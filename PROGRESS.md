@@ -57,7 +57,14 @@
 - 另：`.gitignore` 补 `.pypirc`/token/WAL/`*.db.gz` 防护；`pyproject` 加 `[project.urls]`；sdist+wheel 构建通过。
 - **发布日操作单 `reports/007`**：GitHub/PyPI 双新手逐步指引，标注【可代劳】步骤；红线 token 只进本机 env/.pypirc、不进 git。
 
-**下一步：** 用户给 GitHub 用户名 → 我 wire URL；建仓库/推代码/建 Release 传快照；PyPI 注册+2FA+token → 我 twine 上传。
+**M4 已发布上线 — ✅（详见 reports/008）**
+- GitHub：https://github.com/gzchenhao/openhire （main，72 文件，commit 2d361db）。
+- Release v0.1.0：资产 `openhire-index.db.gz` 13.2MB，下载 URL 与 `config.SNAPSHOT_URL` 一致（HTTP 200）。
+- PyPI：https://pypi.org/project/openhire/0.1.0/ （`pipx install openhire` 全网可装）。
+- 端到端实测：全新 venv 从 PyPI 装 → `ohp bootstrap` 拉发布快照（96/11825，龄4天）→ 刷新（新457/更594/下581）→ `ohp search --role-family engineering` 干净。
+- 红线执行：代码库零密钥（.env/.pypirc/*.db 被 .gitignore 挡，push 前核对暂存区）；快照零用户态（构建时校验）；PyPI token 仅 .pypirc、GitHub 用 gh keyring。
+
+**仅剩：** Smithery 目录提交（`smithery.yaml` 已在库，提交前字段给用户过目、不擅自提交）；快照每周刷新（`docs/maintainer-snapshot-refresh.md`）。
 
 ---
 
