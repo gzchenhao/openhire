@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; padding: 0; background: #0A0E0B; }
+::selection { background: #4ADE87; color: #0E1310; }
+@keyframes ohp-blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+a { color: #4ADE87; }
+a:hover { color: #6FE8A3; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column">
+
+  <div style="border-bottom:1px solid #1C2420;background:#0A0F0C">
+    <div style="max-width:1560px;margin:0 auto;padding:18px 40px;display:flex;align-items:center;gap:20px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:17px;letter-spacing:0.14em;color:#4ADE87;font-weight:700">OPENHIRE</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E5B85C;border:1px solid #5C4E27;border-radius:999px;padding:6px 16px">v0.1 哨兵 SENTINEL</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#9AA69D">全球远程 AI / Infra 岗 · 100 家公司 · 仅公开 API</div>
+      <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:13px;color:#4ADE87;border:1px solid #2E4A38;border-radius:999px;padding:6px 16px">● 简历未离开设备</div>
+    </div>
+  </div>
+
+  <div style="flex:1;max-width:1560px;width:100%;margin:0 auto;box-sizing:border-box;padding:30px 40px;display:grid;grid-template-columns:400px 1fr;gap:28px;align-items:stretch">
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px">
+        <sc-for list="{{ steps }}" as="st" hint-placeholder-count="4">
+          <button onClick="{{ st.go }}" style="{{ st.style }}" style-hover="border-color:#4ADE87">
+            <span style="{{ st.numStyle }}">{{ st.num }}</span>
+            <span style="display:flex;flex-direction:column;gap:3px;align-items:flex-start;flex:1">
+              <span style="font-size:16px;font-weight:700;font-family:'Noto Sans SC',sans-serif;color:#E9EEE9">{{ st.title }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">{{ st.sub }}</span>
+            </span>
+            <span style="{{ st.tickStyle }}">{{ st.tick }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:24px 26px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#4ADE87">{{ annoLabel }}</div>
+        <div style="font-size:22px;font-weight:900;line-height:1.3">{{ annoTitle }}</div>
+        <div style="font-size:15px;color:#B9C2BB;line-height:1.75">{{ annoBody }}</div>
+      </div>
+
+      <sc-if value="{{ showServer }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:24px 26px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#E5B85C">服务器所见 · SERVER LOG</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">实时</span>
+          </div>
+          <div style="background:#0A0F0C;border:1px solid #263029;border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:6px">
+            <sc-for list="{{ srvLines }}" as="sl" hint-placeholder-count="2">
+              <div style="{{ sl.style }}">{{ sl.t }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="background:#0A0F0C;border:1px solid #263029;border-radius:20px;display:flex;flex-direction:column;overflow:hidden;min-height:660px">
+      <div style="display:flex;align-items:center;gap:12px;padding:18px 26px;border-bottom:1px solid #1C2420">
+        <span style="width:12px;height:12px;border-radius:50%;background:#33403A"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#33403A"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#33403A"></span>
+        <span style="margin-left:12px;font-family:'JetBrains Mono',monospace;font-size:14px;color:#5E6B62">openhire-mcp — 内嵌于 Cursor 终端</span>
+      </div>
+      <div style="flex:1;padding:30px 36px;display:flex;flex-direction:column;gap:13px;font-family:'JetBrains Mono',monospace;font-size:15px">
+        <sc-for list="{{ termLines }}" as="line" hint-placeholder-count="4">
+          <div style="display:flex;gap:14px;align-items:baseline">
+            <span style="{{ line.pStyle }}">{{ line.p }}</span>
+            <span style="{{ line.tStyle }}">{{ line.t }}</span>
+          </div>
+        </sc-for>
+        <div style="display:flex;gap:14px;align-items:baseline">
+          <span style="color:#4ADE87;width:18px;flex-shrink:0">$</span>
+          <span style="color:#4ADE87;animation:ohp-blink 1.2s steps(1) infinite">▊</span>
+        </div>
+      </div>
+      <div style="padding:16px 26px;border-top:1px solid #1C2420;display:flex;justify-content:space-between;align-items:center;gap:20px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#5E6B62">{{ footHint }}</span>
+        <div style="display:flex;gap:12px">
+          <button onClick="{{ resetFn }}" style="background:none;border:1px solid #33403A;color:#9AA69D;font-size:13px;font-family:'JetBrains Mono',monospace;border-radius:999px;padding:10px 20px;cursor:pointer" style-hover="color:#E9EEE9;border-color:#4ADE87">↺ 重置</button>
+          <button onClick="{{ nextFn }}" style="background:#4ADE87;color:#0E1310;font-weight:700;font-size:14px;font-family:'Noto Sans SC',sans-serif;border:none;border-radius:999px;padding:10px 26px;cursor:pointer" style-hover="background:#6FE8A3">{{ nextLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1560px;width:100%;margin:0 auto;box-sizing:border-box;padding:0 40px 26px;display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5E6B62">
+    <span>v0.1 北极星：周活跃 Agent × watch 注册数 —— 不是岗位数</span>
+    <span>分发：GitHub README + MCP 目录 + Show HN</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 1560, &quot;height&quot;: 940},
+  &quot;initialStep&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;], &quot;default&quot;: &quot;1&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;演示&quot;},
+  &quot;showServerPanel&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;演示&quot;}
+}">
+class Component extends DCLogic {
+  state = { step: null };
+
+  toStyle(str) {
+    return Object.fromEntries(str.split(';').filter(Boolean).map(r => r.split(':')).map(([k, ...v]) => [k.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase()), v.join(':').trim()]));
+  }
+
+  renderVals() {
+    const cur = this.state.step ?? Number(this.props.initialStep ?? 1);
+    const set = n => this.setState({ step: Math.min(4, Math.max(1, n)) });
+    const S = this.toStyle.bind(this);
+
+    const stepDefs = [
+      { num: '01', title: '安装', sub: 'claude mcp add · 零注册' },
+      { num: '02', title: '技能指纹', sub: 'repo scan · 本地生成' },
+      { num: '03', title: '常驻意向', sub: 'ohp watch · 插件自己响' },
+      { num: '04', title: '命中与授权', sub: '3 天后 · 直达 ATS' }
+    ];
+    const steps = stepDefs.map((d, i) => {
+      const n = i + 1;
+      const active = n === cur, done = n < cur;
+      return {
+        ...d,
+        go: () => set(n),
+        tick: done ? '✓' : (active ? '●' : ''),
+        tickStyle: S('font-family:JetBrains Mono,monospace;font-size:14px;flex-shrink:0;color:' + (done ? '#4ADE87' : '#2E4A38')),
+        numStyle: S('font-family:JetBrains Mono,monospace;font-size:13px;flex-shrink:0;color:' + (active ? '#4ADE87' : '#5E6B62')),
+        style: S('display:flex;align-items:center;gap:16px;text-align:left;width:100%;box-sizing:border-box;border-radius:12px;padding:14px 18px;cursor:pointer;background:' + (active ? '#121A14' : 'transparent') + ';border:1px solid ' + (active ? '#2E4A38' : 'transparent') + (done || active ? '' : ';opacity:0.62'))
+      };
+    });
+
+    const script = {
+      1: [
+        { k: 'cmd', t: 'claude mcp add openhire' },
+        { k: 'ok', t: '已写入 ~/.claude/mcp.json · 无账号 · 无邮箱 · 无简历上传' }
+      ],
+      2: [
+        { k: 'cmd', t: 'ohp init --scan ~/dev/personal' },
+        { k: 'ask', t: '扫描仅限个人项目，数据不出本机 → 确认 [Y/n] y' },
+        { k: 'out', t: '分析 rust-raft/ · llm-gateway/ · vec-bench/ …（14 个仓库）' },
+        { k: 'ok', t: '技能指纹已生成（本地）：Rust 41% · Go 22% · K8s · RAG · CUDA' },
+        { k: 'dim', t: '无姓名 · 无邮箱 · 无雇主代码 —— 简历？从头到尾没写过' }
+      ],
+      3: [
+        { k: 'cmd', t: 'ohp watch --skills auto --remote --min-salary 60w' },
+        { k: 'ok', t: '常驻意向 #a3f9 已注册 · 出户内容仅一枚匿名指纹' },
+        { k: 'dim', t: '关掉终端也在生效 —— 有匹配它自己会响' }
+      ],
+      4: [
+        { k: 'dim', t: '—— 3 天后 · 新 JD 上线 47 秒 ——' },
+        { k: 'notif', t: '深流科技 · LLM 平台工程师 · 远程 · 60–90w · 匹配 91%' },
+        { k: 'cmd', t: 'ohp apply 1024' },
+        { k: 'ask', t: '以你本人身份、走雇主官方通道投递 → 授权 [Y/n] y' },
+        { k: 'ok', t: '已直达雇主 ATS · 来源 = 你自己 · 响应 SLA 7 日起算' }
+      ]
+    };
+    const kindMap = {
+      cmd: { p: '$', pc: '#4ADE87', tc: '#E9EEE9', w: 500 },
+      ok: { p: '✓', pc: '#4ADE87', tc: '#C6CFC8', w: 400 },
+      ask: { p: '?', pc: '#E5B85C', tc: '#C6CFC8', w: 400 },
+      out: { p: '▸', pc: '#5E6B62', tc: '#9AA69D', w: 400 },
+      dim: { p: '#', pc: '#3E4A42', tc: '#5E6B62', w: 400 },
+      notif: { p: '⬥', pc: '#4ADE87', tc: '#D7EBDD', w: 700 }
+    };
+    const termLines = [];
+    for (let n = 1; n <= cur; n++) {
+      for (const line of script[n]) {
+        const m = kindMap[line.k];
+        termLines.push({
+          p: m.p, t: line.t,
+          pStyle: S('width:18px;flex-shrink:0;color:' + m.pc),
+          tStyle: S('line-height:1.75;font-weight:' + m.w + ';color:' + m.tc)
+        });
+      }
+    }
+
+    const annos = {
+      1: { label: 'STEP 1 · 零摩擦', title: '30 秒接入，无注册', body: 'Cursor / Claude / Windsurf 一行命令接入，没有账号体系。对外叙事只有一句：求职是私事，应该发生在你自己的终端里。' },
+      2: { label: 'STEP 2 · 杀手锏', title: '简历根本不用写', body: 'Agent 读你的个人仓库，从真实代码提炼技能指纹。仅个人项目、明确授权、永不出本机——这是任何网页产品都做不到的。' },
+      3: { label: 'STEP 3 · 留存命门', title: '让插件自己响', body: '安装引导必须落在 watch 常驻意向：从「人来搜」变成「岗位来敲门」，解决装完即忘。北极星统计的就是这个动作。' },
+      4: { label: 'STEP 4 · 反海投', title: '每一份都是点过头的', body: '授权制天然限流：以你本人身份走雇主官方通道，永不阵亡于垃圾邮箱。雇主收到的不是洪水，是逐份授权的申请。' }
+    };
+    const anno = annos[cur];
+
+    const srv = {
+      1: [{ k: 'dim', t: '— 无任何请求 —' }, { k: 'dim', t: '安装全程离线' }],
+      2: [{ k: 'dim', t: '— 无任何请求 —' }, { k: 'dim', t: '指纹生成在本机完成' }],
+      3: [{ k: 'g', t: 'POST /v2/watch' }, { k: 'o', t: '{ fingerprint: "#a3f9",' }, { k: 'o', t: '  skills: ["rust","go","k8s","rag"],' }, { k: 'o', t: '  remote: true, min: 600000 }' }, { k: 'dim', t: '// 无姓名 · 无联系方式 · 无简历' }],
+      4: [{ k: 'g', t: 'PUSH match#1024 → 本机' }, { k: 'g', t: 'POST /v2/apply' }, { k: 'o', t: '{ intent: "#a3f9", job: 1024,' }, { k: 'o', t: '  authorized: true }' }, { k: 'dim', t: '// 简历不经平台，直达雇主 ATS' }]
+    };
+    const srvColor = { g: '#4ADE87', o: '#9AA69D', dim: '#5E6B62' };
+    const srvLines = srv[cur].map(l => ({ t: l.t, style: S('font-family:JetBrains Mono,monospace;font-size:13px;line-height:1.7;color:' + srvColor[l.k]) }));
+
+    return {
+      steps, termLines, srvLines,
+      annoLabel: anno.label, annoTitle: anno.title, annoBody: anno.body,
+      showServer: this.props.showServerPanel ?? true,
+      nextLabel: cur < 4 ? '继续 ↵' : '↺ 重播',
+      nextFn: () => set(cur < 4 ? cur + 1 : 1),
+      resetFn: () => set(1),
+      footHint: cur < 4 ? '第 ' + cur + ' / 4 步 · 点左侧步骤可跳转' : '完整旅程 ≈ 30 秒安装 + 一次授权 · 其余时间它自己在值班'
+    };
+  }
+}
+</script>
+</body>
+</html>

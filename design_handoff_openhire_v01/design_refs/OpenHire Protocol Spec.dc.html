@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; padding: 0; background: #0E1310; }
+::selection { background: #4ADE87; color: #0E1310; }
+a { color: #4ADE87; text-decoration: none; }
+a:hover { color: #6FE8A3; text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0E1310;color:#E9EEE9;font-family:Inter,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center">
+
+  <div style="width:100%;box-sizing:border-box;border-bottom:1px solid #1C2420;background:#0A0F0C">
+    <div style="max-width:900px;margin:0 auto;padding:20px 32px;display:flex;align-items:center;gap:16px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:15px;letter-spacing:0.12em;color:#4ADE87;font-weight:700">OPENHIRE PROTOCOL</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E5B85C;border:1px solid #5C4E27;border-radius:999px;padding:5px 13px">SPEC v0.1 · DRAFT</span>
+      <div style="margin-left:auto;display:flex;gap:22px;font-family:'JetBrains Mono',monospace;font-size:13px">
+        <a href="OpenHire Landing Page.dc.html">← openhire.dev</a>
+        <a href="openhire-mcp README.dc.html">GitHub</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:900px;box-sizing:border-box;padding:64px 32px 90px;display:flex;flex-direction:column;gap:16px">
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#9AA69D;border:1px solid #263029;border-radius:999px;padding:5px 13px">schema.org compatible</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#4ADE87;border:1px solid #2E4A38;border-radius:999px;padding:5px 13px">vendor-neutral · donated</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#9AA69D;border:1px solid #263029;border-radius:999px;padding:5px 13px">ref. implementation: openhire-mcp</span>
+    </div>
+
+    <h1 style="font-size:46px;font-weight:800;line-height:1.2;margin:14px 0 0;letter-spacing:-0.01em">The machine-readable contract<br>behind every job posting.</h1>
+    <p style="font-size:18px;color:#B9C2BB;line-height:1.7;margin:6px 0 0;max-width:720px">A small, vendor-neutral extension of <a href="https://schema.org/JobPosting">schema.org/JobPosting</a> for the agent era — plus the four MCP tool contracts that read it. Anyone can implement either half independently.</p>
+
+    <h2 style="font-size:26px;font-weight:700;margin:40px 0 0;padding-bottom:14px;border-bottom:1px solid #1C2420">Why extend, not replace</h2>
+    <p style="font-size:16px;color:#B9C2BB;line-height:1.75;margin:0">schema.org/JobPosting was designed in 2011 for search-engine crawlers — it has no concept of freshness verification, ghost-listing risk, or response accountability. OpenHire doesn't replace it; it adds five fields on top, so any existing JobPosting markup keeps working unchanged.</p>
+
+    <h2 style="font-size:26px;font-weight:700;margin:36px 0 0;padding-bottom:14px;border-bottom:1px solid #1C2420">Schema — 5 new fields</h2>
+    <p style="font-size:16px;color:#9AA69D;line-height:1.7;margin:0">Every OpenHire listing is valid JobPosting markup, plus:</p>
+
+    <div style="display:flex;flex-direction:column;margin-top:8px">
+      <div style="display:flex;gap:26px;padding:20px 0;border-top:1px solid #1C2420;align-items:flex-start">
+        <div style="width:180px;flex-shrink:0;display:flex;flex-direction:column;gap:5px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:#4ADE87;font-weight:700">verified_at</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">datetime</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:15px;color:#C6CFC8;line-height:1.6">Last moment this posting was confirmed live on the employer's own site.</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#6B776E">e.g. 2026-07-09T08:14:00Z</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:26px;padding:20px 0;border-top:1px solid #1C2420;align-items:flex-start">
+        <div style="width:180px;flex-shrink:0;display:flex;flex-direction:column;gap:5px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:#4ADE87;font-weight:700">source</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">enum</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:15px;color:#C6CFC8;line-height:1.6">First-party origin of this data — never a job board.</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#6B776E">employer_site | ats_public_api</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:26px;padding:20px 0;border-top:1px solid #1C2420;align-items:flex-start">
+        <div style="width:180px;flex-shrink:0;display:flex;flex-direction:column;gap:5px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:#4ADE87;font-weight:700">ghost_score</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">float 0–1</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:15px;color:#C6CFC8;line-height:1.6">Likelihood this listing is not an active hire — relist frequency + staleness. Lower is better.</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#6B776E">e.g. 0.04</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:26px;padding:20px 0;border-top:1px solid #1C2420;align-items:flex-start">
+        <div style="width:180px;flex-shrink:0;display:flex;flex-direction:column;gap:5px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:#4ADE87;font-weight:700">response_sla_days</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">int</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:15px;color:#C6CFC8;line-height:1.6">Employer's committed response window. Breach auto-delists the posting.</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#6B776E">e.g. 7</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:26px;padding:20px 0;border-top:1px solid #1C2420;border-bottom:1px solid #1C2420;align-items:flex-start">
+        <div style="width:180px;flex-shrink:0;display:flex;flex-direction:column;gap:5px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:#4ADE87;font-weight:700">apply_channel</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">url</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:15px;color:#C6CFC8;line-height:1.6">Always the employer's own application endpoint. Never a platform inbox.</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#6B776E">e.g. https://boards.greenhouse.io/…</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#0A0F0C;border:1px solid #263029;border-radius:12px;padding:22px 26px;margin-top:10px;display:flex;flex-direction:column;gap:2px;font-family:'JetBrains Mono',monospace;font-size:13.5px;color:#9AA69D;line-height:1.85">
+      <div>{</div>
+      <div style="padding-left:20px">"@type": "JobPosting",</div>
+      <div style="padding-left:20px">"title": "LLM Platform Engineer",</div>
+      <div style="padding-left:20px">"datePosted": "2026-07-01",</div>
+      <div style="padding-left:20px;color:#6B776E">// ↑ standard schema.org fields</div>
+      <div style="padding-left:20px;color:#4ADE87">"verified_at": "2026-07-09T08:14:00Z",</div>
+      <div style="padding-left:20px;color:#4ADE87">"source": "ats_public_api",</div>
+      <div style="padding-left:20px;color:#4ADE87">"ghost_score": 0.04,</div>
+      <div style="padding-left:20px;color:#4ADE87">"response_sla_days": 7,</div>
+      <div style="padding-left:20px;color:#4ADE87">"apply_channel": "https://boards.greenhouse.io/shenliu/jobs/1024"</div>
+      <div style="color:#6B776E">// ↑ the five OpenHire fields</div>
+      <div>}</div>
+    </div>
+
+    <h2 style="font-size:26px;font-weight:700;margin:44px 0 0;padding-bottom:14px;border-bottom:1px solid #1C2420">MCP tool contracts</h2>
+    <p style="font-size:16px;color:#9AA69D;line-height:1.7;margin:0">Four tools. That's the entire surface area.</p>
+
+    <div style="display:flex;flex-direction:column;gap:20px;margin-top:6px">
+
+      <div style="border:1px solid #263029;border-radius:14px;overflow:hidden">
+        <div style="padding:16px 22px;background:#141B16;border-bottom:1px solid #1C2420;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700">search_jobs(filters)</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA396">→ JobPosting[]</span>
+        </div>
+        <div style="padding:16px 22px 0;font-size:14.5px;color:#B9C2BB;line-height:1.6">Hard-filter the live index. Every result includes verified_at, ghost_score, and apply_channel.</div>
+        <div style="padding:16px 22px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// request</div>
+            <div>{</div>
+            <div style="padding-left:16px">"skills": ["rust","k8s","rag"],</div>
+            <div style="padding-left:16px">"remote": true,</div>
+            <div style="padding-left:16px">"min_salary": 600000</div>
+            <div>}</div>
+          </div>
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// response</div>
+            <div>[ {</div>
+            <div style="padding-left:16px">"title": "LLM Platform Engineer",</div>
+            <div style="padding-left:16px">"ghost_score": 0.04,</div>
+            <div style="padding-left:16px">"apply_channel": "https://…"</div>
+            <div>} ]</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #263029;border-radius:14px;overflow:hidden">
+        <div style="padding:16px 22px;background:#141B16;border-bottom:1px solid #1C2420;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700">watch_intent(fingerprint, filters)</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA396">→ { watch_id }</span>
+        </div>
+        <div style="padding:16px 22px 0;font-size:14.5px;color:#B9C2BB;line-height:1.6">Registers a standing intent. New matches push to the client — no polling required.</div>
+        <div style="padding:16px 22px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// request</div>
+            <div>{</div>
+            <div style="padding-left:16px">"fingerprint": "#a3f9",</div>
+            <div style="padding-left:16px">"skills": ["rust","k8s"],</div>
+            <div style="padding-left:16px">"remote": true</div>
+            <div>}</div>
+          </div>
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// response</div>
+            <div>{</div>
+            <div style="padding-left:16px">"watch_id": "w_8841",</div>
+            <div style="padding-left:16px">"status": "active"</div>
+            <div>}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #263029;border-radius:14px;overflow:hidden">
+        <div style="padding:16px 22px;background:#141B16;border-bottom:1px solid #1C2420;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700">get_company_info(company_id)</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA396">→ trust signals</span>
+        </div>
+        <div style="padding:16px 22px 0;font-size:14.5px;color:#B9C2BB;line-height:1.6">Aggregate, anonymous trust signals for one employer — never individual candidate data.</div>
+        <div style="padding:16px 22px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// request</div>
+            <div>{ "company_id": "shenliu-tech" }</div>
+          </div>
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// response</div>
+            <div>{</div>
+            <div style="padding-left:16px">"verified": true,</div>
+            <div style="padding-left:16px">"ghost_score_avg": 0.03,</div>
+            <div style="padding-left:16px">"response_rate_7d": 0.82</div>
+            <div>}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #2E4A38;border-radius:14px;overflow:hidden">
+        <div style="padding:16px 22px;background:#121A14;border-bottom:1px solid #1C2420;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700">apply(job_id, fingerprint, authorized)</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#4ADE87">→ delivery receipt</span>
+        </div>
+        <div style="padding:16px 22px 0;font-size:14.5px;color:#B9C2BB;line-height:1.6">Requires an explicit per-job authorization. Delivers through the employer's own channel — never accepts or stores a résumé file.</div>
+        <div style="padding:16px 22px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// request</div>
+            <div>{</div>
+            <div style="padding-left:16px">"job_id": "1024",</div>
+            <div style="padding-left:16px">"fingerprint": "#a3f9",</div>
+            <div style="padding-left:16px">"authorized": true</div>
+            <div>}</div>
+          </div>
+          <div style="background:#0A0F0C;border:1px solid #1C2420;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:1px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#9AA69D;line-height:1.75">
+            <div style="color:#5E6B62">// response</div>
+            <div>{</div>
+            <div style="padding-left:16px">"delivered_via": "employer_ats",</div>
+            <div style="padding-left:16px">"receipt_id": "r_5567",</div>
+            <div style="padding-left:16px;color:#4ADE87">"resume_transmitted": false</div>
+            <div>}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="background:#121A14;border:1px solid #2E4A38;border-radius:14px;padding:26px 30px;margin-top:36px;display:flex;flex-direction:column;gap:12px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.12em;color:#4ADE87">THREE RULES NO IMPLEMENTATION MAY BREAK</span>
+      <div style="font-size:15.5px;color:#D7EBDD;line-height:1.85">
+        <div>1. A résumé or any PII never transits the server — only an anonymous fingerprint does.</div>
+        <div>2. Ranking is never a paid parameter — it is only a function of match quality and freshness.</div>
+        <div>3. Employers pay only for authorized, delivered outcomes — never for exposure.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:34px;padding-top:22px;border-top:1px solid #1C2420;font-size:13.5px;color:#5E6B62;line-height:1.7">Status: draft, open for public comment. This spec is designed to be forkable — the goal is adoption, not ownership. Reference implementation: <a href="openhire-mcp README.dc.html">openhire-mcp</a> (MIT).</div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

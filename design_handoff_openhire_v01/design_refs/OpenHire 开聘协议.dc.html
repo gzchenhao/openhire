@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; padding: 0; background: #0A0E0B; }
+::selection { background: #4ADE87; color: #0E1310; }
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<section data-label="封面" data-speaker-notes="开场定调：这不是又一个招聘网站，而是把招聘从「网页应用」降维成「协议服务」。今天的推演基于 GEMINI 草案，从求职者与广告主两个视角各自往死里追问一遍，修正三处致命盲点后，得到 V2 方案。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">OPENHIRE PROTOCOL · 产品愿景 V2</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">2026.07 · 推演稿</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:38px">
+    <div style="align-self:flex-start;display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:26px;background:#0A0F0C;border:1px solid #263029;border-radius:12px;padding:16px 28px;color:#C6CFC8">
+      <span style="color:#4ADE87">$</span>
+      <span>ohp match --resume ./本地/简历.md --privacy full</span>
+    </div>
+    <div style="font-size:148px;font-weight:900;line-height:1.05;letter-spacing:0.01em">开聘协议</div>
+    <div style="font-size:42px;color:#C6CFC8;font-weight:500;line-height:1.4">招聘的协议层 —— <span style="color:#4ADE87;font-weight:700">简历不出户</span><span>，机会自上门</span></div>
+    <div style="font-size:27px;color:#9AA69D">基于 GEMINI 草案的双视角升级推演：求职者体验 × 广告主价值</div>
+  </div>
+  <div style="display:flex;gap:16px;align-items:center">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 22px">MCP · SKILL · CLI</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 22px">排序不可购买</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 22px">按合格候选付费</span>
+    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">01 / 16</span>
+  </div>
+</section>
+
+<section data-label="三个盲点" data-speaker-notes="核心升级逻辑一页讲完。盲点一：Agent 的全部价值在于替用户做对判断，排序一旦可购买，Agent 生态会把数据源整体降权，用户迁移成本只有一行配置——所以决策级广告是自毁。盲点二：原案里求职者只读不写，数据库一旦被复制护城河归零，必须把使用行为变成资产。盲点三：爬虫是和全网官网改版赛跑，边际成本不收敛，必须设计出让雇主主动送数据的终局。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">UPGRADE AUDIT · 升级审计</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">02 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">原方案的三个盲点</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-top:54px">
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:42px 38px;display:flex;flex-direction:column;gap:20px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#E5B85C">盲点 01</div>
+      <div style="font-size:34px;font-weight:700;line-height:1.3">决策级广告毒化信任</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">推演</div>
+        <div style="font-size:26px;color:#B9C2BB;line-height:1.6">Agent 的全部价值是替用户做对判断。排序一旦可被购买，Agent 生态会将整个数据源降权——用户换协议只需一行配置。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">升级</div>
+        <div style="font-size:26px;color:#D7EBDD;line-height:1.6">广告只出售「触达权」，永不改变排序；按合格候选结算（CPQC）。</div>
+      </div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:42px 38px;display:flex;flex-direction:column;gap:20px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#E5B85C">盲点 02</div>
+      <div style="font-size:34px;font-weight:700;line-height:1.3">求职者只是查询者</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">推演</div>
+        <div style="font-size:26px;color:#B9C2BB;line-height:1.6">只读不写，无留存、无网络效应；职位库一旦被复制，护城河归零。用户的使用行为没有变成任何人的资产。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">升级</div>
+        <div style="font-size:26px;color:#D7EBDD;line-height:1.6">匿名供给信号沉淀为 Talent Radar——求职者越活跃，广告主侧越值钱，形成双边飞轮。</div>
+      </div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:42px 38px;display:flex;flex-direction:column;gap:20px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#E5B85C">盲点 03</div>
+      <div style="font-size:34px;font-weight:700;line-height:1.3">爬虫对抗不可持续</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">推演</div>
+        <div style="font-size:26px;color:#B9C2BB;line-height:1.6">官网改版 × 反爬 × LLM 解析成本，边际成本不收敛；数据实时性永远在和全网赛跑。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">升级</div>
+        <div style="font-size:26px;color:#D7EBDD;line-height:1.6">爬虫只负责冷启动；当 Agent 流量成为入口，雇主会主动推送结构化 JD。</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:40px;font-size:25px;color:#9AA69D">后续各页依次展开这三处修正：广告模式（11）· 数据飞轮（13）· 供给侧反转（13）</div>
+</section>
+
+<section data-label="范式转移" data-speaker-notes="把定位一句话说死：终局不是做更好的招聘网页，而是做 Agent 时代的职位数据协议。左右对照念两三行即可，落点在底部那句话——求职者不再访问招聘网站，他们的 Agent 访问协议。这也是估值逻辑从「流量平台」切换到「基础设施」的依据。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">PARADIGM</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">03 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">范式转移：从网页应用到协议服务</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 110px 1fr;align-items:stretch;margin-top:54px">
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:36px 44px;display:flex;flex-direction:column">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#9AA69D;padding-bottom:22px">WEB ERA · 网页时代</div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #232B26"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;width:92px;flex-shrink:0">主体</span><span style="font-size:27px;color:#B9C2BB">人刷列表，每周 10+ 小时</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #232B26"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;width:92px;flex-shrink:0">简历</span><span style="font-size:27px;color:#B9C2BB">上传平台，被转卖与打扰</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #232B26"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;width:92px;flex-shrink:0">匹配</span><span style="font-size:27px;color:#B9C2BB">关键词搜索 + 竞价排名</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #232B26"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;width:92px;flex-shrink:0">收入</span><span style="font-size:27px;color:#B9C2BB">卖曝光位，与结果脱钩</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #232B26"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;width:92px;flex-shrink:0">入口</span><span style="font-size:27px;color:#B9C2BB">App / 网站</span></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:56px;color:#4ADE87">→</div>
+    <div style="background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:36px 44px;display:flex;flex-direction:column">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#4ADE87;padding-bottom:22px">PROTOCOL ERA · 协议时代</div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #26362C"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B8A76;width:92px;flex-shrink:0">主体</span><span style="font-size:27px;color:#E2EEE5">Agent 常驻匹配，人只做决定</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #26362C"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B8A76;width:92px;flex-shrink:0">简历</span><span style="font-size:27px;color:#E2EEE5">留在本地，授权才投递</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #26362C"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B8A76;width:92px;flex-shrink:0">匹配</span><span style="font-size:27px;color:#E2EEE5">结构化 Schema + 本地精排</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #26362C"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B8A76;width:92px;flex-shrink:0">收入</span><span style="font-size:27px;color:#E2EEE5">按合格候选结算（CPQC）</span></div>
+      <div style="display:flex;gap:24px;padding:22px 0;border-top:1px solid #26362C"><span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B8A76;width:92px;flex-shrink:0">入口</span><span style="font-size:27px;color:#E2EEE5">MCP · Skill · CLI · API</span></div>
+    </div>
+  </div>
+  <div style="margin-top:40px;font-size:30px;color:#E9EEE9;font-weight:500">求职者不再访问招聘网站——<span style="color:#4ADE87;font-weight:700">他们的 Agent 访问协议。</span></div>
+</section>
+
+<section data-label="三层架构" data-speaker-notes="架构即立场：商业化被物理隔离在 L3 结算层，L1/L2 的匹配逻辑里没有任何付费变量——这是对「排序不可购买」的工程保证，也是审计口径。L2 保留原案的三协议入口；L1 强调结构化质量优先于数量，因为读者是 Agent，Schema 准确率直接等于匹配精度。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">ARCHITECTURE</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">04 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">产品架构：三层协议栈</h1>
+  <div style="flex:1;display:flex;flex-direction:column;gap:24px;margin-top:54px">
+    <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:34px 44px;display:grid;grid-template-columns:300px 1fr 430px;gap:36px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C;letter-spacing:0.14em">L3</div>
+        <div style="font-size:34px;font-weight:700">信任与结算层</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">雇主验证</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">幽灵岗位治理</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">CPQC 结算</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">触达权拍卖</span>
+      </div>
+      <div style="font-size:25px;color:#9AA69D;line-height:1.6">商业化只发生在这一层，与匹配逻辑物理隔离——「排序不可购买」的工程保证。</div>
+    </div>
+    <div style="flex:1;background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:34px 44px;display:grid;grid-template-columns:300px 1fr 430px;gap:36px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">L2</div>
+        <div style="font-size:34px;font-weight:700">协议网关层</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:10px 20px">MCP Server</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:10px 20px">Claude / OpenAI Skill</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:10px 20px">CLI（pip install openhire）</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:10px 20px">REST API</span>
+      </div>
+      <div style="font-size:25px;color:#9AA69D;line-height:1.6">对外暴露 search_jobs · watch_intent · company_card · apply_guide 等工具，限流与计量在网关统一处理。</div>
+    </div>
+    <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:34px 44px;display:grid;grid-template-columns:300px 1fr 430px;gap:36px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D;letter-spacing:0.14em">L1</div>
+        <div style="font-size:34px;font-weight:700">数据引擎层</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">采集集群</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">LLM 标准化</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">统一 JD Schema</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8;border:1px solid #2C3630;border-radius:999px;padding:10px 20px">新鲜度 SLA</span>
+      </div>
+      <div style="font-size:25px;color:#9AA69D;line-height:1.6">读者是 Agent 而非人：技能 / 薪资 / 远程 / 签证全部结构化，质量优先于数量。</div>
+    </div>
+  </div>
+</section>
+
+<section data-label="PART 1" data-speaker-notes="第一幕转场。强调隐私不是功能列表里的一项，而是叙事地基：接下来四页的所有体验设计——本地匹配、MCP 对话、常驻意向、幽灵治理——全部从「简历永远在你的设备上」这一条推导出来。品牌传播也应只重复这一句。" style="box-sizing:border-box;background:#EDF0EA;color:#141814;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#1E7A46;font-weight:500">PART 1 / JOB SEEKER</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B746C">05 / 16</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:34px">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:26px;letter-spacing:0.14em;color:#6B746C">求职者视角</div>
+    <div style="font-size:150px;font-weight:900;line-height:1.08;letter-spacing:0.01em">简历不出户</div>
+    <div style="font-size:33px;color:#3A423B;line-height:1.6;max-width:1150px">隐私不是一个功能开关，而是整条产品叙事的地基：所有体验都从「简历永远在你的设备上」推导出来。</div>
+  </div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B746C">06 本地匹配 · 07 Agent 体验 · 08 岗位找人 · 09 幽灵治理</div>
+</section>
+
+<section data-label="本地匹配" data-speaker-notes="技术叙事的核心一页：服务器只见「匿名的匹配问题」，不见「人」。匿名指纹只含技能向量与硬性条件，PII 全部剥离；精排发生在用户设备上，服务器连最终排序都不知道。授权投递后简历直达雇主，不经平台存储——平台在架构上「无法」作恶，而不是「承诺」不作恶。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">PRIVACY BY DESIGN</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">06 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">本地匹配的四步机制</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 52px 1fr 52px 1fr 52px 1fr;align-items:stretch;margin-top:54px">
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:36px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">STEP 1</div>
+      <div style="font-size:31px;font-weight:700">本地解析</div>
+      <div style="font-size:25px;color:#B9C2BB;line-height:1.6">Agent 在设备上读取简历原文，全程不上传。</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:36px;color:#4ADE87">→</div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:36px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">STEP 2</div>
+      <div style="font-size:31px;font-weight:700">匿名指纹</div>
+      <div style="font-size:25px;color:#B9C2BB;line-height:1.6">生成技能向量与硬性条件；剥离姓名、联系方式、公司等全部 PII。</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:36px;color:#4ADE87">→</div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:36px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">STEP 3</div>
+      <div style="font-size:31px;font-weight:700">协议匹配</div>
+      <div style="font-size:25px;color:#B9C2BB;line-height:1.6">服务器只回答「哪些岗位满足这组条件」，不知道提问者是谁。</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:36px;color:#4ADE87">→</div>
+    <div style="background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:36px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">STEP 4</div>
+      <div style="font-size:31px;font-weight:700">授权投递</div>
+      <div style="font-size:25px;color:#D7EBDD;line-height:1.6">精排在本地完成；用户点头后，简历才离开设备，直达雇主。</div>
+    </div>
+  </div>
+  <div style="margin-top:40px;background:#141B16;border:1px solid #263029;border-radius:16px;padding:28px 44px;display:grid;grid-template-columns:1fr 1fr;gap:48px">
+    <div style="display:flex;gap:20px;align-items:baseline">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;flex-shrink:0">传统平台</span>
+      <span style="font-size:26px;color:#9AA69D">简历入库 → 被打包转卖、被动骚扰</span>
+    </div>
+    <div style="display:flex;gap:20px;align-items:baseline">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;flex-shrink:0">OPENHIRE</span>
+      <span style="font-size:26px;color:#D7EBDD">服务器日志里，只有一次匿名查询</span>
+    </div>
+  </div>
+</section>
+
+<section data-label="Agent 体验" data-speaker-notes="演示页。三个体验主张：零新增入口（不做 App，体验寄生在用户已有的 Claude、GPT、IDE 里，获客成本结构性低于传统平台）；每张职位卡带官网校验时间戳，Agent 可引用可质疑；Sponsored 固定末位、透明标注、仅硬匹配达标可见——右侧演示卡可用 Tweaks 开关切换，现场展示广告形态的克制。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">INTERFACE / MCP</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">07 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">Agent 里的求职体验</h1>
+  <div style="flex:1;display:grid;grid-template-columns:600px 1fr;gap:64px;margin-top:54px;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:40px;justify-content:center">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">01</div>
+        <div style="font-size:31px;font-weight:700">零新增入口</div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.6">体验发生在用户已有的 Claude / GPT / IDE 里，无需下载任何 App。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">02</div>
+        <div style="font-size:31px;font-weight:700">可验证的新鲜度</div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.6">每张职位卡携带「官网最后校验时间」，Agent 可引用、可质疑。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C">03</div>
+        <div style="font-size:31px;font-weight:700">透明的赞助位</div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.6">Sponsored 固定末位、明确标注，且仅在硬性匹配达标时出现。</div>
+      </div>
+    </div>
+    <div style="background:#0A0F0C;border:1px solid #263029;border-radius:20px;padding:34px 38px;display:flex;flex-direction:column;gap:20px;overflow:hidden">
+      <div style="align-self:flex-end;background:#1C2A20;border-radius:16px 16px 4px 16px;padding:16px 24px;max-width:78%;font-size:26px;line-height:1.5">帮我看看有没有适合我的 LLM Infra 岗位，远程优先。</div>
+      <div style="border:1px dashed #33403A;border-radius:10px;padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:24px;color:#8FA396">⚙ openhire.search_jobs(skills=["LLM","K8s"], remote=true) · 简历未上传</div>
+      <div style="border:1px solid #2C3630;border-radius:14px;padding:20px 24px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px">
+          <span style="font-size:27px;font-weight:700">深流科技 · LLM 平台工程师</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">匹配 94%</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#8FA396">远程 · 60–90w · A 轮 · 官网校验 2h 前</div>
+      </div>
+      <div style="border:1px solid #2C3630;border-radius:14px;padding:20px 24px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px">
+          <span style="font-size:27px;font-weight:700">北纬智算 · 推理优化工程师</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">匹配 89%</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#8FA396">混合办公 · 55–80w · C 轮 · 官网校验 26min 前</div>
+      </div>
+      <sc-if value="{{ sponsoredDemo }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#17140C;border:1px solid #5C4E27;border-radius:14px;padding:20px 24px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px">
+            <span style="font-size:27px;font-weight:700">云澈 AI · Infra 研发（急聘）</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C">SPONSORED</span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#B99B4F">匹配 87% · 仅硬性匹配达标可见 · 不参与排序</div>
+        </div>
+      </sc-if>
+      <div style="font-size:26px;color:#C6CFC8;line-height:1.5">两个岗位满足你的全部硬性条件。是否授权投递？</div>
+      <div style="display:flex;gap:16px">
+        <span style="background:#4ADE87;color:#0E1310;font-weight:700;font-size:25px;border-radius:999px;padding:14px 30px">授权投递</span>
+        <span style="border:1px solid #33403A;color:#C6CFC8;font-size:25px;border-radius:999px;padding:14px 30px">先看公司卡</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="岗位找人" data-speaker-notes="方向反转：求职从「搜索行为」变成「订阅状态」。常驻意向（standing intent）注册一次匿名指纹后，新 JD 上线即被全网匹配者的 Agent 秒级感知——这同时是给雇主的卖点：发布即触达全部匹配意向，不必再等搜索流量慢慢爬。CLI 面向硬核开发者，也是开源获客的入口。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">INTERFACE / CLI</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">08 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">岗位找人：常驻意向</h1>
+  <div style="margin-top:34px;font-size:30px;color:#B9C2BB;line-height:1.6;max-width:1400px">求职从「每周刷十小时」的搜索行为，变成<span style="color:#4ADE87;font-weight:700">「一次订阅」</span><span>的常驻状态——新岗位发布的一刻，即被全网匹配者的 Agent 感知。</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;margin-top:44px;min-height:0">
+    <div style="flex:1;background:#0A0F0C;border:1px solid #263029;border-radius:20px;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:20px 28px;border-bottom:1px solid #1C2420">
+        <span style="width:16px;height:16px;border-radius:50%;background:#33403A"></span>
+        <span style="width:16px;height:16px;border-radius:50%;background:#33403A"></span>
+        <span style="width:16px;height:16px;border-radius:50%;background:#33403A"></span>
+        <span style="margin-left:16px;font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">openhire-cli — zsh</span>
+      </div>
+      <div style="padding:36px 48px;font-family:'JetBrains Mono',monospace;font-size:26px;line-height:2.0;color:#C6CFC8">
+        <div><span style="color:#4ADE87">$</span><span> pip install openhire</span></div>
+        <div><span style="color:#4ADE87">$</span><span> ohp watch --skills "RAG, Go" --min-salary 60w --remote</span></div>
+        <div><span style="color:#4ADE87">✓</span><span> 常驻意向已注册 · 匿名指纹 #a3f9 · 简历保留本地</span></div>
+        <div style="color:#5E6B62"># 3 天后 —— 新 JD 上线 47 秒</div>
+        <div><span style="color:#4ADE87">⬥</span><span> 新匹配 · 深研科技 · LLM 平台工程师 · 匹配 91%</span></div>
+        <div><span style="color:#4ADE87">$</span><span> ohp show 1024 --company-card</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:36px;font-size:26px;color:#9AA69D">对雇主同样成立：<span style="color:#D7EBDD">JD 发布即触达全部匹配意向，无需等待搜索流量。</span></div>
+</section>
+
+<section data-label="幽灵治理" data-speaker-notes="求职者留存的真正抓手。比「找不到岗位」更深的痛是投递石沉大海、岗位根本不在招。三个机制全部写进协议字段：新鲜度时间戳（过期自动降权）、响应 SLA（七日未处理自动下架、记录公开）、幽灵分（跨全网 Agent 共享）。落点：职位数据可以被竞品复制，但雇主行为的信任记录复制不了——这是第二条护城河，也是对盲点二的部分回应。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">TRUST LAYER</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">09 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">信任层：幽灵岗位治理</h1>
+  <div style="margin-top:34px;font-size:30px;color:#B9C2BB;line-height:1.6;max-width:1500px">求职者最深的痛不是「找不到岗位」，而是投出去的简历没有人看、岗位根本不在招。治理机制直接写进协议字段：</div>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-top:44px">
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">verified_at</div>
+      <div style="font-size:32px;font-weight:700">新鲜度时间戳</div>
+      <div style="font-size:26px;color:#B9C2BB;line-height:1.6">每条 JD 携带「官网最后校验时间」，过期自动降权；Agent 端可见、可引用。</div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">response_sla</div>
+      <div style="font-size:32px;font-weight:700">响应 SLA</div>
+      <div style="font-size:26px;color:#B9C2BB;line-height:1.6">雇主对授权投递 7 日未处理，岗位自动下架；SLA 记录随公司卡公开。</div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C;letter-spacing:0.14em">ghost_score</div>
+      <div style="font-size:32px;font-weight:700">幽灵分</div>
+      <div style="font-size:26px;color:#B9C2BB;line-height:1.6">长期挂岗不招、僵尸 JD 比例高的公司获得公开幽灵分，全网 Agent 共享。</div>
+    </div>
+  </div>
+  <div style="margin-top:40px;font-size:30px;font-weight:500">职位数据可以被复制，<span style="color:#4ADE87;font-weight:700">雇主行为的信任记录无法被复制</span><span>——这是第二条护城河。</span></div>
+</section>
+
+<section data-label="PART 2" data-speaker-notes="第二幕转场。给广告主的第一句话必须诚实：Agent 时代的用户不会忍受噪音，一行 prompt 就能过滤掉所有加塞内容——届时被过滤的不是某条广告，而是整个数据源。所以广告模式必须重新设计，这正是下一页的三案推演。" style="box-sizing:border-box;background:#EDF0EA;color:#141814;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#1E7A46;font-weight:500">PART 2 / ADVERTISER</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B746C">10 / 16</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:34px">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:26px;letter-spacing:0.14em;color:#6B746C">广告主视角</div>
+    <div style="font-size:135px;font-weight:900;line-height:1.12;letter-spacing:0.01em">广告不能毒化匹配</div>
+    <div style="font-size:33px;color:#3A423B;line-height:1.6;max-width:1150px">在 Agent 时代，用户不会忍受噪音——被过滤掉的不是某条广告，而是整个数据源。</div>
+  </div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B746C">11 模式推演 · 12 控制台 · 13 数据飞轮 · 14 商业模式</div>
+</section>
+
+<section data-label="广告推演" data-speaker-notes="三案推演，逐行念判定列。A 案竞价排名是传统平台的路：短期收入最高，但 Agent 一旦检测到排序失真就整体降权数据源，生态死亡。B 案是 GEMINI 原案：透明标注比 A 诚实，但覆盖与频次不可控，Agent 端一行 prompt 即可全部过滤，广告价值缓慢趋零。C 案是本方案：广告主买的是「对硬匹配达标者的触达权」，固定末位、不改排序，按授权投递的合格候选结算——求职者零噪音、广告主只为结果付费、平台收入与匹配质量绑定，三方激励对齐。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">AD MODEL AUDIT</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">11 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">三种广告模式的推演</h1>
+  <div style="flex:1;display:flex;flex-direction:column;gap:22px;margin-top:54px">
+    <div style="display:grid;grid-template-columns:380px 1fr 240px;gap:36px;padding:0 44px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;letter-spacing:0.14em">模式</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;letter-spacing:0.14em">推演</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E;letter-spacing:0.14em">判定</div>
+    </div>
+    <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:30px 44px;display:grid;grid-template-columns:380px 1fr 240px;gap:36px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:30px;font-weight:700">A · 竞价排名</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">传统平台</div>
+      </div>
+      <div style="font-size:26px;color:#B9C2BB;line-height:1.6">出价直接改变排序 → Agent 检测到匹配失真，整体降权数据源；用户迁移成本 ≈ 一行配置。</div>
+      <div style="font-size:28px;font-weight:700;color:#E07A6B">✗ 生态死亡</div>
+    </div>
+    <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:30px 44px;display:grid;grid-template-columns:380px 1fr 240px;gap:36px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:30px;font-weight:700">B · Sponsored 插入</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">GEMINI 原案</div>
+      </div>
+      <div style="font-size:26px;color:#B9C2BB;line-height:1.6">结果流中加塞标注岗位 → 覆盖与频次不可控；Agent 端一行 prompt 即可全部过滤，广告价值趋零。</div>
+      <div style="font-size:28px;font-weight:700;color:#E5B85C">△ 缓慢失效</div>
+    </div>
+    <div style="flex:1;background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:30px 44px;display:grid;grid-template-columns:380px 1fr 240px;gap:36px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:30px;font-weight:700">C · 触达权 + CPQC</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">本方案</div>
+      </div>
+      <div style="font-size:26px;color:#D7EBDD;line-height:1.6">仅硬性匹配达标者可见、固定末位不改排序，按「授权投递的合格候选」付费 → 求职者零噪音，广告主只为结果付钱。</div>
+      <div style="font-size:28px;font-weight:700;color:#4ADE87">✓ 三方对齐</div>
+    </div>
+  </div>
+  <div style="margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">CPQC = Cost Per Qualified Candidate · 竞价只影响触达配额与结算价，永不影响排序</div>
+</section>
+
+<section data-label="雇主控制台" data-speaker-notes="广告主侧的体验证明：漏斗从 2340 个匿名触达收敛到 31 次授权投递，账单只对 31 结算——未授权不计费，排序不可购买写在结算页脚。右侧 Talent Radar 是第二收入曲线：全部来自匿名指纹聚合，无任何个体可回溯，让雇主在写 JD、定薪资之前就看到市场行情。CPQC 单价可在 Tweaks 面板现场调，结算金额联动。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">EMPLOYER CONSOLE</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">12 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">广告主控制台与 Talent Radar</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 500px;gap:44px;margin-top:54px;min-height:0">
+    <div style="background:#0A0F0C;border:1px solid #263029;border-radius:20px;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:24px;padding:24px 36px;border-bottom:1px solid #1C2420">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#C6CFC8">OpenHire for Employers · Campaign — LLM 平台工程师</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">{{ cpqcLabel }} / 合格候选</span>
+      </div>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px;padding:36px">
+        <div style="border:1px solid #1C2420;border-radius:14px;padding:26px 24px;display:flex;flex-direction:column;gap:14px;justify-content:center">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">触达匹配 Agent</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;color:#C6CFC8">2,340</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">匿名</div>
+        </div>
+        <div style="border:1px solid #1C2420;border-radius:14px;padding:26px 24px;display:flex;flex-direction:column;gap:14px;justify-content:center">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">合格候选</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;color:#C6CFC8">47</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">硬匹配达标</div>
+        </div>
+        <div style="border:1px solid #1C2420;border-radius:14px;padding:26px 24px;display:flex;flex-direction:column;gap:14px;justify-content:center">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">授权投递</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;color:#4ADE87">31</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">候选人点头</div>
+        </div>
+        <div style="border:1px solid #2E4A38;border-radius:14px;padding:26px 24px;display:flex;flex-direction:column;gap:14px;justify-content:center;background:#121A14">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B8A76">本期结算</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;color:#4ADE87">{{ cpqcTotal }}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B8A76">31 × {{ cpqcLabel }}</div>
+        </div>
+      </div>
+      <div style="padding:22px 36px;border-top:1px solid #1C2420;font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">未授权不计费 · 排序不可购买 · 结算明细可审计</div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:20px;padding:36px 40px;display:flex;flex-direction:column;gap:26px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#4ADE87">TALENT RADAR · 订阅</div>
+      <div style="font-size:29px;font-weight:700;line-height:1.4">匿名市场情报</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;border-top:1px solid #232B26;padding-top:24px">
+        <span style="font-size:26px;color:#B9C2BB">RAG 技能供给（90 天）</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:30px;color:#4ADE87;font-weight:700">↑ 23%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;border-top:1px solid #232B26;padding-top:24px">
+        <span style="font-size:26px;color:#B9C2BB">期望薪资中位（LLM Infra）</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:30px;color:#C6CFC8;font-weight:700">58w</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;border-top:1px solid #232B26;padding-top:24px">
+        <span style="font-size:26px;color:#B9C2BB">远程意向占比</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:30px;color:#C6CFC8;font-weight:700">71%</span>
+      </div>
+      <div style="margin-top:auto;font-size:24px;color:#6B776E;line-height:1.6">全部来自匿名指纹聚合，无任何个体可回溯。</div>
+    </div>
+  </div>
+  <div style="margin-top:36px;font-size:26px;color:#9AA69D">广告主在候选人授权之前看不到任何个人信息——<span style="color:#D7EBDD">精准与隐私在协议层同时成立。</span></div>
+</section>
+
+<section data-label="数据飞轮" data-speaker-notes="对盲点二、三的完整回答。左侧飞轮：数据质量带来 Agent 采用，采用产生匿名供给信号，信号变成广告主价值与收入，收入反哺清洗与 SLA。右侧是供给侧反转的三段论：爬虫加 LLM 解析集群只是冷启动的成本中心；当 Agent 流量成为入口，JD 不在协议里就等于对 Agent 不可见；终局是雇主主动推送结构化 JD（类比 SEO 到 AEO），采集成本趋零，实时性问题自我消解。一句话收束：与其对抗官网改版，不如让官网需要你。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">FLYWHEEL / ENDGAME</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">13 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">数据飞轮与供给侧反转</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:64px;margin-top:54px;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#141B16;border:1px solid #263029;border-radius:14px;padding:22px 30px;display:flex;gap:22px;align-items:baseline">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;flex-shrink:0">01</span>
+        <span style="font-size:27px;color:#E2EEE5">职位数据质量：清洗深度 × 新鲜度</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:#4ADE87;padding-left:30px">↓</div>
+      <div style="background:#141B16;border:1px solid #263029;border-radius:14px;padding:22px 30px;display:flex;gap:22px;align-items:baseline">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;flex-shrink:0">02</span>
+        <span style="font-size:27px;color:#E2EEE5">Agent 采用：成为默认职位数据源</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:#4ADE87;padding-left:30px">↓</div>
+      <div style="background:#141B16;border:1px solid #263029;border-radius:14px;padding:22px 30px;display:flex;gap:22px;align-items:baseline">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;flex-shrink:0">03</span>
+        <span style="font-size:27px;color:#E2EEE5">匿名供给信号：技能、薪酬、意向聚合</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:#4ADE87;padding-left:30px">↓</div>
+      <div style="background:#141B16;border:1px solid #263029;border-radius:14px;padding:22px 30px;display:flex;gap:22px;align-items:baseline">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;flex-shrink:0">04</span>
+        <span style="font-size:27px;color:#E2EEE5">广告主价值与收入：CPQC + Radar</span>
+      </div>
+      <div style="margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;padding-left:30px">↺ 收入反哺清洗与 SLA —— 回到 01</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:28px 34px;display:flex;flex-direction:column;gap:12px;justify-content:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D;letter-spacing:0.14em">冷启动</div>
+        <div style="font-size:27px;color:#B9C2BB;line-height:1.55">爬虫 + LLM 解析集群：垂直切入 AI / 技术岗，成本中心，质量优先。</div>
+      </div>
+      <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:28px 34px;display:flex;flex-direction:column;gap:12px;justify-content:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C;letter-spacing:0.14em">引爆点</div>
+        <div style="font-size:27px;color:#B9C2BB;line-height:1.55">Agent 流量成为入口：JD 不在协议里 = 对 Agent 不可见，雇主开始在意。</div>
+      </div>
+      <div style="flex:1;background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:28px 34px;display:flex;flex-direction:column;gap:12px;justify-content:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">终局 · AEO</div>
+        <div style="font-size:27px;color:#D7EBDD;line-height:1.55">雇主主动推送结构化 JD：采集成本趋零，实时性问题自我消解。</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:40px;font-size:30px;font-weight:500">与其对抗官网改版，<span style="color:#4ADE87;font-weight:700">不如让官网需要你。</span></div>
+</section>
+
+<section data-label="商业模式" data-speaker-notes="收入三条曲线按启动顺序排列：CPQC 是主引擎，起价可调（Tweaks 联动），竞价只影响触达配额；Talent Radar 订阅面向 HR、猎头与投资机构；企业 API 服务大客户直连与私有化网关。求职者永久免费——这一侧要的是采用率与供给信号，不是钱。右侧四条护城河对应四个层：Schema 准确率、行为信任记录、协议先发的切换成本、开源社区维护长尾采集器。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">BUSINESS MODEL</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">14 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">商业模式与护城河</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:64px;margin-top:54px;min-height:0">
+    <div style="display:flex;flex-direction:column">
+      <div style="display:flex;align-items:baseline;gap:24px;padding-bottom:28px">
+        <span style="font-size:44px;font-weight:900;color:#4ADE87">求职者 ¥0</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">永久 · 换采用率与供给信号</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;padding:26px 0;border-top:1px solid #232B26">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px">
+          <span style="font-size:30px;font-weight:700">CPQC 结算</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">主引擎 · {{ cpqcLabel }}/人起</span>
+        </div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.6">按授权投递的合格候选计费；竞价只影响触达配额，不影响排序。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;padding:26px 0;border-top:1px solid #232B26">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px">
+          <span style="font-size:30px;font-weight:700">Talent Radar 订阅</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">第二曲线</span>
+        </div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.6">面向 HR、猎头与投资机构的匿名市场情报。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;padding:26px 0;border-top:1px solid #232B26">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px">
+          <span style="font-size:30px;font-weight:700">企业 API</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">大客户</span>
+        </div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.6">直连配额、私有化网关与雇主 Feed 托管。</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:26px 34px;display:flex;flex-direction:column;gap:10px;justify-content:center">
+        <div style="font-size:29px;font-weight:700">清洗深度</div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.55">统一 JD Schema 的准确率，是 Agent 选择数据源的唯一标准。</div>
+      </div>
+      <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:26px 34px;display:flex;flex-direction:column;gap:10px;justify-content:center">
+        <div style="font-size:29px;font-weight:700">行为信任数据</div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.55">幽灵分与 SLA 记录随时间累积，无法被复制。</div>
+      </div>
+      <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:26px 34px;display:flex;flex-direction:column;gap:10px;justify-content:center">
+        <div style="font-size:29px;font-weight:700">协议先发</div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.55">成为 Claude / GPT 生态的默认职位源后，切换成本在用户侧。</div>
+      </div>
+      <div style="flex:1;background:#141B16;border:1px solid #263029;border-radius:16px;padding:26px 34px;display:flex;flex-direction:column;gap:10px;justify-content:center">
+        <div style="font-size:29px;font-weight:700">开发者生态</div>
+        <div style="font-size:25px;color:#9AA69D;line-height:1.55">开源 CLI 与 SDK，社区维护长尾采集器。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="路线图" data-speaker-notes="三阶段各有一个北极星指标，防止同时追逐所有目标。P0 只做数据底座：垂直切入 AIGC 与技术岗，五千家公司官网，Schema v1 冻结，北极星是清洗准确率——因为这是 Agent 采用的前提。P1 开放协议网关：MCP Server GA、开源 CLI、Skill 上架，北极星换成周活跃 Agent 数。P2 才开结算：CPQC 计费、雇主直连 Feed、Radar 订阅，北极星是授权投递到入职的转化率——它同时度量匹配质量和商业价值。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">ROADMAP</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">15 / 16</div>
+  </div>
+  <h1 style="font-size:72px;font-weight:900;line-height:1.16;margin:20px 0 0;letter-spacing:0.01em">三阶段路线图</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-top:54px">
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D;letter-spacing:0.14em">P0</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">0–6 月</span>
+      </div>
+      <div style="font-size:34px;font-weight:700">数据底座</div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:26px;color:#B9C2BB;line-height:1.5">
+        <div>垂直切入 AIGC / 技术岗</div>
+        <div>5,000 家公司官网接入</div>
+        <div>JD Schema v1 冻结</div>
+      </div>
+      <div style="margin-top:auto;align-self:flex-start;font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;border:1px solid #2E4A38;border-radius:999px;padding:10px 22px">北极星 · 清洗准确率 ≥ 98%</div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D;letter-spacing:0.14em">P1</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">6–12 月</span>
+      </div>
+      <div style="font-size:34px;font-weight:700">协议网关</div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:26px;color:#B9C2BB;line-height:1.5">
+        <div>MCP Server GA</div>
+        <div>开源 CLI（pip install openhire）</div>
+        <div>Claude / OpenAI Skill 上架</div>
+      </div>
+      <div style="margin-top:auto;align-self:flex-start;font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;border:1px solid #2E4A38;border-radius:999px;padding:10px 22px">北极星 · 周活跃 Agent 数</div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D;letter-spacing:0.14em">P2</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#6B776E">12–24 月</span>
+      </div>
+      <div style="font-size:34px;font-weight:700">结算生态</div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:26px;color:#B9C2BB;line-height:1.5">
+        <div>CPQC 计费上线</div>
+        <div>雇主直连 Feed（AEO）</div>
+        <div>Talent Radar 订阅</div>
+      </div>
+      <div style="margin-top:auto;align-self:flex-start;font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;border:1px solid #2E4A38;border-radius:999px;padding:10px 22px">北极星 · 授权投递 → 入职转化</div>
+    </div>
+  </div>
+</section>
+
+<section data-label="结语" data-speaker-notes="收尾回到愿景：HTTP 没有取代任何一家门户，它让门户变得不再必要。开聘协议对招聘网站做同样的事。三条原则就是三条产品红线，也是品牌传播的全部文案：简历不出户、排序不可购买、只为结果付费。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:92px 110px 84px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">EPILOGUE</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">16 / 16</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:44px">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:26px;letter-spacing:0.14em;color:#9AA69D">招聘的 HTTP 时刻</div>
+    <div style="font-size:96px;font-weight:900;line-height:1.22;max-width:1500px">让下一代求职者，<br>不再「上」招聘网站。</div>
+    <div style="display:flex;gap:16px;margin-top:12px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:25px;color:#D7EBDD;border:1px solid #2E4A38;border-radius:999px;padding:14px 28px">简历不出户</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:25px;color:#D7EBDD;border:1px solid #2E4A38;border-radius:999px;padding:14px 28px">排序不可购买</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:25px;color:#D7EBDD;border:1px solid #2E4A38;border-radius:999px;padding:14px 28px">只为结果付费</span>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">OPENHIRE PROTOCOL · 2026</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">$ ohp --version 2.0</span>
+  </div>
+</section>
+
+
+
+
+<section data-label="附录A1 作战地图" data-speaker-notes="四象限：横轴数据源（平台二手→官网一手），纵轴入口（网页人刷→Agent协议）。每个象限都有人：左下传统平台（竞价排名+简历入库，幽灵岗位约30%）；左上是在二手数据上叠AI的海投工具，正引发雇主筑墙；右下HiringCafe和LinkUp证明官网一手数据可行——但HiringCafe免费无模式、数据被Apify生态白嫖转卖，LinkUp做了18年最终变现逃向对冲基金的另类数据；右上已有Feed商按月费卖裸数据给Agent开发者，但无信任层、无结算。结论：官网一手×Agent协议×信任结算的完整组合无人占据——这就是开聘协议的位置。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:80px 110px 70px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">APPENDIX · 竞品扫描 2026.07</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">附 A1</div>
+  </div>
+  <h1 style="font-size:64px;font-weight:900;line-height:1.14;margin:14px 0 0;letter-spacing:0.01em">作战地图：四象限与空位</h1>
+  <div style="flex:1;display:flex;flex-direction:column;margin-top:30px;min-height:0">
+    <div style="display:flex;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;padding-bottom:12px">▲ 入口：Agent / 协议</div>
+    <div style="flex:1;display:grid;grid-template-columns:52px 1fr 1fr 52px;gap:0;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D;letter-spacing:0.1em">◀ 数据源：平台二手</span></div>
+      <div style="display:grid;grid-template-rows:1fr 1fr;gap:14px;padding:0 7px 0 0">
+        <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:22px 26px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C">二手数据 × AI 海投</div>
+          <div style="font-size:27px;font-weight:700">Auto-apply 工具 · Jobright 类</div>
+          <div style="font-size:24px;color:#9AA69D;line-height:1.5">"睡觉时投 1000 份"→ 雇主被淹没、平台封杀机器人；军备竞赛没有赢家。</div>
+          <div style="margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:24px;color:#E07A6B">✗ 信任自毁</div>
+        </div>
+        <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:22px 26px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">二手数据 × 人刷网页</div>
+          <div style="font-size:27px;font-weight:700">传统平台 · Boss直聘 / LinkedIn / Indeed</div>
+          <div style="font-size:24px;color:#9AA69D;line-height:1.5">竞价排名 + 简历入库；约三成职位帖从未导向真实雇佣，中介已读不回率 67%。</div>
+          <div style="margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:24px;color:#E07A6B">✗ 被颠覆对象</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-rows:1fr 1fr;gap:14px;padding:0 0 0 7px;border-left:1px dashed #33403A">
+        <div style="background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:22px 26px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">一手数据 × Agent 协议</div>
+          <div style="font-size:27px;font-weight:700">Feed 商（$1k/月卖裸数据）→ <span style="color:#4ADE87">★ 开聘协议</span></div>
+          <div style="font-size:24px;color:#C6D8CB;line-height:1.5">已有人向 Agent 开发者按月卖 ATS 数据 feed——但无隐私匹配、无信任层、无结算。完整组合空位在此。</div>
+          <div style="margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">✓ 我们的位置</div>
+        </div>
+        <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:22px 26px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">一手数据 × 人刷网页</div>
+          <div style="font-size:27px;font-weight:700">HiringCafe · LinkUp</div>
+          <div style="font-size:24px;color:#9AA69D;line-height:1.5">官网直采 18 年可行性已被验证；但 HiringCafe 免费无模式、数据被白嫖转卖，LinkUp 变现逃向 B2B 另类数据。</div>
+          <div style="margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C">△ 数据对了，入口老了</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center"><span style="writing-mode:vertical-rl;font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.1em">数据源：官网一手 ▶</span></div>
+    </div>
+    <div style="display:flex;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D;padding-top:12px">▼ 入口：网页 / 人工</div>
+  </div>
+  <div style="margin-top:22px;font-size:28px;font-weight:500">每个零件都被人验证过，<span style="color:#4ADE87;font-weight:700">但"一手数据 × 协议入口 × 信任结算"的组合无人占据。</span></div>
+</section>
+
+<section data-label="附录A2 AEO先例" data-speaker-notes="供给侧反转不是赌博，Google for Jobs 已经完整演过一遍剧本。第一幕2017：Google把职位聚合放进搜索页，规则只有一条——加JobPosting结构化标记才有资格出现，行业把标记称为非谈判的入场券，雇主大规模主动结构化自己的JD。这直接证明：入口有流量，雇主就会主动送结构化数据。第二幕：Google有政策执法——不完整JD禁止、过期不更新会被处罚下架——但只校验标记合规，不校验真实招聘意图，幽灵岗位照样泛滥到三成。合规层不等于信任层，ghost_score补的正是Google没做的那层。第三幕2021：Google关闭Jobs API，索引从不对机器开放——Agent时代没有可编程的职位聚合入口。三幕合起来：我们做的就是把Google for Jobs的聚合逻辑开放成协议，并把执法从标记合规升级到行为可信。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:80px 110px 70px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">APPENDIX · SEO → AEO</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">附 A2</div>
+  </div>
+  <h1 style="font-size:64px;font-weight:900;line-height:1.14;margin:14px 0 0;letter-spacing:0.01em">先例：Google for Jobs 已演过整个剧本</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:26px;margin-top:40px">
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:36px 34px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">第一幕 · 2017</div>
+      <div style="font-size:31px;font-weight:700;line-height:1.3">入口上线，雇主主动结构化</div>
+      <div style="font-size:25px;color:#B9C2BB;line-height:1.6">Google 把职位聚合放进搜索页，规则只有一条：加 JobPosting 标记才有资格出现。标记成为"非谈判的入场券"，雇主大规模主动结构化 JD。</div>
+      <div style="margin-top:auto;background:#0A0F0C;border:1px solid #26362C;border-radius:10px;padding:14px 18px;font-size:24px;color:#8FBF9C;line-height:1.5">证明：入口有流量 → 雇主主动送结构化数据。供给侧反转成立。</div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:36px 34px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C;letter-spacing:0.14em">第二幕 · 执法的天花板</div>
+      <div style="font-size:31px;font-weight:700;line-height:1.3">只查标记合规，不查招聘意图</div>
+      <div style="font-size:25px;color:#B9C2BB;line-height:1.6">Google 有内容政策：不完整 JD 禁止、过期不更新会被处罚下架。但校验止步于标记本身——幽灵岗位照样泛滥到约三成。</div>
+      <div style="margin-top:auto;background:#17140C;border:1px solid #5C4E27;border-radius:10px;padding:14px 18px;font-size:24px;color:#D9BC72;line-height:1.5">空隙：合规层 ≠ 信任层。ghost_score / 响应 SLA 补的正是这一层。</div>
+    </div>
+    <div style="background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:36px 34px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">第三幕 · 2021</div>
+      <div style="font-size:31px;font-weight:700;line-height:1.3">Jobs API 关闭，索引不对机器开放</div>
+      <div style="font-size:25px;color:#D7EBDD;line-height:1.6">Google 关停 Jobs API，聚合索引只服务自家搜索页。Agent 无法编程访问全网职位聚合——协议入口至今空缺。</div>
+      <div style="margin-top:auto;background:#0A0F0C;border:1px solid #2E4A38;border-radius:10px;padding:14px 18px;font-size:24px;color:#8FBF9C;line-height:1.5">空位：开聘协议 = 把 Google for Jobs 的聚合逻辑，开放成 Agent 可调用的协议。</div>
+    </div>
+  </div>
+  <div style="margin-top:34px;font-size:28px;font-weight:500">SEO → AEO 不是预言，是重播。<span style="color:#4ADE87;font-weight:700">我们只是提前把轨道铺到 Agent 这一侧。</span></div>
+</section>
+
+<section data-label="附录A3 接口与红线" data-speaker-notes="左列接口现实：海外六家 ATS（Greenhouse/Lever/Ashby/Workable/Recruitee/Personio）提供无需授权的公开职位 API 或 feed，Greenhouse 官方明确 Job Board 数据公开、GET 无需鉴权、重缓存不限流——P0 管线可以零对抗启动。国内 Moka 有文档化的招聘官网 API（职位列表、单职位、申请、申请状态），北森接口文档化但偏企业侧凭证，托管页公开 XHR 是实际路径。关键细节：写入侧（提交申请）普遍要企业自己的 API Key——授权投递直达 ATS 必须经雇主认领，这恰好是 P1 免费认领钩子的技术依据，把技术限制变成了商业设计。数据 feed 已商品化到千元每月级，裸数据无护城河，再次确认护城河必须压在信任层与结算层。右列红线：只碰官网与 ATS 公开层；加州已立法要求披露职位真实性，ghost_score 是立法风口上的基础设施；匿名指纹让服务器无 PII 可泄；尊重 robots 与频控。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:80px 110px 70px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">APPENDIX · RULES OF ENGAGEMENT</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">附 A3</div>
+  </div>
+  <h1 style="font-size:64px;font-weight:900;line-height:1.14;margin:14px 0 0;letter-spacing:0.01em">接口现实与合规红线</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:40px;min-height:0">
+    <div style="display:flex;flex-direction:column">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#4ADE87;padding-bottom:20px">接口现实 · 可以零对抗启动</div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">海外六家 ATS 公开职位 API</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">Greenhouse / Lever / Ashby / Workable / Recruitee / Personio 无需授权即可取published jobs；Greenhouse 官方口径：数据公开、GET 免鉴权、重缓存不限流。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">国内 ATS 有文档化官网接口</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">Moka 招聘官网 API 含职位列表 / 单职位 / 申请 / 申请状态；北森接口偏企业侧凭证，托管页公开 XHR 为实际路径。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">写入侧需要雇主钥匙</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">向 ATS 提交申请普遍要求企业自己的 API Key → "授权投递直达 ATS"必须经雇主认领——技术限制恰好变成 P1 免费认领钩子的商业设计。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">裸数据已商品化</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">ATS 数据 feed 千元/月即可买到 → 护城河必须压在信任层与结算层，而非数据本身。</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.14em;color:#E5B85C;padding-bottom:20px">合规红线 · 写进协议章程</div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">只碰官网与 ATS 公开层</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">Boss直聘 / 猎聘等平台数据有 ToS 与判例风险；"一手信源"同时是卖点与法务边界。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">幽灵岗位立法已启动</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">加州 2025 起要求职位帖披露是否为真实空缺，违者构成不正当竞争 → ghost_score 是立法风口上的机器可读实现。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">隐私法规天然站在我们这边</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">匿名指纹架构下服务器无 PII 可泄露——GDPR / 个保法合规成本趋零，且是对手补不上的架构差异。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #232B26;padding:22px 0">
+        <div style="font-size:27px;font-weight:700">礼貌抓取</div>
+        <div style="font-size:24px;color:#9AA69D;line-height:1.55">尊重 robots 与频控；多数招聘页欢迎被索引——被看见符合雇主利益。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-label="附录A4 战略三箭" data-speaker-notes="战略三箭敲打后入库。箭一 IDE 木马：保留 MCP 生态切入；卖点升级为 Agent 读个人仓库提炼技能指纹——简历不出户升级为简历根本不用写（仅个人项目、明确授权、永不出本机）；红线是不拿摸鱼求职做营销（会被企业 IT 封禁、风险留给用户），留存命门是安装引导落在 watch 常驻意向。箭二直觉代码化：拆两半——可验证事实（重挂次数/响应SLA/披露完整度）进协议字段，推断性判断（救火队长论）永远留在端侧 Agent；因为对具体公司发布算法化负面判断有商誉风险且毒化认领关系，且 prompt 会泄漏可复制——真壁垒是授权投递到回应到入职的结果数据回流，直觉只是冷启动权重。箭三标准：不冠公司名（带厂名的标准没人跟），做 schema.org/JobPosting 的中立扩展捐给社区，我们持有参考实现、最大索引、结算轨道——银联不拥有银行卡标准，拥有清算网络；对外话术永远是入场券（加标记=被所有 Agent 看见）绝不是降权威胁，并把白皮书定位为加州幽灵岗位披露法的机器可读实现，让监管站台。底部 v0.1 切口：不做前100家AI公司（供少求多，种子用户投三次没回应就流失），改切全球远程 AI/Infra 岗——远程岗才是全球开发者都投得了的；仅用公开 API 零爬虫对抗，数天上线；北极星是周活跃 Agent 与 watch 注册数，不是岗位数。" style="box-sizing:border-box;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;padding:80px 110px 70px;overflow:hidden">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.16em;color:#4ADE87;font-weight:500">APPENDIX · 战略修正入库</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#5E6B62">附 A4</div>
+  </div>
+  <h1 style="font-size:64px;font-weight:900;line-height:1.14;margin:14px 0 0;letter-spacing:0.01em">战略三箭：敲打后的最终形态</h1>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:26px;margin-top:36px;min-height:0">
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:32px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">箭一 · IDE 特洛伊木马</div>
+      <div style="font-size:30px;font-weight:700;line-height:1.3">占领开发者终端</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">保留</div>
+        <div style="font-size:24px;color:#B9C2BB;line-height:1.55">从 Cursor / Claude / Windsurf 的 MCP 生态切入，分发渠道现成。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">升级</div>
+        <div style="font-size:24px;color:#D7EBDD;line-height:1.55">Agent 读个人仓库提炼技能指纹——简历不出户 → <span style="font-weight:700">简历根本不用写</span>。仅个人项目 · 明确授权 · 永不出本机。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C">红线</div>
+        <div style="font-size:24px;color:#B9C2BB;line-height:1.55">不拿「摸鱼求职」做营销；留存命门 = watch 常驻意向，让插件自己响。</div>
+      </div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:32px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">箭二 · 筛选直觉代码化</div>
+      <div style="font-size:30px;font-weight:700;line-height:1.3">拆成两半，各归其位</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">进协议</div>
+        <div style="font-size:24px;color:#B9C2BB;line-height:1.55">可验证事实：重挂次数 · 响应 SLA · 薪资披露完整度——机器可查证，保持中立。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">留端侧</div>
+        <div style="font-size:24px;color:#D7EBDD;line-height:1.55">推断性判断（「这是在招救火队长」）由用户自己的 Agent 得出——规避商誉风险，不毒化雇主认领。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C">壁垒</div>
+        <div style="font-size:24px;color:#B9C2BB;line-height:1.55">Prompt 会泄漏；「授权投递 → 回应 → 入职」的结果回流才是护城河，直觉只是冷启动。</div>
+      </div>
+    </div>
+    <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:32px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em">箭三 · 机器可读标准</div>
+      <div style="font-size:30px;font-weight:700;line-height:1.3">捐出标准，握住轨道</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#9AA69D">修正</div>
+        <div style="font-size:24px;color:#B9C2BB;line-height:1.55">不冠公司名：做 schema.org/JobPosting 的中立扩展并捐给社区——带厂名的「标准」没人跟。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87">我们持有</div>
+        <div style="font-size:24px;color:#D7EBDD;line-height:1.55">参考实现 + 最大索引 + 结算轨道。银联不拥有银行卡标准，拥有清算网络。</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#E5B85C">话术</div>
+        <div style="font-size:24px;color:#B9C2BB;line-height:1.55">对外只讲入场券（被 Agent 看见），永不讲降权威胁；借加州披露法让监管站台。</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:26px;background:#121A14;border:1px solid #2E4A38;border-radius:16px;padding:24px 40px;display:flex;align-items:center;gap:28px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#4ADE87;letter-spacing:0.14em;flex-shrink:0">v0.1 切口</span>
+    <span style="font-size:26px;color:#E2EEE5;line-height:1.5">「全球远程 AI / Infra 岗」哨兵 —— 100 家公司 · 仅公开 API 零对抗 · 数天上线 · 北极星 = 周活跃 Agent × watch 注册数</span>
+  </div>
+</section>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;sponsoredDemo&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;演示&quot;},
+  &quot;cpqc&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 800, &quot;min&quot;: 200, &quot;max&quot;: 2000, &quot;step&quot;: 50, &quot;unit&quot;: &quot;¥&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;商业参数&quot;}
+}">
+class Component extends DCLogic {
+  renderVals() {
+    const cpqc = Number(this.props.cpqc ?? 800);
+    return {
+      sponsoredDemo: this.props.sponsoredDemo ?? true,
+      cpqcLabel: '¥' + cpqc.toLocaleString('zh-CN'),
+      cpqcTotal: '¥' + (cpqc * 31).toLocaleString('zh-CN')
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; padding: 0; background: #0A0E0B; }
+::selection { background: #4ADE87; color: #0E1310; }
+input[type="range"] { accent-color: #4ADE87; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0E1310;color:#E9EEE9;font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column">
+
+  <div style="border-bottom:1px solid #1C2420;background:#0A0F0C">
+    <div style="max-width:1560px;margin:0 auto;padding:20px 40px;display:flex;align-items:center;gap:28px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:17px;letter-spacing:0.14em;color:#4ADE87;font-weight:700">OPENHIRE PROTOCOL</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#5E6B62">交互原型 v2</div>
+      <div style="margin-left:auto;display:flex;gap:8px;background:#141B16;border:1px solid #263029;border-radius:12px;padding:6px">
+        <button onClick="{{ goSeeker }}" style="{{ seekerTabStyle }}" style-hover="color:#E9EEE9">求职者端</button>
+        <button onClick="{{ goEmployer }}" style="{{ employerTabStyle }}" style-hover="color:#E9EEE9">广告主端</button>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#4ADE87;border:1px solid #2E4A38;border-radius:999px;padding:8px 16px">● 简历未离开设备</div>
+    </div>
+  </div>
+
+  <sc-if value="{{ isSeeker }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;max-width:1560px;width:100%;margin:0 auto;box-sizing:border-box;padding:36px 40px;display:grid;grid-template-columns:420px 1fr;gap:32px;align-items:start">
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:26px 28px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#4ADE87">本地设备 · LOCAL</div>
+        <div style="display:flex;align-items:center;gap:14px;background:#0A0F0C;border:1px solid #263029;border-radius:12px;padding:16px 18px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#4ADE87">▤</span>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:15px;color:#E9EEE9">~/简历/王砚舟_2026.md</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">28 KB · 从不上传</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#9AA69D">匿名指纹 #a3f9 · 唯一出户内容</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:6px 14px">LLM Infra</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:6px 14px">K8s</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:6px 14px">RAG</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:6px 14px">≥60w</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #35543F;border-radius:999px;padding:6px 14px">远程优先</span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">已剥离：姓名 · 电话 · 邮箱 · 任职公司</div>
+        </div>
+      </div>
+
+      <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:26px 28px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#E5B85C">服务器所见 · SERVER LOG</div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">实时</span>
+        </div>
+        <sc-if value="{{ serverLogEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#5E6B62;padding:18px 0;line-height:1.8">— 暂无记录 —<br>发起匹配后，这里显示服务器实际收到的全部内容。</div>
+        </sc-if>
+        <sc-if value="{{ serverLogVisible }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#0A0F0C;border:1px solid #263029;border-radius:12px;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.9;color:#9AA69D">
+            <div><span style="color:#4ADE87">POST</span> /v2/match</div>
+            <div>{ fingerprint: <span style="color:#E5B85C">"#a3f9"</span>,</div>
+            <div>&nbsp;&nbsp;skills: [<span style="color:#D7EBDD">"llm-infra","k8s","rag"</span>],</div>
+            <div>&nbsp;&nbsp;min_salary: <span style="color:#D7EBDD">600000</span>, remote: <span style="color:#D7EBDD">true</span> }</div>
+            <div style="color:#5E6B62;margin-top:6px">// 无姓名 · 无联系方式 · 无简历原文</div>
+          </div>
+          <div style="font-size:15px;color:#9AA69D;line-height:1.7">服务器只回答「哪些岗位满足这组条件」——它不知道你是谁。</div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="background:#0A0F0C;border:1px solid #263029;border-radius:20px;display:flex;flex-direction:column;overflow:hidden;min-height:640px">
+      <div style="display:flex;align-items:center;gap:12px;padding:18px 26px;border-bottom:1px solid #1C2420">
+        <span style="width:12px;height:12px;border-radius:50%;background:#33403A"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#33403A"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#33403A"></span>
+        <span style="margin-left:12px;font-family:'JetBrains Mono',monospace;font-size:14px;color:#5E6B62">Claude Desktop — openhire mcp 已连接</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:18px;padding:28px 32px">
+
+        <div style="align-self:flex-end;background:#1C2A20;border-radius:16px 16px 4px 16px;padding:14px 22px;max-width:70%;font-size:17px;line-height:1.6">帮我看看有没有适合我的 LLM Infra 岗位，远程优先。</div>
+
+        <sc-if value="{{ stageIdle }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ sendQuery }}" style="align-self:flex-start;background:#4ADE87;color:#0E1310;font-weight:700;font-size:16px;font-family:'Noto Sans SC',sans-serif;border:none;border-radius:999px;padding:14px 32px;cursor:pointer" style-hover="background:#6FE8A3">发起匹配 →</button>
+        </sc-if>
+
+        <sc-if value="{{ stageToolVisible }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px dashed #33403A;border-radius:10px;padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:14px;color:#8FA396">⚙ openhire.search_jobs(fingerprint="#a3f9", remote=true) · 简历未上传</div>
+        </sc-if>
+
+        <sc-if value="{{ stageResults }}" hint-placeholder-val="{{ false }}">
+          <sc-for list="{{ jobs }}" as="job" hint-placeholder-count="3">
+            <div style="{{ job.cardStyle }}">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px">
+                <span style="font-size:18px;font-weight:700">{{ job.title }}</span>
+                <span style="{{ job.badgeStyle }}">{{ job.badge }}</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA396">{{ job.meta }}</div>
+              <sc-if value="{{ job.applied }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#4ADE87">✓ 简历已直达雇主（未经平台存储）</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E5B85C;border:1px solid #5C4E27;border-radius:999px;padding:4px 12px">响应 SLA · 7 日</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ job.notApplied }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;gap:12px;margin-top:4px">
+                  <button onClick="{{ job.apply }}" style="background:#4ADE87;color:#0E1310;font-weight:700;font-size:14px;font-family:'Noto Sans SC',sans-serif;border:none;border-radius:999px;padding:10px 24px;cursor:pointer" style-hover="background:#6FE8A3">授权投递</button>
+                  <span style="border:1px solid #33403A;color:#C6CFC8;font-size:14px;border-radius:999px;padding:10px 24px">公司卡</span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <div style="font-size:16px;color:#C6CFC8;line-height:1.6">{{ resultSummary }}</div>
+        </sc-if>
+
+      </div>
+      <div style="padding:16px 26px;border-top:1px solid #1C2420;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#5E6B62">Sponsored 固定末位 · 仅硬性匹配达标可见 · 不参与排序</span>
+        <button onClick="{{ resetSeeker }}" style="background:none;border:1px solid #33403A;color:#9AA69D;font-size:13px;font-family:'JetBrains Mono',monospace;border-radius:999px;padding:8px 18px;cursor:pointer" style-hover="color:#E9EEE9;border-color:#4ADE87">↺ 重置演示</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isEmployer }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;max-width:1560px;width:100%;margin:0 auto;box-sizing:border-box;padding:36px 40px;display:grid;grid-template-columns:1fr 400px;gap:32px;align-items:start">
+
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div style="background:#0A0F0C;border:1px solid #263029;border-radius:20px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;padding:20px 30px;border-bottom:1px solid #1C2420">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:19px;font-weight:700">Campaign — LLM 平台工程师</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#5E6B62">深流科技 · 已验证雇主 · 幽灵分 0.02（优）</span>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#4ADE87;border:1px solid #2E4A38;border-radius:999px;padding:8px 18px">投放中</span>
+        </div>
+
+        <div style="padding:28px 30px;display:flex;flex-direction:column;gap:14px;border-bottom:1px solid #1C2420">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#9AA69D">CPQC 出价 · 每合格候选</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:#4ADE87">{{ bidLabel }}</span>
+          </div>
+          <input type="range" min="200" max="2000" step="50" value="{{ bid }}" onChange="{{ setBid }}" style="width:100%;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;color:#5E6B62">
+            <span>¥200</span>
+            <span>出价 ↑ = 触达配额 ↑ · 排序不变</span>
+            <span>¥2,000</span>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;padding:26px 30px">
+          <div style="border:1px solid #1C2420;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B776E">触达配额 / 月</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:#C6CFC8">{{ reachLabel }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B776E">匿名匹配 Agent</span>
+          </div>
+          <div style="border:1px solid #1C2420;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B776E">预计合格候选</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:#C6CFC8">{{ qualifiedLabel }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B776E">硬匹配达标</span>
+          </div>
+          <div style="border:1px solid #1C2420;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B776E">预计授权投递</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:#4ADE87">{{ authorizedLabel }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B776E">候选人点头</span>
+          </div>
+          <div style="border:1px solid #2E4A38;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:8px;background:#121A14">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B8A76">预计月结算</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:#4ADE87">{{ totalLabel }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B8A76">{{ totalFormula }}</span>
+          </div>
+        </div>
+
+        <div style="padding:18px 30px;border-top:1px solid #1C2420;display:flex;justify-content:space-between;align-items:center;gap:20px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#6B776E">未授权不计费 · 结算明细可审计</span>
+          <button onClick="{{ tryBuyRank }}" style="background:none;border:1px solid #5C4E27;color:#E5B85C;font-size:14px;font-family:'Noto Sans SC',sans-serif;border-radius:999px;padding:10px 22px;cursor:pointer" style-hover="background:#17140C">尝试购买排名靠前 →</button>
+        </div>
+        <sc-if value="{{ denied }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:0 30px 24px;background:#170F0C;border:1px solid #6B3A2E;border-radius:12px;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:20px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:15px;color:#E07A6B;font-weight:700">ERR_RANKING_NOT_FOR_SALE</span>
+              <span style="font-size:15px;color:#C6A99F;line-height:1.6">排序由匹配分决定，协议层不存在该商品。竞价仅影响触达配额与结算价。</span>
+            </div>
+            <button onClick="{{ dismissDenied }}" style="background:none;border:1px solid #6B3A2E;color:#C6A99F;font-size:13px;font-family:'JetBrains Mono',monospace;border-radius:999px;padding:8px 16px;cursor:pointer" style-hover="color:#E9EEE9">知道了</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="background:#141B16;border:1px solid #263029;border-radius:16px;padding:22px 30px;display:flex;gap:40px;align-items:center">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#9AA69D;flex-shrink:0">协议红线</span>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #2E4A38;border-radius:999px;padding:8px 16px">候选人授权前不可见任何 PII</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #2E4A38;border-radius:999px;padding:8px 16px">排序不可购买</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D7EBDD;border:1px solid #2E4A38;border-radius:999px;padding:8px 16px">7 日响应 SLA，违约自动下架</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#141B16;border:1px solid #263029;border-radius:20px;padding:28px 30px;display:flex;flex-direction:column;gap:22px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#4ADE87">TALENT RADAR · 匿名市场情报</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-top:1px solid #232B26;padding-top:18px">
+        <span style="font-size:16px;color:#B9C2BB">RAG 技能供给（90 天）</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#4ADE87;font-weight:700">↑ 23%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-top:1px solid #232B26;padding-top:18px">
+        <span style="font-size:16px;color:#B9C2BB">期望薪资中位（LLM Infra）</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#C6CFC8;font-weight:700">58w</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-top:1px solid #232B26;padding-top:18px">
+        <span style="font-size:16px;color:#B9C2BB">远程意向占比</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#C6CFC8;font-weight:700">71%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-top:1px solid #232B26;padding-top:18px">
+        <span style="font-size:16px;color:#B9C2BB">本岗位常驻意向命中</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#4ADE87;font-weight:700">{{ reachLabel }}</span>
+      </div>
+      <div style="margin-top:auto;font-size:13px;color:#6B776E;line-height:1.7;border-top:1px solid #232B26;padding-top:18px">全部来自匿名指纹聚合，无任何个体可回溯。发布 JD 即秒级触达全部匹配意向。</div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 1560, &quot;height&quot;: 900},
+  &quot;sponsoredDemo&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;演示&quot;},
+  &quot;initialView&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;seeker&quot;, &quot;employer&quot;], &quot;default&quot;: &quot;seeker&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;演示&quot;}
+}">
+class Component extends DCLogic {
+  state = { view: null, stage: 'idle', applied: {}, bid: 800, denied: false };
+
+  jobsData() {
+    return [
+      { id: 'j1', title: '深流科技 · LLM 平台工程师', meta: '远程 · 60–90w · A 轮 · 官网校验 2h 前', badge: '匹配 94%', sponsored: false },
+      { id: 'j2', title: '北纬智算 · 推理优化工程师', meta: '混合办公 · 55–80w · C 轮 · 官网校验 26min 前', badge: '匹配 89%', sponsored: false },
+      { id: 'j3', title: '云澈 AI · Infra 研发（急聘）', meta: '远程 · 65–95w · B 轮 · 官网校验 11min 前 · 匹配 87%', badge: 'SPONSORED', sponsored: true }
+    ];
+  }
+
+  renderVals() {
+    const s = { ...this.state, view: this.state.view ?? (this.props.initialView ?? 'seeker') };
+    const showSponsored = this.props.sponsoredDemo ?? true;
+    const fmt = n => '¥' + n.toLocaleString('zh-CN');
+
+    const tabOn = 'font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;background:#4ADE87;color:#0E1310;border:none;border-radius:8px;padding:10px 24px;cursor:pointer';
+    const tabOff = 'font-family:JetBrains Mono,monospace;font-size:14px;background:none;color:#9AA69D;border:none;border-radius:8px;padding:10px 24px;cursor:pointer';
+    const toStyle = str => Object.fromEntries(str.split(';').map(r => r.split(':')).map(([k, ...v]) => [k.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase()), v.join(':').trim()]));
+
+    const jobs = this.jobsData().filter(j => !j.sponsored || showSponsored).map(j => {
+      const applied = !!s.applied[j.id];
+      return {
+        ...j,
+        applied,
+        notApplied: !applied,
+        apply: () => this.setState(st => ({ applied: { ...st.applied, [j.id]: true } })),
+        cardStyle: toStyle(j.sponsored
+          ? 'background:#17140C;border:1px solid #5C4E27;border-radius:14px;padding:18px 22px;display:flex;flex-direction:column;gap:10px'
+          : 'border:1px solid #2C3630;border-radius:14px;padding:18px 22px;display:flex;flex-direction:column;gap:10px;background:#10160F'),
+        badgeStyle: toStyle(j.sponsored
+          ? 'font-family:JetBrains Mono,monospace;font-size:14px;color:#E5B85C;flex-shrink:0'
+          : 'font-family:JetBrains Mono,monospace;font-size:14px;color:#4ADE87;flex-shrink:0')
+      };
+    });
+
+    const appliedCount = jobs.filter(j => j.applied).length;
+    const bid = s.bid;
+    const reach = Math.round(400 + (bid - 200) / 1800 * 2800);
+    const qualified = Math.max(3, Math.round(reach * 0.02));
+    const authorized = Math.max(1, Math.round(qualified * 0.66));
+
+    return {
+      isSeeker: s.view === 'seeker',
+      isEmployer: s.view === 'employer',
+      goSeeker: () => this.setState({ view: 'seeker' }),
+      goEmployer: () => this.setState({ view: 'employer' }),
+      seekerTabStyle: toStyle(s.view === 'seeker' ? tabOn : tabOff),
+      employerTabStyle: toStyle(s.view === 'employer' ? tabOn : tabOff),
+
+      stageIdle: s.stage === 'idle',
+      stageToolVisible: s.stage === 'tool' || s.stage === 'results',
+      stageResults: s.stage === 'results',
+      serverLogEmpty: s.stage === 'idle',
+      serverLogVisible: s.stage !== 'idle',
+      sendQuery: () => {
+        this.setState({ stage: 'tool' });
+        setTimeout(() => this.setState({ stage: 'results' }), 900);
+      },
+      resetSeeker: () => this.setState({ stage: 'idle', applied: {} }),
+      jobs,
+      resultSummary: appliedCount === 0
+        ? '两个岗位满足你的全部硬性条件。精排在本地完成——是否授权投递？'
+        : `已授权 ${appliedCount} 份投递。雇主须在 7 日内响应，否则岗位自动下架并计入幽灵分。`,
+
+      bid,
+      setBid: e => this.setState({ bid: Number(e.target.value) }),
+      bidLabel: fmt(bid),
+      reachLabel: reach.toLocaleString('zh-CN'),
+      qualifiedLabel: String(qualified),
+      authorizedLabel: String(authorized),
+      totalLabel: fmt(authorized * bid),
+      totalFormula: `${authorized} × ${fmt(bid)}`,
+      denied: s.denied,
+      tryBuyRank: () => this.setState({ denied: true }),
+      dismissDenied: () => this.setState({ denied: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

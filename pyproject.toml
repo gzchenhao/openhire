@@ -1,0 +1,45 @@
+[project]
+name = "openhire"
+version = "0.1.0"
+description = "OpenHire v0.1 「哨兵」— an MCP job protocol server. Résumés never leave your device."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "OpenHire" }]
+keywords = ["mcp", "jobs", "recruiting", "greenhouse", "lever", "ashby", "ats"]
+
+dependencies = [
+    "mcp>=1.2.0",
+    "httpx>=0.27",
+    "sqlalchemy>=2.0",
+    "apscheduler>=3.10",
+    "anthropic>=0.39",
+    "typer>=0.12",
+    "rich>=13.7",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.1"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+
+[project.scripts]
+ohp = "openhire.cli:app"
+openhire = "openhire.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/gzchenhao/openhire"
+Repository = "https://github.com/gzchenhao/openhire"
+Issues = "https://github.com/gzchenhao/openhire/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openhire"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]

@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Env / secrets — NEVER commit API keys or PyPI tokens
+.env
+*.env
+!.env.example
+.pypirc
+*.pem
+*.key
+*_token
+*.token
+
+# Local state / data
+*.db
+*.db-wal
+*.db-shm
+*.db.gz
+*.sqlite
+*.sqlite3
+.openhire/
+~/.openhire/
+
+# Test / tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

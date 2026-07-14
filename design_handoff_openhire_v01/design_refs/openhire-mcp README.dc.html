@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; padding: 0; background: #0D1117; }
+::selection { background: #1F6FEB; color: #FFFFFF; }
+a { color: #58A6FF; text-decoration: none; }
+a:hover { text-decoration: underline; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0D1117;color:#E6EDF3;font-family:-apple-system,'Segoe UI','Noto Sans SC',sans-serif;display:flex;flex-direction:column;align-items:center;padding:0 0 60px">
+
+  <div style="width:100%;box-sizing:border-box;border-bottom:1px solid #21262D;background:#010409">
+    <div style="max-width:1080px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:15px;color:#8D96A0">◈</span>
+      <span style="font-size:15px"><a href="#top">openhire</a><span style="color:#8D96A0"> / </span><a href="#top" style="font-weight:700">openhire-mcp</a></span>
+      <span style="font-size:11px;color:#8D96A0;border:1px solid #30363D;border-radius:999px;padding:2px 8px">Public</span>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <span style="font-size:12px;color:#C9D1D9;background:#21262D;border:1px solid #30363D;border-radius:6px;padding:5px 12px">⊙ Watch</span>
+        <span style="font-size:12px;color:#C9D1D9;background:#21262D;border:1px solid #30363D;border-radius:6px;padding:5px 12px">⑂ Fork</span>
+        <span style="font-size:12px;color:#C9D1D9;background:#21262D;border:1px solid #30363D;border-radius:6px;padding:5px 12px">☆ Star</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:1080px;box-sizing:border-box;padding:28px 32px 0">
+    <div style="border:1px solid #30363D;border-radius:10px;overflow:hidden">
+      <div style="padding:12px 20px;border-bottom:1px solid #21262D;background:#161B22;font-family:'JetBrains Mono',monospace;font-size:12px;color:#8D96A0">README.md</div>
+      <div style="padding:36px 44px;display:flex;flex-direction:column;gap:22px">
+
+        <h1 style="margin:0;font-size:34px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-0.01em">openhire-mcp</h1>
+        <div style="font-size:19px;color:#C9D1D9;line-height:1.6;border-left:4px solid #30363D;padding-left:18px;margin:0">Jobs come to you. Your résumé never leaves your machine.<br><span style="color:#8D96A0">岗位来找你，简历不出户。</span></div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#58A6FF;background:#0D1B2E;border:1px solid #1F3B5C;border-radius:999px;padding:4px 12px">MCP 1.0</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#3FB950;background:#0D1F12;border:1px solid #1F4A28;border-radius:999px;padding:4px 12px">privacy: local-first</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#C9D1D9;background:#161B22;border:1px solid #30363D;border-radius:999px;padding:4px 12px">python ≥ 3.11</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#C9D1D9;background:#161B22;border:1px solid #30363D;border-radius:999px;padding:4px 12px">license: MIT</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E3B341;background:#211A0E;border:1px solid #4A3B1F;border-radius:999px;padding:4px 12px">v0.1 · sentinel</span>
+        </div>
+
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8D96A0;display:flex;gap:14px;flex-wrap:wrap">
+          <a href="OpenHire Landing Page.dc.html">openhire.dev</a>
+          <span style="color:#30363D">·</span>
+          <a href="OpenHire Protocol Spec.dc.html">protocol spec</a>
+          <span style="color:#30363D">·</span>
+          <a href="OpenHire v0.1 哨兵.dc.html">live walkthrough</a>
+        </div>
+
+        <p style="margin:0;font-size:16px;line-height:1.75;color:#C9D1D9">An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar for <strong>remote AI / Infra roles</strong> — sourced directly from 100 company career sites and public ATS APIs. No account. No signup. No résumé upload. Ever.</p>
+
+        <h2 style="margin:14px 0 0;font-size:24px;font-weight:700;padding-bottom:10px;border-bottom:1px solid #21262D">Quickstart — 30 seconds</h2>
+        <div style="background:#161B22;border:1px solid #30363D;border-radius:8px;padding:18px 24px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.9;color:#C9D1D9">
+          <div><span style="color:#8D96A0"># Claude Code / Claude Desktop</span></div>
+          <div><span style="color:#3FB950">$</span><span> claude mcp add openhire</span></div>
+          <div style="margin-top:10px"><span style="color:#8D96A0"># or any MCP client (Cursor, Windsurf, Cline)</span></div>
+          <div><span style="color:#3FB950">$</span><span> pip install openhire &amp;&amp; ohp serve</span></div>
+        </div>
+
+        <h2 style="margin:14px 0 0;font-size:24px;font-weight:700;padding-bottom:10px;border-bottom:1px solid #21262D">What it does</h2>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:14px;align-items:baseline">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#58A6FF;flex-shrink:0;width:150px">watch_intent</span>
+            <span style="font-size:15px;color:#C9D1D9;line-height:1.7">Register a standing intent once — new matching jobs ping you minutes after they go live on the employer's site. Close the terminal; it keeps watching.</span>
+          </div>
+          <div style="display:flex;gap:14px;align-items:baseline">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#58A6FF;flex-shrink:0;width:150px">fingerprint</span>
+            <span style="font-size:15px;color:#C9D1D9;line-height:1.7">Optional: scans your <em>personal</em> repos locally and derives a skill fingerprint. You never write a résumé. Only an anonymous vector leaves your machine.</span>
+          </div>
+          <div style="display:flex;gap:14px;align-items:baseline">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#58A6FF;flex-shrink:0;width:150px">apply (authorized)</span>
+            <span style="font-size:15px;color:#C9D1D9;line-height:1.7">One explicit confirmation per job. The application goes through the employer's own official channel, under your identity — never a platform mailbox.</span>
+          </div>
+          <div style="display:flex;gap:14px;align-items:baseline">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#58A6FF;flex-shrink:0;width:150px">search_jobs</span>
+            <span style="font-size:15px;color:#C9D1D9;line-height:1.7">Every result carries a <span style="font-family:'JetBrains Mono',monospace;font-size:13px;background:#161B22;border-radius:4px;padding:1px 6px">verified_at</span> timestamp from the employer's site; stale posts auto-decay.</span>
+          </div>
+        </div>
+
+        <h2 style="margin:14px 0 0;font-size:24px;font-weight:700;padding-bottom:10px;border-bottom:1px solid #21262D">Privacy model</h2>
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid #21262D;border-radius:8px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;padding:13px 20px;background:#161B22">
+            <span style="font-size:14px;color:#8D96A0">Résumé / PII upload</span>
+            <span style="font-size:14px;color:#3FB950;font-weight:700">never — matching runs locally</span>
+          </div>
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;padding:13px 20px;border-top:1px solid #21262D">
+            <span style="font-size:14px;color:#8D96A0">What the server sees</span>
+            <span style="font-size:14px;color:#C9D1D9">one anonymous fingerprint + hard filters</span>
+          </div>
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;padding:13px 20px;background:#161B22;border-top:1px solid #21262D">
+            <span style="font-size:14px;color:#8D96A0">Repo scan</span>
+            <span style="font-size:14px;color:#C9D1D9">local-only · personal projects · explicit consent · opt-out anytime</span>
+          </div>
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;padding:13px 20px;border-top:1px solid #21262D">
+            <span style="font-size:14px;color:#8D96A0">Job sources</span>
+            <span style="font-size:14px;color:#C9D1D9">first-party only: employer career pages + public ATS APIs (Greenhouse / Lever / Ashby)</span>
+          </div>
+        </div>
+
+        <h2 style="margin:14px 0 0;font-size:24px;font-weight:700;padding-bottom:10px;border-bottom:1px solid #21262D">Roadmap</h2>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:15px;color:#C9D1D9;line-height:1.7">
+          <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8D96A0;flex-shrink:0;width:52px">v0.2</span><span>CN ATS adapters (Beisen / Moka) · <span style="font-family:'JetBrains Mono',monospace;font-size:13px;background:#161B22;border-radius:4px;padding:1px 6px">ghost_score</span> public beta</span></div>
+          <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8D96A0;flex-shrink:0;width:52px">v0.3</span><span>Employer claim + verified badges · response-SLA enforcement (7-day auto-delist)</span></div>
+          <div style="display:flex;gap:12px"><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8D96A0;flex-shrink:0;width:52px">v1.0</span><span>Open schema extension for AI-readable job postings (donated, vendor-neutral)</span></div>
+        </div>
+
+        <div style="margin-top:14px;padding:16px 22px;background:#0D1B2E;border:1px solid #1F3B5C;border-radius:8px;font-size:14px;color:#C9D1D9;line-height:1.7"><strong style="color:#58A6FF">Three rules this project will never break:</strong> your résumé stays on your machine · ranking is not for sale · employers pay only for outcomes.</div>
+
+        <div style="font-size:13px;color:#8D96A0;border-top:1px solid #21262D;padding-top:18px">MIT © OpenHire Protocol · PRs welcome · <a href="#top">openhire.dev</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1180, &quot;height&quot;: 980}}"></script>
+</body>
+</html>

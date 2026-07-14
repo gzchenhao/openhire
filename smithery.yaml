@@ -1,0 +1,21 @@
+# Smithery MCP directory manifest — how the registry launches the openhire server.
+# The server is stdio; it needs no secrets to run (search/watch/apply work off the local
+# index). OPENHIRE_DATABASE_URL is optional (point at Postgres instead of local SQLite).
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      OPENHIRE_DATABASE_URL:
+        type: string
+        description: Optional. Postgres URL (postgresql+psycopg://…); omit to use the local SQLite index.
+    required: []
+  commandFunction: |
+    (config) => ({
+      command: "ohp",
+      args: ["serve"],
+      env: config.OPENHIRE_DATABASE_URL
+        ? { OPENHIRE_DATABASE_URL: config.OPENHIRE_DATABASE_URL, PYTHONIOENCODING: "utf-8" }
+        : { PYTHONIOENCODING: "utf-8" }
+    })
+build: null
