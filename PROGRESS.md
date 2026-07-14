@@ -2,6 +2,12 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+**当前状态：v0.1 已公开发布（2026-07-14）· M1–M4 全部完成 · 118 tests green**
+- GitHub：https://github.com/gzchenhao/openhire
+- Release v0.1.0（含快照 `openhire-index.db.gz`）：https://github.com/gzchenhao/openhire/releases/tag/v0.1.0
+- PyPI：https://pypi.org/project/openhire/0.1.0/ （`pipx install openhire`）
+- 仅剩：Smithery 目录提交（待用户「提交」，见 `reports/009`）；**每周手动刷新快照**（`docs/maintainer-snapshot-refresh.md`）。
+
 ---
 
 ## 2026-07-12 — 真机验收修复 campaign（报告 003 → 逐项修，详见 reports/004）

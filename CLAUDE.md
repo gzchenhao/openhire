@@ -4,7 +4,15 @@
 
 1. **先读 `README.md`** — 了解产品定位、五个协议字段、三条隐私红线、安装与工具（公开版 README）。
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
-3. **禁止重做已完成的工作。** M1/M2/M3 已验收通过（见 PROGRESS.md 的验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
+3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
+
+## 发布状态（v0.1 已上线 · 2026-07-14）
+
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main 分支）
+- **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`）
+- **PyPI：** https://pypi.org/project/openhire/0.1.0/ （`pipx install openhire`）
+- 推送用 `gh`（keyring 凭据）；PyPI token 仅在 `%USERPROFILE%\.pypirc`。二者均**不进代码/git**。
+- 仅剩：Smithery 目录提交（待用户回「提交」，材料见 `reports/009`）。
 
 ## 常设工作制度（持续遵守）
 
@@ -23,6 +31,7 @@
    - Markdown 格式，**自足完整**：不依赖终端上下文，单独打开也能看懂（含背景、做了什么、证据、结论、下一步）。
    - 每次干完活的**最后一行**告诉用户：「汇报已写入 C:\openhire\reports\xxx.md」。
    - 编号取 `reports\` 里现有最大编号 +1（补零三位）。
+6. **每周快照刷新（维护者职责）：** 发布用的快照是 GitHub Release 资产，会随时间过时。每周按 `docs/maintainer-snapshot-refresh.md` 跑一次 `ohp snapshot-build` 并替换 Release 里的 `openhire-index.db.gz`（文件名保持不变，否则 `ohp bootstrap` 找不到）。构建自带「零用户态」红线校验。
 
 ## 三条隐私红线（CI 强制，永不可破）
 
