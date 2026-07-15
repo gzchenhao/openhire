@@ -168,3 +168,7 @@ slug + ATS vendor/tenant) and open a PR; the seeder validates tenants against th
 ## License
 
 MIT © OpenHire Protocol · PRs welcome.
+
+---
+
+*Built by a non-coder PM-ing Claude Code — full acceptance reports in [`reports/`](reports/).*
