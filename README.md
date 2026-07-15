@@ -1,3 +1,5 @@
+<!-- mcp-name: io.github.gzchenhao/openhire -->
+
 # openhire-mcp
 
 > **Jobs come to you. Your résumé never passes through OpenHire's servers, and we never store it.**

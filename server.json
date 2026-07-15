@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.gzchenhao/openhire",
+  "title": "OpenHire · 哨兵",
+  "description": "Radar for remote AI/Infra jobs from employer ATS; your résumé never transits the server.",
+  "repository": {
+    "url": "https://github.com/gzchenhao/openhire",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "openhire",
+      "version": "0.1.1",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "serve"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "OPENHIRE_DATABASE_URL",
+          "description": "Optional. Postgres URL (postgresql+psycopg://…); omit to use the local SQLite index.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

@@ -4,4 +4,4 @@ Résumés never leave your device. Only an anonymous fingerprint ever transits t
 server. See the three privacy red lines in README / tests/test_privacy.py.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
