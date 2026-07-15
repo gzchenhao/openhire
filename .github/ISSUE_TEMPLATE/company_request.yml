@@ -1,0 +1,52 @@
+name: "🏢 Company inclusion request"
+description: "Ask us to index a company you want to apply to (best way to contribute!)"
+title: "[Company] <company name>"
+labels: ["company-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping grow the index! OpenHire only pulls from **public ATS APIs**
+        (Greenhouse / Lever / Ashby) — no scraping. The more of the URL you can give, the
+        faster we can add it.
+  - type: input
+    id: company
+    attributes:
+      label: Company name
+      placeholder: "e.g. Anthropic"
+    validations:
+      required: true
+  - type: dropdown
+    id: vendor
+    attributes:
+      label: Which ATS do they use? (if you know)
+      options:
+        - "Not sure"
+        - "Greenhouse"
+        - "Lever"
+        - "Ashby"
+        - "Other / none of these"
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Careers page or public ATS URL
+      description: "e.g. https://job-boards.greenhouse.io/anthropic  or  https://jobs.lever.co/<company>  or  https://jobs.ashbyhq.com/<company>"
+      placeholder: "https://…"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else? (optional)
+      placeholder: "Roles you're watching, region, etc."
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirm
+      options:
+        - label: "This is the company's own careers page / public ATS (not a job board like LinkedIn/Indeed)."
+          required: true

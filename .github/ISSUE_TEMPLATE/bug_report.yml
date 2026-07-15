@@ -1,0 +1,54 @@
+name: "🐛 Bug report"
+description: "Something didn't work as expected"
+title: "[Bug] <short summary>"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The exact command(s) you ran.
+      placeholder: |
+        1. ohp bootstrap
+        2. ohp search --required-skills rust,k8s --remote
+        3. …
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Output of `ohp version`"
+      placeholder: "openhire 0.1.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options: ["Windows", "macOS", "Linux"]
+    validations:
+      required: true
+  - type: dropdown
+    id: how
+    attributes:
+      label: How did you install / run it?
+      options: ["pipx install openhire", "uvx openhire", "pip install openhire", "from source", "via an MCP client (Claude Desktop / Cursor / Windsurf)"]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output / logs (optional)
+      description: "Paste any ERR_… line or traceback. Do NOT paste secrets (API keys)."
+      render: shell
+    validations:
+      required: false

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "❓ Questions & FAQ"
+    url: https://github.com/gzchenhao/openhire#faq
+    about: "Where does the data come from? Does my résumé transit the server? — see the README FAQ first."
+  - name: "🔒 Privacy red lines"
+    url: https://github.com/gzchenhao/openhire#three-rules-this-project-will-never-break
+    about: "The three rules this project will never break."

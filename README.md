@@ -7,6 +7,10 @@
 
 ![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![v0.1 · sentinel](https://img.shields.io/badge/v0.1-sentinel-E3B341)
 
+<p align="center"><em>▶️ 30-second quickstart demo — coming soon.</em></p>
+<!-- TODO(v0.2): replace the line above with  ![Quickstart](docs/quickstart.gif)  once recorded.
+     Recording checklist (what to record + timing) is in reports/012. -->
+
 An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar
 for **remote AI / Infra roles** — sourced directly from ~100 company career sites and their
 public ATS APIs (Greenhouse / Lever / Ashby). **No account. No signup. No résumé upload. Ever.**
@@ -35,22 +39,32 @@ ohp search --required-skills rust,k8s --remote --role-family engineering
 ohp serve
 ```
 
-For **Claude Desktop**, add to `claude_desktop_config.json`:
+Then point your MCP client at it — see **[Works with](#works-with)** below.
 
+---
+
+## Works with
+
+All clients use the same MCP entry. If you ran `pipx install openhire`, use `ohp`; otherwise
+`uvx openhire serve` fetches and runs it with no prior install (needs [uv](https://docs.astral.sh/uv/)).
+
+**Claude Desktop** — `%APPDATA%\Claude\claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/`); quit & reopen after editing:
 ```json
-{
-  "mcpServers": {
-    "openhire": {
-      "command": "ohp",
-      "args": ["serve"]
-    }
-  }
-}
+{ "mcpServers": { "openhire": { "command": "ohp", "args": ["serve"] } } }
 ```
 
-> On Windows the config file lives at `%APPDATA%\Claude\claude_desktop_config.json` (for the
-> Microsoft Store build it is under `…\Packages\<Claude package>\LocalCache\Roaming\Claude\`).
-> Fully quit and reopen Claude Desktop after editing.
+**Cursor** — `~/.cursor/mcp.json` (or a project `.cursor/mcp.json`):
+```json
+{ "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire", "serve"] } } }
+```
+
+**Windsurf** — `~/.codeium/windsurf/mcp_config.json`:
+```json
+{ "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire", "serve"] } } }
+```
+
+> Run `ohp bootstrap` once first so the index has data. On Windows Claude Desktop from the
+> Microsoft Store, the config is under `…\Packages\<Claude package>\LocalCache\Roaming\Claude\`.
 
 ---
 
@@ -121,6 +135,35 @@ default local SQLite file (`~/.openhire/openhire.db`).
 - **v0.2** — CN ATS adapters (Beisen / Moka) · `ghost_score` public beta
 - **v0.3** — Employer claim + verified badges · response-SLA enforcement (7-day auto-delist)
 - **v1.0** — Open, vendor-neutral schema extension for AI-readable job postings
+
+## FAQ
+
+**Where does the job data come from?**
+Directly from ~100 employers' own public ATS APIs (Greenhouse, Lever, Ashby) — the same
+endpoints that power their careers pages. No scraping, no third-party job boards. `source` is
+always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.
+
+**Why should I trust `ghost_score`?**
+It's a pure, open, unpurchasable function — `min(1, 0.15·relist_count + staleness)` aged off the
+**real** ATS posting date, not our crawl date. The formula lives in `pipeline/ghost_score.py`,
+is unit-tested, and takes no money as input (red line #2). Long-open, repeatedly-relisted
+postings score higher (worse); you can always re-rank client-side.
+
+**Does my résumé actually go through the server — really?**
+No. There is no résumé anywhere in the protocol. `authorize_application` has no résumé/file
+parameter (it structurally cannot accept one), matching runs on your machine, and the only thing
+that ever transits the server is a short anonymous fingerprint like `#a3f9`. This is enforced by
+`tests/test_privacy.py`, and the published snapshot carries **zero** user data (`tests/test_snapshot.py`).
+
+**Does it support China (中国区)?**
+v0.1 covers global remote AI/Infra roles on Greenhouse/Lever/Ashby. CN ATS adapters (Beisen /
+Moka) are on the **v0.2** roadmap. The architecture is adapter-based (`src/openhire/ats/`), so
+adding a vendor is self-contained.
+
+**How do I get a company added?**
+Open a **Company inclusion request** issue (title it with the company + its ATS URL) — this is
+the best way to contribute. If you code, add it to `src/openhire/seed/candidates.py` (company
+slug + ATS vendor/tenant) and open a PR; the seeder validates tenants against the live API.
 
 ## License
 

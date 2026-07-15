@@ -12,6 +12,16 @@
 
 ---
 
+## 2026-07-15 — v0.2 启动：分发与种子用户（GitHub 门面第一批，详见 reports/012）
+
+- **`uvx openhire serve` 零失败已验**（陌生人第一条命令）：从 PyPI 现装、空索引下用官方 MCP stdio 客户端握手 → initialize + 列出 5 工具 + `search_jobs` 调用不报错。与注册表 `packageArguments: serve` 对齐。
+- **README 补三样**：顶部 30s Quickstart GIF **占位**（待用户录 `docs/quickstart.gif`，清单在 012）；**Works with**（Claude Desktop/Cursor/Windsurf 配置）；**FAQ 五条**。
+- **Issue 模板**：`.github/ISSUE_TEMPLATE/` 加 `company_request.yml`（社区钩子）+ `bug_report.yml` + `config.yml`。
+- **About/topics**：已用 `gh repo edit` 设描述 + homepage(PyPI) + 16 个 topics。
+- **待用户**：录 Quickstart GIF（≤30s/≤5MB）回我替换占位。
+
+---
+
 ## 2026-07-12 — 真机验收修复 campaign（报告 003 → 逐项修，详见 reports/004）
 
 **P0-1 写路径挂死 — ✅ 已修复**
