@@ -2,11 +2,13 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
-**当前状态：v0.1 已公开发布（2026-07-14）· M1–M4 全部完成 · 118 tests green**
-- GitHub：https://github.com/gzchenhao/openhire
-- Release v0.1.0（含快照 `openhire-index.db.gz`）：https://github.com/gzchenhao/openhire/releases/tag/v0.1.0
-- PyPI：https://pypi.org/project/openhire/0.1.0/ （`pipx install openhire`）
-- 仅剩：Smithery 目录提交（待用户「提交」，见 `reports/009`）；**每周手动刷新快照**（`docs/maintainer-snapshot-refresh.md`）。
+**当前状态：v0.1 已公开发布 + 上架官方 MCP Registry（2026-07-15）· M1–M4 完成 · 118 tests green**
+- GitHub：https://github.com/gzchenhao/openhire （main，tag v0.1.1）
+- Release v0.1.0（含快照 `openhire-index.db.gz`，URL 稳定）：https://github.com/gzchenhao/openhire/releases/tag/v0.1.0
+- PyPI：https://pypi.org/project/openhire/0.1.1/ （`pipx install openhire`）
+- **官方 MCP Registry：`io.github.gzchenhao/openhire` v0.1.1**（`registry.modelcontextprotocol.io`；PulseMCP/mcp.so 会自动同步）
+- Smithery：v0.1 **放弃**（无本地 stdio 网页入口，见 `reports/010`）。
+- **常设仅剩：每周手动刷新快照**（`docs/maintainer-snapshot-refresh.md`）。
 
 ---
 

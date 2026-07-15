@@ -6,13 +6,15 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（v0.1 已上线 · 2026-07-14）
+## 发布状态（v0.1 已上线 + 上架官方 Registry · 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main 分支）
-- **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`）
-- **PyPI：** https://pypi.org/project/openhire/0.1.0/ （`pipx install openhire`）
-- 推送用 `gh`（keyring 凭据）；PyPI token 仅在 `%USERPROFILE%\.pypirc`。二者均**不进代码/git**。
-- 仅剩：Smithery 目录提交（待用户回「提交」，材料见 `reports/009`）。
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，tag v0.1.1）
+- **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`，URL 稳定不变）
+- **PyPI：** https://pypi.org/project/openhire/0.1.1/ （`pipx install openhire`）
+- **官方 MCP Registry：** `io.github.gzchenhao/openhire` v0.1.1（`registry.modelcontextprotocol.io`，用 `server.json` + `mcp-publisher` 发布；PulseMCP/mcp.so 自动同步）。
+- **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。
+- 推送用 `gh`（keyring）；PyPI token 仅 `%USERPROFILE%\.pypirc`；`mcp-publisher` 用其本地 GitHub 凭据。三者均**不进代码/git**。
+- 再发新版流程：改 README `mcp-name` 保持不变 → bump 版本 → `twine upload` → 改 `server.json` 版本 → `mcp-publisher publish`。
 
 ## 常设工作制度（持续遵守）
 
