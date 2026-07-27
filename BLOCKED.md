@@ -26,9 +26,14 @@ Error: publish failed: server returned status 401:
    `<!-- mcp-name: io.github.gzchenhao/openhire -->` 归属行（Registry 校验所有权要用）。
 3. **publish** → 上面的 401。
 4. **按官方文档重新登录** —— `mcp-publisher login github` 走 device-code 流程，已拿到
-   授权码并交给用户在其**自己的浏览器**完成授权。截至写下本文件时，进程仍停在
-   `Waiting for authorization...`，未收到授权（GitHub 的 device code 有效期约 15 分钟，
-   超时后需重新执行 `login` 取新码）。
+   授权码（`36CA-9789`）并交给用户在其**自己的浏览器**完成授权。用户当时不在场，
+   该码**已超时作废**：
+
+   ```
+   Error: login failed: error polling for token: device code authorization timed out
+   ```
+
+   → 解除时必须**重新执行 `login` 取新码**（旧码不能再用）。这是预期行为，不是故障。
 
 ## 怀疑什么
 
