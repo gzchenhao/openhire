@@ -12,7 +12,20 @@
 
 ---
 
-## 2026-07-27 — 015 任务 C 完成：DeepSeek 补抽取 ¥11.59（进行中）
+## 2026-07-27 — 015 v0.2.0 已发布（✅ 7 项验收 6 项达成；Registry 一步待授权，详见 reports/015 + BLOCKED.md）
+
+**当前状态：v0.2.0 已上线 PyPI + GitHub Release + 新快照 · 155 tests green · 本单花费 ¥11.59**
+
+- **PyPI 0.2.0 ✅** https://pypi.org/project/openhire/0.2.0/ —— 全新隔离 venv 从 PyPI 实装验证：`ohp version`=0.2.0、`all_vendors()` 含 **beisen**、MCP stdio 握手列出 **5 工具**、`search_jobs` 调用无误。（上传前先用同法验过本地 wheel。）
+- **GitHub Release v0.2.0 ✅**（变更说明，**0 资产**）；**快照资产仍留在 v0.1.0 稳定 URL**，`ohp bootstrap` 跨版本不断链。
+- **新快照 ✅** 公司 **125** · 职位 **16,316** · 18.3MB · 零用户态校验通过；**时序合规**：PyPI `14:19:09Z` → 资产 `14:35:26Z`（资产更晚）。真·新用户端到端（PyPI 0.2.0 + 已发布快照）：「龄 0 天前」，且 `--currency CNY --role-family engineering --min-salary 300000` 能搜到**宇树岗**。
+- **ingest 未强制 `--all`：** freshness 未到期、索引本就是当日的；强刷会用 heuristic 覆盖刚花钱买的 DeepSeek 抽取结果。
+- **⏳ 唯一未完成：官方 Registry 仍是 0.1.1。** `mcp-publisher publish` 报 **401 token expired**（011 那枚 JWT 已过期）。按止损条款**不自行找回/重置凭据**，改走官方 device-code 登录并把码交给用户浏览器授权，截至收工未完成授权 → 已写 `BLOCKED.md`（含一步解除办法）。**不影响用户安装**：`pipx install openhire` 拿到的已是 0.2.0。
+- **下一步：** 用户授权后跑一条 `mcp-publisher publish` 即可；三方目录（glama/mcp.so/PulseMCP）仍需主动提交（对外动作待批）。
+
+---
+
+## 2026-07-27 — 015 任务 C 完成：DeepSeek 补抽取 ¥11.59（过程记录）
 
 - **试点核费率：** `--limit 50` → CNY 0.12（¥0.0024/岗），且实测**只动 heuristic 岗**（deepseek 11,825→11,875、heuristic 4,491→4,441），范围正确。
 - **skills 补全：** 4,441/4,441 更新 · 0 失败 · **CNY 9.49**（in 3,552,869 / out 297,585 tok）。
