@@ -12,6 +12,28 @@
 
 ---
 
+## 2026-07-27 — 013 v0.2 分发收尾：快照刷新 + README 演示 + 四方收录核查（✅ 完成，详见 reports/013）
+
+- **A 快照已刷新（¥0）：** `ohp ingest`（强制 heuristic）→ 96 家 / 新 2399 / 下架 2057 → `ohp snapshot-build` **公司 96 · 职位 14224**（11,825→14,224，无倒退）、零用户态校验通过 → `gh release upload --clobber`。验证三重：资产 `updatedAt=2026-07-27T05:52:55Z`；SNAPSHOT_URL `HTTP 200` + `Last-Modified` 为今日；临时库 `ohp bootstrap` 报**「龄 0 天前」**。
+- **顺手修 op card 两个坑**（`docs/maintainer-snapshot-refresh.md`）：① `ohp ingest --once` **命令不存在**（裸 `ohp ingest` 才是一次性）；② **默认会花钱** —— `OPENHIRE_EXTRACTOR=auto` 在有 `DEEPSEEK_API_KEY` 时选 DeepSeek，等于对 4,553 条变更 JD 付费重抽；已加 `heuristic` 强制与说明。上传步骤改为 `gh` CLI + 三步验证。
+- **B README 演示：** 占位 → `docs/quickstart.svg`（24.5KB，无外链；已剥掉 rich 默认的 cdnjs 字体）。三步**全真跑**：隔离 `PIPX_HOME` 里 `pipx install openhire`（PyPI 0.1.1）→ `ohp bootstrap`（下新快照）→ `ohp search`。job_id `mongodb:7727896` 等均可在新快照查到，零伪造；`src/` 未改（monkeypatch 只在临时脚本）。
+- **C 四方收录（2026-07-27 只读查证）：** 官方 Registry ✅ 已收录（`count:1`、`status:active`、v0.1.1）；PulseMCP ❌「No servers found.」；mcp.so ❌ `servers:[], total:0`；glama.ai ❌ 只有 OpenAIRE/openhive-mcp 等模糊匹配，`gzchenhao` 0 次。
+- **⚠️ 推翻旧假设：** 「PulseMCP/mcp.so 会自动同步」**不成立** —— 官方收录已 12 天，三家一个都没同步。要收录须**主动提交**（对外动作，留待下一单批准）。
+- **测试：** 收尾复跑 **118 passed / 0 failed / 0 skipped**，与基线一致。
+- **下一步：** ① 是否授权向 glama/mcp.so/PulseMCP 主动提交；② 快照刷新可考虑 GitHub Actions 每周定时。
+
+---
+
+## 2026-07-27 — 013 开工回执：v0.2 分发收尾（进行中）
+
+- **目标：** ① 刷新 Release 快照（欠约两周，上次 2026-07-14）；② README 顶部占位换成真实静态终端演示；③ 核查四方 MCP 目录收录状态（只读）。
+- **顺序：** 0 核验 → A 快照 → B 演示 → C 收录 → D 报告/提交。每完成一步回写本文件。
+- **核验已过：** `pytest -q` = **118 passed / 0 failed / 0 skipped**；`gh release view v0.1.0` 资产 `openhire-index.db.gz` 存在（updatedAt 2026-07-14T03:03Z, 13.2MB）。
+- **最大风险：** ingest 用免费启发式重跑可能改写既有 DeepSeek 抽取字段，导致快照质量倒退——按合并策略（skills-only merge）应无损，构建后核对职位/公司数不低于 96/11.8k 再上传；若倒退则不上传并如实记录。
+- **地界：** 本单零花费（禁 DeepSeek）；只改 README/docs/reports/PROGRESS；不碰 src/tests/server.json/版本号；站外只读。
+
+---
+
 ## 2026-07-15 — v0.2 启动：分发与种子用户（GitHub 门面第一批，详见 reports/012）
 
 - **`uvx openhire serve` 零失败已验**（陌生人第一条命令）：从 PyPI 现装、空索引下用官方 MCP stdio 客户端握手 → initialize + 列出 5 工具 + `search_jobs` 调用不报错。与注册表 `packageArguments: serve` 对齐。

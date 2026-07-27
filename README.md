@@ -7,9 +7,8 @@
 
 ![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![v0.1 · sentinel](https://img.shields.io/badge/v0.1-sentinel-E3B341)
 
-<p align="center"><em>▶️ 30-second quickstart demo — coming soon.</em></p>
-<!-- TODO(v0.2): replace the line above with  ![Quickstart](docs/quickstart.gif)  once recorded.
-     Recording checklist (what to record + timing) is in reports/012. -->
+<p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
+<p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
 
 An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar
 for **remote AI / Infra roles** — sourced directly from ~100 company career sites and their

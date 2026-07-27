@@ -14,22 +14,34 @@ Run from the repo root, in the project venv (`.venv\Scripts\activate`).
 ```powershell
 # 1. Refresh your local index from the live public ATS (free; heuristic is fine).
 #    (Skip if your local ~/.openhire/openhire.db is already current.)
-ohp ingest --once
+#    IMPORTANT: force the heuristic. OPENHIRE_EXTRACTOR defaults to "auto", which picks
+#    DeepSeek whenever DEEPSEEK_API_KEY is set (.env) — i.e. a paid re-extraction of every
+#    changed JD. The snapshot does not need it.
+$env:OPENHIRE_EXTRACTOR = "heuristic"
+ohp ingest            # one-shot; `--daemon` is the looping variant
 
 # 2. Build the snapshot (writes dist/openhire-index.db.gz; validates zero user-state).
 ohp snapshot-build --out dist/openhire-index.db.gz
 
-# 3. Confirm the summary: "公司 96 · 职位 ~11.8k" and "零用户态校验通过".
+# 3. Confirm the summary: "公司 96 · 职位 ~14k" and "零用户态校验通过".
 #    If it errors ERR_SNAPSHOT_REDLINE, STOP — user data leaked; do not upload.
 ```
 
 ## Upload to the Release
 
-1. Go to `https://github.com/<you>/openhire/releases` → open the `v0.1.0` release → **Edit**.
-2. Under **Assets**, delete the old `openhire-index.db.gz`, then drag in the new
-   `dist/openhire-index.db.gz`. Keep the **filename identical** (the bootstrap URL is fixed).
-3. Save. Verify the asset URL matches `OPENHIRE_SNAPSHOT_URL` in `src/openhire/config.py`.
-4. Sanity-check as a user would: in a throwaway dir, `OPENHIRE_DATABASE_URL=…/tmp.db ohp bootstrap`
+One command replaces the old drag-and-drop; `--clobber` overwrites in place, so the
+**filename stays identical** (the bootstrap URL is fixed):
+
+```powershell
+gh release upload v0.1.0 dist/openhire-index.db.gz --clobber --repo gzchenhao/openhire
+```
+
+Then verify:
+
+1. `gh release view v0.1.0 --repo gzchenhao/openhire --json assets` → `updatedAt` is today.
+2. `curl -sIL <SNAPSHOT_URL>` (the URL in `src/openhire/config.py`) → `HTTP 200` and a
+   `Last-Modified` of today.
+3. Sanity-check as a user would: in a throwaway dir, `OPENHIRE_DATABASE_URL=…/tmp.db ohp bootstrap`
    and confirm it downloads + reports a low "龄 N 天".
 
 ## Notes
