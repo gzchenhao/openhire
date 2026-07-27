@@ -333,6 +333,66 @@ _DEEPSEEK_ROLE_FAMILY_SYSTEM = (
 )
 
 
+# --- free, deterministic role_family fallback ---------------------------------
+# The DeepSeek classifier above is the quality path, but it costs money and only runs on
+# demand — so jobs ingested between passes sit at role_family NULL, which makes them
+# invisible to `--role-family` (the filter matches on the value, not on NULL). This
+# keyword classifier fills that gap for free. It is deliberately CONSERVATIVE: it returns
+# None whenever it is not confident, leaving the row NULL so the DeepSeek pass (which
+# resumes on `role_family IS NULL`) can still claim it later.
+#
+# Order matters. The sales patterns are checked first because the exact trap the DeepSeek
+# prompt calls out — 售前/解决方案/客户成功 "engineers" in a revenue org — is a sales role
+# whose title contains 工程师.
+_RF_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("sales", (
+        "销售", "客户经理", "大客户", "商务", "渠道", "售前", "解决方案工程师",
+        "解决方案专家", "客户成功", "业务拓展",
+        "account executive", "account manager", "sales", "business development",
+        "solutions engineer", "solutions architect", "customer success", "presales",
+    )),
+    ("data", (
+        "数据工程", "数据分析", "数据科学", "数据挖掘", "大数据", "数据仓库", "商业分析",
+        "data engineer", "data scientist", "data analyst", "analytics", "bi ",
+    )),
+    ("design", (
+        "设计师", "交互设计", "视觉设计", "工业设计", "用户体验",
+        "designer", "ux ", "ui ",
+    )),
+    ("product", ("产品经理", "产品总监", "产品专员", "product manager", "product owner")),
+    ("marketing", (
+        "市场营销", "市场推广", "品牌", "公关", "内容运营", "新媒体",
+        "marketing", "brand", "public relations",
+    )),
+    ("ops", (
+        "人力资源", "招聘", "行政", "财务", "法务", "供应链", "采购", "生产", "制造",
+        "质量", "品质", "仓储", "物流", "运维", "客服", "职能",
+        "recruiter", "human resources", "finance", "legal", "procurement",
+        "supply chain", "manufacturing", "quality", "operations manager", "it support",
+    )),
+    ("engineering", (
+        "工程师", "研发", "开发", "算法", "架构师", "嵌入式", "软件", "硬件", "电气",
+        "机械", "结构", "测试", "仿真", "感知", "定位", "规划控制", "标定", "视觉",
+        "engineer", "developer", "programmer", "architect", "scientist", "research",
+    )),
+)
+
+
+def classify_role_family_heuristic(title: str, description: str = "") -> str | None:
+    """Best-effort job family from the title alone, or None when unsure.
+
+    Title-only by design: Chinese JD bodies are boilerplate-heavy (公司介绍/福利) and match
+    far too many families, so the body is used only as a tiebreak-free fallback signal.
+    """
+    blob = f" {(title or '').lower()} "
+    if not blob.strip():
+        return None
+    for family, needles in _RF_RULES:
+        if any(n in blob for n in needles):
+            return family
+    return None
+
+
 class DeepSeekExtractor:
     """OpenAI-compatible backend (default DeepSeek). Cheap model for a simple task.
 

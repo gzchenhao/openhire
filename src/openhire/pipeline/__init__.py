@@ -7,6 +7,7 @@ from .ingest import IngestStats, due_companies, ingest_company, run_ingest
 from .rebuild import (
     RebuildStats,
     SampleReport,
+    backfill_role_family_heuristic,
     cost_cny,
     rebuild_extraction,
     rebuild_role_family,
@@ -24,6 +25,7 @@ __all__ = [
     "SampleReport",
     "SeedStats",
     "backfill_posting_dates",
+    "backfill_role_family_heuristic",
     "compute_ghost_score",
     "content_hash",
     "cost_cny",

@@ -29,6 +29,17 @@ _GREENHOUSE = [
     ("datadog", "Datadog"),
     ("mongodb", "MongoDB"),
     ("waymo", "Waymo"),
+    # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
+    ("aurorainnovation", "Aurora"),
+    ("wayve", "Wayve"),
+    ("kodiak", "Kodiak Robotics"),
+    ("motional", "Motional"),
+    ("torcrobotics", "Torc Robotics"),
+    ("botauto", "Bot Auto"),
+    ("figureai", "Figure"),
+    ("agilityrobotics", "Agility Robotics"),
+    ("carbonrobotics", "Carbon Robotics"),
+    ("pathrobotics", "Path Robotics"),
     ("nebius", "Nebius"),
     ("samsara", "Samsara"),
     ("verkada", "Verkada"),
@@ -90,11 +101,21 @@ _LEVER = [
     ("mistral", "Mistral AI"),
     ("matchgroup", "Match Group"),
     ("weride", "WeRide"),
+    # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
+    ("zoox", "Zoox"),
+    ("waabi", "Waabi"),
+    ("dexterity", "Dexterity"),
+    ("ambirobotics", "Ambi Robotics"),
 ]
 
 # --- Ashby --------------------------------------------------------------------
 _ASHBY = [
     ("openai", "OpenAI"),
+    # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
+    ("1x", "1X Technologies"),
+    ("standardbots", "Standard Bots"),
+    ("saronic", "Saronic"),
+    ("cobot", "Collaborative Robotics"),
     ("crusoe", "Crusoe"),
     ("harvey", "Harvey"),
     ("elevenlabs", "ElevenLabs"),
@@ -130,14 +151,37 @@ _ASHBY = [
     ("weaviate", "Weaviate"),
 ]
 
+# --- Beisen 北森 (`<tenant>.zhiye.com`) — domestic CN autonomous-driving / embodied AI ---
+# Added in v0.2 to cover the target industry inside China. Feishu Hire (飞书招聘) covers more
+# CN employers but signs its job-list requests with a ByteDance `_signature`, so it is not
+# publicly crawlable and is deliberately absent — see reports/014.
+_BEISEN = [
+    ("unitree", "宇树科技 Unitree"),
+    ("galaxea", "星海图 Galaxea"),
+    ("ubtrobot", "优必选 UBTECH"),
+    ("dobot", "越疆 Dobot"),
+    ("jaka", "节卡机器人 JAKA"),
+    ("mechmind", "梅卡曼德 Mech-Mind"),
+    ("megarobo", "镁伽 MegaRobo"),
+    ("pudutech", "普渡科技 Pudu Robotics"),
+    ("hairobotics", "海柔创新 Hai Robotics"),
+    ("siasun", "新松机器人 SIASUN"),
+    ("seyond", "图达通 Seyond"),
+]
+
 
 def all_candidates() -> list[Candidate]:
     out: list[Candidate] = []
-    for vendor, rows in (("greenhouse", _GREENHOUSE), ("lever", _LEVER), ("ashby", _ASHBY)):
+    for vendor, rows in (
+        ("greenhouse", _GREENHOUSE),
+        ("lever", _LEVER),
+        ("ashby", _ASHBY),
+        ("beisen", _BEISEN),
+    ):
         for tenant, name in rows:
             out.append(Candidate(vendor=vendor, tenant=tenant, name=name))
     return out
 
 
 def candidate_count() -> int:
-    return len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY)
+    return len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN)

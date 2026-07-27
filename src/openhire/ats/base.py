@@ -39,6 +39,20 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
     "ashby": {"jobs.ashbyhq.com"},
 }
 
+# Beisen (北森) gives every employer its own host (`<tenant>.zhiye.com`), so its canonical
+# apply hosts cannot be enumerated up front the way the others can — they are derived from
+# the tenant instead. See `_apply_hosts`.
+_PER_TENANT_HOST: dict[str, str] = {"beisen": "{tenant}.zhiye.com"}
+
+
+def _apply_hosts(vendor: str, tenant: str) -> set[str]:
+    """Canonical apply hosts for a vendor, including per-tenant ones."""
+    hosts = set(ATS_APPLY_HOSTS.get(vendor, set()))
+    pattern = _PER_TENANT_HOST.get(vendor)
+    if pattern:
+        hosts.add(pattern.format(tenant=tenant).lower())
+    return hosts
+
 
 @dataclass
 class ApplyResolution:
@@ -60,6 +74,9 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
         return f"https://jobs.lever.co/{tenant}/{ats_job_id}"
     if vendor == "ashby":
         return f"https://jobs.ashbyhq.com/{tenant}/{ats_job_id}"
+    if vendor == "beisen":
+        # The employer's own Beisen-hosted job page, which carries the 申请 button.
+        return f"https://{tenant}.zhiye.com/social/detail?jobAdId={ats_job_id}"
     raise ValueError(f"unknown vendor: {vendor!r}")
 
 
@@ -67,14 +84,14 @@ def resolve_apply_channel(
     vendor: str, tenant: str, ats_job_id: str, vendor_url: str | None
 ) -> ApplyResolution:
     """Choose a guaranteed-deep-linking apply_channel (see module note above)."""
-    hosts = ATS_APPLY_HOSTS.get(vendor, set())
+    hosts = _apply_hosts(vendor, tenant)
     canonical = canonical_apply_url(vendor, tenant, ats_job_id)
 
     if vendor_url:
         parsed = urlparse(vendor_url)
         host = (parsed.netloc or "").lower()
         # Trust only a canonical ATS host that carries the job id in the path.
-        if host in hosts and ats_job_id in (parsed.path or ""):
+        if host in hosts and ats_job_id in (parsed.path or "") + (parsed.query or ""):
             return ApplyResolution(url=vendor_url, used_fallback=False, is_embed=False)
         # A non-ATS host = an employer self-hosted embed; treat as unreliable.
         is_embed = bool(host) and host not in hosts

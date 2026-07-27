@@ -12,6 +12,37 @@
 
 ---
 
+## 2026-07-27 — 014 自动驾驶/具身智能覆盖扩张（✅ 完成，详见 reports/014）
+
+- **A 摸底（40 行矩阵）：** 飞书招聘覆盖最广（≥10 家目标公司）但**判不可抓** —— 职位列表是 GET `/api/v1/search/job/posts`，参数带字节跳动 `_signature` 反爬签名 + 滑块验证码 SDK，裸 curl 只返回 HTML 壳；按「不许硬闯」**就地停手**。**北森 `<tenant>.zhiye.com` 可抓** —— `POST /api/Jobad/GetJobAdPageList`，无签名/无 cookie，裸 curl 200。故 **vendor #1 = 北森**（任务书「摸底数据说了算」的预案生效）。
+- **踩坑记录：** ① 只看 HTTP 200 会认错公司（`horizon.*`=汉森、`ikingtec`=云圣智能、`galaxis`=凯乐士、`yushi`=雨时），必须核 `<title>`；② 北森 `DisplayFields` 不带就不返回 PostDate/LocNames/Salary，看起来像「数据稀疏」；③ 自定义域名可能是白标 ATS（`career.limxdynamics.com` 实为飞书）。
+- **B 北森适配器：** 新增 `ats/beisen.py`（覆写 POST+分页 fetch、模块级 Semaphore(2) 频控）+ `base.py` 加 beisen apply 分支与按 tenant 推导的 apply host + 20 项单测（真实 fixture）。**入库 11 家 / 622 岗，`posted_at` 覆盖 100%**（零值日期一律 NULL，不用抓取时刻兜底）；薪资按月存 CNY 不折年薪；11/11 apply_channel HTTP 200，浏览器人工核对逐项吻合。
+- **补洞：** 新岗 `role_family` 全 NULL 会被 `--role-family` 过滤器完全排除（622 条国内岗隐身）。付费通道禁用，故加**免费**标题关键词分类 `ohp extract-role-family --heuristic`（拿不准留 NULL，不挡将来 DeepSeek 续跑）：标注 3086 · 仍 NULL 1405 · ¥0。
+- **C 海外补齐：** 逐家 live 验证后新增 **18 家 / 1,448 岗**（Zoox、Aurora、Wayve、Figure、Motional、Kodiak、1X、Waabi、Torc、Agility、Saronic、Standard Bots、Dexterity、Bot Auto、Path/Carbon Robotics、Ambi、Collaborative Robotics）。
+- **库存：** 公司 96 → **124**；在招 → **14,232**。**测试 138 passed / 0 failed / 0 skipped**（118+20）。全程 ¥0。
+- **⚠️ 遗留待决策：** `jobs` 表无薪资周期字段，CNY 月薪与 USD 年薪同列比较 → `--min-salary` 会系统性误杀国内岗。建议 015 加 `salary_period` 或服务层按币种归一。其余见 reports/014 第七节。
+
+---
+
+## 2026-07-27 — 014 任务 A 关键结论：飞书=不可抓，北森=可抓（过程记录）
+
+- **飞书招聘（覆盖最广，≥10 家）判定「不可公开抓取」：** 浏览器实测其职位列表是 **GET `/api/v1/search/job/posts`，查询参数带字节跳动 `_signature` 反爬签名**（同页还加载 `verify.snssdk.com` 验证码 SDK）。裸 curl 无签名 → 返回「猎头平台」HTML 壳。按任务书「需破解签名/验证码者一律判不可抓、不许硬闯」→ **停手，写进矩阵**。
+- **北森 zhiye.com 判定「可抓」✅：** `POST https://<tenant>.zhiye.com/api/Jobad/GetJobAdPageList`，body `{portalId,pageIndex,pageSize}`，**无签名、无 cookie、裸 curl 200**（宇树实测 `Count:81`）。`portalId` 直接写在页面 HTML 的 `"PortalId":"…"`，可自举。
+- **注意（P0-2 教训）：** 北森 `PostDate` 大量为 `0001-01-01T00:00:00` 零值 → 必须落 NULL，**严禁**用抓取时刻兜底。
+- **由此定 vendor #1 = 北森**（飞书虽覆盖更广但不可抓）。
+
+---
+
+## 2026-07-27 — 014 开工回执：自动驾驶/具身智能覆盖扩张（进行中）
+
+- **目标：** ① 国内 ≥30 家自动驾驶/具身智能公司的 ATS 归属摸底（矩阵+证据）；② 按摸底结果做「覆盖第一」的国内 vendor 适配器（≥8 家 / ≥300 岗）；③ 海外目标行业种子补齐 ≥12 家。
+- **顺序：** 0 核验 → A 摸底（先于一切编码）→ B 适配器 → C 海外种子 → D 报告/提交。每完成一步回写本文件。
+- **核验已过：** `pytest -q` = **118 passed / 0 failed / 0 skipped**；已读 `ats/base|greenhouse|lever|ashby` 与 `seed/candidates.py`，新 vendor 照 `ATSClient` 模式加进 `ats/__init__.py` 的 `_CLIENTS`。
+- **最大风险：** 国内 ATS（飞书/Moka/北森）多为带 cookie/CSRF 的 POST 接口，可能全部拿不到免登录 JSON。若「可得」公司 <5 家，按止损条款停在任务 A，矩阵+结论即为合格交付——**不硬闯签名/验证码/登录墙**。
+- **地界：** 零花费（强制 heuristic）；不发 PyPI、不动版本号/server.json/Release；现有测试断言不改不删不 skip。
+
+---
+
 ## 2026-07-27 — 013 v0.2 分发收尾：快照刷新 + README 演示 + 四方收录核查（✅ 完成，详见 reports/013）
 
 - **A 快照已刷新（¥0）：** `ohp ingest`（强制 heuristic）→ 96 家 / 新 2399 / 下架 2057 → `ohp snapshot-build` **公司 96 · 职位 14224**（11,825→14,224，无倒退）、零用户态校验通过 → `gh release upload --clobber`。验证三重：资产 `updatedAt=2026-07-27T05:52:55Z`；SNAPSHOT_URL `HTTP 200` + `Last-Modified` 为今日；临时库 `ohp bootstrap` 报**「龄 0 天前」**。

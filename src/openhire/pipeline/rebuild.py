@@ -20,7 +20,11 @@ from .. import config
 from ..ats.base import JobRecord
 from ..db import Job, session_scope
 from ..db.migrate import ensure_schema
-from .extract import DeepSeekExtractor, make_deepseek_extractor
+from .extract import (
+    DeepSeekExtractor,
+    classify_role_family_heuristic,
+    make_deepseek_extractor,
+)
 
 TARGET_SOURCE = "deepseek"
 
@@ -376,6 +380,28 @@ def rebuild_role_family(
             break
 
     return stats
+
+
+def backfill_role_family_heuristic(limit: int | None = None) -> tuple[int, int]:
+    """Free, no-LLM pass: label `role_family IS NULL` rows by title keywords.
+
+    Returns (labelled, still_null). Rows the classifier is unsure about are left NULL so
+    the paid DeepSeek pass — which resumes on `role_family IS NULL` — can still claim them.
+    """
+    ensure_schema()
+    labelled = still_null = 0
+    with session_scope() as s:
+        stmt = select(Job).where(Job.role_family.is_(None)).order_by(Job.id)
+        if limit:
+            stmt = stmt.limit(limit)
+        for job in s.execute(stmt).scalars():
+            family = classify_role_family_heuristic(job.title or "", job.description_raw or "")
+            if family:
+                job.role_family = family
+                labelled += 1
+            else:
+                still_null += 1
+    return labelled, still_null
 
 
 def rollback_extraction() -> int:

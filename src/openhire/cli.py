@@ -858,12 +858,26 @@ def extract_role_family(
     workers: int = typer.Option(12, "--workers", help="Concurrent API calls."),
     limit: int = typer.Option(None, "--limit", help="Cap jobs this run (for testing)."),
     ceiling: float = typer.Option(None, "--ceiling", help="CNY hard stop (default from config)."),
+    heuristic: bool = typer.Option(
+        False, "--heuristic",
+        help="Free title-keyword pass instead of DeepSeek; leaves unclear jobs NULL.",
+    ),
 ) -> None:
     """Classify each job's role_family with DeepSeek; resumable, hard-stops at the ¥ ceiling."""
     from .pipeline import rebuild_role_family
 
     init_db()
     _banner()
+
+    if heuristic:
+        from .pipeline import backfill_role_family_heuristic
+
+        console.cmd("ohp extract-role-family --heuristic")
+        console.out("免费标注（标题关键词）· 不调用任何付费接口 · 拿不准的留 NULL 交给 DeepSeek")
+        labelled, still_null = backfill_role_family_heuristic(limit)
+        console.ok(f"完成 · 标注 {labelled} · 仍为 NULL {still_null} · 花费 ¥0.00")
+        return
+
     console.cmd("ohp extract-role-family")
     try:
         def on_batch(stx):

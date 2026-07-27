@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .ashby import AshbyClient
+from .beisen import BeisenClient
 from .base import (
     ATSClient,
     ApplyResolution,
@@ -19,6 +20,7 @@ _CLIENTS: dict[str, ATSClient] = {
     "greenhouse": GreenhouseClient(),
     "lever": LeverClient(),
     "ashby": AshbyClient(),
+    "beisen": BeisenClient(),
 }
 
 
@@ -37,6 +39,7 @@ __all__ = [
     "ATSClient",
     "ApplyResolution",
     "AshbyClient",
+    "BeisenClient",
     "FetchResult",
     "GreenhouseClient",
     "JobRecord",
