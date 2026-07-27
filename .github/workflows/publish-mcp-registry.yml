@@ -1,0 +1,48 @@
+# Publish server.json to the official MCP Registry.
+#
+# Why this exists: the interactive `mcp-publisher login github` flow mints a short-lived
+# Registry JWT, and it had expired between v0.1.1 and v0.2.0 — leaving the release blocked
+# on a human clicking a device code. GitHub Actions OIDC removes that: the workflow proves
+# it belongs to this repository, which is exactly what the `io.github.gzchenhao/*`
+# namespace requires. No stored token, nothing to expire, nothing to rotate.
+#
+# Publishes whatever version server.json declares, so bump it in the same commit as the
+# PyPI release. Run it manually (Actions → Run workflow) or let a v* tag trigger it.
+name: Publish to MCP Registry
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for the OIDC token used by `login github-oidc`
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mcp-publisher
+        run: |
+          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.0/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher --version
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+
+      - name: Publish
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
+
+      - name: Verify the registry now serves this version
+        run: |
+          want=$(python3 -c "import json;print(json.load(open('server.json'))['version'])")
+          got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" \
+                | python3 -c "import json,sys;s=json.load(sys.stdin)['servers'];print(s[0]['server']['version'] if s else 'none')")
+          echo "server.json=$want registry=$got"
+          test "$want" = "$got"
