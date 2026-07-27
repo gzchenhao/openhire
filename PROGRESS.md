@@ -12,7 +12,7 @@
 
 ---
 
-## 2026-07-27 — 015 v0.2.0 已发布（✅ 7 项验收 6 项达成；Registry 一步待授权，详见 reports/015 + BLOCKED.md）
+## 2026-07-27 — 015 v0.2.0 已发布（✅ 7 项硬指标全达成，详见 reports/015）
 
 **当前状态：v0.2.0 已上线 PyPI + GitHub Release + 新快照 · 155 tests green · 本单花费 ¥11.59**
 
@@ -20,8 +20,9 @@
 - **GitHub Release v0.2.0 ✅**（变更说明，**0 资产**）；**快照资产仍留在 v0.1.0 稳定 URL**，`ohp bootstrap` 跨版本不断链。
 - **新快照 ✅** 公司 **125** · 职位 **16,316** · 18.3MB · 零用户态校验通过；**时序合规**：PyPI `14:19:09Z` → 资产 `14:35:26Z`（资产更晚）。真·新用户端到端（PyPI 0.2.0 + 已发布快照）：「龄 0 天前」，且 `--currency CNY --role-family engineering --min-salary 300000` 能搜到**宇树岗**。
 - **ingest 未强制 `--all`：** freshness 未到期、索引本就是当日的；强刷会用 heuristic 覆盖刚花钱买的 DeepSeek 抽取结果。
-- **⏳ 唯一未完成：官方 Registry 仍是 0.1.1。** `mcp-publisher publish` 报 **401 token expired**（011 那枚 JWT 已过期）。按止损条款**不自行找回/重置凭据**，改走官方 device-code 登录并把码交给用户浏览器授权，截至收工未完成授权 → 已写 `BLOCKED.md`（含一步解除办法）。**不影响用户安装**：`pipx install openhire` 拿到的已是 0.2.0。
-- **下一步：** 用户授权后跑一条 `mcp-publisher publish` 即可；三方目录（glama/mcp.so/PulseMCP）仍需主动提交（对外动作待批）。
+- **官方 Registry ✅ 0.2.0 · isLatest:true**（`published 2026-07-27T14:47:43Z`）。曲折：011 那枚 JWT 已过期 → `publish` 报 401；按止损条款**不自行找回/重置凭据**，走 device-code 交用户授权但超时作废。**遂改用 GitHub Actions OIDC 根治**——新增 `.github/workflows/publish-mcp-registry.yml`（`id-token: write`），用**仓库自身身份**证明归属 `io.github.gzchenhao/*`，**没有任何令牌需要经手、也没有会过期的东西**。首跑 Verify 步骤误报（search 返回全部历史版本且旧版在前，我取了 `servers[0]`）已修为按 `isLatest` 判定 + 显式 utf-8。
+- **副产品：** 以后发版只需 bump `server.json` + 推 `v*` tag（或点 Run workflow），不必再碰 `mcp-publisher` 登录。`BLOCKED.md` 已删除。
+- **下一步：** 三方目录（glama/mcp.so/PulseMCP）仍需主动提交（对外动作待批）。
 
 ---
 

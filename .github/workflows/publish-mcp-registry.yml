@@ -41,8 +41,9 @@ jobs:
 
       - name: Verify the registry now serves this version
         run: |
-          want=$(python3 -c "import json;print(json.load(open('server.json'))['version'])")
-          got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" \
-                | python3 -c "import json,sys;s=json.load(sys.stdin)['servers'];print(s[0]['server']['version'] if s else 'none')")
-          echo "server.json=$want registry=$got"
+          # The search returns EVERY published version, oldest first — so match on the
+          # entry flagged isLatest rather than taking servers[0], which is the old one.
+          want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")
+          got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" | python3 -c "import json,sys;v=[s['server']['version'] for s in json.load(sys.stdin).get('servers',[]) if s['_meta']['io.modelcontextprotocol.registry/official'].get('isLatest')];print(v[0] if v else 'none')")
+          echo "server.json=$want registry-isLatest=$got"
           test "$want" = "$got"
