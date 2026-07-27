@@ -23,6 +23,8 @@ _EXTRACTION_COLUMNS = {
     "updated_at": ("TIMESTAMP", "TIMESTAMPTZ"),
     # Coarse job family — column frozen now; population pending a DeepSeek pass.
     "role_family": ("TEXT", "TEXT"),
+    # annual | monthly — the period the employer published the pay in (v0.2).
+    "salary_period": ("TEXT", "TEXT"),
 }
 
 
@@ -45,5 +47,17 @@ def ensure_schema() -> list[str]:
             conn.execute(
                 text("UPDATE jobs SET extraction_source = 'heuristic' "
                      "WHERE extraction_source IS NULL")
+            )
+        if "salary_period" in added:
+            # Every pre-v0.2 row came from a Western ATS quoting annual pay; the Chinese
+            # portals (Beisen) quote 月薪, so those are corrected to monthly.
+            conn.execute(
+                text("UPDATE jobs SET salary_period = 'annual' WHERE salary_period IS NULL")
+            )
+            conn.execute(
+                text(
+                    "UPDATE jobs SET salary_period = 'monthly' WHERE company_id IN "
+                    "(SELECT id FROM companies WHERE ats_vendor = 'beisen')"
+                )
             )
     return added

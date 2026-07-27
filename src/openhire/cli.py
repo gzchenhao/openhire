@@ -171,7 +171,7 @@ def search(
     min_salary: str = typer.Option(None, "--min-salary", help="Salary floor, e.g. 600000 / 60w / 600k."),
     currency: str = typer.Option(None, "--currency", help="Restrict to a stated-pay currency, e.g. USD."),
     require_stated_salary: bool = typer.Option(False, "--require-stated-salary", help="Drop roles with no published pay."),
-    role_family: str = typer.Option(None, "--role-family", help="Coarse family (v0.1: unpopulated → no-op)."),
+    role_family: str = typer.Option(None, "--role-family", help="Only this family, e.g. engineering (keeps sales/SA out)."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -230,11 +230,17 @@ def _parse_salary_arg(value: str | None) -> int | None:
     return int(num * mult)
 
 
+def _salary_period_suffix(period: str | None) -> str:
+    """Monthly pay must say so — otherwise 25000 CNY/月 reads as an annual figure."""
+    return "/月" if period == "monthly" else ""
+
+
 def _print_job(r: dict) -> None:
     sal = ""
     if r.get("salary_min") or r.get("salary_max"):
         cur = r.get("salary_currency") or ""
-        sal = f" · {cur} {r.get('salary_min')}–{r.get('salary_max')}"
+        per = _salary_period_suffix(r.get("salary_period"))
+        sal = f" · {cur} {r.get('salary_min')}–{r.get('salary_max')}{per}"
     scope = r.get("remote_scope")
     regions = r.get("eligible_regions") or []
     scope_str = ""
@@ -422,6 +428,7 @@ def apply(
             "remote_policy": job.remote_policy,
             "salary_min": job.salary_min, "salary_max": job.salary_max,
             "salary_currency": job.salary_currency,
+            "salary_period": getattr(job, "salary_period", None) or "annual",
             "skills": list(job.skills or []),
             "ghost_score": round(job.ghost_score, 4) if job.ghost_score is not None else None,
             "apply_channel": job.apply_channel,
@@ -477,7 +484,8 @@ def _print_apply_summary(s: dict) -> None:
     sal = "薪资未公开"
     if s.get("salary_min") or s.get("salary_max"):
         cur = s.get("salary_currency") or ""
-        sal = f"{cur} {s.get('salary_min')}–{s.get('salary_max')}"
+        per = _salary_period_suffix(s.get("salary_period"))
+        sal = f"{cur} {s.get('salary_min')}–{s.get('salary_max')}{per}"
     ghost = s.get("ghost_score")
     c.print()
     c.print(f"  [accent]⬥ {s['company']} · {s['title']}[/]")
@@ -661,15 +669,15 @@ def extract_sample(
     c.print()
     c.print("  [risk]预算[/]")
     console.out(f"本次样本 {rep.ok} 条实际用量：input {rep.prompt_tokens} · output {rep.completion_tokens} tokens")
-    console.out(f"本次样本成本：¥{rep.cost:.4f}")
+    console.out(f"本次样本成本：CNY {rep.cost:.4f}")
     full = rep.extrapolate(total_jobs)
     ceiling = _cfg_ceiling()
-    console.out(f"外推全量 {total_jobs} 条预计成本：¥{full:.2f}（上限 ¥{ceiling:.0f}）")
+    console.out(f"外推全量 {total_jobs} 条预计成本：CNY {full:.2f}（上限 CNY {ceiling:.0f}）")
     if full >= ceiling:
         console.error("ERR_BUDGET_OVER_CEILING",
-                      f"预计 ¥{full:.2f} ≥ ¥{ceiling:.0f}——已停下，请确认后再跑全量。")
+                      f"预计 CNY {full:.2f} ≥ CNY {ceiling:.0f}——已停下，请确认后再跑全量。")
     else:
-        console.note(f"预计低于上限。确认质量后运行 `ohp extract-rebuild` 跑全量（¥{ceiling:.0f} 硬停）。")
+        console.note(f"预计低于上限。确认质量后运行 `ohp extract-rebuild` 跑全量（CNY {ceiling:.0f} 硬停）。")
 
 
 def _cfg_ceiling() -> float:
@@ -685,7 +693,7 @@ def extract_rebuild(
     limit: int = typer.Option(None, "--limit", help="Cap jobs this run (for testing)."),
     ceiling: float = typer.Option(None, "--ceiling", help="CNY hard stop (default from config)."),
 ) -> None:
-    """Rebuild extraction with DeepSeek in resumable batches; hard-stops at the ¥ ceiling."""
+    """Rebuild extraction with DeepSeek in resumable batches; hard-stops at the CNY ceiling."""
     from .pipeline import rebuild_extraction
 
     init_db()
@@ -695,7 +703,7 @@ def extract_rebuild(
         def on_batch(stx):
             console.out(
                 f"进度 {stx.processed}/{stx.total_target} · 更新 {stx.updated} · "
-                f"失败 {stx.failed} · 花费 ¥{stx.cost:.2f}"
+                f"失败 {stx.failed} · 花费 CNY {stx.cost:.2f}"
             )
 
         stats = rebuild_extraction(batch, workers, limit, ceiling, on_batch)
@@ -708,7 +716,7 @@ def extract_rebuild(
                       f"{stats.halt_reason}——已在断点停下。再次运行会从未完成处续跑。")
     console.ok(
         f"完成 · 更新 {stats.updated}/{stats.total_target} · 失败 {stats.failed} · "
-        f"总花费 ¥{stats.cost:.2f}（input {stats.prompt_tokens} / output {stats.completion_tokens} tok）"
+        f"总花费 CNY {stats.cost:.2f}（input {stats.prompt_tokens} / output {stats.completion_tokens} tok）"
     )
     console.note("原启发式值已存入 *_fallback 列，可 `ohp extract-rollback` 回滚对比。")
 
@@ -863,7 +871,7 @@ def extract_role_family(
         help="Free title-keyword pass instead of DeepSeek; leaves unclear jobs NULL.",
     ),
 ) -> None:
-    """Classify each job's role_family with DeepSeek; resumable, hard-stops at the ¥ ceiling."""
+    """Classify each job's role_family with DeepSeek; resumable, hard-stops at the CNY ceiling."""
     from .pipeline import rebuild_role_family
 
     init_db()
@@ -875,7 +883,7 @@ def extract_role_family(
         console.cmd("ohp extract-role-family --heuristic")
         console.out("免费标注（标题关键词）· 不调用任何付费接口 · 拿不准的留 NULL 交给 DeepSeek")
         labelled, still_null = backfill_role_family_heuristic(limit)
-        console.ok(f"完成 · 标注 {labelled} · 仍为 NULL {still_null} · 花费 ¥0.00")
+        console.ok(f"完成 · 标注 {labelled} · 仍为 NULL {still_null} · 花费 CNY 0.00")
         return
 
     console.cmd("ohp extract-role-family")
@@ -883,7 +891,7 @@ def extract_role_family(
         def on_batch(stx):
             console.out(
                 f"进度 {stx.processed}/{stx.total_target} · 标注 {stx.updated} · "
-                f"失败 {stx.failed} · 花费 ¥{stx.cost:.2f}"
+                f"失败 {stx.failed} · 花费 CNY {stx.cost:.2f}"
             )
 
         stats = rebuild_role_family(batch, workers, limit, ceiling, on_batch)
@@ -896,7 +904,7 @@ def extract_role_family(
                       f"{stats.halt_reason}——已在断点停下。再次运行会从未完成处续跑。")
     console.ok(
         f"完成 · 标注 {stats.updated}/{stats.total_target} · 失败 {stats.failed} · "
-        f"总花费 ¥{stats.cost:.2f}（input {stats.prompt_tokens} / output {stats.completion_tokens} tok）"
+        f"总花费 CNY {stats.cost:.2f}（input {stats.prompt_tokens} / output {stats.completion_tokens} tok）"
     )
 
 

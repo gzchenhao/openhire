@@ -12,6 +12,39 @@
 
 ---
 
+## 2026-07-27 — 015 任务 C 完成：DeepSeek 补抽取 ¥11.59（进行中）
+
+- **试点核费率：** `--limit 50` → CNY 0.12（¥0.0024/岗），且实测**只动 heuristic 岗**（deepseek 11,825→11,875、heuristic 4,491→4,441），范围正确。
+- **skills 补全：** 4,441/4,441 更新 · 0 失败 · **CNY 9.49**（in 3,552,869 / out 297,585 tok）。
+- **role_family 补全：** 1,405/1,405 标注 · 0 失败 · **CNY 1.98**。全库 `role_family` **NULL 归零**；分布 engineering 6,221 / sales 4,071 / ops 3,859 / marketing 615 / product 608 / data 503 / other 248 / design 191。
+- **合计花费 ¥11.59**（0.12 + 9.49 + 1.98），在 ¥15 硬停内。
+- **质量验收：** 附录 B 回归全绿（155 passed）；`engineering` 里**真·销售岗 0 条**（"Salesforce Engineer" 属平台研发，非销售）；经典陷阱判对——Sales Engineer 119/119→sales、Solutions Architect 385/387→sales、Solutions Engineer 186/192→sales。
+- **北森数据完好：** 622 岗全部重抽，CNY **月薪值与 period 一字未改**（merge 策略保留 ATS 薪资），中文 JD 现在能抽出 skills（c++/stl/linux/robotics…）。
+- **已备妥发布件：** 0.2.0 已 bump（pyproject/__init__/server.json ×2，README 的 mcp-name 未动）；`python -m build` + `twine check` 双 PASSED；**净 venv 装本地 wheel 实测 `ohp version`=0.2.0、MCP 握手列出 5 工具**；`mcp-publisher` v1.8.0 已重装。
+
+---
+
+## 2026-07-27 — 015 任务 A/B 完成（进行中）
+
+- **A 薪资可比性 ✅：** `jobs` 加 `salary_period`（annual|monthly）+ migrate 回填（存量 15,694 annual / 北森 622 monthly）；`JobRecord.salary_period` 默认 annual、北森置 monthly；服务端 `--min-salary` 用 SQL `case` 归一（月薪 ×12 **仅用于比较**，存储值一字不改）；`job_posting` 输出 `salary_period`；CLI 显示 `/月` 后缀。`rank_score` 签名未动。新增 17 项单测（含 25K-50K 月薪对 300000 年薪门槛的**边界**：300000 收、600000 收、600001 不收；NULL 视作 annual 不被 ×12）。
+- **实测证据：** `--min-salary 300000 --currency CNY` → 宇树「高级研发项目经理 CNY 25000–50000/月」**在结果里**（修复前必被丢弃）；`--min-salary 700000` → 该岗消失，只剩 40K-70K/月、30K-60K/月 等年化后确实过线的岗。
+- **B 中文控制台 ✅：** 根因是 GBK（cp936）编不了 `¥`(U+00A5)，且 `▸ ⬥` 同样编不了 → 运行时输出也会崩。双保险：① `console.py::_harden_stdio()` 对 stdout/stderr 设 `errors="replace"`（保留控制台原编码，改用 UTF-8 会让中文变乱码）；② CLI 文案里的裸 `¥` 全改 `CNY`。`PYTHONIOENCODING=gbk` 下两条 `--help` 均**无 traceback、exit 0**。顺带把 `search --role-family` 的过时 help「(v0.1: unpopulated → no-op)」改成与现实一致。
+- **测试：155 passed / 0 failed / 0 skipped**（138 + 17）。
+- **下一步：** C DeepSeek 补抽取（先 --limit 50 试点核费率）→ D 发布链条。
+
+---
+
+## 2026-07-27 — 015 开工回执：v0.2.0 发布全链条（进行中）
+
+- **目标：** A 加 `salary_period` 修 CNY 月薪被年薪门槛误杀；B 修中文 GBK 控制台 `--help` 崩溃 + 过时 help 文案；C DeepSeek 补抽取（≤¥15 硬停）；D bump 0.2.0 → PyPI → 全新 venv 验证 → Registry → GitHub Release → **最后**才刷快照。
+- **铁律已记：** PyPI 0.2.0 未经全新环境验证前**绝不动 Release 快照资产**（否则 0.1.1 用户拉到含 beisen 的快照会遇到不认识的 vendor）。
+- **核验已过：** pytest **138 passed / 0 failed / 0 skipped**；pyproject + server.json 均 0.1.1；twine 6.2.0 / build 1.5.1 可用；`.pypirc` 与 `.env` 的 DEEPSEEK_API_KEY 均存在（内容不打印）；`mcp-publisher` 不在 PATH，仅剩 `~/.config/mcp-publisher/token.json` → 需按官方文档重装。
+- **已查实：** `rebuild_extraction` 本就只选 `extraction_source != 'deepseek'`，**无需加范围参数**；`merge_extraction` 保留既有 ATS 薪资（故北森 CNY 月薪不会被 LLM 覆盖）。
+- **待补量：** heuristic 岗 **4,491** 条（非任务书估的 2,070，因 013 那趟 ingest 也留了 2,399 条）、`role_family` NULL **1,405** 条 → 按 M4 费率估合计约 ¥12，仍在 ¥15 硬停内；先 `--limit 50` 试点核费率。
+- **最大风险：** 补抽取实际花费超预估；`mcp-publisher` 重装后登录态失效（若失效→停写 BLOCKED.md，不自行重置任何凭据）。
+
+---
+
 ## 2026-07-27 — 014 自动驾驶/具身智能覆盖扩张（✅ 完成，详见 reports/014）
 
 - **A 摸底（40 行矩阵）：** 飞书招聘覆盖最广（≥10 家目标公司）但**判不可抓** —— 职位列表是 GET `/api/v1/search/job/posts`，参数带字节跳动 `_signature` 反爬签名 + 滑块验证码 SDK，裸 curl 只返回 HTML 壳；按「不许硬闯」**就地停手**。**北森 `<tenant>.zhiye.com` 可抓** —— `POST /api/Jobad/GetJobAdPageList`，无签名/无 cookie，裸 curl 200。故 **vendor #1 = 北森**（任务书「摸底数据说了算」的预案生效）。

@@ -142,6 +142,7 @@ class BeisenClient(ATSClient):
                     salary_min=smin,
                     salary_max=smax,
                     salary_currency=scur,
+                    salary_period="monthly",  # 元/月 — never annualised on the way in
                     posted_at=self._date(j.get("PostDateInt"), j.get("PostDate")),
                     updated_at=self._date(None, j.get("ChangeDate")),
                 )

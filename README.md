@@ -5,17 +5,18 @@
 > **Jobs come to you. Your résumé never passes through OpenHire's servers, and we never store it.**
 > 岗位来找你，简历不经过我们的服务器，也不被我们存储。
 
-![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![v0.1 · sentinel](https://img.shields.io/badge/v0.1-sentinel-E3B341)
+![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![v0.2 · sentinel](https://img.shields.io/badge/v0.2-sentinel-E3B341)
 
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
 
 An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar
-for **remote AI / Infra roles** — sourced directly from ~100 company career sites and their
-public ATS APIs (Greenhouse / Lever / Ashby). **No account. No signup. No résumé upload. Ever.**
+for **AI / Infra, autonomous-driving and embodied-AI roles** — sourced directly from ~120
+company career sites and their public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen),
+in the US, Europe **and China**. **No account. No signup. No résumé upload. Ever.**
 
 Matching runs on your machine; only an anonymous fingerprint and hard filters ever reach the
-server. This is the v0.1 「哨兵 / Sentinel」 reference implementation — see
+server. This is the 「哨兵 / Sentinel」 reference implementation — see
 `design_handoff_openhire_v01/README.md` for the full protocol spec.
 
 ---
@@ -138,7 +139,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## FAQ
 
 **Where does the job data come from?**
-Directly from ~100 employers' own public ATS APIs (Greenhouse, Lever, Ashby) — the same
+Directly from ~120 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen) — the same
 endpoints that power their careers pages. No scraping, no third-party job boards. `source` is
 always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.
 
@@ -155,9 +156,14 @@ that ever transits the server is a short anonymous fingerprint like `#a3f9`. Thi
 `tests/test_privacy.py`, and the published snapshot carries **zero** user data (`tests/test_snapshot.py`).
 
 **Does it support China (中国区)?**
-v0.1 covers global remote AI/Infra roles on Greenhouse/Lever/Ashby. CN ATS adapters (Beisen /
-Moka) are on the **v0.2** roadmap. The architecture is adapter-based (`src/openhire/ats/`), so
-adding a vendor is self-contained.
+Yes, since **v0.2**: employers on **北森 Beisen** (`<tenant>.zhiye.com`) are indexed — currently
+11 robotics / embodied-AI companies (宇树 Unitree, 优必选 UBTECH, 星海图 Galaxea, 越疆 Dobot,
+梅卡曼德 Mech-Mind, 普渡 Pudu, 海柔创新, 新松 SIASUN …). Pay published as 月薪 keeps its real
+period (`salary_period`), so a salary floor no longer silently drops Chinese roles.
+
+**飞书招聘 (Feishu Hire) is not supported and won't be**: it signs its job-list requests with a
+ByteDance `_signature` and gates them behind a captcha SDK, so its listings are not publicly
+readable. We don't break anti-bot measures. Moka is on the roadmap.
 
 **How do I get a company added?**
 Open a **Company inclusion request** issue (title it with the company + its ATS URL) — this is

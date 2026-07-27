@@ -131,6 +131,9 @@ class JobRecord:
     salary_min: int | None = None
     salary_max: int | None = None
     salary_currency: str | None = None
+    # The period the ATS quotes pay in. Western boards quote annual; Chinese portals
+    # quote 月薪, so their clients override this to "monthly".
+    salary_period: str = "annual"
     posted_at: dt.datetime | None = None
     updated_at: dt.datetime | None = None
 

@@ -1,12 +1,16 @@
 [project]
 name = "openhire"
-version = "0.1.1"
-description = "OpenHire v0.1 「哨兵」— an MCP job protocol server. Résumés never leave your device."
+version = "0.2.0"
+description = "OpenHire 「哨兵」— an MCP job protocol server for AI/Infra, autonomous-driving and embodied-AI roles (US/EU/CN). Résumés never leave your device."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "OpenHire" }]
-keywords = ["mcp", "jobs", "recruiting", "greenhouse", "lever", "ashby", "ats"]
+keywords = [
+    "mcp", "jobs", "recruiting", "ats",
+    "greenhouse", "lever", "ashby", "beisen",
+    "robotics", "embodied-ai", "autonomous-driving",
+]
 
 dependencies = [
     "mcp>=1.2.0",

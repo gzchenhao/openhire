@@ -18,7 +18,7 @@ import datetime as dt
 import secrets
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from .db import Application, Company, Job, Watch
@@ -82,6 +82,26 @@ def _aware(d: dt.datetime | None) -> dt.datetime | None:
     return d if d.tzinfo else d.replace(tzinfo=dt.timezone.utc)
 
 
+# --- salary period normalisation ----------------------------------------------
+# `--min-salary` is an annual floor. Chinese portals publish 月薪, so a 25K-50K 元/月 role
+# is stored as 25000–50000 with salary_period='monthly'. Comparing that raw against an
+# annual floor would silently drop every Chinese job, so comparisons annualise (×12).
+# Storage is untouched: what the employer published is what we show.
+MONTHS_PER_YEAR = 12
+
+
+def _annualised(column):
+    """SQL expression: the column's value expressed as an annual figure."""
+    return case((Job.salary_period == "monthly", column * MONTHS_PER_YEAR), else_=column)
+
+
+def annualise(value: int | None, period: str | None) -> int | None:
+    """Python-side twin of `_annualised`, for callers comparing a single job."""
+    if value is None:
+        return None
+    return value * MONTHS_PER_YEAR if period == "monthly" else value
+
+
 # --- serialization ------------------------------------------------------------
 def job_posting(job: Job, company: Company | None, requested_skills: list[str], now: dt.datetime) -> dict:
     """schema.org/JobPosting + the five OpenHire fields (protocol contract)."""
@@ -108,6 +128,9 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "salary_min": job.salary_min,
         "salary_max": job.salary_max,
         "salary_currency": job.salary_currency,
+        # The period the employer published the figure in — without it a monthly CNY
+        # number is indistinguishable from an annual one.
+        "salary_period": getattr(job, "salary_period", None) or "annual",
         "salary_inferred": job.salary_inferred,
         # ---- the five OpenHire protocol fields ----
         "verified_at": _aware(job.verified_at).isoformat() if job.verified_at else None,  # ①
@@ -146,9 +169,12 @@ def _filter_and_rank(
     if min_salary is not None:
         # Keep jobs whose stated pay could meet the floor. Unstated pay is KEPT here (it
         # cannot be ruled out) unless require_stated_salary asks to exclude it.
+        # min_salary is an ANNUAL floor, so monthly-quoted pay (Chinese portals) is
+        # annualised for the comparison only — the stored figures are never rewritten.
+        ann_max, ann_min = _annualised(Job.salary_max), _annualised(Job.salary_min)
         stmt = stmt.where(
-            (Job.salary_max.isnot(None) & (Job.salary_max >= min_salary))
-            | (Job.salary_min.isnot(None) & (Job.salary_min >= min_salary))
+            (Job.salary_max.isnot(None) & (ann_max >= min_salary))
+            | (Job.salary_min.isnot(None) & (ann_min >= min_salary))
             | (Job.salary_min.is_(None) & Job.salary_max.is_(None))
         )
     if require_stated_salary:

@@ -25,6 +25,27 @@ MUTED = "#9AA69D"
 DIM = "#5E6B62"
 TEXT = "#E9EEE9"
 
+def _harden_stdio() -> None:
+    """Never let an unencodable character kill a command.
+
+    A Chinese Windows console runs code page 936 (GBK), which cannot encode ¥ (U+00A5)
+    nor the 哨兵 glyphs ▸ ⬥ (U+25B8 / U+2B25) — so `ohp extract-rebuild --help` died with
+    UnicodeEncodeError before printing anything. We keep the console's own encoding
+    (switching to UTF-8 would turn every Chinese string into mojibake on a legacy code
+    page) and just degrade the handful of unencodable characters.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:  # redirected to something without the 3.7+ API
+            continue
+        try:
+            reconfigure(errors="replace")
+        except (ValueError, OSError):  # detached or already-closed stream
+            pass
+
+
+_harden_stdio()
+
 _theme = Theme(
     {
         "cmd": f"bold {GREEN}",

@@ -191,6 +191,7 @@ def _insert_new_job(
         salary_min=extraction.salary_min,
         salary_max=extraction.salary_max,
         salary_currency=extraction.salary_currency,
+        salary_period=rec.salary_period,  # the ATS's own period (annual | monthly)
         salary_inferred=False,  # v0.1 never infers
         location=rec.location,
         posted_at=_aware(rec.posted_at) if rec.posted_at else None,  # real ATS date
@@ -245,6 +246,7 @@ def _update_job(
     job.salary_min = extraction.salary_min
     job.salary_max = extraction.salary_max
     job.salary_currency = extraction.salary_currency
+    job.salary_period = rec.salary_period
     job.location = rec.location
     job.content_hash = chash
     stats.jobs_updated += 1

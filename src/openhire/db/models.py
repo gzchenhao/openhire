@@ -56,6 +56,11 @@ class Job(Base):
     salary_min: Mapped[int | None] = mapped_column(Integer)
     salary_max: Mapped[int | None] = mapped_column(Integer)
     salary_currency: Mapped[str | None] = mapped_column(Text)
+    # annual | monthly — the period the employer PUBLISHED the figure in. Chinese ATSes
+    # quote 月薪 ("25K-50K 元/月"); storing that as-is next to annual USD would make a
+    # 25,000 CNY/month role look like a low-paid one. The stored numbers are never
+    # rewritten — only comparisons annualise (see service._annualised).
+    salary_period: Mapped[str | None] = mapped_column(Text, default="annual")
     salary_inferred: Mapped[bool] = mapped_column(Boolean, default=False)
     location: Mapped[str | None] = mapped_column(Text)
     # Real ATS-provided posting dates — the employer's own truth, distinct from when WE
