@@ -625,11 +625,22 @@ def make_llm_extractor(backend: str = "deepseek", model: str | None = None):
 
 
 def get_extractor() -> Extractor:
-    """Select the extractor from config. `auto` = DeepSeek→Anthropic if a key is set,
-    else the offline heuristic."""
+    """Select the extractor from config.
+
+    `auto` prefers GLM: its tokens come out of a prepaid coding plan, so live ingest
+    costs no cash, whereas DeepSeek bills per call — an unattended `ohp ingest` should
+    never quietly start spending. Falls through to DeepSeek, then Anthropic, then the
+    offline heuristic. Every LLM path degrades to the heuristic on failure (including a
+    spent quota), so ingestion never breaks on the extractor.
+    """
     choice = (config.EXTRACTOR or "auto").lower()
     if choice == "heuristic":
         return HeuristicExtractor()
+    if choice in ("glm", "auto") and config.ZHIPU_API_KEY:
+        try:
+            return make_glm_extractor()
+        except Exception:
+            pass
     if choice in ("deepseek", "auto") and config.DEEPSEEK_API_KEY:
         try:
             return make_deepseek_extractor()

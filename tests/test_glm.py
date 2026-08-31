@@ -267,3 +267,45 @@ def test_rollback_restores_every_llm_source(monkeypatch, mixed_jobs):
     restored = rebuild.rollback_extraction()
     assert restored == 6  # 3 fresh glm + 2 deepseek + 1 pre-existing glm
     assert set(_sources().values()) == {"heuristic"}
+
+
+# --- backend selection --------------------------------------------------------
+def test_auto_prefers_glm_over_deepseek(monkeypatch):
+    """Cash safety: `auto` must not start billing per call when a free plan is available."""
+    from openhire.pipeline import extract as ex
+
+    monkeypatch.setattr(config, "EXTRACTOR", "auto")
+    monkeypatch.setattr(config, "ZHIPU_API_KEY", "z")
+    monkeypatch.setattr(config, "DEEPSEEK_API_KEY", "d")
+    assert ex.get_extractor().name == "glm"
+
+
+def test_auto_falls_back_to_deepseek_without_a_glm_key(monkeypatch):
+    from openhire.pipeline import extract as ex
+
+    monkeypatch.setattr(config, "EXTRACTOR", "auto")
+    monkeypatch.setattr(config, "ZHIPU_API_KEY", None)
+    monkeypatch.setattr(config, "DEEPSEEK_API_KEY", "d")
+    assert ex.get_extractor().name == "deepseek"
+
+
+def test_heuristic_choice_is_never_overridden(monkeypatch):
+    """What the CI snapshot refresh relies on: an explicit heuristic stays heuristic."""
+    from openhire.pipeline import extract as ex
+
+    monkeypatch.setattr(config, "EXTRACTOR", "heuristic")
+    monkeypatch.setattr(config, "ZHIPU_API_KEY", "z")
+    monkeypatch.setattr(config, "DEEPSEEK_API_KEY", "d")
+    assert ex.get_extractor().name == "heuristic"
+
+
+def test_spent_quota_degrades_to_heuristic_instead_of_breaking_ingest():
+    """A 429 during live ingest must not break the crawl — skills just fall back."""
+    ext = _glm()
+    _stub(ext, _Resp(429, {"error": {"code": "1310"}}))
+    res = ext.extract(
+        JobRecord(ats_job_id="1", title="Rust Engineer",
+                  description_raw="We use rust and kubernetes.",
+                  apply_channel="https://x", location=None, remote_hint=None)
+    )
+    assert "rust" in res.skills and "k8s" in res.skills  # heuristic answered
