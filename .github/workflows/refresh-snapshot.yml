@@ -128,8 +128,11 @@ jobs:
           print("user-state tables present in snapshot:",
                 sorted(present & {"watches", "applications"}) or "none")
           as_of = str(one("select max(verified_at) from jobs"))
-          age = (dt.datetime.now(dt.timezone.utc)
-                 - dt.datetime.fromisoformat(as_of.replace("Z", "+00:00"))).days
+          # SQLite stores these naive; they are UTC by construction (see db/types.py).
+          stamp = dt.datetime.fromisoformat(as_of.replace("Z", "+00:00"))
+          if stamp.tzinfo is None:
+              stamp = stamp.replace(tzinfo=dt.timezone.utc)
+          age = (dt.datetime.now(dt.timezone.utc) - stamp).days
           print(f"published: companies={companies} jobs={jobs} as_of={as_of} "
                 f"age_days={age} user_state_rows={leaked}")
           assert leaked == 0, "user state leaked into the published snapshot"
