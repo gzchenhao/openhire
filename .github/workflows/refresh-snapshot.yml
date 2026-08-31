@@ -118,7 +118,15 @@ jobs:
           con = sqlite3.connect("verify/published.db")
           one = lambda q: con.execute(q).fetchone()[0]
           companies, jobs = one("select count(*) from companies"), one("select count(*) from jobs")
-          leaked = sum(one(f"select count(*) from {t}") for t in ("watches", "applications"))
+          # A user-state table that does not exist is stronger than one with zero rows:
+          # `build_snapshot` copies only companies+jobs into a fresh file, so `watches`
+          # is normally ABSENT. Count rows when the table is there, treat missing as 0.
+          present = {r[0] for r in con.execute(
+              "select name from sqlite_master where type='table'")}
+          leaked = sum(one(f"select count(*) from {t}")
+                       for t in ("watches", "applications") if t in present)
+          print("user-state tables present in snapshot:",
+                sorted(present & {"watches", "applications"}) or "none")
           as_of = str(one("select max(verified_at) from jobs"))
           age = (dt.datetime.now(dt.timezone.utc)
                  - dt.datetime.fromisoformat(as_of.replace("Z", "+00:00"))).days
