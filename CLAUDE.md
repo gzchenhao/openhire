@@ -52,7 +52,7 @@
 ## 关键路径与事实
 
 - 代码根：`C:\openhire\src\openhire`
-- 数据库（默认，绝对路径）：`C:\Users\gdche\.openhire\openhire.db`（11,825 职位 / 96 公司 / 全量 DeepSeek 抽取）
+- 数据库（默认，绝对路径）：`C:\Users\gdche\.openhire\openhire.db`（2026-08-31：21,568 职位 / 活跃 14,909 / 125 公司；抽取来源 deepseek 16,316 · glm 1,749 · heuristic 3,503）
 - CLI 可执行文件：`C:\openhire\.venv\Scripts\ohp.exe`（**未在系统 PATH 上** —— 接入 Claude Desktop 时须写全路径）
 - 抽取后端（可插拔，`--backend` 选）：
   - **GLM（默认首选，017 起）** —— `glm-5.3-flash`，走领导的 coding 套餐，**现金 ¥0**。key 从 `.env` 的 `ZHIPU_API_KEY` 读。base_url 必须是 `https://open.bigmodel.cn/api/coding/paas/v4`（标准 `/api/paas/v4` 对套餐 key 报 1113）。两个坑已在代码里处理并有测试锁死：① 必须发 `thinking:{"type":"disabled"}` 且 `max_tokens ≥ 1024`（reasoning token 先于 content 从额度里扣，额度小会返回空串）；② flash 输出带 ```json 围栏，解析须剥。

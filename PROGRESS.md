@@ -2,13 +2,28 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
-**当前状态：v0.2.0 已上线（PyPI + Registry isLatest + 快照 2026-08-31 刷新）· 155 tests green · 覆盖 125 家（含北森 11 家国内机器人/具身智能）**
+**当前状态：v0.2.0 已上线（PyPI + Registry isLatest）· 188 tests green · 覆盖 125 家 · 快照刷新已由 GitHub Actions 每周自动执行**
 - GitHub：https://github.com/gzchenhao/openhire （main，tag v0.2.0）
 - Release v0.1.0（含快照 `openhire-index.db.gz`，URL 稳定）：https://github.com/gzchenhao/openhire/releases/tag/v0.1.0
 - PyPI：https://pypi.org/project/openhire/0.1.1/ （`pipx install openhire`）
 - **官方 MCP Registry：`io.github.gzchenhao/openhire` v0.1.1**（`registry.modelcontextprotocol.io`；PulseMCP/mcp.so 会自动同步）
 - Smithery：v0.1 **放弃**（无本地 stdio 网页入口，见 `reports/010`）。
-- **常设仅剩：每周手动刷新快照**（`docs/maintainer-snapshot-refresh.md`）。
+- **常设仅剩：月度一次本机 LLM 精抽**（`ohp extract-rebuild --backend glm`）——每周快照刷新已自动化，CI 无 key 只能跑启发式，精抽是它唯一做不到的事。
+
+---
+
+## 2026-08-31 — 017 完成（4/5 硬指标达成，详见 reports/017）
+
+**当前状态：188 tests green · 125 家 / 21,568 岗（活跃 14,909）· 快照刷新已自动化 · 本单花费 CNY 0.00**
+
+- **A GLM 后端 ✅：** 把 `DeepSeekExtractor` 抽成可配置基类，新增 `GLMExtractor`（coding 端点 + `thinking:disabled` + `max_tokens≥1024` + 剥 ```json 围栏）。`extraction_source` 如实标 `'glm'`；重抽范围改为「不属任何 LLM 源」，杜绝 glm/deepseek 互刷；429 退避 + 连续 5 次停在断点；`auto` 链优先 GLM（免费）而非 DeepSeek（按次计费）。
+- **A 选型 ✅ 取 `glm-5.3-flash`：** 新命令 `ohp extract-compare` 对同一批 100 条（中文 JD 30 条）做三方对比。**中文岗 7.86 技能/岗 vs 库内 deepseek 7.39、清空 0 条、1.17 s/岗**；glm-5.3 更慢（1.65 s/岗）且清空 9 条。对比本身也 ¥0（基准用库内已有结果）。
+- **B 存量精抽 ⚠️ 停在断点：** 跑到 1,800 条时 **GLM 周配额耗尽**（HTTP 429 / code **1310**，**2026-09-03 21:22 重置**）。已入库 **glm 1,749** 条；剩 heuristic 活跃岗 **3,503**、role_family NULL **1,712**。按止损条款停下，进度逐批已提交，重跑续上不重抽。**待你定：等 9-03 配额（¥0，推荐）还是今天花约 ¥10 走 DeepSeek 补完。**
+- **C 快照周刷新 ✅ 已上线并实跑通过：** `.github/workflows/refresh-snapshot.yml`（周一 06:10 UTC + 手动）。**零密钥**——`permissions: contents:write` 单项、无任何 GitHub Secret、唯一凭据是 `${{ github.token }}`。从已发布快照起步，故 GLM 抽取结果不被覆盖（已复核公开快照里 glm 1,749 条仍在）。新增 `ohp ingest --fail-over N` 让崩掉的抓取以非零退出触发失败邮件。**run 33376083394 全绿**：资产 `06:01:01Z → 09:08:32Z`、新用户 bootstrap「龄 0 天前」、公开快照只含 companies/jobs 两张表。前 3 次失败都是我验证脚本自身的 bug（三个不同原因），核心流程每次都成功。
+- **C CN 可达性 ✅ 有日志实证：** 北森 `zhiye.com` 从 GitHub 海外 runner **4/4 HTTP 200**（unitree/galaxea/pudutech/jaka），当次 125 家 0 失败 → **预备的「北森只能本机刷新」降级不需要启用**。探测步骤保留在工作流里（不拦截，只留证据）。
+- **D 三家租户 ✅ 全部找到，无一关站：** `aurorainnovation → ashby:aurora-operations-inc`（从 aurora.tech 的 `ashbyOrgSlug` 挖到，UUID 交叉验证）、`temporaltechnologies → ashby:temporal`、`fireworksai → ashby:fireworks`。给 `Candidate` 加 `company_id`：**ATS tenant 可以漂、我们的 slug 钉死**（职位主键是 `{company_id}:{ats_job_id}`，换 slug 会让全部历史变孤儿）。实抓入库 70/57/67 岗，217 条旧岗转「下架」而非删除。
+- **测试：188 passed / 0 failed / 0 skipped**（155 + 33：GLM 22 / 迁移 7 / fail-over 4）。
+- **顺手发现：** `lever:mistral` 板面在线但返回空数组（本次 seed 唯一被拒租户），不是 slug 漂移；建议观察一周。
 
 ---
 
