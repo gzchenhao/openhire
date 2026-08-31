@@ -20,6 +20,16 @@ class Candidate:
     vendor: str
     tenant: str
     name: str
+    # Our own stable slug for the employer, used as `companies.id` and therefore as the
+    # prefix of every job PK. Normally identical to the ATS tenant — but when a company
+    # migrates ATS (or its board slug drifts) the tenant changes while this must NOT, or
+    # the whole job history would be orphaned under a dead company row. Defaults to the
+    # tenant so the ordinary case stays a two-tuple.
+    company_id: str | None = None
+
+    @property
+    def slug(self) -> str:
+        return self.company_id or self.tenant
 
 
 # --- Greenhouse ---------------------------------------------------------------
@@ -30,7 +40,7 @@ _GREENHOUSE = [
     ("mongodb", "MongoDB"),
     ("waymo", "Waymo"),
     # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
-    ("aurorainnovation", "Aurora"),
+    # NOTE: Aurora moved to Ashby (see _ASHBY) — its Greenhouse board is gone.
     ("wayve", "Wayve"),
     ("kodiak", "Kodiak Robotics"),
     ("motional", "Motional"),
@@ -70,7 +80,6 @@ _GREENHOUSE = [
     ("togetherai", "Together AI"),
     ("abnormalsecurity", "Abnormal Security"),
     ("newrelic", "New Relic"),
-    ("temporaltechnologies", "Temporal"),
     ("mercury", "Mercury"),
     ("discord", "Discord"),
     ("cribl", "Cribl"),
@@ -109,8 +118,14 @@ _LEVER = [
 ]
 
 # --- Ashby --------------------------------------------------------------------
+# (tenant, name) or (tenant, name, company_id) — the third element pins our slug when
+# the ATS tenant has drifted away from it (2026-08-31 migrations, each verified live).
 _ASHBY = [
     ("openai", "OpenAI"),
+    # Greenhouse -> Ashby. Board name found via aurora.tech's own `ashbyOrgSlug`.
+    ("aurora-operations-inc", "Aurora", "aurorainnovation"),
+    # Greenhouse -> Ashby. Confirmed: job UUIDs on temporal.io/careers are in this board.
+    ("temporal", "Temporal", "temporaltechnologies"),
     # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
     ("1x", "1X Technologies"),
     ("standardbots", "Standard Bots"),
@@ -135,7 +150,8 @@ _ASHBY = [
     ("writer", "Writer"),
     ("reflectionai", "Reflection AI"),
     ("abridge", "Abridge"),
-    ("fireworksai", "Fireworks AI"),
+    # Ashby board slug shortened: fireworksai -> fireworks (same ATS, same company).
+    ("fireworks", "Fireworks AI", "fireworksai"),
     ("modal", "Modal Labs"),
     ("linear", "Linear"),
     ("physicalintelligence", "Physical Intelligence"),
@@ -178,8 +194,12 @@ def all_candidates() -> list[Candidate]:
         ("ashby", _ASHBY),
         ("beisen", _BEISEN),
     ):
-        for tenant, name in rows:
-            out.append(Candidate(vendor=vendor, tenant=tenant, name=name))
+        for row in rows:
+            tenant, name = row[0], row[1]
+            company_id = row[2] if len(row) > 2 else None
+            out.append(
+                Candidate(vendor=vendor, tenant=tenant, name=name, company_id=company_id)
+            )
     return out
 
 

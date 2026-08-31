@@ -11,6 +11,8 @@ Design constraints from the user:
 from __future__ import annotations
 
 import concurrent.futures as cf
+import re
+import time
 from dataclasses import dataclass, field
 
 from sqlalchemy import func, select
@@ -21,19 +23,43 @@ from ..ats.base import JobRecord
 from ..db import Job, session_scope
 from ..db.migrate import ensure_schema
 from .extract import (
+    LLM_SOURCES,
     DeepSeekExtractor,
+    RateLimited,
+    canonicalize_skills,
     classify_role_family_heuristic,
     make_deepseek_extractor,
+    make_llm_extractor,
 )
 
 TARGET_SOURCE = "deepseek"
 
+# Back off on 429 instead of hammering; give up on a job after this many rate-limited
+# attempts, and stop the whole run after MAX_CONSECUTIVE_429 jobs die that way in a row
+# (that means the plan's quota is gone, not that one call was unlucky).
+_429_BACKOFF_SECONDS = (2.0, 5.0, 12.0, 30.0)
+MAX_CONSECUTIVE_429 = 5
 
-def cost_cny(prompt_tokens: int, completion_tokens: int) -> float:
-    return (
-        prompt_tokens / 1_000_000 * config.DEEPSEEK_PRICE_INPUT_CNY
-        + completion_tokens / 1_000_000 * config.DEEPSEEK_PRICE_OUTPUT_CNY
-    )
+
+def cost_cny(prompt_tokens: int, completion_tokens: int, backend: str = "deepseek") -> float:
+    """Cash cost in CNY. GLM runs inside a prepaid coding plan, so its rate is 0."""
+    if backend == "glm":
+        pin, pout = config.GLM_PRICE_INPUT_CNY, config.GLM_PRICE_OUTPUT_CNY
+    else:
+        pin, pout = config.DEEPSEEK_PRICE_INPUT_CNY, config.DEEPSEEK_PRICE_OUTPUT_CNY
+    return prompt_tokens / 1_000_000 * pin + completion_tokens / 1_000_000 * pout
+
+
+def _make_extractor(backend: str = "deepseek", model: str | None = None):
+    """`deepseek` still goes through the module-level factory (tests patch it)."""
+    if (backend or "deepseek") == "deepseek":
+        return make_deepseek_extractor()
+    return make_llm_extractor(backend, model)
+
+
+def _source_label(extractor, backend: str = "deepseek") -> str:
+    """Provenance stamp. Never let one LLM masquerade as another."""
+    return getattr(extractor, "name", None) or (backend or TARGET_SOURCE)
 
 
 def _job_to_record(job: Job) -> JobRecord:
@@ -90,26 +116,48 @@ class _JobOutcome:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     error: str | None = None
+    rate_limited: bool = False
+
+
+def _retry_call(fn, attempts: int = 3):
+    """Run `fn`, retrying failures. A 429 sleeps an escalating backoff first and gets its
+    own extra attempts, because it means "come back later", not "this input is bad".
+
+    Returns (value, error, rate_limited).
+    """
+    last_err = None
+    hit_429 = 0
+    tries = 0
+    while tries < attempts:
+        try:
+            return fn(), None, False
+        except RateLimited as exc:
+            last_err = f"RateLimited: {exc}"
+            if hit_429 >= len(_429_BACKOFF_SECONDS):
+                return None, last_err, True
+            time.sleep(_429_BACKOFF_SECONDS[hit_429])
+            hit_429 += 1
+        except Exception as exc:  # noqa: BLE001 - retry then record
+            last_err = f"{type(exc).__name__}: {exc}"
+            tries += 1
+    return None, last_err, False
 
 
 def _extract_many(
     extractor: DeepSeekExtractor, jobs: list[Job], workers: int
 ) -> list[_JobOutcome]:
-    """Call the LLM concurrently for a set of jobs (2 retries each)."""
+    """Call the LLM concurrently for a set of jobs (2 retries each, 429s backed off)."""
 
     def one(job: Job) -> _JobOutcome:
         rec = _job_to_record(job)
-        last_err = None
-        for _ in range(3):
-            try:
-                res, pin, pout = extractor.extract_with_usage(rec)
-                return _JobOutcome(
-                    job.id, True, res.skills, res.remote_policy, res.salary_min,
-                    res.salary_max, res.salary_currency, pin, pout,
-                )
-            except Exception as exc:  # noqa: BLE001 - retry then record
-                last_err = f"{type(exc).__name__}: {exc}"
-        return _JobOutcome(job.id, False, error=last_err)
+        value, err, limited = _retry_call(lambda: extractor.extract_with_usage(rec))
+        if value is None:
+            return _JobOutcome(job.id, False, error=err, rate_limited=limited)
+        res, pin, pout = value
+        return _JobOutcome(
+            job.id, True, res.skills, res.remote_policy, res.salary_min,
+            res.salary_max, res.salary_currency, pin, pout,
+        )
 
     outcomes: list[_JobOutcome] = []
     with cf.ThreadPoolExecutor(max_workers=workers) as pool:
@@ -201,6 +249,181 @@ def run_sample_comparison(n: int = 100, workers: int = 8) -> SampleReport:
     return rep
 
 
+# --- Backend bake-off (no DB writes) -----------------------------------------
+# Model selection is decided on measured output, not on vibes. The DB already holds
+# DeepSeek's skills for 16k jobs, so the incumbent is free to compare against: we only
+# pay (in plan tokens) for the challengers.
+
+_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+
+
+def is_chinese_jd(text: str) -> bool:
+    """A JD counts as Chinese when CJK characters are a real share of it, not a stray
+    company name in an English posting."""
+    if not text:
+        return False
+    sample = text[:2000]
+    return len(_CJK_RE.findall(sample)) >= 20
+
+
+@dataclass
+class BackendResult:
+    backend: str
+    model: str
+    ok: int = 0
+    failed: int = 0
+    seconds: float = 0.0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    skill_total: int = 0
+    # vs the stored DeepSeek extraction, on the same jobs
+    same: int = 0        # identical skill sets
+    superset: int = 0    # found everything DeepSeek did, plus more
+    subset: int = 0      # strictly fewer (dropped tags DeepSeek had)
+    overlap: int = 0     # partial - each found something the other missed
+    emptied: int = 0     # DeepSeek had skills, this backend found none
+    jaccard_total: float = 0.0
+    # Chinese-JD slice only
+    cn_ok: int = 0
+    cn_skill_total: int = 0
+    cn_ds_skill_total: int = 0
+    cn_jaccard_total: float = 0.0
+    cn_emptied: int = 0
+    per_job: dict = field(default_factory=dict)
+
+    @property
+    def avg_skills(self) -> float:
+        return self.skill_total / self.ok if self.ok else 0.0
+
+    @property
+    def avg_jaccard(self) -> float:
+        return self.jaccard_total / self.ok if self.ok else 0.0
+
+    @property
+    def cn_avg_skills(self) -> float:
+        return self.cn_skill_total / self.cn_ok if self.cn_ok else 0.0
+
+    @property
+    def cn_avg_jaccard(self) -> float:
+        return self.cn_jaccard_total / self.cn_ok if self.cn_ok else 0.0
+
+    @property
+    def secs_per_job(self) -> float:
+        return self.seconds / self.ok if self.ok else 0.0
+
+
+@dataclass
+class BakeOff:
+    n: int = 0
+    cn: int = 0
+    ds_skill_total: int = 0
+    ds_cn_skill_total: int = 0
+    results: list[BackendResult] = field(default_factory=list)
+    jobs: list[dict] = field(default_factory=list)
+
+    @property
+    def ds_avg_skills(self) -> float:
+        return self.ds_skill_total / self.n if self.n else 0.0
+
+    @property
+    def ds_cn_avg_skills(self) -> float:
+        return self.ds_cn_skill_total / self.cn if self.cn else 0.0
+
+
+def _sample_jobs(s: Session, n: int, cn_min: int) -> list[Job]:
+    """N jobs already extracted by DeepSeek, forcing at least `cn_min` Chinese JDs so the
+    Chinese-language quality bar is actually measured and not left to a random draw."""
+    pool = list(
+        s.execute(
+            select(Job)
+            .where(Job.extraction_source == "deepseek")
+            .order_by(func.random())
+            .limit(n * 12)
+        ).scalars()
+    )
+    cn = [j for j in pool if is_chinese_jd(j.description_raw or "")]
+    en = [j for j in pool if j not in cn]
+    picked = cn[:cn_min] + en[: max(0, n - min(len(cn), cn_min))]
+    return picked[:n]
+
+
+def run_backend_comparison(
+    n: int = 100,
+    cn_min: int = 30,
+    backends: tuple[tuple[str, str], ...] = (
+        ("glm", "glm-5.3-flash"),
+        ("glm", "glm-5.3"),
+    ),
+    workers: int = 4,
+) -> BakeOff:
+    """Run each candidate backend over the SAME jobs and diff against stored DeepSeek."""
+    ensure_schema()
+    rep = BakeOff()
+    with session_scope() as s:
+        jobs = _sample_jobs(s, n, cn_min)
+        rep.n = len(jobs)
+        stored = {
+            j.id: (
+                set(j.skills or []),
+                is_chinese_jd(j.description_raw or ""),
+                j.title,
+                j.company_id,
+            )
+            for j in jobs
+        }
+        rep.cn = sum(1 for v in stored.values() if v[1])
+        rep.ds_skill_total = sum(len(v[0]) for v in stored.values())
+        rep.ds_cn_skill_total = sum(len(v[0]) for v in stored.values() if v[1])
+
+        for backend, model in backends:
+            extractor = make_llm_extractor(backend, model)
+            res = BackendResult(backend=_source_label(extractor, backend), model=model)
+            t0 = time.monotonic()
+            outcomes = _extract_many(extractor, jobs, workers)
+            res.seconds = time.monotonic() - t0
+            for oc in outcomes:
+                res.prompt_tokens += oc.prompt_tokens
+                res.completion_tokens += oc.completion_tokens
+                if not oc.ok:
+                    res.failed += 1
+                    continue
+                res.ok += 1
+                ds, is_cn, _title, _co = stored[oc.job_id]
+                got = set(canonicalize_skills(oc.skills))
+                res.per_job[oc.job_id] = sorted(got)
+                res.skill_total += len(got)
+                union = ds | got
+                jac = len(ds & got) / len(union) if union else 1.0
+                res.jaccard_total += jac
+                if got == ds:
+                    res.same += 1
+                elif ds and not got:
+                    res.emptied += 1
+                    res.subset += 1
+                elif got > ds:
+                    res.superset += 1
+                elif got < ds:
+                    res.subset += 1
+                else:
+                    res.overlap += 1
+                if is_cn:
+                    res.cn_ok += 1
+                    res.cn_skill_total += len(got)
+                    res.cn_ds_skill_total += len(ds)
+                    res.cn_jaccard_total += jac
+                    if ds and not got:
+                        res.cn_emptied += 1
+            rep.results.append(res)
+
+        for jid, (ds, is_cn, title, co) in stored.items():
+            rep.jobs.append({
+                "id": jid, "company": co, "title": title, "cn": is_cn,
+                "deepseek": sorted(ds),
+                **{r.model: r.per_job.get(jid) for r in rep.results},
+            })
+    return rep
+
+
 # --- Full rebuild (writes, resumable, cost-capped) ---------------------------
 @dataclass
 class RebuildStats:
@@ -212,10 +435,12 @@ class RebuildStats:
     completion_tokens: int = 0
     halted: bool = False
     halt_reason: str | None = None
+    backend: str = TARGET_SOURCE
+    rate_limited: int = 0
 
     @property
     def cost(self) -> float:
-        return cost_cny(self.prompt_tokens, self.completion_tokens)
+        return cost_cny(self.prompt_tokens, self.completion_tokens, self.backend)
 
 
 def _copy_fallback(job: Job) -> None:
@@ -234,15 +459,26 @@ def rebuild_extraction(
     limit: int | None = None,
     ceiling_cny: float | None = None,
     on_batch=None,
+    backend: str = TARGET_SOURCE,
+    model: str | None = None,
 ) -> RebuildStats:
+    """Re-extract every job NOT already done by an LLM backend.
+
+    The target set is `extraction_source NOT IN LLM_SOURCES` rather than `!= <this
+    backend>`: with two LLM backends in play, the old test would have made glm and
+    deepseek endlessly re-extract each other's rows for no quality gain.
+    """
     ensure_schema()
-    extractor = make_deepseek_extractor()
+    extractor = _make_extractor(backend, model)
+    source = _source_label(extractor, backend)
     ceiling = config.EXTRACTION_COST_CEILING_CNY if ceiling_cny is None else ceiling_cny
-    stats = RebuildStats()
+    stats = RebuildStats(backend=source)
+    consecutive_429 = 0
 
     with session_scope() as s:
         stats.total_target = s.scalar(
-            select(func.count()).select_from(Job).where(Job.extraction_source != TARGET_SOURCE)
+            select(func.count()).select_from(Job)
+            .where(Job.extraction_source.notin_(LLM_SOURCES))
         ) or 0
 
     remaining = stats.total_target if limit is None else min(limit, stats.total_target)
@@ -253,7 +489,7 @@ def rebuild_extraction(
             jobs = list(
                 s.execute(
                     select(Job)
-                    .where(Job.extraction_source != TARGET_SOURCE)
+                    .where(Job.extraction_source.notin_(LLM_SOURCES))
                     .order_by(Job.id)
                     .limit(take)
                 ).scalars()
@@ -268,7 +504,13 @@ def rebuild_extraction(
                 stats.completion_tokens += oc.completion_tokens
                 if not oc.ok:
                     stats.failed += 1
+                    if oc.rate_limited:
+                        stats.rate_limited += 1
+                        consecutive_429 += 1
+                    else:
+                        consecutive_429 = 0
                     continue  # leave heuristic in place; a re-run will retry
+                consecutive_429 = 0
                 merged = merge_extraction(job, oc)
                 _copy_fallback(job)
                 job.skills = merged.skills
@@ -277,13 +519,22 @@ def rebuild_extraction(
                 job.salary_max = merged.salary_max
                 job.salary_currency = merged.salary_currency
                 job.salary_inferred = False
-                job.extraction_source = TARGET_SOURCE
+                job.extraction_source = source
                 stats.updated += 1
             # batch is committed on exiting session_scope (resumable checkpoint)
 
         remaining -= len(jobs)
         if on_batch:
             on_batch(stats)
+
+        # HARD STOP: repeated 429s mean the plan quota is gone, not that one call was
+        # unlucky. Progress is already committed, so a re-run resumes from here.
+        if consecutive_429 >= MAX_CONSECUTIVE_429:
+            stats.halted = True
+            stats.halt_reason = (
+                f"{consecutive_429} consecutive rate-limited jobs (HTTP 429)"
+            )
+            break
 
         # HARD STOP: never spend beyond the ceiling without asking.
         if stats.cost >= ceiling:
@@ -304,6 +555,7 @@ class _RFOutcome:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     error: str | None = None
+    rate_limited: bool = False
 
 
 def _classify_many(
@@ -311,14 +563,13 @@ def _classify_many(
 ) -> list[_RFOutcome]:
     def one(job: Job) -> _RFOutcome:
         rec = _job_to_record(job)
-        last_err = None
-        for _ in range(3):
-            try:
-                label, pin, pout = extractor.classify_role_family_with_usage(rec)
-                return _RFOutcome(job.id, True, label, pin, pout)
-            except Exception as exc:  # noqa: BLE001
-                last_err = f"{type(exc).__name__}: {exc}"
-        return _RFOutcome(job.id, False, error=last_err)
+        value, err, limited = _retry_call(
+            lambda: extractor.classify_role_family_with_usage(rec)
+        )
+        if value is None:
+            return _RFOutcome(job.id, False, error=err, rate_limited=limited)
+        label, pin, pout = value
+        return _RFOutcome(job.id, True, label, pin, pout)
 
     outcomes: list[_RFOutcome] = []
     with cf.ThreadPoolExecutor(max_workers=workers) as pool:
@@ -333,13 +584,16 @@ def rebuild_role_family(
     limit: int | None = None,
     ceiling_cny: float | None = None,
     on_batch=None,
+    backend: str = TARGET_SOURCE,
+    model: str | None = None,
 ) -> RebuildStats:
-    """Classify each job's role_family via DeepSeek. Resumable (role_family IS NULL) and
-    cost-capped (hard stop at the ¥ ceiling), mirroring rebuild_extraction."""
+    """Classify each job's role_family with an LLM. Resumable (role_family IS NULL) and
+    cost-capped (hard stop at the CNY ceiling), mirroring rebuild_extraction."""
     ensure_schema()
-    extractor = make_deepseek_extractor()
+    extractor = _make_extractor(backend, model)
     ceiling = config.EXTRACTION_COST_CEILING_CNY if ceiling_cny is None else ceiling_cny
-    stats = RebuildStats()
+    stats = RebuildStats(backend=_source_label(extractor, backend))
+    consecutive_429 = 0
 
     with session_scope() as s:
         stats.total_target = s.scalar(
@@ -366,13 +620,26 @@ def rebuild_role_family(
                 stats.completion_tokens += oc.completion_tokens
                 if not oc.ok:
                     stats.failed += 1
+                    if oc.rate_limited:
+                        stats.rate_limited += 1
+                        consecutive_429 += 1
+                    else:
+                        consecutive_429 = 0
                     continue  # leave NULL; a re-run retries it
+                consecutive_429 = 0
                 job.role_family = oc.role_family
                 stats.updated += 1
 
         remaining -= len(jobs)
         if on_batch:
             on_batch(stats)
+
+        if consecutive_429 >= MAX_CONSECUTIVE_429:
+            stats.halted = True
+            stats.halt_reason = (
+                f"{consecutive_429} consecutive rate-limited jobs (HTTP 429)"
+            )
+            break
 
         if stats.cost >= ceiling:
             stats.halted = True
@@ -410,7 +677,7 @@ def rollback_extraction() -> int:
     restored = 0
     with session_scope() as s:
         for job in s.execute(
-            select(Job).where(Job.extraction_source == TARGET_SOURCE)
+            select(Job).where(Job.extraction_source.in_(LLM_SOURCES))
         ).scalars():
             job.skills = list(job.skills_fallback or [])
             job.remote_policy = job.remote_policy_fallback

@@ -34,11 +34,13 @@ def seed_companies(on_result=None) -> SeedStats:
     """Validate every seed candidate and upsert the ones that pass."""
     candidates = all_candidates()
     # Reuse the crawler's concurrency + politeness by treating candidates as refs.
+    # `id` is OUR slug and `ats_tenant` is the board to fetch — identical for most
+    # companies, deliberately different for one that migrated ATS (see Candidate.slug).
     refs = [
-        CompanyRef(id=c.tenant, ats_vendor=c.vendor, ats_tenant=c.tenant, name=c.name)
+        CompanyRef(id=c.slug, ats_vendor=c.vendor, ats_tenant=c.tenant, name=c.name)
         for c in candidates
     ]
-    by_slug = {c.tenant: c for c in candidates}
+    by_slug = {c.slug: c for c in candidates}
 
     results = asyncio.run(fetch_all(refs, on_result=on_result))
 
@@ -61,14 +63,17 @@ def seed_companies(on_result=None) -> SeedStats:
                     id=slug,
                     name=cand.name,
                     ats_vendor=cand.vendor,
-                    ats_tenant=slug,
-                    careers_url=client.careers_url(slug),
+                    ats_tenant=cand.tenant,
+                    careers_url=client.careers_url(cand.tenant),
                     verified=False,
                 )
                 session.add(company)
                 stats.inserted += 1
             else:
+                # Re-point an existing employer at its current board without touching
+                # `companies.id`, so the job history stays attached to the same row.
                 company.name = cand.name
                 company.ats_vendor = cand.vendor
-                company.careers_url = client.careers_url(slug)
+                company.ats_tenant = cand.tenant
+                company.careers_url = client.careers_url(cand.tenant)
     return stats

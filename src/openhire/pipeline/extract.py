@@ -393,6 +393,34 @@ def classify_role_family_heuristic(title: str, description: str = "") -> str | N
     return None
 
 
+class RateLimited(RuntimeError):
+    """HTTP 429 from the provider. Raised so callers can back off instead of retrying hot."""
+
+
+_JSON_FENCE_RE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.I)
+
+
+def parse_json_object(content: str) -> dict:
+    """Parse a model reply that should be one JSON object.
+
+    Providers differ: DeepSeek honours `response_format=json_object` and returns bare
+    JSON, while GLM (with thinking disabled) wraps it in a ```json fence. Strip the
+    fence, then fall back to the first balanced-looking {...} span.
+    """
+    text = (content or "").strip()
+    text = _JSON_FENCE_RE.sub("", text).strip()
+    try:
+        data = json.loads(text)
+    except ValueError:
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end <= start:
+            raise
+        data = json.loads(text[start : end + 1])
+    if not isinstance(data, dict):
+        raise ValueError("model did not return a JSON object")
+    return data
+
+
 class DeepSeekExtractor:
     """OpenAI-compatible backend (default DeepSeek). Cheap model for a simple task.
 
@@ -403,13 +431,52 @@ class DeepSeekExtractor:
 
     name = "deepseek"
 
-    def __init__(self, api_key: str, base_url: str, model: str, jd_char_cap: int = 4000):
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str,
+        model: str,
+        jd_char_cap: int = 4000,
+        *,
+        max_tokens: int = 300,
+        rf_max_tokens: int = 20,
+        json_mode: bool = True,
+        extra_body: dict | None = None,
+    ):
         self._api_key = api_key
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._model = model
         self._cap = jd_char_cap
+        self._max_tokens = max_tokens
+        self._rf_max_tokens = rf_max_tokens
+        self._json_mode = json_mode
+        self._extra_body = dict(extra_body or {})
         self._fallback = HeuristicExtractor()
         self._client = None  # lazily-created pooled httpx.Client (keep-alive, thread-safe)
+
+    def _payload(self, system: str, prompt: str, max_tokens: int) -> dict:
+        payload = {
+            "model": self._model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0,
+            "max_tokens": max_tokens,
+            "stream": False,
+            **self._extra_body,
+        }
+        if self._json_mode:
+            payload["response_format"] = {"type": "json_object"}
+        return payload
+
+    def _call(self, payload: dict) -> dict:
+        """POST once. Raises RateLimited on 429 so the caller can back off."""
+        resp = self._http().post(self._url, json=payload)
+        if resp.status_code == 429:
+            raise RateLimited("HTTP 429 from provider")
+        resp.raise_for_status()
+        return resp.json()
 
     def _http(self):
         if self._client is None:
@@ -433,22 +500,10 @@ class DeepSeekExtractor:
 
     def extract_with_usage(self, job: JobRecord) -> tuple[ExtractionResult, int, int]:
         """Raises on API/parse failure so callers can retry/track. Returns (result, in, out)."""
-        payload = {
-            "model": self._model,
-            "messages": [
-                {"role": "system", "content": _DEEPSEEK_SYSTEM},
-                {"role": "user", "content": self._prompt(job)},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 300,
-            "stream": False,
-        }
-        resp = self._http().post(self._url, json=payload)
-        resp.raise_for_status()
-        body = resp.json()
-        content = body["choices"][0]["message"]["content"]
-        data = json.loads(content)
+        body = self._call(
+            self._payload(_DEEPSEEK_SYSTEM, self._prompt(job), self._max_tokens)
+        )
+        data = parse_json_object(body["choices"][0]["message"]["content"])
         usage = body.get("usage", {})
         result = self._to_result(data, job)
         return result, int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0))
@@ -482,21 +537,10 @@ class DeepSeekExtractor:
             f"Title: {job.title}\nLocation: {job.location or 'n/a'}\n\n"
             f"Description:\n{(job.description_raw or '')[: min(self._cap, 2500)]}"
         )
-        payload = {
-            "model": self._model,
-            "messages": [
-                {"role": "system", "content": _DEEPSEEK_ROLE_FAMILY_SYSTEM},
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 20,
-            "stream": False,
-        }
-        resp = self._http().post(self._url, json=payload)
-        resp.raise_for_status()
-        body = resp.json()
-        data = json.loads(body["choices"][0]["message"]["content"])
+        body = self._call(
+            self._payload(_DEEPSEEK_ROLE_FAMILY_SYSTEM, prompt, self._rf_max_tokens)
+        )
+        data = parse_json_object(body["choices"][0]["message"]["content"])
         label = str(data.get("role_family", "other")).strip().lower()
         if label not in ROLE_FAMILIES:
             label = "other"
@@ -515,6 +559,69 @@ def make_deepseek_extractor() -> "DeepSeekExtractor":
         config.DEEPSEEK_MODEL,
         config.EXTRACTION_JD_CHAR_CAP,
     )
+
+
+class GLMExtractor(DeepSeekExtractor):
+    """Zhipu GLM via the OpenAI-compatible *coding-plan* endpoint.
+
+    Same wire protocol as DeepSeek, three provider-specific adjustments:
+      * `thinking: disabled` — the glm-5.3 family reasons before answering by default,
+        burning ~240 reasoning tokens on a task that needs none (measured: completion
+        267 → 29 tokens with it off). Turning it off is a pure speed/quota win.
+      * `max_tokens` ≥ 1024 — reasoning tokens are charged against max_tokens BEFORE any
+        content is emitted, so a small cap returns an empty string rather than an error.
+        The floor keeps extraction safe even if `thinking` is ever ignored.
+      * no `response_format` — the coding endpoint accepts it, but with thinking off the
+        reply can still arrive inside a ```json fence, so `parse_json_object` (which
+        strips fences) is the real guarantee and the extra prompt tokens buy nothing.
+
+    Cash cost is zero: tokens are metered by the prepaid coding plan, not billed per call.
+    Rows written by this backend are stamped `extraction_source='glm'` — never 'deepseek'.
+    """
+
+    name = "glm"
+
+    def __init__(self, api_key: str, base_url: str, model: str, jd_char_cap: int = 4000):
+        super().__init__(
+            api_key,
+            base_url,
+            model,
+            jd_char_cap,
+            max_tokens=1024,
+            rf_max_tokens=1024,
+            json_mode=False,
+            extra_body={"thinking": {"type": "disabled"}},
+        )
+
+
+def make_glm_extractor(model: str | None = None) -> "GLMExtractor":
+    if not config.ZHIPU_API_KEY:
+        raise RuntimeError(
+            "ZHIPU_API_KEY is not set. Add it to .env (see README) before extracting."
+        )
+    return GLMExtractor(
+        config.ZHIPU_API_KEY,
+        config.GLM_BASE_URL,
+        model or config.GLM_MODEL,
+        config.EXTRACTION_JD_CHAR_CAP,
+    )
+
+
+# Backends that write real LLM-quality extraction. A row already stamped with any of
+# these is NOT re-extracted by another one — glm and deepseek must not churn each other.
+LLM_SOURCES = ("deepseek", "glm", "anthropic")
+
+
+def make_llm_extractor(backend: str = "deepseek", model: str | None = None):
+    """Factory used by the rebuild pipeline. Returns (extractor, source_label)."""
+    b = (backend or "deepseek").lower()
+    if b == "deepseek":
+        return make_deepseek_extractor()
+    if b in ("glm", "glm-flash", "glm-5.3", "glm-5.3-flash"):
+        if model is None and b not in ("glm",):
+            model = {"glm-flash": "glm-5.3-flash"}.get(b, b)
+        return make_glm_extractor(model)
+    raise RuntimeError(f"unknown extraction backend: {backend!r}")
 
 
 def get_extractor() -> Extractor:

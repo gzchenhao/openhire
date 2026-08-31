@@ -76,8 +76,17 @@ def ingest(
     daemon: bool = typer.Option(
         False, "--daemon", help="Run the freshness loop forever (APScheduler)."
     ),
+    fail_over: int = typer.Option(
+        None, "--fail-over",
+        help="Exit non-zero if more than N companies fail to crawl (for unattended runs).",
+    ),
 ) -> None:
-    """Fetch due companies from their public ATS and update the local index."""
+    """Fetch due companies from their public ATS and update the local index.
+
+    `--fail-over N` is for scheduled runs with no human watching: a crawl where half the
+    boards 404 must not look like a success, or a stale index gets published silently.
+    Failures never delete anything — a company that cannot be reached keeps its jobs.
+    """
     from .pipeline import run_ingest
 
     init_db()
@@ -105,6 +114,14 @@ def ingest(
 
     stats = run_ingest(company_ids=company_ids, respect_interval=respect, on_progress=on_progress)
     _print_ingest_stats(stats)
+
+    if fail_over is not None and stats.companies_failed > fail_over:
+        console.error(
+            "ERR_INGEST_TOO_MANY_FAILURES",
+            f"{stats.companies_failed} 家抓取失败，超过阈值 {fail_over}——"
+            "已存数据未被删除，但索引不完整，请勿发布。",
+        )
+        raise typer.Exit(1)
 
 
 def _print_ingest_stats(stats) -> None:
@@ -680,6 +697,66 @@ def extract_sample(
         console.note(f"预计低于上限。确认质量后运行 `ohp extract-rebuild` 跑全量（CNY {ceiling:.0f} 硬停）。")
 
 
+# --- extract-compare ----------------------------------------------------------
+@app.command(name="extract-compare")
+def extract_compare(
+    n: int = typer.Option(100, "--n", help="Jobs to sample (all backends see the same set)."),
+    cn_min: int = typer.Option(30, "--cn-min", help="Minimum Chinese-language JDs in the sample."),
+    workers: int = typer.Option(4, "--workers", help="Concurrent API calls (kept conservative)."),
+    models: str = typer.Option(
+        "glm-5.3-flash,glm-5.3", "--models",
+        help="Comma-separated GLM model ids to bake off against the stored DeepSeek run.",
+    ),
+    out: str = typer.Option(None, "--out", help="Write the full per-job diff to this JSON file."),
+) -> None:
+    """Bake off GLM models against the DeepSeek extraction already in the index.
+
+    No DB writes and no cash: the incumbent's answers are already stored, so only the
+    challengers make API calls — and those run on the prepaid coding plan.
+    """
+    import json as _json
+    from pathlib import Path
+
+    from .pipeline.rebuild import run_backend_comparison
+
+    init_db()
+    _banner()
+    console.cmd(f"ohp extract-compare --n {n} --cn-min {cn_min}")
+    backends = tuple(("glm", m.strip()) for m in models.split(",") if m.strip())
+    try:
+        rep = run_backend_comparison(n, cn_min, backends, workers)
+    except RuntimeError as e:
+        console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
+        raise typer.Exit(1)
+
+    console.out(f"样本 {rep.n} 条（中文 JD {rep.cn} 条）· 基准 = 库内 deepseek 抽取结果")
+    console.out(f"deepseek 平均技能数 {rep.ds_avg_skills:.2f}（中文岗 {rep.ds_cn_avg_skills:.2f}）")
+    c.print()
+    c.print("  [muted]模型对比（对同一批岗，与库内 deepseek 相比）[/]")
+    for r in rep.results:
+        console.out(
+            f"{r.model}: 成功 {r.ok}/{rep.n} 失败 {r.failed} · "
+            f"平均技能 {r.avg_skills:.2f} · Jaccard {r.avg_jaccard:.3f} · "
+            f"耗时 {r.seconds:.0f}s（{r.secs_per_job:.2f}s/岗）"
+        )
+        console.out(
+            f"    一致 {r.same} · 更全 {r.superset} · 更少 {r.subset}"
+            f"（其中清空 {r.emptied}） · 各有取舍 {r.overlap}"
+        )
+        console.out(
+            f"    中文岗 {r.cn_ok} 条：平均技能 {r.cn_avg_skills:.2f}"
+            f"（deepseek {r.cn_ds_skill_total / r.cn_ok if r.cn_ok else 0:.2f}）"
+            f" · Jaccard {r.cn_avg_jaccard:.3f} · 清空 {r.cn_emptied}"
+        )
+        console.out(f"    tokens: in {r.prompt_tokens} / out {r.completion_tokens} · 现金成本 CNY 0.00（套餐内）")
+
+    if out:
+        Path(out).write_text(
+            _json.dumps(rep.jobs, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        console.note(f"逐岗差异已写入 {out}")
+
+
 def _cfg_ceiling() -> float:
     from . import config
     return config.EXTRACTION_COST_CEILING_CNY
@@ -692,13 +769,19 @@ def extract_rebuild(
     workers: int = typer.Option(8, "--workers", help="Concurrent API calls."),
     limit: int = typer.Option(None, "--limit", help="Cap jobs this run (for testing)."),
     ceiling: float = typer.Option(None, "--ceiling", help="CNY hard stop (default from config)."),
+    backend: str = typer.Option("deepseek", "--backend", help="deepseek | glm (GLM runs on a prepaid coding plan: CNY 0)."),
+    model: str = typer.Option(None, "--model", help="Override the backend's model id."),
 ) -> None:
-    """Rebuild extraction with DeepSeek in resumable batches; hard-stops at the CNY ceiling."""
+    """Rebuild extraction with an LLM in resumable batches; hard-stops at the CNY ceiling.
+
+    Only jobs no LLM has touched yet are targeted, so glm and deepseek never re-extract
+    each other's rows. Each row is stamped with the backend that actually produced it.
+    """
     from .pipeline import rebuild_extraction
 
     init_db()
     _banner()
-    console.cmd("ohp extract-rebuild")
+    console.cmd(f"ohp extract-rebuild --backend {backend}")
     try:
         def on_batch(stx):
             console.out(
@@ -706,11 +789,13 @@ def extract_rebuild(
                 f"失败 {stx.failed} · 花费 CNY {stx.cost:.2f}"
             )
 
-        stats = rebuild_extraction(batch, workers, limit, ceiling, on_batch)
+        stats = rebuild_extraction(batch, workers, limit, ceiling, on_batch, backend, model)
     except RuntimeError as e:
-        console.error("ERR_DEEPSEEK_KEY_MISSING", str(e))
+        console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
         raise typer.Exit(1)
 
+    if stats.rate_limited:
+        console.note(f"其中 {stats.rate_limited} 条因限流（HTTP 429）未完成，重跑会从断点续上。")
     if stats.halted:
         console.error("ERR_BUDGET_OVER_CEILING",
                       f"{stats.halt_reason}——已在断点停下。再次运行会从未完成处续跑。")
@@ -868,10 +953,12 @@ def extract_role_family(
     ceiling: float = typer.Option(None, "--ceiling", help="CNY hard stop (default from config)."),
     heuristic: bool = typer.Option(
         False, "--heuristic",
-        help="Free title-keyword pass instead of DeepSeek; leaves unclear jobs NULL.",
+        help="Free title-keyword pass instead of an LLM; leaves unclear jobs NULL.",
     ),
+    backend: str = typer.Option("deepseek", "--backend", help="deepseek | glm (GLM runs on a prepaid coding plan: CNY 0)."),
+    model: str = typer.Option(None, "--model", help="Override the backend's model id."),
 ) -> None:
-    """Classify each job's role_family with DeepSeek; resumable, hard-stops at the CNY ceiling."""
+    """Classify each job's role_family with an LLM; resumable, hard-stops at the CNY ceiling."""
     from .pipeline import rebuild_role_family
 
     init_db()
@@ -886,7 +973,7 @@ def extract_role_family(
         console.ok(f"完成 · 标注 {labelled} · 仍为 NULL {still_null} · 花费 CNY 0.00")
         return
 
-    console.cmd("ohp extract-role-family")
+    console.cmd(f"ohp extract-role-family --backend {backend}")
     try:
         def on_batch(stx):
             console.out(
@@ -894,11 +981,13 @@ def extract_role_family(
                 f"失败 {stx.failed} · 花费 CNY {stx.cost:.2f}"
             )
 
-        stats = rebuild_role_family(batch, workers, limit, ceiling, on_batch)
+        stats = rebuild_role_family(batch, workers, limit, ceiling, on_batch, backend, model)
     except RuntimeError as e:
-        console.error("ERR_DEEPSEEK_KEY_MISSING", str(e))
+        console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
         raise typer.Exit(1)
 
+    if stats.rate_limited:
+        console.note(f"其中 {stats.rate_limited} 条因限流（HTTP 429）未完成，重跑会从断点续上。")
     if stats.halted:
         console.error("ERR_BUDGET_OVER_CEILING",
                       f"{stats.halt_reason}——已在断点停下。再次运行会从未完成处续跑。")

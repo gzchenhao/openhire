@@ -1,0 +1,142 @@
+# Weekly refresh of the public index snapshot (the `openhire-index.db.gz` Release asset).
+#
+# Why this exists: the snapshot is what every new user bootstraps from, and it goes stale
+# on its own. It was refreshed by hand — so when the maintainer was away for five weeks,
+# the published index was five weeks old. This makes the boring 95% automatic.
+#
+# ZERO SECRETS BY DESIGN. No API keys live here and none may be added:
+#   * the crawl reads PUBLIC ATS endpoints, which need no credentials;
+#   * extraction is forced to the free offline heuristic (OPENHIRE_EXTRACTOR=heuristic);
+#   * the only credential is GitHub's own automatic per-run token, scoped contents:write.
+# The paid/LLM extraction pass stays on the maintainer's machine, where the key lives in
+# .env and never leaves it. That is the trade: CI keeps the snapshot FRESH, the monthly
+# local `ohp extract-rebuild --backend glm` run keeps it RICH.
+#
+# The refresh starts FROM the published snapshot rather than from an empty DB, so job
+# history (first_seen_at, relist_count, ghost_score, and the LLM-extracted skills) carries
+# forward instead of being reset every week.
+name: Refresh index snapshot
+
+on:
+  schedule:
+    # 06:10 UTC every Monday. Off the hour to avoid the top-of-hour runner queue.
+    - cron: "10 6 * * 1"
+  workflow_dispatch:
+
+# Only what the upload needs. No id-token, no packages, no PR scopes.
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-snapshot
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # Force the free, offline extractor. "auto" would look for an LLM key — there is
+      # none here, but being explicit keeps a future key from silently changing costs.
+      OPENHIRE_EXTRACTOR: heuristic
+      OPENHIRE_DATABASE_URL: sqlite+pysqlite:///${{ github.workspace }}/index/openhire.db
+      SNAPSHOT_TAG: v0.1.0
+      SNAPSHOT_ASSET: openhire-index.db.gz
+      # GitHub's automatic per-run token, not a stored secret: nothing to create, nothing
+      # to rotate, and it expires when the job ends.
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install openhire from this checkout
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Start from the published snapshot
+        run: |
+          mkdir -p index
+          gh release download "$SNAPSHOT_TAG" --pattern "$SNAPSHOT_ASSET" \
+            --repo "$GITHUB_REPOSITORY" --output published.db.gz
+          gunzip -c published.db.gz > index/openhire.db
+          ls -l index/openhire.db
+
+      - name: Re-seed company roster
+        # Picks up ATS migrations committed since the last run (a moved board would
+        # otherwise 404 forever). Verifies every tenant live before touching the table.
+        run: ohp seed
+
+      - name: Refresh from the public ATS
+        # --all ignores the freshness tiers: this runs weekly, so everything is due.
+        # --fail-over 10 makes a broken crawl LOUD. Nothing is deleted on failure; an
+        # unreachable board just keeps its existing jobs, which then age out naturally.
+        run: ohp ingest --all --fail-over 10
+
+      - name: Check CN (Beisen) reachability from this runner
+        # GitHub runners are outside China. Whether zhiye.com answers from here decides
+        # if CN jobs can be refreshed in CI at all — so measure it instead of assuming.
+        # Never fails the job: this step is evidence, not a gate.
+        continue-on-error: true
+        run: |
+          for tenant in unitree galaxea pudutech jaka; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -m 25 \
+              -X POST "https://$tenant.zhiye.com/api/Jobad/GetJobAdPageList" \
+              -H "Content-Type: application/json" \
+              -d '{"PageIndex":0,"PageSize":1}' || echo "000")
+            echo "beisen $tenant -> HTTP $code"
+          done
+
+      - name: Build the snapshot
+        # Re-runs the zero-user-state red-line check; it fails the build on any violation.
+        run: ohp snapshot-build --out "dist/$SNAPSHOT_ASSET"
+
+      - name: Publish it to the Release
+        # --clobber overwrites in place so the filename — and therefore the bootstrap URL
+        # baked into every published version of the client — never changes.
+        run: |
+          gh release upload "$SNAPSHOT_TAG" "dist/$SNAPSHOT_ASSET" \
+            --clobber --repo "$GITHUB_REPOSITORY"
+
+      - name: Inspect what was actually published
+        # Download the asset back over the public URL, exactly as a stranger would, and
+        # assert on it directly — the red line is checked against what is SERVED, not
+        # against the local file we happened to upload.
+        run: |
+          python - <<'PY'
+          import datetime as dt, gzip, os, sqlite3, urllib.request
+          url = "https://github.com/{}/releases/download/{}/{}".format(
+              os.environ["GITHUB_REPOSITORY"], os.environ["SNAPSHOT_TAG"],
+              os.environ["SNAPSHOT_ASSET"])
+          print("fetching", url)
+          os.makedirs("verify", exist_ok=True)
+          with open("verify/published.db", "wb") as fh:
+              fh.write(gzip.decompress(urllib.request.urlopen(url).read()))
+          con = sqlite3.connect("verify/published.db")
+          one = lambda q: con.execute(q).fetchone()[0]
+          companies, jobs = one("select count(*) from companies"), one("select count(*) from jobs")
+          leaked = sum(one(f"select count(*) from {t}") for t in ("watches", "applications"))
+          as_of = str(one("select max(verified_at) from jobs"))
+          age = (dt.datetime.now(dt.timezone.utc)
+                 - dt.datetime.fromisoformat(as_of.replace("Z", "+00:00"))).days
+          print(f"published: companies={companies} jobs={jobs} as_of={as_of} "
+                f"age_days={age} user_state_rows={leaked}")
+          assert leaked == 0, "user state leaked into the published snapshot"
+          assert companies > 0 and jobs > 0, "published snapshot is empty"
+          assert age <= 1, f"published snapshot is {age} days old"
+          PY
+
+      - name: Bootstrap as a brand-new user
+        # End-to-end proof that the thing a stranger runs works and reports fresh data.
+        # `ohp bootstrap` prints the snapshot age before it refreshes; that line is the
+        # acceptance criterion, so the run fails unless it says 0 or 1 days.
+        env:
+          OPENHIRE_DATABASE_URL: sqlite+pysqlite:///${{ github.workspace }}/verify/tmp.db
+          OPENHIRE_HOME: ${{ github.workspace }}/verify-home
+        run: |
+          mkdir -p verify verify-home
+          ohp bootstrap --yes 2>&1 | tee bootstrap.log
+          grep -E "龄 [01] 天前" bootstrap.log

@@ -64,6 +64,15 @@ DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_BASE_URL = os.environ.get("OPENHIRE_DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.environ.get("OPENHIRE_DEEPSEEK_MODEL", "deepseek-chat")
 
+# Zhipu GLM (OpenAI-compatible) — a coding-plan backend, so extraction costs no cash.
+# NOTE the base URL: the *coding* path. The standard /api/paas/v4 rejects plan keys with
+# error 1113 ("no resource package"). Key comes from .env only; never committed.
+ZHIPU_API_KEY = os.environ.get("ZHIPU_API_KEY")
+GLM_BASE_URL = os.environ.get(
+    "OPENHIRE_GLM_BASE_URL", "https://open.bigmodel.cn/api/coding/paas/v4"
+)
+GLM_MODEL = os.environ.get("OPENHIRE_GLM_MODEL", "glm-5.3-flash")
+
 # JD text is capped before extraction to bound token cost (skills/remote sit early in a JD).
 EXTRACTION_JD_CHAR_CAP = int(os.environ.get("OPENHIRE_JD_CHAR_CAP", "4000"))
 
@@ -73,6 +82,11 @@ DEEPSEEK_PRICE_INPUT_CNY = float(os.environ.get("OPENHIRE_DEEPSEEK_PRICE_IN", "2
 DEEPSEEK_PRICE_OUTPUT_CNY = float(os.environ.get("OPENHIRE_DEEPSEEK_PRICE_OUT", "8.0"))
 # Hard stop: the rebuild halts and asks before spending beyond this (CNY).
 EXTRACTION_COST_CEILING_CNY = float(os.environ.get("OPENHIRE_COST_CEILING_CNY", "50.0"))
+
+# GLM runs inside a prepaid coding plan: tokens are metered by the plan, not billed per
+# call, so the marginal CASH cost is zero. Tokens are still counted and reported.
+GLM_PRICE_INPUT_CNY = float(os.environ.get("OPENHIRE_GLM_PRICE_IN", "0.0"))
+GLM_PRICE_OUTPUT_CNY = float(os.environ.get("OPENHIRE_GLM_PRICE_OUT", "0.0"))
 
 
 def ensure_client_home() -> Path:

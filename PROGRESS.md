@@ -12,6 +12,17 @@
 
 ---
 
+## 2026-08-31 — 017 开工回执：GLM 接入 + 存量精抽 + 快照自动刷新 + 三家租户（进行中）
+
+- **核验过：** `pytest -q` **155 passed / 0 failed / 0 skipped**（基线）；`.env` 含 `ZHIPU_API_KEY`（未打印、不入 git）。
+- **GLM 连通性实测：** base_url `https://open.bigmodel.cn/api/coding/paas/v4`；`glm-5.3` / `glm-5.3-flash` × {plain, json_mode, thinking-disabled} **6 组全 200**，中文 JD 技能抽取正确。
+- **新发现（提速关键）：** `thinking:{"type":"disabled"}` 生效——reasoning tokens 242→5、completion 267→29；flash 关思考后输出带 ```json 围栏，解析须剥。
+- **库存现状：** 21,413 条（活跃 14,963）；`extraction_source` deepseek 16,316 / heuristic 5,097（5,097 全部活跃）；`role_family` NULL **1,676**（全部活跃）。
+- **计划：** A 加 GLM 后端（`extraction_source='glm'`，选取条件改为「不属任何 LLM 源」）+ 三方对比选型 → B 存量精抽（¥0）→ C Actions 周刷新（零密钥）→ D 三家租户。
+- **风险：** GLM 配额未知（连续 429×5 即停并记进度）；Actions runner 在海外，北森 zhiye.com 可达性待实证。
+
+---
+
 ## 2026-08-31 — 恢复会话：015 验收关单 + 补欠 5 周快照 + 目录提交（详见 reports/016）
 
 - **015 验收：过**（七项硬指标管理者独立复核全过；pytest 155 green 亲测；OIDC 发布工作流审过批准保留）。
