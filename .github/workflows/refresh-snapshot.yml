@@ -147,7 +147,13 @@ jobs:
         env:
           OPENHIRE_DATABASE_URL: sqlite+pysqlite:///${{ github.workspace }}/verify/tmp.db
           OPENHIRE_HOME: ${{ github.workspace }}/verify-home
+          # Stop rich from hard-wrapping at 80 columns and splitting the age line in two.
+          COLUMNS: "200"
         run: |
           mkdir -p verify verify-home
           ohp bootstrap --yes 2>&1 | tee bootstrap.log
-          grep -E "龄 [01] 天前" bootstrap.log
+          # Match against the log with newlines removed, so a re-wrap can never turn a
+          # passing run into a failing one.
+          tr -d '\n' < bootstrap.log | grep -qE "龄 [01] 天前" \
+            || { echo "::error::bootstrap did not report a fresh snapshot"; exit 1; }
+          echo "new-user bootstrap reported a snapshot 0-1 days old"
