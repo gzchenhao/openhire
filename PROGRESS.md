@@ -2,13 +2,23 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
-**当前状态：v0.1 已公开发布 + 上架官方 MCP Registry（2026-07-15）· M1–M4 完成 · 118 tests green**
-- GitHub：https://github.com/gzchenhao/openhire （main，tag v0.1.1）
+**当前状态：v0.2.0 已上线（PyPI + Registry isLatest + 快照 2026-08-31 刷新）· 155 tests green · 覆盖 125 家（含北森 11 家国内机器人/具身智能）**
+- GitHub：https://github.com/gzchenhao/openhire （main，tag v0.2.0）
 - Release v0.1.0（含快照 `openhire-index.db.gz`，URL 稳定）：https://github.com/gzchenhao/openhire/releases/tag/v0.1.0
 - PyPI：https://pypi.org/project/openhire/0.1.1/ （`pipx install openhire`）
 - **官方 MCP Registry：`io.github.gzchenhao/openhire` v0.1.1**（`registry.modelcontextprotocol.io`；PulseMCP/mcp.so 会自动同步）
 - Smithery：v0.1 **放弃**（无本地 stdio 网页入口，见 `reports/010`）。
 - **常设仅剩：每周手动刷新快照**（`docs/maintainer-snapshot-refresh.md`）。
+
+---
+
+## 2026-08-31 — 恢复会话：015 验收关单 + 补欠 5 周快照 + 目录提交（详见 reports/016）
+
+- **015 验收：过**（七项硬指标管理者独立复核全过；pytest 155 green 亲测；OIDC 发布工作流审过批准保留）。
+- **快照刷新补欠**：ingest 新 5,097/更 3,957/下架 4,484；role_family 启发式补标 3,421（¥0）；快照 **125 家 / 21,413 行（在招 14,963）/ 24.6MB**，资产 updatedAt=2026-08-31T06:01:01Z，零用户态通过。
+- **3 家租户持续 404 待查**：aurorainnovation / temporaltechnologies / fireworksai（疑 slug 漂移）。
+- **目录**：Glama 已自动收录 ✅；mcp.so 已提交（chatmcp/mcpso#3845，领导批准）；PulseMCP 等其恢复自动拉取；Show HN 定稿在 drafts/（不入 git）。
+- **待办候选**：快照刷新自动化（Actions 每周）、1,676 条 role_family NULL 付费补标（需批预算）、Moka 适配器、404 租户调查。
 
 ---
 
