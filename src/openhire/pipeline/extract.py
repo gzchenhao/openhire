@@ -689,7 +689,11 @@ class GLMExtractor(DeepSeekExtractor):
                 continue
             if resp.status_code in (401, 429):
                 code = self._provider_code(resp)
-                key_dead = resp.status_code == 401 or code == "1310"
+                # Dead-key signals seen live: 401 invalid; 1310 quota exhausted; 1113
+                # "no resource pack" — a key whose pack is fully consumed FLIPS from
+                # 1310 to 1113 mid-run (observed 2026-08-31 on key #3), so both mean
+                # "rotate", not "back off".
+                key_dead = resp.status_code == 401 or code in ("1310", "1113")
                 if key_dead:
                     if self._rotate_from(idx):
                         continue

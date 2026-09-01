@@ -112,6 +112,16 @@ def test_invalid_key_is_skipped_like_a_spent_one(monkeypatch):
     assert ext._call({}) == OK_BODY
 
 
+def test_no_pack_1113_also_rotates(monkeypatch):
+    # A fully-consumed pack flips from 1310 to 1113 mid-run (seen live 2026-08-31):
+    # 1113 must rotate to the next key, not spin on the dead one until the breaker trips.
+    ext = _ext(["key-1", "key-2"])
+    no_pack = FakeResp(429, {"code": "1113", "message": "无可用资源包"})
+    fake = _wire(ext, {"key-1": [no_pack], "key-2": [FakeResp(200, OK_BODY)]}, monkeypatch)
+    assert ext._call({}) == OK_BODY
+    assert fake.calls == ["key-1", "key-2"]
+
+
 def test_transient_rate_limit_backs_off_without_burning_a_backup(monkeypatch):
     ext = _ext(["key-1", "key-2"])
     fake = _wire(ext, {"key-1": [RATE_LIMIT]}, monkeypatch)
