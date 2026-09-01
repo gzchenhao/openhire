@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -577,13 +578,28 @@ class GLMExtractor(DeepSeekExtractor):
 
     Cash cost is zero: tokens are metered by the prepaid coding plan, not billed per call.
     Rows written by this backend are stamped `extraction_source='glm'` — never 'deepseek'.
+
+    Accepts one key or a try-order list. Coding-plan quotas are per-key, so when the
+    active key is spent (HTTP 429 / provider code 1310) or invalid (HTTP 401) the
+    extractor hot-swaps to the next key mid-run and retries the same request; only when
+    every key is dead does it raise `RateLimited`, which lands the resumable rebuild on
+    its normal breakpoint. A plain 429 (transient rate limit, not 1310) never rotates —
+    that is what the caller's backoff is for.
     """
 
     name = "glm"
 
-    def __init__(self, api_key: str, base_url: str, model: str, jd_char_cap: int = 4000):
+    def __init__(
+        self, api_key: str | list[str], base_url: str, model: str, jd_char_cap: int = 4000
+    ):
+        keys = [api_key] if isinstance(api_key, str) else [k for k in api_key if k]
+        if not keys:
+            raise RuntimeError("GLMExtractor needs at least one API key")
+        self._keys = keys
+        self._key_idx = 0
+        self._key_lock = threading.Lock()
         super().__init__(
-            api_key,
+            keys[0],
             base_url,
             model,
             jd_char_cap,
@@ -593,6 +609,56 @@ class GLMExtractor(DeepSeekExtractor):
             extra_body={"thinking": {"type": "disabled"}},
         )
 
+    @staticmethod
+    def _provider_code(resp) -> str:
+        """Zhipu error codes arrive either top-level or under `error`."""
+        try:
+            body = resp.json()
+        except Exception:
+            return ""
+        err = body.get("error") if isinstance(body.get("error"), dict) else body
+        return str(err.get("code", ""))
+
+    def _rotate_from(self, failed_idx: int) -> bool:
+        """Swap to the next key. True = retry is worthwhile; False = nothing left."""
+        with self._key_lock:
+            if failed_idx != self._key_idx:
+                return True  # another worker already rotated; just retry on the new key
+            if self._key_idx + 1 >= len(self._keys):
+                return False
+            self._key_idx += 1
+            self._api_key = self._keys[self._key_idx]
+            # Abandon (do not close) the old client: other workers may be mid-request
+            # on it. At most len(keys) clients ever exist, so the leak is bounded.
+            self._client = None
+            return True
+
+    def _http(self):
+        client = self._client
+        if client is None:
+            with self._key_lock:
+                client = super()._http()
+        return client
+
+    def _call(self, payload: dict) -> dict:
+        for _ in range(len(self._keys) + 1):
+            idx = self._key_idx
+            resp = self._http().post(self._url, json=payload)
+            if resp.status_code in (401, 429):
+                code = self._provider_code(resp)
+                key_dead = resp.status_code == 401 or code == "1310"
+                if key_dead:
+                    if self._rotate_from(idx):
+                        continue
+                    raise RateLimited(
+                        f"every configured GLM key is exhausted or invalid "
+                        f"(last: HTTP {resp.status_code}, code {code or 'n/a'})"
+                    )
+                raise RateLimited(f"HTTP 429 from provider (code {code or 'n/a'})")
+            resp.raise_for_status()
+            return resp.json()
+        raise RateLimited("GLM key rotation exceeded its retry budget")
+
 
 def make_glm_extractor(model: str | None = None) -> "GLMExtractor":
     if not config.ZHIPU_API_KEY:
@@ -600,7 +666,7 @@ def make_glm_extractor(model: str | None = None) -> "GLMExtractor":
             "ZHIPU_API_KEY is not set. Add it to .env (see README) before extracting."
         )
     return GLMExtractor(
-        config.ZHIPU_API_KEY,
+        config.zhipu_api_keys(),
         config.GLM_BASE_URL,
         model or config.GLM_MODEL,
         config.EXTRACTION_JD_CHAR_CAP,

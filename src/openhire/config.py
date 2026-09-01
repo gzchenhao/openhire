@@ -73,6 +73,20 @@ GLM_BASE_URL = os.environ.get(
 )
 GLM_MODEL = os.environ.get("OPENHIRE_GLM_MODEL", "glm-5.3-flash")
 
+
+def zhipu_api_keys() -> list[str]:
+    """Every configured coding-plan key, in try-order.
+
+    ZHIPU_API_KEY stays the on/off switch (no primary, no GLM — `make_glm_extractor`
+    enforces that); ZHIPU_API_KEY_2 … ZHIPU_API_KEY_9 are backups the extractor
+    hot-swaps to when the active key's quota runs out (HTTP 429 / code 1310) or the
+    key is invalid (HTTP 401). DeepSeek is only reached when every key here is spent.
+    Read lazily so tests can monkeypatch, and blank/whitespace slots are skipped —
+    an unfilled `ZHIPU_API_KEY_3=` line in .env is not an error.
+    """
+    keys = [ZHIPU_API_KEY] + [os.environ.get(f"ZHIPU_API_KEY_{i}") for i in range(2, 10)]
+    return [k.strip() for k in keys if k and k.strip()]
+
 # JD text is capped before extraction to bound token cost (skills/remote sit early in a JD).
 EXTRACTION_JD_CHAR_CAP = int(os.environ.get("OPENHIRE_JD_CHAR_CAP", "4000"))
 
