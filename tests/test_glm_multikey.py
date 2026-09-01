@@ -78,6 +78,28 @@ def test_spent_key_rotates_and_retries_same_request(monkeypatch):
     assert ext._key_idx == 1  # stays on the working key for subsequent calls
 
 
+def test_rotation_switches_endpoint_and_model_with_the_key(monkeypatch):
+    # Keys are not interchangeable: a coding-plan key (5.3-flash) backed by a
+    # token-billed resource-pack key (glm-4.7 on the standard endpoint).
+    ext = GLMExtractor(
+        [
+            ("key-1", "https://example.invalid/api/coding/paas/v4", "glm-5.3-flash"),
+            ("key-2", "https://example.invalid/api/paas/v4", "glm-4.7"),
+        ],
+        "https://unused.invalid",
+        "unused-model",
+    )
+    fake = _wire(ext, {"key-1": [QUOTA_GONE], "key-2": [FakeResp(200, OK_BODY)]}, monkeypatch)
+    sent: list[dict] = []
+    original_post = fake.post
+    fake.post = lambda url, json=None: (sent.append(json), original_post(url, json))[1]
+    assert ext._call({"model": "glm-5.3-flash"}) == OK_BODY
+    assert ext._model == "glm-4.7"
+    assert "/api/paas/v4/chat/completions" in ext._url
+    # The RETRIED request must name the new key's model, not the old payload's.
+    assert sent[0]["model"] == "glm-5.3-flash" and sent[1]["model"] == "glm-4.7"
+
+
 def test_flat_error_shape_also_counts_as_spent(monkeypatch):
     ext = _ext(["key-1", "key-2"])
     _wire(ext, {"key-1": [QUOTA_GONE_FLAT], "key-2": [FakeResp(200, OK_BODY)]}, monkeypatch)
@@ -108,7 +130,7 @@ def test_all_keys_dead_raises_rate_limited(monkeypatch):
 
 def test_single_string_key_still_constructs():
     ext = _ext("dummy-key")
-    assert ext._keys == ["dummy-key"]
+    assert [e[0] for e in ext._keys] == ["dummy-key"]
     assert ext._api_key == "dummy-key"
 
 
@@ -130,7 +152,22 @@ def test_config_collects_numbered_keys_in_order(monkeypatch):
     monkeypatch.setenv("ZHIPU_API_KEY_2", "second")
     monkeypatch.setenv("ZHIPU_API_KEY_3", "   ")  # unfilled template slot: skipped
     monkeypatch.setenv("ZHIPU_API_KEY_4", "fourth")
-    assert config.zhipu_api_keys() == ["primary", "second", "fourth"]
+    got = config.zhipu_api_keys()
+    assert [k.key for k in got] == ["primary", "second", "fourth"]
+    # Slots without companions inherit the global endpoint + model.
+    assert all(k.base_url == config.GLM_BASE_URL and k.model == config.GLM_MODEL for k in got)
+
+
+def test_config_respects_per_slot_model_and_endpoint(monkeypatch):
+    _clear_numbered_slots(monkeypatch)
+    monkeypatch.setattr(config, "ZHIPU_API_KEY", "primary")
+    monkeypatch.setenv("ZHIPU_API_KEY_2", "pack-key")
+    monkeypatch.setenv("ZHIPU_API_KEY_2_MODEL", "glm-4.7")
+    monkeypatch.setenv("ZHIPU_API_KEY_2_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
+    got = config.zhipu_api_keys()
+    assert got[1] == config.ZhipuKey(
+        "pack-key", "https://open.bigmodel.cn/api/paas/v4", "glm-4.7"
+    )
 
 
 def test_backup_keys_alone_do_not_enable_glm(monkeypatch):
@@ -146,4 +183,14 @@ def test_make_glm_extractor_passes_every_key(monkeypatch):
     monkeypatch.setattr(config, "ZHIPU_API_KEY", "primary")
     monkeypatch.setenv("ZHIPU_API_KEY_2", "second")
     ext = make_glm_extractor()
-    assert ext._keys == ["primary", "second"]
+    assert [e[0] for e in ext._keys] == ["primary", "second"]
+
+
+def test_model_override_touches_only_the_primary_key(monkeypatch):
+    _clear_numbered_slots(monkeypatch)
+    monkeypatch.setattr(config, "ZHIPU_API_KEY", "primary")
+    monkeypatch.setenv("ZHIPU_API_KEY_2", "pack-key")
+    monkeypatch.setenv("ZHIPU_API_KEY_2_MODEL", "glm-4.5-air")
+    ext = make_glm_extractor("glm-5.3")
+    assert ext._keys[0][2] == "glm-5.3"      # CLI override applies to the primary
+    assert ext._keys[1][2] == "glm-4.5-air"  # the pack key keeps the model its pack covers

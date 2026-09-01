@@ -590,18 +590,33 @@ class GLMExtractor(DeepSeekExtractor):
     name = "glm"
 
     def __init__(
-        self, api_key: str | list[str], base_url: str, model: str, jd_char_cap: int = 4000
+        self, api_key: str | list, base_url: str, model: str, jd_char_cap: int = 4000
     ):
-        keys = [api_key] if isinstance(api_key, str) else [k for k in api_key if k]
-        if not keys:
+        # Normalise to (key, base_url, model) triples: keys are NOT interchangeable —
+        # a coding-plan key and a token-billed resource-pack key live on different
+        # endpoints and cover different models, so each entry carries its own pair.
+        # Accepted inputs: one key string, a list of key strings (all sharing the
+        # constructor's base_url/model), or a list of (key, base_url, model) triples
+        # (e.g. config.ZhipuKey) with falsy members falling back to the constructor's.
+        entries: list[tuple[str, str, str]] = []
+        items = [api_key] if isinstance(api_key, str) else list(api_key)
+        for item in items:
+            if isinstance(item, str):
+                k, b, m = item, base_url, model
+            else:
+                k, b, m = item
+            if k and k.strip():
+                entries.append((k.strip(), (b or base_url), (m or model)))
+        if not entries:
             raise RuntimeError("GLMExtractor needs at least one API key")
-        self._keys = keys
+        self._keys = entries
         self._key_idx = 0
         self._key_lock = threading.Lock()
+        k0, b0, m0 = entries[0]
         super().__init__(
-            keys[0],
-            base_url,
-            model,
+            k0,
+            b0,
+            m0,
             jd_char_cap,
             max_tokens=1024,
             rf_max_tokens=1024,
@@ -620,14 +635,17 @@ class GLMExtractor(DeepSeekExtractor):
         return str(err.get("code", ""))
 
     def _rotate_from(self, failed_idx: int) -> bool:
-        """Swap to the next key. True = retry is worthwhile; False = nothing left."""
+        """Swap to the next key (and ITS endpoint+model). True = retry is worthwhile."""
         with self._key_lock:
             if failed_idx != self._key_idx:
                 return True  # another worker already rotated; just retry on the new key
             if self._key_idx + 1 >= len(self._keys):
                 return False
             self._key_idx += 1
-            self._api_key = self._keys[self._key_idx]
+            key, base, model = self._keys[self._key_idx]
+            self._api_key = key
+            self._url = base.rstrip("/") + "/chat/completions"
+            self._model = model
             # Abandon (do not close) the old client: other workers may be mid-request
             # on it. At most len(keys) clients ever exist, so the leak is bounded.
             self._client = None
@@ -643,6 +661,10 @@ class GLMExtractor(DeepSeekExtractor):
     def _call(self, payload: dict) -> dict:
         for _ in range(len(self._keys) + 1):
             idx = self._key_idx
+            # The retried request must name the CURRENT key's model — payloads are
+            # built before _call, so after a rotation the model may have changed.
+            if payload.get("model") != self._model:
+                payload = {**payload, "model": self._model}
             resp = self._http().post(self._url, json=payload)
             if resp.status_code in (401, 429):
                 code = self._provider_code(resp)
@@ -665,8 +687,12 @@ def make_glm_extractor(model: str | None = None) -> "GLMExtractor":
         raise RuntimeError(
             "ZHIPU_API_KEY is not set. Add it to .env (see README) before extracting."
         )
+    entries = config.zhipu_api_keys()
+    if model:  # an explicit model override applies to the primary key only; numbered
+        # slots keep their own ZHIPU_API_KEY_N_MODEL — their packs cover what they cover.
+        entries = [entries[0]._replace(model=model)] + entries[1:]
     return GLMExtractor(
-        config.zhipu_api_keys(),
+        entries,
         config.GLM_BASE_URL,
         model or config.GLM_MODEL,
         config.EXTRACTION_JD_CHAR_CAP,

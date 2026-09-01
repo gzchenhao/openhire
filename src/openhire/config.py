@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import NamedTuple
 
 from dotenv import load_dotenv
 
@@ -74,18 +75,45 @@ GLM_BASE_URL = os.environ.get(
 GLM_MODEL = os.environ.get("OPENHIRE_GLM_MODEL", "glm-5.3-flash")
 
 
-def zhipu_api_keys() -> list[str]:
-    """Every configured coding-plan key, in try-order.
+class ZhipuKey(NamedTuple):
+    key: str
+    base_url: str
+    model: str
+
+
+def zhipu_api_keys() -> list[ZhipuKey]:
+    """Every configured Zhipu key with ITS OWN endpoint + model, in try-order.
 
     ZHIPU_API_KEY stays the on/off switch (no primary, no GLM — `make_glm_extractor`
     enforces that); ZHIPU_API_KEY_2 … ZHIPU_API_KEY_9 are backups the extractor
     hot-swaps to when the active key's quota runs out (HTTP 429 / code 1310) or the
     key is invalid (HTTP 401). DeepSeek is only reached when every key here is spent.
-    Read lazily so tests can monkeypatch, and blank/whitespace slots are skipped —
-    an unfilled `ZHIPU_API_KEY_3=` line in .env is not an error.
+
+    Keys are not interchangeable: a coding-plan key only works on the coding endpoint
+    with the 5.3 family, while a token-billed resource-pack key lives on the standard
+    /api/paas/v4 endpoint with whatever model the pack covers (glm-4.7, glm-4.5-air…).
+    So each numbered slot takes optional companions:
+        ZHIPU_API_KEY_2_MODEL=glm-4.7
+        ZHIPU_API_KEY_2_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+    missing companions fall back to the global GLM_MODEL / GLM_BASE_URL. Read lazily
+    so tests can monkeypatch; blank/whitespace slots are skipped — an unfilled
+    `ZHIPU_API_KEY_3=` line in .env is not an error.
     """
-    keys = [ZHIPU_API_KEY] + [os.environ.get(f"ZHIPU_API_KEY_{i}") for i in range(2, 10)]
-    return [k.strip() for k in keys if k and k.strip()]
+    out: list[ZhipuKey] = []
+    if ZHIPU_API_KEY and ZHIPU_API_KEY.strip():
+        out.append(ZhipuKey(ZHIPU_API_KEY.strip(), GLM_BASE_URL, GLM_MODEL))
+    for i in range(2, 10):
+        k = os.environ.get(f"ZHIPU_API_KEY_{i}")
+        if not k or not k.strip():
+            continue
+        out.append(
+            ZhipuKey(
+                k.strip(),
+                (os.environ.get(f"ZHIPU_API_KEY_{i}_BASE_URL") or GLM_BASE_URL).strip(),
+                (os.environ.get(f"ZHIPU_API_KEY_{i}_MODEL") or GLM_MODEL).strip(),
+            )
+        )
+    return out
 
 # JD text is capped before extraction to bound token cost (skills/remote sit early in a JD).
 EXTRACTION_JD_CHAR_CAP = int(os.environ.get("OPENHIRE_JD_CHAR_CAP", "4000"))
