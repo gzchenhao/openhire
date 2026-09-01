@@ -2,7 +2,13 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
-**当前状态：v0.2.0 已上线（PyPI + Registry isLatest）· 188 tests green · 覆盖 125 家 · 快照刷新已由 GitHub Actions 每周自动执行**
+**当前状态：v0.2.0 已上线（PyPI + Registry isLatest）· 204 tests green · 覆盖 125 家 / 活跃 14,909 岗（LLM 精抽覆盖 99.99%，role_family 空值 0）· 快照周刷自动化 + 2026-09-01 手动加刷一次**
+
+## 2026-09-01 — GLM 多钥匙精抽收官（详见 reports/018 终账）
+
+- 多钥匙轮换上线后连修两个 provider 侧突变（thinking 参数契约、1310→1113 变身），204 tests green。
+- 存量精抽全部清偿：skills 剩 2、role_family NULL=0，现金 ¥0（全走领导的智谱套餐/资源包，主力为 glm-4.5-air token 包）。
+- 新快照 25.0MB 已上传（2026-09-01T14:50Z），公开数据即刻带上精抽质量。
 - GitHub：https://github.com/gzchenhao/openhire （main，tag v0.2.0）
 - Release v0.1.0（含快照 `openhire-index.db.gz`，URL 稳定）：https://github.com/gzchenhao/openhire/releases/tag/v0.1.0
 - PyPI：https://pypi.org/project/openhire/0.1.1/ （`pipx install openhire`）
