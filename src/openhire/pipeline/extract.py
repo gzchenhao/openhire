@@ -566,9 +566,11 @@ class GLMExtractor(DeepSeekExtractor):
     """Zhipu GLM via the OpenAI-compatible *coding-plan* endpoint.
 
     Same wire protocol as DeepSeek, three provider-specific adjustments:
-      * `thinking: disabled` — the glm-5.3 family reasons before answering by default,
-        burning ~240 reasoning tokens on a task that needs none (measured: completion
-        267 → 29 tokens with it off). Turning it off is a pure speed/quota win.
+      * `thinking: {enabled, effort: low}` — the glm-5.3 family reasons before
+        answering by default (~240 reasoning tokens on a task that needs none).
+        `disabled` worked until 2026-08-31, when the endpoint began rejecting it
+        (400/1210: only low/high/max allowed); effort:low measured 62 reasoning
+        tokens. On any future 1210 the extractor drops the parameter entirely.
       * `max_tokens` ≥ 1024 — reasoning tokens are charged against max_tokens BEFORE any
         content is emitted, so a small cap returns an empty string rather than an error.
         The floor keeps extraction safe even if `thinking` is ever ignored.
@@ -621,7 +623,12 @@ class GLMExtractor(DeepSeekExtractor):
             max_tokens=1024,
             rf_max_tokens=1024,
             json_mode=False,
-            extra_body={"thinking": {"type": "disabled"}},
+            # 2026-08-31: the coding endpoint stopped accepting {"type": "disabled"}
+            # (HTTP 400, code 1210 — "不支持关闭思考，请使用 low、high 或 max").
+            # effort:low measured 62 reasoning tokens vs 78 with thinking omitted.
+            # If the provider changes the contract again, _call self-heals by dropping
+            # the parameter entirely on the first 1210 — omission is always accepted.
+            extra_body={"thinking": {"type": "enabled", "effort": "low"}},
         )
 
     @staticmethod
@@ -659,13 +666,27 @@ class GLMExtractor(DeepSeekExtractor):
         return client
 
     def _call(self, payload: dict) -> dict:
-        for _ in range(len(self._keys) + 1):
+        stripped_thinking = False
+        for _ in range(len(self._keys) + 2):
             idx = self._key_idx
             # The retried request must name the CURRENT key's model — payloads are
             # built before _call, so after a rotation the model may have changed.
             if payload.get("model") != self._model:
                 payload = {**payload, "model": self._model}
             resp = self._http().post(self._url, json=payload)
+            if (
+                resp.status_code == 400
+                and not stripped_thinking
+                and "thinking" in payload
+                and self._provider_code(resp) == "1210"
+            ):
+                # The provider changed the thinking-parameter contract (again). Drop
+                # the parameter — omission is always accepted — and stop sending it
+                # for the rest of this extractor's life.
+                stripped_thinking = True
+                self._extra_body.pop("thinking", None)
+                payload = {k: v for k, v in payload.items() if k != "thinking"}
+                continue
             if resp.status_code in (401, 429):
                 code = self._provider_code(resp)
                 key_dead = resp.status_code == 401 or code == "1310"

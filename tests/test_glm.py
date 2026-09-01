@@ -57,9 +57,11 @@ def _glm() -> GLMExtractor:
     return GLMExtractor("dummy-key", "https://example.invalid/api/coding/paas/v4", "glm-5.3-flash")
 
 
-def test_glm_disables_thinking_and_keeps_a_large_token_budget():
+def test_glm_minimises_thinking_and_keeps_a_large_token_budget():
+    # 2026-08-31: the endpoint rejects {"type": "disabled"} (400/1210) — the closest
+    # accepted setting is effort:low (62 reasoning tokens measured).
     payload = _glm()._payload("sys", "user", 1024)
-    assert payload["thinking"] == {"type": "disabled"}
+    assert payload["thinking"] == {"type": "enabled", "effort": "low"}
     # Reasoning tokens are charged against max_tokens BEFORE any content is emitted.
     assert payload["max_tokens"] >= 1024
     # The fence-tolerant parser is the guarantee; response_format only costs prompt tokens.

@@ -121,6 +121,28 @@ def test_transient_rate_limit_backs_off_without_burning_a_backup(monkeypatch):
     assert ext._key_idx == 0  # the backup key was NOT consumed by a transient 429
 
 
+def test_1210_thinking_rejection_self_heals(monkeypatch):
+    # Provider flip-flops on the thinking parameter → drop it and retry, then never
+    # send it again from this extractor instance.
+    ext = _ext(["key-1"])
+    rejected = FakeResp(400, {"error": {"code": "1210", "message": "不支持关闭思考"}})
+    fake = _wire(ext, {"key-1": [rejected, FakeResp(200, OK_BODY)]}, monkeypatch)
+    sent: list[dict] = []
+    original_post = fake.post
+    fake.post = lambda url, json=None: (sent.append(json), original_post(url, json))[1]
+    assert ext._call(ext._payload("sys", "user", 1024)) == OK_BODY
+    assert "thinking" in sent[0] and "thinking" not in sent[1]
+    assert "thinking" not in ext._payload("sys", "user", 1024)  # future payloads too
+
+
+def test_other_400s_are_not_swallowed(monkeypatch):
+    ext = _ext(["key-1"])
+    bad = FakeResp(400, {"error": {"code": "1214", "message": "bad request"}})
+    _wire(ext, {"key-1": [bad]}, monkeypatch)
+    with pytest.raises(Exception):
+        ext._call(ext._payload("sys", "user", 1024))
+
+
 def test_all_keys_dead_raises_rate_limited(monkeypatch):
     ext = _ext(["key-1", "key-2"])
     _wire(ext, {"key-1": [QUOTA_GONE], "key-2": [QUOTA_GONE]}, monkeypatch)
@@ -143,7 +165,8 @@ def test_empty_key_list_is_refused():
 def _clear_numbered_slots(monkeypatch):
     """Isolate from whatever real backup keys live in the developer's environment."""
     for i in range(2, 10):
-        monkeypatch.delenv(f"ZHIPU_API_KEY_{i}", raising=False)
+        for suffix in ("", "_MODEL", "_BASE_URL"):
+            monkeypatch.delenv(f"ZHIPU_API_KEY_{i}{suffix}", raising=False)
 
 
 def test_config_collects_numbered_keys_in_order(monkeypatch):
