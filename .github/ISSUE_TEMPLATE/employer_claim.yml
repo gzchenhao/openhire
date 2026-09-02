@@ -1,0 +1,59 @@
+name: 🏢 Employer claim — verify your company's listings
+description: >
+  Claim your company's tenant in the OpenHire index. Claiming is free and reserves
+  verified-badge + listing-status control for your company when v0.3 ships. We verify
+  claims through corporate identity (a GitHub account associated with your company, or
+  a reply from a corporate-domain email) — never through payment.
+title: "[Employer claim] <company name>"
+labels: ["employer-claim"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **What claiming gets you (v0.3):** a verified badge on your listings, the ability
+        to correct listing status (e.g. mark an evergreen talent pool so `ghost_score`
+        reflects reality), and optional response-SLA commitments.
+
+        **What it never gets you:** ranking. Ranking is a locked pure function of
+        (match, freshness) — it is not for sale, to anyone, ever.
+  - type: input
+    id: company
+    attributes:
+      label: Company name
+      placeholder: e.g. Unitree Robotics
+    validations:
+      required: true
+  - type: input
+    id: tenant
+    attributes:
+      label: ATS vendor and tenant
+      description: As shown in your listings' apply URLs.
+      placeholder: e.g. beisen / unitree · greenhouse / anthropic
+    validations:
+      required: true
+  - type: input
+    id: role
+    attributes:
+      label: Your role at the company
+      placeholder: e.g. Recruiting lead / HRBP / Engineering manager
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: Corporate identity proof
+      description: >
+        A GitHub org membership visible on your profile, or state a corporate-domain
+        email we can confirm with (we will never publish it). Claims are verified by
+        identity, not payment.
+    validations:
+      required: true
+  - type: textarea
+    id: corrections
+    attributes:
+      label: Listing corrections (optional)
+      description: >
+        Any listings whose status needs correcting now — e.g. an evergreen talent pool
+        currently carrying a high staleness score, or a closed role still showing live.
+    validations:
+      required: false

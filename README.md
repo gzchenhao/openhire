@@ -88,8 +88,9 @@ Every listing is valid `schema.org/JobPosting`, plus:
 
 - `verified_at` — last moment confirmed live on the employer's own site
 - `source` — `employer_site | ats_public_api` (never a job board)
-- `ghost_score` — 0–1 likelihood the listing is not a real, active hire (ages off the **real**
-  posting date; lower is better)
+- `ghost_score` — 0–1 listing-activity signal, aged off the **real** posting date (lower =
+  fresher). A noise filter, not an accusation: long-open listings are often evergreen talent
+  pools or slow pipelines — the score simply lets agents down-rank low-activity noise
 - `response_sla_days` — employer's committed response window (v0.1: always null)
 - `apply_channel` — always the employer's own application URL, deep-linked to the specific job
 
@@ -132,8 +133,13 @@ default local SQLite file (`~/.openhire/openhire.db`).
 
 ## Roadmap
 
-- **v0.2** — CN ATS adapters (Beisen / Moka) · `ghost_score` public beta
-- **v0.3** — Employer claim + verified badges · response-SLA enforcement (7-day auto-delist)
+- **v0.2** — CN ATS adapters (Beisen shipped; Moka next) · `ghost_score` public beta
+- **v0.3** — Employer claim + verified badges — employers can [reserve their claim
+  today](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml) via a
+  corporate-identity GitHub issue (zero-cost now; badges + listing-status control ship with
+  v0.3) · response-SLA enforcement (7-day auto-delist) · **redacted proof-of-fit** — an
+  anonymous, candidate-authorized match summary that travels with an application (skills
+  overlap only; identity never included, résumés still never transit the server)
 - **v1.0** — Open, vendor-neutral schema extension for AI-readable job postings
 
 ## FAQ
@@ -147,7 +153,9 @@ always `ats_public_api`, and `verified_at` records the last time we confirmed ea
 It's a pure, open, unpurchasable function — `min(1, 0.15·relist_count + staleness)` aged off the
 **real** ATS posting date, not our crawl date. The formula lives in `pipeline/ghost_score.py`,
 is unit-tested, and takes no money as input (red line #2). Long-open, repeatedly-relisted
-postings score higher (worse); you can always re-rank client-side.
+postings score higher; you can always re-rank client-side. Read it as **signal-to-noise, not
+bad faith**: plenty of high-scoring listings are legitimate evergreen talent pools. Employers
+who want their listing activity represented accurately can claim their tenant (see Roadmap).
 
 **Does my résumé actually go through the server — really?**
 No. There is no résumé anywhere in the protocol. `authorize_application` has no résumé/file
