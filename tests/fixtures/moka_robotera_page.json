@@ -1,0 +1,231 @@
+{
+ "jobs": [
+  {
+   "attributeId": 145065,
+   "campusSites": [],
+   "createdAt": "2026-01-21T15:20:03",
+   "department": {
+    "id": 3998364,
+    "name": "研发中心"
+   },
+   "deptId": 3992997,
+   "hireMode": 1,
+   "id": "38a5bd61-6462-470d-9c61-5c71433777c7",
+   "locations": [],
+   "mjCode": "MJ000128",
+   "openedAt": "2026-06-08T00:00",
+   "orgId": "robotera",
+   "prior": 1,
+   "publishedAt": "2026-07-30T15:43:39",
+   "showCampusSites": false,
+   "showIsCampus": false,
+   "status": "open",
+   "title": "高级嵌入式电控软件工程师",
+   "updatedAt": "2026-07-30T15:44:15"
+  },
+  {
+   "attributeId": 145065,
+   "campusSites": [],
+   "createdAt": "2026-07-09T14:45:14",
+   "department": {
+    "id": 3992991,
+    "name": "质量部"
+   },
+   "deptId": 3992991,
+   "hireMode": 1,
+   "id": "0a563abd-4987-4f3c-ab64-53775c2e2c47",
+   "locations": [
+    {
+     "cityId": 110108,
+     "cityName": "海淀区",
+     "country": "中国",
+     "id": 705966,
+     "provinceId": 110000,
+     "provinceName": "北京市"
+    }
+   ],
+   "mjCode": "MJ000322",
+   "openedAt": "2026-07-09T00:00",
+   "orgId": "robotera",
+   "prior": 1,
+   "publishedAt": "2026-07-21T10:33:17",
+   "showCampusSites": false,
+   "showIsCampus": false,
+   "status": "open",
+   "title": "软件研发质量专家",
+   "updatedAt": "2026-07-21T10:33:16"
+  }
+ ],
+ "details": {
+  "38a5bd61-6462-470d-9c61-5c71433777c7": {
+   "aiCurrentAccuracy": 0.5,
+   "aiThresholdAccuracy": 0.5,
+   "aimFields": [],
+   "attributeId": 145065,
+   "autoDistribution": 0,
+   "autoFilterThreshold": 0.253,
+   "campusSiteGroupByCity": [],
+   "campusSites": [],
+   "commitment": "全职",
+   "createMethod": "手动添加",
+   "createdAt": "2026-01-21T15:20:03",
+   "customFields": {
+    "315487": {
+     "name": "旧系统状态",
+     "value": "暂停招聘"
+    }
+   },
+   "department": {
+    "id": 3998364,
+    "name": "研发中心"
+   },
+   "departmentId": 3992997,
+   "departments": [
+    {
+     "id": 3992997,
+     "name": "关节灵巧手嵌入式"
+    }
+   ],
+   "deptParentId": 0,
+   "hireMode": 1,
+   "id": "38a5bd61-6462-470d-9c61-5c71433777c7",
+   "isShowRecommendSite": true,
+   "jobContactWorkWechatQRCode": "",
+   "jobDescription": "<p>有电控经验的mcu工程师，高级及以上</p>",
+   "jobIntentions": [],
+   "jobRankIds": [],
+   "locDepCampusList": [
+    {
+     "campusSiteIds": [],
+     "departmentIds": [
+      3992997
+     ],
+     "locationIds": [],
+     "storeIds": []
+    }
+   ],
+   "locations": [],
+   "multiLocale": "{\"mainLocale\":\"zh-CN\",\"secondLocale\":\"\"}",
+   "openedAt": "2026-06-08T00:00",
+   "orgId": "robotera",
+   "pipelineId": 144370,
+   "postRequestResult": 0,
+   "prior": 1,
+   "publishedAt": "2026-07-30T15:43:39",
+   "recommendAccessTimes": 0,
+   "recommendShareTimes": 0,
+   "recommendationBonus": 0,
+   "recommendationReason": {
+    "notNull": true,
+    "require": true
+   },
+   "salaryUnit": 0,
+   "shmInterview": 0,
+   "shmNextInterview": 0,
+   "showCampusSites": true,
+   "showIsCampus": true,
+   "status": "open",
+   "title": "高级嵌入式电控软件工程师",
+   "updatedAt": "2026-07-30T15:44:15",
+   "useHeadhunter": 1,
+   "virtual": 0,
+   "zhineng": {
+    "name": "其他"
+   }
+  },
+  "0a563abd-4987-4f3c-ab64-53775c2e2c47": {
+   "aiCurrentAccuracy": 0.5,
+   "aiThresholdAccuracy": 0.5,
+   "aimFields": [
+    1
+   ],
+   "attributeId": 145065,
+   "autoArchiveTalentPoolId": 406185,
+   "autoDistribution": 0,
+   "autoFilterThreshold": 0.253,
+   "campusSiteGroupByCity": [],
+   "campusSites": [],
+   "commitment": "全职",
+   "createMethod": "手动添加",
+   "createdAt": "2026-07-09T14:45:14",
+   "customFields": {
+    "315487": {
+     "name": "旧系统状态",
+     "value": "招聘中"
+    }
+   },
+   "department": {
+    "id": 3992991,
+    "name": "质量部"
+   },
+   "departmentId": 3992991,
+   "departments": [
+    {
+     "id": 3992991,
+     "name": "质量部"
+    }
+   ],
+   "deptParentId": 0,
+   "hireMode": 1,
+   "id": "0a563abd-4987-4f3c-ab64-53775c2e2c47",
+   "isShowRecommendSite": false,
+   "jobContactWorkWechatQRCode": "",
+   "jobDescription": "<p><strong>岗位职责</strong></p><p>1. 质量策划与流程建设</p><p>1.1 负责机器人软件新产品的质量先期策划与实施，建立并优化软件研发全流程质量保证流程与管控体系，适配机器人软件迭代开发模式。</p><p>1.2 编制软件项目质量计划，明确需求阶段、设计阶段、开发阶段、测试阶段、发布阶段的质量活动、交付物、准入/准出验收标准，保障软件研发过程标准化、可落地、可追溯。</p><p>2. 设计阶段质量保证</p><p>2.1 全程参与机器人软件需求评审、架构设计评审、算法方案评审、版本方案评审、第三方软件/固件导入验证评审，从软件质量、功能安全、稳定性、兼容性、可测试性角度开展可行性评估，提前识别潜在质量风险与设计漏洞。</p><p>2.2 参与机器人新产品软件设计阶段品质可行性评估分析，覆盖运动控制、导航避障、调度系统、固件程序、上位机软件等核心模块，确保软件设计满足产品可靠性、场景适配性、量产交付质量要求。</p><p>2.3 对软件研发各阀点的需求文档、设计文档、测试方案、版本报告等质量交付物进行评审把关，拦截设计缺陷与流程不合规问题，保障软件项目各节点高质量过阀。</p><p>3. 测试与验证管理</p><p>3.1 参与制定机器人新产品软件整体测试规划、测试策略与全场景测试用例库，覆盖仿真测试、真机测试、场景极限测试、回归测试、版本迭代测试。</p><p>3.2 主导软件测试报告评审、版本上线评审，针对测试偏差项、遗留bug、性能不达标项进行风险等级评估，牵头推动问题整改、回归验证与风险闭环。</p><p>4. 问题管理与复盘迭代</p><p>4.1 负责新产品软件设计质量风险全流程把控，对研发阶段、样机试用阶段暴露的算法异常、逻辑缺陷、固件稳定性问题、兼容性问题等设计类质量问题，推动团队完成根因分析、整改落地、效果验证。</p><p>4.2 牵头完成软件设计质量问题专题复盘，梳理系统性、流程性、设计性短板，制定防复发、防流出的软件质量管控需求与规范要求。</p><p>4.3 建立软件历史问题库，在新项目、新版本迭代中开展前置风险规避，杜绝同类软件质量问题重复发生。</p><p><br></p><p><strong>任职要求</strong></p><p>1. 本科及以上学历，计算机科学与技术、软件工程、自动化、机器人工程、电子信息等相关工科专业。</p><p>2. 3年以上软件新产品质量开发（软件DQE）、项目质量、研发质量领域工作经验，有机器人行业软件质量经验优先。</p><p>3. 具备完整的软件产品从需求、设计、开发、测试、迭代到量产交付的全流程质量管控经验，熟悉软件敏捷开发、版本管控、测试迭代流程。</p><p>4. 熟悉机器人软件产品开发流程、软件测试原理与各类验证方法，能够独立制定软件测试策略、质量准入准出标准。</p><p>5. 具备优秀的问题解决能力，熟练掌握8D、5Why、鱼骨图等根本原因分析方法，可独立推进软件复杂质量问题定位、整改、闭环与预防优化。</p><p>6. 具备出色的跨部门沟通协调能力，能高效联动算法、软件开发、嵌入式、测试、项目、量产团队推进质量工作落地。</p><p>7. 具备极强的质量风险意识与前置预防思维，工作主动严谨、细致负责，具备良好的项目把控能力与复盘迭代能力。</p>",
+   "jobIntentions": [
+    1
+   ],
+   "jobRankIds": [],
+   "locDepCampusList": [
+    {
+     "campusSiteIds": [],
+     "departmentIds": [
+      3992991
+     ],
+     "locationIds": [
+      705966
+     ],
+     "storeIds": []
+    }
+   ],
+   "locations": [
+    {
+     "cityId": 110108,
+     "cityName": "海淀区",
+     "country": "中国",
+     "countryDescription": "中国",
+     "id": 705966,
+     "provinceName": "北京市"
+    }
+   ],
+   "maxSalary": 50,
+   "minSalary": 25,
+   "number": 1,
+   "openedAt": "2026-07-09T00:00",
+   "orgId": "robotera",
+   "pipelineId": 144370,
+   "postRequestResult": 0,
+   "prior": 1,
+   "publishedAt": "2026-07-21T10:33:17",
+   "recommendAccessTimes": 0,
+   "recommendShareTimes": 0,
+   "recommendationBonus": 0,
+   "recommendationReason": {
+    "notNull": true,
+    "require": true
+   },
+   "salaryUnit": 0,
+   "shmInterview": 0,
+   "shmNextInterview": 0,
+   "showCampusSites": true,
+   "showIsCampus": true,
+   "status": "open",
+   "title": "软件研发质量专家",
+   "updatedAt": "2026-07-21T10:33:16",
+   "useHeadhunter": 0,
+   "virtual": 0,
+   "zhineng": {
+    "name": "其他"
+   }
+  }
+ }
+}

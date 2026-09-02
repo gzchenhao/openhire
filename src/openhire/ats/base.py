@@ -1,8 +1,8 @@
 """ATS client abstractions and a normalized job record.
 
-All three vendors (Greenhouse, Lever, Ashby) are read through their *public,
-unauthenticated* job-board endpoints. Each client turns a vendor payload into a list
-of `JobRecord`s with a stable shape, so the pipeline is vendor-agnostic downstream.
+Every vendor is read through its *public, unauthenticated* job-board endpoints. Each
+client turns a vendor payload into a list of `JobRecord`s with a stable shape, so the
+pipeline is vendor-agnostic downstream.
 
 `source` for every record is `ats_public_api` — protocol field ②.
 """
@@ -37,6 +37,7 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
     "greenhouse": {"boards.greenhouse.io", "job-boards.greenhouse.io"},
     "lever": {"jobs.lever.co"},
     "ashby": {"jobs.ashbyhq.com"},
+    "moka": {"app.mokahr.com"},
 }
 
 # Beisen (北森) gives every employer its own host (`<tenant>.zhiye.com`), so its canonical
@@ -77,6 +78,10 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
     if vendor == "beisen":
         # The employer's own Beisen-hosted job page, which carries the 申请 button.
         return f"https://{tenant}.zhiye.com/social/detail?jobAdId={ats_job_id}"
+    if vendor == "moka":
+        # `tenant` is already "<org>/<siteId>". The portal is a hash-routed SPA, so the
+        # job id lives in the fragment — the path form 404s.
+        return f"https://app.mokahr.com/apply/{tenant}#/job/{ats_job_id}"
     raise ValueError(f"unknown vendor: {vendor!r}")
 
 

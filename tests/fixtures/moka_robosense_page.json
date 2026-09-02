@@ -1,0 +1,427 @@
+{
+ "jobs": [
+  {
+   "attributeId": 33461,
+   "campusSites": [],
+   "createdAt": "2026-01-29T09:28:13",
+   "deptId": 3879240,
+   "hireMode": 1,
+   "id": "b9cbf7e6-5760-4fe6-847b-05aefac35bfe",
+   "locations": [
+    {
+     "cityId": 440305,
+     "cityName": "南山区",
+     "country": "中国",
+     "id": 210641,
+     "provinceId": 440000,
+     "provinceName": "广东"
+    }
+   ],
+   "mjCode": "MJ002394",
+   "openedAt": "2026-01-29T00:00",
+   "orgId": "robosense",
+   "prior": 1,
+   "publishedAt": "2026-08-26T20:37:23",
+   "showCampusSites": false,
+   "showIsCampus": false,
+   "status": "open",
+   "title": "高级机械结构工程师（机器人业务）",
+   "updatedAt": "2026-08-26T20:37:22",
+   "zhineng": {
+    "id": 180488,
+    "name": "研发技术族"
+   }
+  },
+  {
+   "attributeId": 33461,
+   "campusSites": [],
+   "createdAt": "2026-03-11T11:43:42",
+   "deptId": 3879240,
+   "hireMode": 1,
+   "id": "bf9e3f46-8080-4b25-b844-8aa9cba00f12",
+   "locations": [
+    {
+     "cityId": 440305,
+     "cityName": "南山区",
+     "country": "中国",
+     "id": 210641,
+     "provinceId": 440000,
+     "provinceName": "广东"
+    }
+   ],
+   "mjCode": "MJ002517",
+   "openedAt": "2026-03-11T00:00",
+   "orgId": "robosense",
+   "prior": 1,
+   "publishedAt": "2026-08-26T20:37:10",
+   "showCampusSites": false,
+   "showIsCampus": false,
+   "status": "open",
+   "title": "机器人算法工程师（机器人业务）",
+   "updatedAt": "2026-08-26T20:37:09",
+   "zhineng": {
+    "id": 180488,
+    "name": "研发技术族"
+   }
+  },
+  {
+   "attributeId": 33461,
+   "campusSites": [],
+   "closedAt": "2025-08-25T11:02:29",
+   "createdAt": "2025-04-14T15:20:59",
+   "deptId": 3879240,
+   "hireMode": 1,
+   "id": "70266a0c-33b8-42c7-882c-28a9ae560cbb",
+   "locations": [
+    {
+     "cityId": 440305,
+     "cityName": "南山区",
+     "country": "中国",
+     "id": 210641,
+     "provinceId": 440000,
+     "provinceName": "广东"
+    }
+   ],
+   "mjCode": "MJ001716",
+   "openedAt": "2026-01-15T00:00",
+   "orgId": "robosense",
+   "prior": 1,
+   "publishedAt": "2026-08-26T20:36",
+   "showCampusSites": false,
+   "showIsCampus": false,
+   "status": "open",
+   "title": "机器人运动控制（机器人业务）专家",
+   "updatedAt": "2026-08-26T22:35:27",
+   "zhineng": {
+    "id": 180488,
+    "name": "研发技术族"
+   }
+  }
+ ],
+ "details": {
+  "b9cbf7e6-5760-4fe6-847b-05aefac35bfe": {
+   "aiCurrentAccuracy": 0.5,
+   "aiThresholdAccuracy": 0.5,
+   "aimFields": [],
+   "attributeId": 33461,
+   "autoArchiveTalentPoolId": 103007,
+   "autoDistribution": 0,
+   "autoFilterThreshold": 0.253,
+   "campusSiteGroupByCity": [],
+   "campusSites": [],
+   "commitment": "全职",
+   "createMethod": "手动添加",
+   "createdAt": "2026-01-29T09:28:13",
+   "customFields": {
+    "245204": {
+     "name": "职位序列",
+     "value": ""
+    },
+    "256161": {
+     "name": "基准职位",
+     "value": "机械结构岗"
+    },
+    "243180": {
+     "name": "P职级",
+     "value": "预P6"
+    }
+   },
+   "department": {
+    "id": 3879240,
+    "name": "创新事业部"
+   },
+   "departmentId": 3879240,
+   "departments": [
+    {
+     "id": 3879240,
+     "name": "创新事业部"
+    }
+   ],
+   "deptParentId": 0,
+   "education": "本科",
+   "finishedAt": "2026-04-26T00:00",
+   "hireMode": 1,
+   "id": "b9cbf7e6-5760-4fe6-847b-05aefac35bfe",
+   "isShowRecommendSite": true,
+   "jobContactWorkWechatQRCode": "",
+   "jobDescription": "<p>工作职责：</p><p>1. 参与人形机器人整机方案的技术论证，骨架方案设计，仿真计算和器件选型；</p><p>2. 负责轻量化机械臂的详细设计，评审，urdf输出，安装调试和关键技术问题解决；</p><p>3. 与ID、硬件、线束人员打合产品化设计，装配运输包材设计，对最终交付的性能与可靠性负责；</p><p>4. 参与各阶段样机测试验收，工艺优化，成本优化等，撰写相关技术文档，直至产品化导入；</p><p>5. 物料质量验收，进度评估，供应商寻源等协助性工作；</p><p><br></p><p>任职要求：</p><p>1. 机械设计，机电一体化等相关专业，本科及以上学历，六年以上中大型机器人相关工作经验；</p><p>2. 主导过至少一款可移动机器人产品从研发到落地的项目经验，有机械臂研发经验优先；</p><p>3. 具备扎实的机械理论基础和设计能力，熟悉尺寸链，公差，精密传动设计，对精度控制有清晰地认知；</p><p>4. 熟悉常用金属非金属材料特性和轻量化设计，动/静力学分析；</p><p>5. 熟悉行星和谐波减速机特性，熟悉电机、编码器、常用感知传感器等特性；</p><p>6. 有责任心，沟通顺畅，能适应灵活多变的新兴行业设计需求，善于从第一性原理的角度解决问题；</p>",
+   "jobIntentions": [],
+   "jobRankIds": [
+    72226
+   ],
+   "jobRankInfo": "高级",
+   "locDepCampusList": [
+    {
+     "campusSiteIds": [],
+     "departmentIds": [
+      3879240
+     ],
+     "locationIds": [
+      210641
+     ],
+     "storeIds": []
+    }
+   ],
+   "locations": [
+    {
+     "cityId": 440305,
+     "cityName": "南山区",
+     "country": "中国",
+     "countryDescription": "中国",
+     "id": 210641,
+     "provinceName": "广东"
+    }
+   ],
+   "maxSalary": 57,
+   "minSalary": 35,
+   "multiLocale": "{\"mainLocale\":\"zh-CN\",\"secondLocale\":\"\"}",
+   "number": 7,
+   "openedAt": "2026-01-29T00:00",
+   "orgId": "robosense",
+   "pipelineId": 37451,
+   "postRequestResult": 0,
+   "prior": 1,
+   "publishedAt": "2026-08-26T20:37:23",
+   "recommendAccessTimes": 0,
+   "recommendShareTimes": 0,
+   "recommendationBonus": 0,
+   "recommendationReason": {
+    "notNull": false,
+    "require": true
+   },
+   "salaryUnit": 0,
+   "shmInterview": 0,
+   "shmNextInterview": 0,
+   "showCampusSites": true,
+   "showIsCampus": true,
+   "status": "open",
+   "title": "高级机械结构工程师（机器人业务）",
+   "updatedAt": "2026-08-26T20:37:22",
+   "useHeadhunter": 1,
+   "virtual": 0,
+   "zhineng": {
+    "id": 180488,
+    "name": "研发技术族"
+   }
+  },
+  "bf9e3f46-8080-4b25-b844-8aa9cba00f12": {
+   "aiCurrentAccuracy": 0.5,
+   "aiThresholdAccuracy": 0.5,
+   "aimFields": [
+    1
+   ],
+   "attributeId": 33461,
+   "autoArchiveTalentPoolId": 103007,
+   "autoDistribution": 0,
+   "autoFilterThreshold": 0.253,
+   "campusSiteGroupByCity": [],
+   "campusSites": [],
+   "commitment": "全职",
+   "createMethod": "手动添加",
+   "createdAt": "2026-03-11T11:43:42",
+   "customFields": {
+    "245204": {
+     "name": "职位序列",
+     "value": ""
+    },
+    "256161": {
+     "name": "基准职位",
+     "value": "机器人算法"
+    },
+    "243180": {
+     "name": "P职级",
+     "value": "P6"
+    }
+   },
+   "department": {
+    "id": 3879240,
+    "name": "创新事业部"
+   },
+   "departmentId": 3879240,
+   "departments": [
+    {
+     "id": 3879240,
+     "name": "创新事业部"
+    }
+   ],
+   "deptParentId": 0,
+   "education": "本科",
+   "finishedAt": "2026-05-26T00:00",
+   "hireMode": 1,
+   "id": "bf9e3f46-8080-4b25-b844-8aa9cba00f12",
+   "isShowRecommendSite": true,
+   "jobContactWorkWechatQRCode": "",
+   "jobDescription": "<p>工作职责：</p><p>核心职责：</p><p>技术主导：负责具身智能核心算法模块（如任务规划、动态场景理解、机器人自主操作）的设计与迭代，主导技术方案从原型到实际部署的全链路；</p><p>复杂问题攻关：解决高难度场景下的技术挑战（如长时序决策、数据模态混杂、端侧高性能推理、sim2real gap）；</p><p>跨领域协同：与硬件团队深度协作，探索迭代机器人构型的最佳解决方案；</p><p>前沿探索：探索模仿学习（VLA/VLM/LLM与Diffusion模型）或强化学习在机器人任务规划、具身交互中的创新应用，如基于语言指令的零样本操作、非本体采集数据的训练、力触觉在操作大模型中的应用；</p><p>性能优化：主导算法在机器人域控上的性能调优，提升系统实时性与鲁棒性。</p><p>任职要求：</p><p>硕士及以上学历，计算机科学、自动化、电子工程、机器人学等相关专业；</p><p>3年以上AI算法开发经验，参与过现代AI技术项目（如端到端自动驾驶、多模态大模型、现代机器人智能系统、生成式AI等）；</p><p>优秀的C++和Python编程能力,注重代码质量、性能和可维护性；</p><p>熟悉机器人学基础，机器人运动学、动力学分析和设计；</p><p>强烈的交付意识，强烈的数据意识，对数据闭环有实操经验和深刻见解。</p>",
+   "jobIntentions": [
+    1
+   ],
+   "jobRankIds": [
+    72225
+   ],
+   "jobRankInfo": "中级",
+   "locDepCampusList": [
+    {
+     "campusSiteIds": [],
+     "departmentIds": [
+      3879240
+     ],
+     "locationIds": [
+      210641
+     ],
+     "storeIds": []
+    }
+   ],
+   "locations": [
+    {
+     "cityId": 440305,
+     "cityName": "南山区",
+     "country": "中国",
+     "countryDescription": "中国",
+     "id": 210641,
+     "provinceName": "广东"
+    }
+   ],
+   "maxSalary": 57,
+   "minSalary": 35,
+   "multiLocale": "{\"mainLocale\":\"zh-CN\",\"secondLocale\":\"\"}",
+   "number": 2,
+   "openedAt": "2026-03-11T00:00",
+   "orgId": "robosense",
+   "pipelineId": 37451,
+   "postRequestResult": 0,
+   "prior": 1,
+   "publishedAt": "2026-08-26T20:37:10",
+   "recommendAccessTimes": 0,
+   "recommendShareTimes": 0,
+   "recommendationBonus": 0,
+   "recommendationReason": {
+    "notNull": false,
+    "require": true
+   },
+   "salaryUnit": 0,
+   "shmInterview": 0,
+   "shmNextInterview": 0,
+   "showCampusSites": true,
+   "showIsCampus": true,
+   "status": "open",
+   "title": "机器人算法工程师（机器人业务）",
+   "updatedAt": "2026-08-26T20:37:09",
+   "useHeadhunter": 1,
+   "virtual": 0,
+   "zhineng": {
+    "id": 180488,
+    "name": "研发技术族"
+   }
+  },
+  "70266a0c-33b8-42c7-882c-28a9ae560cbb": {
+   "aiCurrentAccuracy": 0.5,
+   "aiThresholdAccuracy": 0.5,
+   "aimFields": [
+    1
+   ],
+   "attributeId": 33461,
+   "autoArchiveTalentPoolId": 103007,
+   "autoDistribution": 0,
+   "autoFilterThreshold": 0.253,
+   "campusSiteGroupByCity": [],
+   "campusSites": [],
+   "closedAt": "2025-08-25T11:02:29",
+   "commitment": "全职",
+   "createMethod": "手动添加",
+   "createdAt": "2025-04-14T15:20:59",
+   "customFields": {
+    "245204": {
+     "name": "职位序列",
+     "value": ""
+    },
+    "243180": {
+     "name": "P职级",
+     "value": "P6"
+    },
+    "256161": {
+     "name": "基准职位",
+     "value": "运控岗"
+    }
+   },
+   "department": {
+    "id": 3879240,
+    "name": "创新事业部"
+   },
+   "departmentId": 3879240,
+   "departments": [
+    {
+     "id": 3879240,
+     "name": "创新事业部"
+    }
+   ],
+   "deptParentId": 0,
+   "education": "硕士",
+   "hireMode": 1,
+   "id": "70266a0c-33b8-42c7-882c-28a9ae560cbb",
+   "isShowRecommendSite": true,
+   "jobContactWorkWechatQRCode": "",
+   "jobDescription": "<p>工作职责：  </p><p>1. 负责高动态足式机器人运动控制算法仿真验证；  </p><p>2. 负责机器人行走移动、任务作业等运动控制demo调试；  </p><p>3. 参与机器人关节设计、本体结构设计改进与功能优化；  </p><p>4. 参与机器人软件系统开发和更新，确保系统运行稳定；  </p><p>5. 参与技术文档编写、归档。  </p><p>任职要求： </p><p>1. 自动化、机械、航空航天、能源、电气等相关专业；  </p><p>2. 精通足式机器人运动学、动力学建模；  </p><p>3. 熟悉控制系统建模、状态估计、反馈控制系统设计等；  </p><p>4. 熟悉C++/python编程，熟悉linux软件开发；  </p><p>5. 熟悉机器人机械系统与硬件系统，熟悉各软件子系统原理及技术。</p>",
+   "jobIntentions": [
+    1
+   ],
+   "jobRankIds": [
+    72226
+   ],
+   "jobRankInfo": "高级",
+   "locDepCampusList": [
+    {
+     "campusSiteIds": [],
+     "departmentIds": [
+      3879240
+     ],
+     "locationIds": [
+      210641
+     ],
+     "storeIds": []
+    }
+   ],
+   "locations": [
+    {
+     "cityId": 440305,
+     "cityName": "南山区",
+     "country": "中国",
+     "countryDescription": "中国",
+     "id": 210641,
+     "provinceName": "广东"
+    }
+   ],
+   "maxSalary": 60000,
+   "minSalary": 35000,
+   "multiLocale": "{\"mainLocale\":\"zh-CN\",\"secondLocale\":\"\"}",
+   "number": 2,
+   "openedAt": "2026-01-15T00:00",
+   "orgId": "robosense",
+   "payPeriod": 15,
+   "pipelineId": 37451,
+   "postRequestResult": 0,
+   "prior": 1,
+   "publishedAt": "2026-08-26T20:36",
+   "recommendAccessTimes": 0,
+   "recommendShareTimes": 0,
+   "recommendationBonus": 0,
+   "recommendationReason": {
+    "notNull": false,
+    "require": true
+   },
+   "salaryUnit": 0,
+   "shmInterview": 0,
+   "shmNextInterview": 0,
+   "showCampusSites": true,
+   "showIsCampus": true,
+   "status": "open",
+   "title": "机器人运动控制（机器人业务）专家",
+   "updatedAt": "2026-08-26T22:35:27",
+   "useHeadhunter": 1,
+   "virtual": 0,
+   "zhineng": {
+    "id": 180488,
+    "name": "研发技术族"
+   }
+  }
+ }
+}

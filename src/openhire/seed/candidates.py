@@ -183,6 +183,33 @@ _BEISEN = [
     ("hairobotics", "海柔创新 Hai Robotics"),
     ("siasun", "新松机器人 SIASUN"),
     ("seyond", "图达通 Seyond"),
+    # Re-checked in 020: the 014 "non-JSON" reading no longer reproduces — the tenant
+    # answers the standard endpoint with 134 postings. Its sibling `zhito` (挚途科技) is
+    # still absent on purpose: that portal runs Beisen's legacy CmsPortal build, which has
+    # no JSON endpoint at all, and it currently lists 无任何在招职位.
+    ("yijiahe", "亿嘉和 YIJIAHE"),
+]
+
+
+# --- Moka 摩卡 (`app.mokahr.com/apply/<org>/<siteId>`) — the second domestic vendor ---
+# Added in 020. `tenant` is the org/siteId pair because that pair *is* the portal address;
+# `company_id` stays the bare org slug so a site-id change never orphans job history.
+# Every entry below was verified live on 2026-09-02 (portal page carries an `org` record
+# and the public roster endpoint returns jobs) — a bogus slug also answers HTTP 200, so
+# the org record, not the status code, is the existence test. See reports/020.
+_MOKA = [
+    ("robosense/77883", "速腾聚创 RoboSense", "robosense"),
+    ("deeproute/143885", "元戎启行 DeepRoute", "deeproute"),
+    ("minieye/118570", "佑驾创新 MINIEYE", "minieye"),
+    ("freetech/42354", "福瑞泰克 Freetech", "freetech"),
+    ("yushi/3774", "驭势科技 UISEE", "yushi"),
+    ("rino/165980", "白犀牛 Rino.ai", "rino"),
+    ("trunk/39504", "主线科技 Trunk Tech", "trunk"),
+    ("robotera/163877", "星动纪元 Robot Era", "robotera"),
+    ("fftai/126181", "傅利叶 Fourier", "fftai"),
+    ("zvision/43353", "一径科技 ZVISION", "zvision"),
+    ("geekplus/5030", "极智嘉 Geek+", "geekplus"),
+    ("keenon/24672", "擎朗智能 Keenon", "keenon"),
 ]
 
 
@@ -193,6 +220,7 @@ def all_candidates() -> list[Candidate]:
         ("lever", _LEVER),
         ("ashby", _ASHBY),
         ("beisen", _BEISEN),
+        ("moka", _MOKA),
     ):
         for row in rows:
             tenant, name = row[0], row[1]
@@ -204,4 +232,4 @@ def all_candidates() -> list[Candidate]:
 
 
 def candidate_count() -> int:
-    return len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN)
+    return len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN) + len(_MOKA)

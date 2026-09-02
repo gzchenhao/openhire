@@ -15,12 +15,14 @@ from .base import (
 )
 from .greenhouse import GreenhouseClient
 from .lever import LeverClient
+from .moka import MokaClient
 
 _CLIENTS: dict[str, ATSClient] = {
     "greenhouse": GreenhouseClient(),
     "lever": LeverClient(),
     "ashby": AshbyClient(),
     "beisen": BeisenClient(),
+    "moka": MokaClient(),
 }
 
 
@@ -44,6 +46,7 @@ __all__ = [
     "GreenhouseClient",
     "JobRecord",
     "LeverClient",
+    "MokaClient",
     "canonical_apply_url",
     "get_client",
     "all_vendors",
