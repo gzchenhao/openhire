@@ -210,6 +210,10 @@ _MOKA = [
     ("zvision/43353", "一径科技 ZVISION", "zvision"),
     ("geekplus/5030", "极智嘉 Geek+", "geekplus"),
     ("keenon/24672", "擎朗智能 Keenon", "keenon"),
+    # 2026-09-03 leader ruling (reports/020 §拍板): admission criterion is now "first-tier
+    # in-house AD/embodied-AI investment", not the primary-business label — XPeng qualifies
+    # (XNGP + humanoid Iron); Dreame (appliances) and Inovance (components) still do not.
+    ("xiaopeng/67918", "小鹏汽车 XPeng", "xiaopeng"),
 ]
 
 
