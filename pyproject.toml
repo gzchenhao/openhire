@@ -1,6 +1,6 @@
 [project]
 name = "openhire"
-version = "0.2.0"
+version = "0.3.0"
 description = "OpenHire 「哨兵」— an MCP job protocol server for AI/Infra, autonomous-driving and embodied-AI roles (US/EU/CN). Résumés never leave your device."
 readme = "README.md"
 requires-python = ">=3.11"
