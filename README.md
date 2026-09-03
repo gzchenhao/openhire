@@ -1,22 +1,32 @@
 <!-- mcp-name: io.github.gzchenhao/openhire -->
 
-# openhire-mcp
+# OpenHire · 开聘
 
-> **Jobs come to you. Your résumé never passes through OpenHire's servers, and we never store it.**
-> 岗位来找你，简历不经过我们的服务器，也不被我们存储。
+> **A job-search radar for your AI assistant — first-party listings, ghost jobs scored, and your résumé never touches our servers.**
+> 让 AI 助手替你盯岗的求职雷达 —— 一手职位、幽灵岗位打分，简历不经过我们的服务器。
 
-![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![v0.2 · sentinel](https://img.shields.io/badge/v0.2-sentinel-E3B341)
+![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![139 employers](https://img.shields.io/badge/employers-139-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
 
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
 
-An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar
-for **AI / Infra, autonomous-driving and embodied-AI roles** — sourced directly from ~120
-company career sites and their public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen),
-in the US, Europe **and China**. **No account. No signup. No résumé upload. Ever.**
+An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar for
+**AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **139 employers'**
+own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka), across
+the US, Europe **and China** (Waymo, Figure, Zoox — and Unitree, XPeng, UBTECH, Mech-Mind…).
+**No account. No signup. No résumé upload. Ever.**
 
-Matching runs on your machine; only an anonymous fingerprint and hard filters ever reach the
-server. This is the 「哨兵 / Sentinel」 reference implementation — see
+Three things a job board won't do for you:
+
+- **Kills ghost-job noise.** Every listing carries a `ghost_score` aged off the employer's
+  **real** posting date — the "2 days ago" a board shows you can be 300 days old in the ATS.
+- **Structural privacy, not a pinky-promise.** There is no résumé field in the protocol; a CI
+  test fails the build if anyone adds one. Matching runs on your machine — only an anonymous
+  fingerprint reaches the server.
+- **Ranking you can't buy.** Order is a locked pure function of (match, freshness). No
+  sponsored slots, no bidding — the signature is frozen by a test.
+
+This is the 「哨兵 / Sentinel」 reference implementation — see
 `design_handoff_openhire_v01/README.md` for the full protocol spec.
 
 ---
@@ -28,12 +38,11 @@ server. This is the 「哨兵 / Sentinel」 reference implementation — see
 pipx install openhire
 
 # 2. Get a job index. Default: download the public snapshot, then refresh it live.
-ohp bootstrap
-#   --fresh      crawl the public ATS from scratch (heuristic, free, no snapshot)
-#   --deepseek   higher-quality extraction using YOUR OWN DEEPSEEK_API_KEY
+ohp bootstrap                    # 139 employers · ~16k live postings · no account
 
 # 3. Use it directly…
 ohp search --required-skills rust,k8s --remote --role-family engineering
+ohp search --currency CNY --role-family engineering   # e.g. CN autonomous-driving / robotics roles
 
 # …or connect it to an MCP client:
 ohp serve
@@ -133,21 +142,23 @@ default local SQLite file (`~/.openhire/openhire.db`).
 
 ## Roadmap
 
-- **v0.2** — CN ATS adapters (Beisen shipped; Moka next) · `ghost_score` public beta
-- **v0.3** — Employer claim + verified badges — employers can [reserve their claim
+- **v0.2 – v0.3 (shipped)** — CN ATS adapters (北森 Beisen + Moka) · weekly auto-refreshed
+  public snapshot · `ghost_score` public beta · 139 employers across US / EU / China
+- **next** — Employer claim + verified badges — employers can [reserve their claim
   today](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml) via a
-  corporate-identity GitHub issue (zero-cost now; badges + listing-status control ship with
-  v0.3) · response-SLA enforcement (7-day auto-delist) · **redacted proof-of-fit** — an
-  anonymous, candidate-authorized match summary that travels with an application (skills
-  overlap only; identity never included, résumés still never transit the server)
+  corporate-identity GitHub issue (zero-cost now; badges + listing-status control ship next) ·
+  response-SLA enforcement (7-day auto-delist) · **redacted proof-of-fit** — an anonymous,
+  candidate-authorized match summary that travels with an application (skills overlap only;
+  identity never included, résumés still never transit the server)
 - **v1.0** — Open, vendor-neutral schema extension for AI-readable job postings
 
 ## FAQ
 
 **Where does the job data come from?**
-Directly from ~120 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen) — the same
-endpoints that power their careers pages. No scraping, no third-party job boards. `source` is
+Directly from 139 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka) — the
+same endpoints that power their careers pages. No scraping, no third-party job boards. `source` is
 always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.
+The public index is auto-refreshed weekly, so a fresh `ohp bootstrap` starts from recent data.
 
 **Why should I trust `ghost_score`?**
 It's a pure, open, unpurchasable function — `min(1, 0.15·relist_count + staleness)` aged off the
@@ -164,9 +175,10 @@ that ever transits the server is a short anonymous fingerprint like `#a3f9`. Thi
 `tests/test_privacy.py`, and the published snapshot carries **zero** user data (`tests/test_snapshot.py`).
 
 **Does it support China (中国区)?**
-Yes, since **v0.2**: employers on **北森 Beisen** (`<tenant>.zhiye.com`) are indexed — currently
-11 robotics / embodied-AI companies (宇树 Unitree, 优必选 UBTECH, 星海图 Galaxea, 越疆 Dobot,
-梅卡曼德 Mech-Mind, 普渡 Pudu, 海柔创新, 新松 SIASUN …). Pay published as 月薪 keeps its real
+Yes — this is what sets OpenHire apart. Employers on **北森 Beisen** (`<tenant>.zhiye.com`) and
+**Moka** (`app.mokahr.com`) are indexed: 20+ autonomous-driving / robotics / embodied-AI
+companies including 宇树 Unitree, 小鹏 XPeng, 优必选 UBTECH, 梅卡曼德 Mech-Mind, 速腾聚创 RoboSense,
+元戎启行 DeepRoute, 星海图 Galaxea, 傅利叶 Fourier, 普渡 Pudu. Pay published as 月薪 keeps its real
 period (`salary_period`), so a salary floor no longer silently drops Chinese roles.
 
 **飞书招聘 (Feishu Hire) is not supported and won't be**: it signs its job-list requests with a
