@@ -24,7 +24,7 @@
 - pinned commit 同步到含修复的 7fc2022。
 
 ## 遗留（下次继续）
-- **Glama 构建 release 未完成**：mcp<2 修复后 server 已能成功启动（构建从秒崩变为跑满 10 分钟），但两次构建分别遇 Glama 侧基础设施超时（拉 debian:trixie-slim 基础镜像 `context deadline exceeded`）——**非我方问题**。已重试（测试 01a06bf1…，进行中）。构建通过后点「Build & Release」→ 评分跳升 → 回 PR #13379 回复 bot 推进合并。
+- **Glama 构建 release 未完成**：mcp<2 修复后 server 已能成功启动（构建从秒崩变为跑满 10 分钟），但两次构建分别遇 Glama 侧基础设施超时（拉 debian:trixie-slim 基础镜像 `context deadline exceeded`）——**非我方问题**。此后又两次（分别用 trixie 与 bookworm 两种基础镜像）均在 Docker 第一步 `load metadata for docker.io/library/debian:*` 处 `no active session … context deadline exceeded`——三连败全发生在我方代码被克隆之前，判定为 **Glama 构建农场当日故障**。配置已定稿（bookworm-slim + `serve` + pinned 96bfcc8），择日重试即可。构建通过后点「Build & Release」→ 评分跳升 → 回 PR #13379 回复 bot 推进合并。
 - 重试若持续遇 Glama infra 超时，改日再试即可（配置与代码均已就位，无需再改）。
 
 ## KPI（2026-09-04）
