@@ -2,6 +2,12 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-09-04（下午）— 装机→star 漏斗后端：一次性星标提示 + `ohp star`（commit 2eaa5ca）
+
+- 依据 npm「终端广告」被禁→`npm fund` 的教训设计：提示**仅一次**、仅在首次搜出结果/check 命中的价值时刻、永不出现在 `serve`（stdout 属协议）、`OPENHIRE_NO_STAR_HINT=1` 可关；`ohp star` 为 npm-fund 式的用户主动命令。253 tests green（+5）。
+- 否决「MCP 返回值里塞推广脚标」：污染 AI 上下文 + 破坏冻结协议契约 + 与定位相悖。
+- 待下次发版进 PyPI；社区文案（知乎/即刻）文末加诚恳 star CTA（HN 除外，文化不容）。
+
 ## 2026-09-04 — Glama 认领/评分 + 0.3.1 热修（详见 reports/021）
 
 - **0.3.1 已发布**（PyPI + Registry isLatest + tag）：修 `mcp>=1.2.0` 无上限导致新装用户解析到 mcp 2.x、`serve` 崩溃（FastMCP 被 2.x 移除）。锁 `mcp<2`。全新装机验证 mcp=1.29.1、serve import OK。248 tests green。
