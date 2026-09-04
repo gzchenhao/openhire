@@ -17,7 +17,7 @@
 
 - **0.3.1 已发布**（PyPI + Registry isLatest + tag）：修 `mcp>=1.2.0` 无上限导致新装用户解析到 mcp 2.x、`serve` 崩溃（FastMCP 被 2.x 移除）。锁 `mcp<2`。全新装机验证 mcp=1.29.1、serve import OK。248 tests green。
 - **Glama**：加 glama.json + GitHub 认领 → 作者验证通过（蓝勾）、评分 17%→33%；修正 Glama 自动 CMD 漏 `serve`。
-- **遗留**：Glama Docker release 未完（mcp 修复后 server 成功启动，但三次（trixie/bookworm 两种镜像）均卡在 Glama 拉 docker.io 元数据的第一步 `no active session`——其构建农场当日故障，非我方问题；配置已定稿，择日重试）。通过后 Release → 回 punkpeye PR #13379 推进合并。
+- **遗留**：Glama Docker release 未完（mcp 修复后 server 成功启动，但**四次**（trixie/bookworm 两种镜像）均卡在 Glama 拉 docker.io 元数据的第一步 `no active session ... context deadline exceeded`——发生在 git clone 我方代码之前，纯 Glama 构建农场故障（最后一次卡 14 分钟才超时），非我方问题；配置已定稿（bookworm+serve+pinned），**下次会话一键重试 Build 即可，无需再改任何配置**）。通过后 Release → 回 punkpeye PR #13379 推进合并。
 - KPI：star 2 · 快照下载 5 · PyPI 72/天。装机>star，漏斗后端（首次运行引导 star）待优化。
 
 ## 2026-09-03 — 020 验收通过 + 小鹏入库 + 精抽存量二次清零 + 快照刷新
