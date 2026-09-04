@@ -2,6 +2,13 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-09-04 — Glama 认领/评分 + 0.3.1 热修（详见 reports/021）
+
+- **0.3.1 已发布**（PyPI + Registry isLatest + tag）：修 `mcp>=1.2.0` 无上限导致新装用户解析到 mcp 2.x、`serve` 崩溃（FastMCP 被 2.x 移除）。锁 `mcp<2`。全新装机验证 mcp=1.29.1、serve import OK。248 tests green。
+- **Glama**：加 glama.json + GitHub 认领 → 作者验证通过（蓝勾）、评分 17%→33%；修正 Glama 自动 CMD 漏 `serve`。
+- **遗留**：Glama Docker release 未完（mcp 修复后 server 成功启动，但两次撞 Glama 侧拉基础镜像超时，非我方问题，已重试）。通过后 Release → 回 punkpeye PR #13379 推进合并。
+- KPI：star 2 · 快照下载 5 · PyPI 72/天。装机>star，漏斗后端（首次运行引导 star）待优化。
+
 ## 2026-09-03 — 020 验收通过 + 小鹏入库 + 精抽存量二次清零 + 快照刷新
 
 - **020 验收：过**（248 tests 亲测；Moka 620 岗 posted_at 零造假；AES 信封判定复核维持，边界判例入 CLAUDE.md）。
