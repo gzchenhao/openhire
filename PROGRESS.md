@@ -2,6 +2,11 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-09-04（晚）— 0.3.2 已发布（PyPI + tag v0.3.2 → Registry 自动发）
+
+- 内容：一次性价值时刻星标提示 + `ohp star`。解耦于 Glama（其构建农场故障，徽章链接动态无需发版）。发布前门禁：253 tests、twine check、全新环境 wheel 验证（mcp 1.29.1、serve import OK）。
+- 版本线：0.3.0（Moka 崩溃修）→ 0.3.1（mcp<2 热修）→ 0.3.2（star 漏斗）。**现在 PyPI 新装用户三个已知洞全堵。**
+
 ## 2026-09-04（下午）— 装机→star 漏斗后端：一次性星标提示 + `ohp star`（commit 2eaa5ca）
 
 - 依据 npm「终端广告」被禁→`npm fund` 的教训设计：提示**仅一次**、仅在首次搜出结果/check 命中的价值时刻、永不出现在 `serve`（stdout 属协议）、`OPENHIRE_NO_STAR_HINT=1` 可关；`ohp star` 为 npm-fund 式的用户主动命令。253 tests green（+5）。
