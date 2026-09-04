@@ -21,6 +21,7 @@ from .pipeline.extract import canonicalize_skills
 
 FINGERPRINT_FILE = "fingerprint.json"
 RECEIPTS_FILE = "receipts.jsonl"
+STAR_HINT_FILE = "star_hint_shown"  # marker: the one-time star hint has been printed
 
 
 def _home() -> Path:
@@ -86,6 +87,30 @@ def load_or_create_fingerprint() -> Fingerprint:
 def append_receipt(receipt: dict) -> None:
     with receipts_path().open("a", encoding="utf-8") as f:
         f.write(json.dumps(receipt, ensure_ascii=False) + "\n")
+
+
+def star_hint_path() -> Path:
+    return _home() / STAR_HINT_FILE
+
+
+def star_hint_due() -> bool:
+    """True exactly once per machine: before the marker exists, unless opted out.
+
+    The npm "terminal ads" episode is the design constraint here — an unsolicited
+    message on every run gets a tool banned from people's terminals. So the hint is
+    shown one time, only after the user has actually gotten value (a search with
+    results), never from `serve` (stdout belongs to the MCP protocol), and can be
+    disabled outright with OPENHIRE_NO_STAR_HINT=1.
+    """
+    import os
+
+    if os.environ.get("OPENHIRE_NO_STAR_HINT", "").strip() not in ("", "0", "false"):
+        return False
+    return not star_hint_path().exists()
+
+
+def mark_star_hint_shown() -> None:
+    star_hint_path().write_text(dt.datetime.now(dt.timezone.utc).isoformat(), encoding="utf-8")
 
 
 def load_receipts() -> list[dict]:

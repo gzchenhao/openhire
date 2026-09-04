@@ -222,6 +222,42 @@ def search(
     console.ok(f"{len(results)} 条结果 · 服务端只做硬过滤 + 固定排序，精排交给客户端 Agent")
     for r in results:
         _print_job(r)
+    _maybe_star_hint()
+
+
+REPO_URL = "https://github.com/gzchenhao/openhire"
+
+
+def _maybe_star_hint() -> None:
+    """One-time, value-triggered star hint (see client.star_hint_due for the rules)."""
+    if not client.star_hint_due():
+        return
+    console.rule()
+    console.console.print(
+        "[ok]★[/] OpenHire 由一个不写代码的 PM 与 AI 结对维护，数据每周自动刷新。"
+        "觉得有用？给个 star："
+    )
+    console.console.print(
+        f"  [link={REPO_URL}]{REPO_URL}[/link]  [muted](或敲 `ohp star` 直接打开；本提示只出现这一次)[/]"
+    )
+    console.rule()
+    client.mark_star_hint_shown()
+
+
+@app.command()
+def star(
+    no_open: bool = typer.Option(False, "--no-open", help="Print the URL only; don't open a browser."),
+) -> None:
+    """Open the OpenHire GitHub repo — the one place a star actually helps."""
+    console.cmd("ohp star")
+    console.out(REPO_URL)
+    if no_open:
+        return
+    try:
+        opened = bool(webbrowser.open(REPO_URL))
+    except Exception:
+        opened = False
+    console.ok("已在浏览器打开" if opened else "无法自动打开，请手动访问上面的链接")
 
 
 def _parse_skills(skills: str | None) -> list[str] | None:
@@ -416,9 +452,13 @@ def check() -> None:
 
 
 def _print_check_results(res: dict) -> None:
+    printed = 0
     for r in res["results"]:
         for m in r["new_matches"]:
             _print_job(m)
+            printed += 1
+    if printed:
+        _maybe_star_hint()
 
 
 # --- apply --------------------------------------------------------------------
