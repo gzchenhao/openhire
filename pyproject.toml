@@ -13,7 +13,7 @@ keywords = [
 ]
 
 dependencies = [
-    "mcp>=1.2.0",
+    "mcp>=1.2.0,<2",  # v2 renamed FastMCP→MCPServer and moved the import; pin until we migrate
     "httpx>=0.27",
     "sqlalchemy>=2.0",
     "apscheduler>=3.10",
