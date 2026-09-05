@@ -2,6 +2,15 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-09-05 — Glama release 拿下 → 评分 83% → punkpeye(94k) 推进；X 进展续推
+
+- **Glama 农场当日恢复** + **逮到 CMD 回退**（Glama 自动填成 `ohp serve`，`ohp` 不在容器 PATH → `spawn ohp ENOENT`；改回 `uv run openhire serve`）→ 构建 **success**（server 正确响应 introspection）。
+- **Glama Release v0.3.2 已发布** → 质量评分 **33%→83%**，Server Coherence **A**（工具命名/职责/数量各 5/5）。
+- **punkpeye PR #13379**：已发事实性评论附 83% 分数推进合并（labels 已有 has-emoji/valid-name/has-glama，等 bot 复检或人工 merge）。
+- **X 进展续推**已发（Glama+Registry+0.3.2+软性 star 邀请，挂原 changelog 线程）。知乎/即刻**按住**，留给 punkpeye 合并/star 里程碑再放（防受众连日轰炸疲劳）。
+- 触达面态势：官方 Registry ✅ Glama(83%)✅ punkpeye 待 merge · mcp.so 待审 · wong2/appcypher 被维护者互动限制挡(非我可控) · PulseMCP 未同步。
+- KPI(09-05): star 2 · 快照下载 7 · PyPI 限流未取到。
+
 ## 2026-09-04（晚）— 0.3.2 已发布（PyPI + tag v0.3.2 → Registry 自动发）
 
 - 内容：一次性价值时刻星标提示 + `ohp star`。解耦于 Glama（其构建农场故障，徽章链接动态无需发版）。发布前门禁：253 tests、twine check、全新环境 wheel 验证（mcp 1.29.1、serve import OK）。
