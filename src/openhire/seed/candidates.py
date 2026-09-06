@@ -188,6 +188,9 @@ _BEISEN = [
     # still absent on purpose: that portal runs Beisen's legacy CmsPortal build, which has
     # no JSON endpoint at all, and it currently lists 无任何在招职位.
     ("yijiahe", "亿嘉和 YIJIAHE"),
+    # Added 2026-09-06: tactile-sensor + dexterous-hand maker, core embodied-AI supply
+    # chain (probe hit: 122 social postings on paxini.zhiye.com).
+    ("paxini", "帕西尼 PaXini"),
 ]
 
 
