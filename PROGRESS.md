@@ -2,6 +2,14 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-09-07 — 🎉 punkpeye(94k★) 已合并！三渠道重炮发射 + 第二北极星立项
+
+- **PR #13379 MERGED**（02:55Z）→ OpenHire 正式进入 awesome-mcp-servers（94k★，全 MCP 生态最大发现入口）。
+- **三渠道里程碑重炮已发**（合并即发，star 基线=2）：X changelog 续推 · 知乎想法（同步「开源软件宝藏库」圈子，第171篇）· 即刻动态（AI探索站圈子）。文案见 drafts/punkpeye-merge-posts.md。
+- **第二北极星立项**：雇主认领数（employer_claim）——见 reports/019 北极星序列 + memory。推广话术备好（drafts/employer-claim-outreach.md），启动门槛 star≥100 或周活≥50。
+- 目录触达面态势：官方 Registry ✅ · Glama 83% ✅ · **punkpeye 94k ✅ 已合并** · mcp.so 待审 · PulseMCP 恢复后自动收录 · wong2/appcypher 维护者限制挡。
+- **下一步**：盯 star 曲线（重炮转化）；到门槛启动雇主认领。
+
 ## 2026-09-05 — Glama release 拿下 → 评分 83% → punkpeye(94k) 推进；X 进展续推
 
 - **Glama 农场当日恢复** + **逮到 CMD 回退**（Glama 自动填成 `ohp serve`，`ohp` 不在容器 PATH → `spawn ohp ENOENT`；改回 `uv run openhire serve`）→ 构建 **success**（server 正确响应 introspection）。
