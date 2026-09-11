@@ -1,0 +1,38 @@
+{
+  "manifest_version": "0.4",
+  "name": "openhire",
+  "display_name": "OpenHire — job radar",
+  "version": "0.4.0",
+  "description": "First-party job listings from 139 employers' own ATS, with real posting dates and a ghost_score. No résumé ever leaves your machine.",
+  "long_description": "OpenHire turns Claude into a private job-search radar for AI / Infra, autonomous-driving and embodied-AI roles. It reads employers' own public ATS APIs (Greenhouse, Lever, Ashby, Beisen, Moka) — not job boards — so every listing carries the real posting date, days_open and a ghost_score that ages off the employer's timestamp, plus a direct apply link.\n\nPrivacy is structural: there is no résumé field in the protocol, matching runs on your machine, and the only user-originated value the server stores is an anonymous fingerprint. Ranking is a locked pure function of (match, freshness) — no sponsored slots.\n\nFirst start downloads the ~25 MB public snapshot (jobs/companies only). Requires Python ≥ 3.11 available to uv.",
+  "author": {
+    "name": "Howard Chen (gzchenhao)",
+    "url": "https://github.com/gzchenhao"
+  },
+  "homepage": "https://github.com/gzchenhao/openhire",
+  "documentation": "https://github.com/gzchenhao/openhire#readme",
+  "support": "https://github.com/gzchenhao/openhire/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "uv",
+    "entry_point": "src/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "src/server.py"]
+    }
+  },
+  "tools": [
+    { "name": "search_jobs", "description": "Hard-filter the live index; results carry verified_at, datePosted, days_open, ghost_score and apply_channel." },
+    { "name": "get_company_info", "description": "Aggregate, anonymous trust signals for one employer (ghost_score_avg, active_jobs)." },
+    { "name": "watch_intent", "description": "Register a standing job intent under an anonymous fingerprint." },
+    { "name": "check_watches", "description": "Pull matches that are new since the last check." },
+    { "name": "authorize_application", "description": "Record an authorized, employer-direct application and return the employer's own apply URL. Refuses résumés." }
+  ],
+  "keywords": ["jobs", "recruiting", "ats", "ghost-jobs", "autonomous-driving", "embodied-ai", "privacy"],
+  "license": "MIT",
+  "privacy_policies": ["https://github.com/gzchenhao/openhire/blob/main/docs/PRIVACY.md"],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "python": ">=3.11" }
+  }
+}

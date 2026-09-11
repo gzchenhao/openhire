@@ -54,8 +54,15 @@ Then point your MCP client at it — see **[Works with](#works-with)** below.
 
 ## Works with
 
-All clients use the same MCP entry. If you ran `pipx install openhire`, use `ohp`; otherwise
-`uvx openhire serve` fetches and runs it with no prior install (needs [uv](https://docs.astral.sh/uv/)).
+All clients use the same MCP entry. The canonical, zero-install config (needs
+[uv](https://docs.astral.sh/uv/)) works in every MCP client:
+
+```json
+{ "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire@latest", "serve"] } } }
+```
+
+The server **auto-downloads the public job snapshot on first run** if the index is empty, so
+`ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
 
 **Claude Desktop** — `%APPDATA%\Claude\claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/`); quit & reopen after editing:
 ```json
@@ -72,8 +79,12 @@ All clients use the same MCP entry. If you ran `pipx install openhire`, use `ohp
 { "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire", "serve"] } } }
 ```
 
-> Run `ohp bootstrap` once first so the index has data. On Windows Claude Desktop from the
-> Microsoft Store, the config is under `…\Packages\<Claude package>\LocalCache\Roaming\Claude\`.
+> First start downloads the ~25 MB public snapshot (jobs/companies only) — give it a moment.
+> To refresh later run `ohp bootstrap --force` or `ohp ingest`. On Windows Claude Desktop from
+> the Microsoft Store, the config is under `…\Packages\<Claude package>\LocalCache\Roaming\Claude\`.
+>
+> **Hosted / remote:** `ohp serve --transport streamable-http --host 0.0.0.0 --port 8000`
+> exposes `http://host:8000/mcp` (also `--transport sse`). A `Dockerfile` is included.
 
 ---
 
@@ -102,6 +113,13 @@ Every listing is valid `schema.org/JobPosting`, plus:
   pools or slow pipelines — the score simply lets agents down-rank low-activity noise
 - `response_sla_days` — employer's committed response window (v0.1: always null)
 - `apply_channel` — always the employer's own application URL, deep-linked to the specific job
+
+## Privacy Policy
+
+Short version: **there is no résumé field in the protocol**, matching runs on your machine, and
+the only user-originated value the server ever stores is an anonymous client-generated
+fingerprint. No analytics, no telemetry, no third-party sharing. Full policy:
+[docs/PRIVACY.md](https://github.com/gzchenhao/openhire/blob/main/docs/PRIVACY.md).
 
 ## Privacy model
 

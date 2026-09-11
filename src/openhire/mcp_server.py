@@ -1,4 +1,4 @@
-"""OpenHire MCP server (FastMCP, stdio transport).
+"""OpenHire MCP server (FastMCP; stdio by default, sse / streamable-http optional).
 
 Exposes the four protocol tools + apply. Tool docstrings are the descriptions the agent
 reads, so they carry the privacy contract verbatim. Each tool is a thin wrapper over the
@@ -8,9 +8,12 @@ transport-agnostic `service` layer; OpenHireError is surfaced as a structured
 
 from __future__ import annotations
 
+import os
+import sys
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from . import service
 from .db import init_db, session_scope
@@ -31,7 +34,10 @@ mcp = FastMCP(
 )
 
 
-@mcp.tool()
+@mcp.tool(
+    title="Search jobs",
+    annotations=ToolAnnotations(title="Search jobs", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=False),
+)
 def search_jobs(
     skills: list[str] | None = None,
     remote: bool | None = None,
@@ -76,7 +82,10 @@ def search_jobs(
             return e.as_dict()
 
 
-@mcp.tool()
+@mcp.tool(
+    title="Company trust signals",
+    annotations=ToolAnnotations(title="Company trust signals", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=False),
+)
 def get_company_info(company_id: str) -> dict:
     """Aggregate, anonymous trust signals for one employer.
 
@@ -90,7 +99,10 @@ def get_company_info(company_id: str) -> dict:
             return e.as_dict()
 
 
-@mcp.tool()
+@mcp.tool(
+    title="Watch a job intent",
+    annotations=ToolAnnotations(title="Watch a job intent", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
+)
 def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     """Register a standing intent so new matches can be pulled later.
 
@@ -110,7 +122,10 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
             return e.as_dict()
 
 
-@mcp.tool()
+@mcp.tool(
+    title="Check watches",
+    annotations=ToolAnnotations(title="Check watches", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
+)
 def check_watches(fingerprint: str) -> dict:
     """Pull matches that are new since this fingerprint's last check.
 
@@ -124,7 +139,10 @@ def check_watches(fingerprint: str) -> dict:
             return e.as_dict()
 
 
-@mcp.tool()
+@mcp.tool(
+    title="Authorize application",
+    annotations=ToolAnnotations(title="Authorize application", readOnlyHint=False, destructiveHint=False, idempotentHint=True,  openWorldHint=False),
+)
 def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> dict:
     """Record an authorized, employer-direct application. REFUSES résumés.
 
@@ -149,10 +167,54 @@ def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> di
             return e.as_dict()
 
 
-def serve() -> None:
-    """Start the stdio MCP server."""
+def _ensure_index() -> None:
+    """Auto-bootstrap: if the local SQLite index is empty, install the public snapshot.
+
+    Makes `uvx openhire serve` work with zero prior setup (one-click installs, hosted
+    marketplaces, Docker). Snapshot = public jobs/companies only, never user data
+    (verified by install_snapshot). Skipped for Postgres and when
+    OPENHIRE_NO_AUTO_BOOTSTRAP is set (tests/CI). All chatter goes to stderr — stdout
+    belongs to the MCP protocol.
+    """
+    from sqlalchemy import func, select
+
+    from . import config
+    from .db.models import Company
+
+    if os.environ.get("OPENHIRE_NO_AUTO_BOOTSTRAP"):
+        return
+    if not config.DATABASE_URL.startswith("sqlite"):
+        return
+    with session_scope() as s:
+        n = s.execute(select(func.count()).select_from(Company)).scalar() or 0
+    if n:
+        return
+    db_path = config.DATABASE_URL.split(":///", 1)[-1]
+    from .db.session import dispose_engine
+    from .pipeline.snapshot import install_snapshot
+
+    import logging
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # no per-request INFO lines on stderr
+    print("openhire: empty index — downloading the public snapshot (jobs/companies only)…",
+          file=sys.stderr)
+    dispose_engine()  # release the SQLite handle before the file is overwritten
+    try:
+        res = install_snapshot(config.SNAPSHOT_URL, db_path)
+        print(f"openhire: snapshot ready · {res.companies} employers · {res.jobs:,} jobs · "
+              f"data as of {res.data_as_of}", file=sys.stderr)
+    except Exception as e:  # network / invalid snapshot: keep serving (empty) with a hint
+        print(f"openhire: auto-bootstrap failed ({type(e).__name__}: {e}). "
+              "Run `ohp bootstrap` manually.", file=sys.stderr)
+
+
+def serve(transport: str = "stdio", host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Start the MCP server. transport: "stdio" (default) | "sse" | "streamable-http"."""
     init_db()
-    mcp.run(transport="stdio")
+    _ensure_index()
+    if transport != "stdio":
+        mcp.settings.host = host
+        mcp.settings.port = port
+    mcp.run(transport=transport)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":

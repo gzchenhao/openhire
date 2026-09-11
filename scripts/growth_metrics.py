@@ -3,7 +3,13 @@
 The north-star metric (weekly active fingerprints) is unmeasurable by design — matching
 runs on users' machines and nothing phones home. These public proxies stand in for it:
 GitHub stars/traffic, PyPI downloads, and snapshot downloads (every `ohp bootstrap` pulls
-the Release asset exactly once, so its download_count ≈ cumulative first-runs + CI runs).
+the Release asset exactly once, so its download_count ≈ first-runs + CI runs).
+
+CAUTION on snapshot_dl: it is NOT cumulative. refresh-snapshot.yml overwrites the asset
+under the same name every Monday, and GitHub gives the replacement a fresh counter — so
+this number only covers the period since the last refresh (and one of the hits is that
+workflow's own download). Read it as "bootstraps this week", never as an all-time total.
+PyPI counts are the opposite problem: they include mirrors and CI, so they overstate.
 
 Run:  .venv/Scripts/python.exe scripts/growth_metrics.py
 Needs: gh (authenticated) on PATH; network to pypistats.org.

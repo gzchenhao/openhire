@@ -170,12 +170,22 @@ def _run_daemon() -> None:
 
 # --- serve --------------------------------------------------------------------
 @app.command()
-def serve() -> None:
-    """Start the stdio MCP server (for Claude Desktop / Cursor / CLI clients)."""
+def serve(
+    transport: str = typer.Option(
+        "stdio", "--transport", "-t",
+        help='"stdio" (Claude Desktop / Cursor / Windsurf) | "sse" | "streamable-http" (hosted).',
+    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Bind address for sse / streamable-http."),
+    port: int = typer.Option(8000, "--port", help="Port for sse / streamable-http."),
+) -> None:
+    """Start the MCP server. First run auto-downloads the public snapshot if the index is empty."""
     from .mcp_server import serve as _serve
 
+    if transport not in ("stdio", "sse", "streamable-http"):
+        console.error("ERR_BAD_TRANSPORT", 'transport must be "stdio", "sse" or "streamable-http".')
+        raise typer.Exit(2)
     # NOTE: no banner/stdout chatter — stdio transport owns stdout for the MCP protocol.
-    _serve()
+    _serve(transport=transport, host=host, port=port)
 
 
 # --- search -------------------------------------------------------------------

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1220"/><stop offset="1" stop-color="#16233A"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- radar rings -->
+  <g fill="none" stroke="#4ADE87" stroke-linecap="round">
+    <circle cx="256" cy="268" r="168" stroke-width="10" opacity="0.28"/>
+    <circle cx="256" cy="268" r="112" stroke-width="10" opacity="0.5"/>
+    <circle cx="256" cy="268" r="56"  stroke-width="10" opacity="0.8"/>
+  </g>
+  <!-- sweep -->
+  <path d="M256 268 L256 100 A168 168 0 0 1 402 184 Z" fill="#4ADE87" opacity="0.22"/>
+  <line x1="256" y1="268" x2="256" y2="100" stroke="#4ADE87" stroke-width="12" stroke-linecap="round"/>
+  <!-- verified hit -->
+  <circle cx="338" cy="196" r="22" fill="#E3B341"/>
+  <circle cx="338" cy="196" r="34" fill="none" stroke="#E3B341" stroke-width="6" opacity="0.5"/>
+  <!-- center -->
+  <circle cx="256" cy="268" r="14" fill="#E9EEE9"/>
+</svg>

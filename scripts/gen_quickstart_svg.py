@@ -52,7 +52,7 @@ def main() -> None:
 
     # Step 1 — install (external stdout, faithfully replayed).
     cmd("pipx install openhire")
-    out("  installed package openhire 0.3.0, installed using Python 3.11", MUTED)
+    out("  installed package openhire 0.4.0, installed using Python 3.11", MUTED)
     out("  These apps are now globally available:  ohp", MUTED)
     rec.print()
 
