@@ -155,3 +155,75 @@ async def test_apply_tool_has_no_resume_parameter(seeded):
         assert props == {"job_id", "fingerprint", "authorized"}
         for pii in ("resume", "cv", "file", "attachment", "email", "name"):
             assert pii not in props
+
+
+# --- 0.4.1: startup must not block on auto-bootstrap ---------------------------
+# A hosted marketplace (ModelScope, Docker MCP Toolkit, Glama) probes a new server by
+# connecting and calling tools/list. If `serve()` synchronously downloads the ~25 MB
+# snapshot first, that probe times out and the listing is marked undeployable — which is
+# exactly what happened to the first ModelScope submission. Startup therefore kicks the
+# download onto a daemon thread; only tools that read data wait for it.
+
+
+def test_start_bootstrap_does_not_block(monkeypatch):
+    """_start_bootstrap returns immediately even when a download is in flight."""
+    import time
+
+    from openhire import mcp_server as ms
+
+    monkeypatch.delenv("OPENHIRE_NO_AUTO_BOOTSTRAP", raising=False)
+    monkeypatch.setattr(ms, "_BOOTSTRAP_STARTED", False)
+    monkeypatch.setattr(ms, "_INDEX_READY", ms.threading.Event())
+
+    slow_done = ms.threading.Event()
+
+    def slow_bootstrap():
+        time.sleep(1.0)  # stand-in for the real ~30 s download
+        slow_done.set()
+        ms._INDEX_READY.set()
+
+    monkeypatch.setattr(ms, "_do_bootstrap", slow_bootstrap)
+    # Pretend the index is empty so a bootstrap is actually started.
+    monkeypatch.setattr(ms, "session_scope", _empty_index_session_scope)
+
+    t0 = time.monotonic()
+    ms._start_bootstrap()
+    elapsed = time.monotonic() - t0
+
+    assert elapsed < 0.5, f"startup blocked for {elapsed:.2f}s; marketplace probes will time out"
+    assert not ms._INDEX_READY.is_set(), "download should still be running in the background"
+    assert slow_done.wait(5), "background bootstrap thread never ran"
+
+
+def test_await_index_noop_when_no_bootstrap(monkeypatch):
+    """Tools called without serve() (tests, CLI, embedding hosts) must never wait."""
+    import time
+
+    from openhire import mcp_server as ms
+
+    monkeypatch.setattr(ms, "_BOOTSTRAP_STARTED", False)
+    monkeypatch.setattr(ms, "_INDEX_READY", ms.threading.Event())
+
+    t0 = time.monotonic()
+    ms._await_index(timeout=30.0)
+    assert time.monotonic() - t0 < 0.5
+
+
+class _FakeSession:
+    def execute(self, *_a, **_k):
+        class _R:
+            @staticmethod
+            def scalar():
+                return 0
+
+        return _R()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_a):
+        return False
+
+
+def _empty_index_session_scope():
+    return _FakeSession()

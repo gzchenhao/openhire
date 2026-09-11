@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -70,6 +71,7 @@ def search_jobs(
         role_family: coarse family filter, e.g. "engineering" (v0.1: unpopulated → no-op).
         limit: max results (default 20).
     """
+    _await_index()
     with session_scope() as s:
         try:
             return service.search_jobs(
@@ -92,6 +94,7 @@ def get_company_info(company_id: str) -> dict:
     Returns ghost_score_avg, active_jobs, and index_built_at (when the index was last
     built). NEVER returns any individual candidate data — the server holds none.
     """
+    _await_index()
     with session_scope() as s:
         try:
             return service.get_company_info(s, company_id)
@@ -115,6 +118,7 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     "engineering"), `min_salary` (int). Returns { watch_id, status, fingerprint,
     fingerprint_notice }.
     """
+    _await_index()
     with session_scope() as s:
         try:
             return service.watch_intent(s, fingerprint, filters)
@@ -132,6 +136,7 @@ def check_watches(fingerprint: str) -> dict:
     stdio has no server push, so clients pull: call this at the start of a session.
     Returns the new matches per watch and advances each watch's last-notified marker.
     """
+    _await_index()
     with session_scope() as s:
         try:
             return service.check_watches(s, fingerprint)
@@ -160,6 +165,7 @@ def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> di
         fingerprint: the user's anonymous fingerprint.
         authorized: must be true — explicit per-job consent.
     """
+    _await_index()
     with session_scope() as s:
         try:
             return service.apply(s, job_id, fingerprint, authorized)
@@ -167,50 +173,84 @@ def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> di
             return e.as_dict()
 
 
-def _ensure_index() -> None:
-    """Auto-bootstrap: if the local SQLite index is empty, install the public snapshot.
+_INDEX_READY = threading.Event()
+_BOOTSTRAP_STARTED = False
 
-    Makes `uvx openhire serve` work with zero prior setup (one-click installs, hosted
-    marketplaces, Docker). Snapshot = public jobs/companies only, never user data
-    (verified by install_snapshot). Skipped for Postgres and when
-    OPENHIRE_NO_AUTO_BOOTSTRAP is set (tests/CI). All chatter goes to stderr — stdout
-    belongs to the MCP protocol.
-    """
-    from sqlalchemy import func, select
 
+def _do_bootstrap() -> None:
+    """Download+install the public snapshot. Runs on a worker thread; never raises."""
     from . import config
-    from .db.models import Company
-
-    if os.environ.get("OPENHIRE_NO_AUTO_BOOTSTRAP"):
-        return
-    if not config.DATABASE_URL.startswith("sqlite"):
-        return
-    with session_scope() as s:
-        n = s.execute(select(func.count()).select_from(Company)).scalar() or 0
-    if n:
-        return
-    db_path = config.DATABASE_URL.split(":///", 1)[-1]
     from .db.session import dispose_engine
     from .pipeline.snapshot import install_snapshot
 
-    import logging
-    logging.getLogger("httpx").setLevel(logging.WARNING)  # no per-request INFO lines on stderr
+    db_path = config.DATABASE_URL.split(":///", 1)[-1]
     print("openhire: empty index — downloading the public snapshot (jobs/companies only)…",
           file=sys.stderr)
-    dispose_engine()  # release the SQLite handle before the file is overwritten
     try:
+        dispose_engine()  # release the SQLite handle before the file is overwritten
         res = install_snapshot(config.SNAPSHOT_URL, db_path)
         print(f"openhire: snapshot ready · {res.companies} employers · {res.jobs:,} jobs · "
               f"data as of {res.data_as_of}", file=sys.stderr)
     except Exception as e:  # network / invalid snapshot: keep serving (empty) with a hint
         print(f"openhire: auto-bootstrap failed ({type(e).__name__}: {e}). "
               "Run `ohp bootstrap` manually.", file=sys.stderr)
+    finally:
+        _INDEX_READY.set()
+
+
+def _start_bootstrap() -> None:
+    """Kick off auto-bootstrap on a background thread if the index is empty.
+
+    Startup must NOT block: `initialize` and `tools/list` need no data, and hosted
+    marketplaces (ModelScope, Docker MCP Toolkit, Glama) time out a server that takes
+    ~30 s to answer its first request. Tools that read data call `_await_index()`
+    instead, so correctness is preserved without delaying discovery.
+
+    Snapshot = public jobs/companies only, never user data (verified by
+    install_snapshot). Skipped for Postgres and when OPENHIRE_NO_AUTO_BOOTSTRAP is set
+    (tests/CI). All chatter goes to stderr — stdout belongs to the MCP protocol.
+    """
+    global _BOOTSTRAP_STARTED
+    from sqlalchemy import func, select
+
+    from . import config
+    from .db.models import Company
+
+    if _BOOTSTRAP_STARTED:
+        return
+    _BOOTSTRAP_STARTED = True
+    if os.environ.get("OPENHIRE_NO_AUTO_BOOTSTRAP") or not config.DATABASE_URL.startswith("sqlite"):
+        _INDEX_READY.set()
+        return
+    try:
+        with session_scope() as s:
+            n = s.execute(select(func.count()).select_from(Company)).scalar() or 0
+    except Exception:
+        n = 1  # can't tell: assume populated rather than clobber someone's index
+    if n:
+        _INDEX_READY.set()
+        return
+
+    import logging
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # no per-request INFO on stderr
+    threading.Thread(target=_do_bootstrap, name="openhire-bootstrap", daemon=True).start()
+
+
+def _await_index(timeout: float = 180.0) -> None:
+    """Block until auto-bootstrap finishes.
+
+    No-op unless `_start_bootstrap()` actually kicked one off — tools imported and called
+    directly (tests, the CLI, an embedding host) must never wait on an event nobody will set.
+    """
+    if not _BOOTSTRAP_STARTED or _INDEX_READY.is_set():
+        return
+    _INDEX_READY.wait(timeout)
 
 
 def serve(transport: str = "stdio", host: str = "127.0.0.1", port: int = 8000) -> None:
     """Start the MCP server. transport: "stdio" (default) | "sse" | "streamable-http"."""
     init_db()
-    _ensure_index()
+    _start_bootstrap()  # background: startup must stay instant for marketplace probes
     if transport != "stdio":
         mcp.settings.host = host
         mcp.settings.port = port
