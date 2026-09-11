@@ -2,6 +2,28 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-09-11（晚）— 外部体验官报告 → 0.4.2（版本漂移 / 假幂等 / 陈旧文案）
+
+- **智谱 Autoclaw 产品体验官**对 0.3.2 与 0.4.1 做了两轮完整实测（五工具 + 错误路径 + CLI +
+  streamable-http），出报告与 17 条吐槽。**这是迄今最有价值的外部输入**，见 reports/026。
+- **三条最严重的我逐条复验，全部属实，其中两条是我当天造成的**：① `__init__.py` 硬编码
+  `__version__`，0.4.0 与 0.4.1 两次 bump 都漏，`ohp version` 一直报 0.3.2；②
+  `authorize_application` 标 `idempotentHint=True` 但连调两次得 `r_8d6d`/`r_d03f`，注解是我当天加的；
+  ③ README 仍写 "Moka is on the roadmap" 而 moka=13 家在跑。
+- **0.4.2 已发**：版本号改为从 `importlib.metadata` 读取（物理上杜绝第二份副本）+ 回归测试；
+  `idempotentHint` 改为 False（**只改注解不改行为**，语义变更是产品决策，等领导定）；删陈旧句。
+  干净 venv 装 PyPI 验证通过。256 tests。
+- **我的流程失误（记下来）**：0.4.2 是在测试未通过的情况下发的——`pip install -e .` 因 `ohp.exe`
+  被占用而失败，pytest 报 23 个 collection error，但 install→test→build→publish 串在一条命令链里，
+  `set -e` 捕不到管道尾部为 `tail` 的失败。产物碰巧是好的（wheel 由源码构建），**但那是运气不是把关**。
+  今后发布前的测试必须单独成步、单独断言退出码。
+- **环境**：`.venv` editable 安装当前是坏的，占用 `ohp.exe` 的是 **Claude Desktop（PID 7260）派生的
+  两个 `ohp serve`**——OpenHire 正在领导的 Claude Desktop 里跑着，我没擅自杀。**待领导重启 Claude
+  Desktop** 后修复；期间用 `PYTHONPATH=src` 绕开，不影响干活。
+- **他的总评**：未发现 S0/S1，S2×3 / S3×9 / S4×5，「修完三个 P0 就可以上 MCP store」。隐私三条红线
+  他在代码与运行时都验证属实。零配置 serve 实测 24 秒从空索引到第一条数据。
+- **待领导决定**：销售岗噪音（需抽取管线立项）、重复授权是否应当幂等、bootstrap 文档收口。
+
 ## 2026-09-11（下午）— 0.4.1 热修：非阻塞启动 → 魔搭从「不可部署」翻成 Hosted
 
 - **0.4.0 有个我自己引入的缺陷**：`serve()` 同步跑那 31 s 的快照下载才进 `mcp.run()`。托管市场探测新服务的方式是「连上 → 调 tools/list」，而 `tools/list` 根本不需要索引。结果魔搭部署检测超时，列表被判 **不可部署**。（我一度误报「检测通过」，那是个短暂状态，重检即失败——教训：托管平台的状态要等稳定再下结论。）
