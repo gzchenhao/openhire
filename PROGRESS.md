@@ -2,6 +2,18 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-09-11 — 0.4.0 发布（零配置 serve）+ 四个 Agent 平台商店同日提交 + 掘金昵称
+
+- **0.4.0 已上线**：PyPI ✅ · tag v0.4.0 → OIDC 工作流自动发官方 Registry ✅ · GitHub Release 附 `openhire-0.4.0.mcpb`。253 tests green。
+- **为什么要 0.4.0**：上架任何「一键装 / 云托管」商店的共同前提是 `uvx openhire serve` **零配置就能出数据**。此前 serve 起来是空库，必须先 `ohp bootstrap`。现在 serve 检测到空索引自动拉公开快照（实测 140 家 / 23,874 岗 / 31 s），`OPENHIRE_NO_AUTO_BOOTSTRAP=1` 可关。同时补齐商店硬性要求：五个工具 `title` + `readOnly/destructive/idempotent/openWorld` 注解、`docs/PRIVACY.md`、品牌图标、`Dockerfile`、`--transport sse|streamable-http`。
+- **商店提交（当日）**：Cline Marketplace issue cline/mcp-marketplace#2501 · Docker MCP Registry PR docker/mcp-registry#5055 · GitHub 精选 Registry 申请（github/github-mcp-server discussion #1257 评论）。
+- **待领导登录后即可完成**：魔搭 ModelScope MCP 广场（国内最大，免费托管，README 首个配置块已改成它要求的 `uvx openhire@latest serve`）· Claude Desktop 扩展目录 Google 表单（要上传 .mcpb，且明示偏好 Node.js，概率偏低）。步骤见 `drafts/marketplace-手工两步.md`。
+- **调研定档（reports/025）**：腾讯云 MCP 广场「暂不提供第三方上架」；百度千帆仅企业；扣子/百炼/ChatGPT 插件目录/Claude 远程连接器目录都要公网 HTTP 端点（后者还要 Team/Enterprise 组织）→ 归为「托管期」，等有服务器再做；WorkBuddy 无公开市场，只能靠用户手填。
+- **掘金**：作者昵称改名「用户857732759795」→「陈灏」**未成功**（前端报「保存失败，请检查提交内容」，排查中）。
+- **测量口径修正**：`snapshot_dl` 不是累计——每周一工作流覆盖资产会归零计数，只代表「本周 bootstrap 次数」（已写进 growth_metrics.py 注释）。
+- **KPI(09-11)**：star **4**（09-09 +1 rei-lena，09-10 +1 sparowjake-troll）· views14d 53/25 · 四渠道归因见 reports/024。
+- **下一步**：等 Cline/Docker 审核；领导登录魔搭后 2 分钟完成国内最大入口；LinkedIn 每周一条（主阵地）；知乎以回答为主。
+
 ## 2026-09-07 — 🎉 punkpeye(94k★) 已合并！三渠道重炮发射 + 第二北极星立项
 
 - **PR #13379 MERGED**（02:55Z）→ OpenHire 正式进入 awesome-mcp-servers（94k★，全 MCP 生态最大发现入口）。
