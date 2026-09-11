@@ -213,6 +213,8 @@ def test_version_matches_pyproject():
 
     import openhire
 
+    if openhire.__version__.endswith("+dev"):
+        return  # source tree with no install (PYTHONPATH=src) — nothing to compare against
     pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
     if not pyproject.exists():  # running against an installed wheel, nothing to compare
         return
