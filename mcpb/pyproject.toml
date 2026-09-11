@@ -3,4 +3,4 @@ name = "openhire-mcpb"
 version = "0.4.0"
 description = "Claude Desktop extension wrapper for the OpenHire MCP server"
 requires-python = ">=3.11"
-dependencies = ["openhire==0.4.1"]
+dependencies = ["openhire==0.4.2"]

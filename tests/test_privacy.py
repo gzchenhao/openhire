@@ -200,3 +200,24 @@ def test_apply_tool_exposes_no_resume_parameter():
     props = asyncio.run(_props())
     assert props == {"job_id", "fingerprint", "authorized"}
     assert not (props & {"resume", "cv", "file", "attachment", "email", "name", "phone"})
+
+
+# --- version must never drift (a tester found the banner reporting 0.3.2 on 0.4.1) ---
+def test_version_matches_pyproject():
+    """`openhire.__version__` comes from installed metadata, so it can only drift if the
+    editable install is stale or a release shipped mismatched metadata. Either way the
+    user-visible `ohp version` banner would lie, which is how 0.4.0/0.4.1 both shipped
+    reporting "0.3.2"."""
+    import tomllib
+    from pathlib import Path
+
+    import openhire
+
+    pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    if not pyproject.exists():  # running against an installed wheel, nothing to compare
+        return
+    declared = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["version"]
+    assert openhire.__version__ == declared, (
+        f"openhire.__version__={openhire.__version__} but pyproject says {declared}. "
+        "Run `pip install -e .` after a version bump."
+    )

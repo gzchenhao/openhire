@@ -201,7 +201,7 @@ period (`salary_period`), so a salary floor no longer silently drops Chinese rol
 
 **飞书招聘 (Feishu Hire) is not supported and won't be**: it signs its job-list requests with a
 ByteDance `_signature` and gates them behind a captcha SDK, so its listings are not publicly
-readable. We don't break anti-bot measures. Moka is on the roadmap.
+readable. We don't break anti-bot measures.
 
 **How do I get a company added?**
 Open a **Company inclusion request** issue (title it with the company + its ATS URL) — this is

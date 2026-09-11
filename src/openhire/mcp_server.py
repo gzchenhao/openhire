@@ -146,7 +146,7 @@ def check_watches(fingerprint: str) -> dict:
 
 @mcp.tool(
     title="Authorize application",
-    annotations=ToolAnnotations(title="Authorize application", readOnlyHint=False, destructiveHint=False, idempotentHint=True,  openWorldHint=False),
+    annotations=ToolAnnotations(title="Authorize application", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )
 def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> dict:
     """Record an authorized, employer-direct application. REFUSES résumés.

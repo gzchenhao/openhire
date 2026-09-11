@@ -4,4 +4,9 @@ Résumés never leave your device. Only an anonymous fingerprint ever transits t
 server. See the three privacy red lines in README / tests/test_privacy.py.
 """
 
-__version__ = "0.3.2"
+try:  # single source of truth is pyproject; never hardcode a second copy
+    from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
+    __version__ = _pkg_version("openhire")
+except PackageNotFoundError:  # running from a source tree that was never installed
+    __version__ = "0.0.0+dev"
