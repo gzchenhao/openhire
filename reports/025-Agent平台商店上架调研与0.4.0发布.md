@@ -57,14 +57,21 @@
 - `.tools/mcp-publisher.exe`（v1.8.1）已下载备用；本地令牌已过期，但实际不需要它——`v*` tag 推送即由 OIDC 工作流自动发布。
 - CLAUDE.md 发布状态、PROGRESS.md 已更新。
 
-## 三、待领导本人动手（两步，共约五分钟）
+## 三、魔搭已上线（领导登录后当场完成）
 
-见 `drafts/marketplace-手工两步.md`，字段答案已写好可照抄：
+**https://modelscope.cn/mcp/servers/haolu98/openhire**
 
-1. **魔搭**：登录 modelscope.cn → 创建 MCP → 从 GitHub 仓库快速创建 → 托管类型选「可托管部署」→ 传图标 → 创建。
-2. **Claude 扩展目录表单**：内置浏览器里你的 Google 账号已登录，只差上传 `dist/openhire-0.4.0.mcpb`。概率偏低（偏好 Node.js），但成本两分钟。
+- 从 GitHub 仓库快速创建，托管类型「可托管部署」，标签 招聘/求职/jobs。
+- 魔搭自动解析 README 抽到了三组服务配置，**第一组正是 `uvx openhire@latest serve`**（平台默认用第一组做部署检测——这正是 0.4.0 把 README 首块改成它的原因）。
+- **部署检测通过**：工具测试页显示「可部署」，五个工具全部 list 出来（Search_jobs / Get_company_info / Watch_intent / Check_watches / Authorize_application）。
+- AI 自动摘的服务描述带了 markdown 残片（`](https://glama.` 之类），已手工改写成中文版。
+- 遗留两点：① 详情页头部徽章仍显示 `Local / 不可部署`，与工具页的「可部署」矛盾，疑为缓存或标签延迟，观察一天；② 图标未上传（内置浏览器无文件选择器），可后补；③ 工具页有「新建部署」按钮可开一个托管 SSE 端点，**会占用魔搭账号的算力配额，未擅自点，等领导决定**。
 
-## 四、下一步发力方向（筹划）
+## 四、还差一步：Claude 扩展目录表单
+
+内置浏览器里你的 Google 账号已登录，只差上传 `dist/openhire-0.4.0.mcpb`。表单明示偏好 Node.js，我们是 Python，概率偏低，但成本两分钟。字段答案见 `drafts/marketplace-手工两步.md`。
+
+## 五、下一步发力方向（筹划）
 
 按「触达量」这个瓶颈排，投入产出从高到低：
 
@@ -75,10 +82,11 @@
 5. **X 不追加**。
 6. **雇主认领**门槛不变（star ≥ 100 或周活 ≥ 50）。
 
-## 五、验收证据
+## 六、验收证据
 
 - `curl https://registry.modelcontextprotocol.io/v0.1/servers/io.github.gzchenhao%2Fopenhire/versions/0.4.0` → 200
 - `pip download openhire==0.4.0` → 取到 wheel
 - `gh release view v0.4.0` → assets: `openhire-0.4.0.mcpb`
 - `pytest` → 253 passed
 - 自动快照实测：`_ensure_index()` 在空库上 31.4 s 装入 140 家 / 23,874 岗，二次调用 0.00 s
+- 魔搭部署检测通过：工具测试页「可部署」+ 五个工具全部列出（即平台成功从 PyPI 装包、起服务、调通 `list_tools`）——这是 0.4.0 零配置改造的端到端验证
