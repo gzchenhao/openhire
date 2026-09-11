@@ -9,7 +9,7 @@
 - **商店提交（当日）**：Cline Marketplace issue cline/mcp-marketplace#2501 · Docker MCP Registry PR docker/mcp-registry#5055 · GitHub 精选 Registry 申请（github/github-mcp-server discussion #1257 评论）。
 - **待领导登录后即可完成**：魔搭 ModelScope MCP 广场（国内最大，免费托管，README 首个配置块已改成它要求的 `uvx openhire@latest serve`）· Claude Desktop 扩展目录 Google 表单（要上传 .mcpb，且明示偏好 Node.js，概率偏低）。步骤见 `drafts/marketplace-手工两步.md`。
 - **调研定档（reports/025）**：腾讯云 MCP 广场「暂不提供第三方上架」；百度千帆仅企业；扣子/百炼/ChatGPT 插件目录/Claude 远程连接器目录都要公网 HTTP 端点（后者还要 Team/Enterprise 组织）→ 归为「托管期」，等有服务器再做；WorkBuddy 无公开市场，只能靠用户手填。
-- **掘金**：作者昵称改名「用户857732759795」→「陈灏」**未成功**（前端报「保存失败，请检查提交内容」，排查中）。
+- **掘金**：作者昵称「用户857732759795」→「陈灏」由领导本人提交，**审核中**（自动化填表被前端校验挡回，已交回人工）。
 - **测量口径修正**：`snapshot_dl` 不是累计——每周一工作流覆盖资产会归零计数，只代表「本周 bootstrap 次数」（已写进 growth_metrics.py 注释）。
 - **KPI(09-11)**：star **4**（09-09 +1 rei-lena，09-10 +1 sparowjake-troll）· views14d 53/25 · 四渠道归因见 reports/024。
 - **下一步**：等 Cline/Docker 审核；领导登录魔搭后 2 分钟完成国内最大入口；LinkedIn 每周一条（主阵地）；知乎以回答为主。
