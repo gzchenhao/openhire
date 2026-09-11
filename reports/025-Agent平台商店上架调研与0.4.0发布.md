@@ -21,7 +21,7 @@
 | Docker MCP Registry | 目录 + Docker Desktop 工具箱 | ✅ PR | 仓库根目录 Dockerfile；MIT/Apache；Docker 方构建签名 | **PR #5055 已提**（新增 `servers/openhire/server.yaml`） |
 | Cline Marketplace | IDE 内市场 | ✅ issue | 400×400 PNG 图标；README 能让 Cline 自动装 | **issue #2501 已提** |
 | GitHub 精选 Registry (github.com/mcp, VS Code @mcp 画廊) | 人工精选 ~250 | ⚠️ 排队 | 先上官方 Registry，再在 discussion #1257 留言申请；无明确标准与时限 | **已留言申请**（概率低，成本零） |
-| Claude Desktop 扩展目录 (MCPB) | 一键安装 | ✅ Google 表单 | .mcpb 文件；隐私政策；工具注解；**明示偏好 Node.js** | .mcpb 已打包并挂 Release；**表单要上传文件，需领导操作** |
+| Claude Desktop 扩展目录 (MCPB) | 一键安装 | ✅ Google 表单 | .mcpb 文件；隐私政策；工具注解；**明示偏好 Node.js** | **09-11 已提交**（0.4.1 的 .mcpb）；表单自述不保证收录，我们不满足 Node.js 那条 |
 | Claude 远程连接器目录 | 云端 | ⚠️ | HTTPS 端点 + **Team/Enterprise 组织**才能进提交门户 | 个人版无入口 → 托管期 |
 | ChatGPT 插件目录 (Apps SDK) | 云端 | ✅ | 远程 MCP + 审核 | 需服务器 → 托管期 |
 | 魔搭 ModelScope MCP 广场 | 国内最大（1400+）| ✅ | 从 GitHub 仓库快速创建；README 首个配置块须是 `npx`/`uvx`；包在 PyPI；自动部署检测调 list_tools | **万事俱备，只差登录** |
@@ -67,9 +67,14 @@
 - AI 自动摘的服务描述带了 markdown 残片（`](https://glama.` 之类），已手工改写成中文版。
 - 遗留两点：① 详情页头部徽章仍显示 `Local / 不可部署`，与工具页的「可部署」矛盾，疑为缓存或标签延迟，观察一天；② 图标未上传（内置浏览器无文件选择器），可后补；③ 工具页有「新建部署」按钮可开一个托管 SSE 端点，**会占用魔搭账号的算力配额，未擅自点，等领导决定**。
 
-## 四、还差一步：Claude 扩展目录表单
+## 四、Claude 扩展目录已提交（09-11）
 
-内置浏览器里你的 Google 账号已登录，只差上传 `dist/openhire-0.4.0.mcpb`。表单明示偏好 Node.js，我们是 Python，概率偏低，但成本两分钟。字段答案见 `drafts/marketplace-手工两步.md`。
+领导本人填的表（表单要上传文件，自动化做不到），提交的是 `dist/openhire-0.4.1.mcpb`。
+Primary Party 选 Yes（OpenHire 连的是我们自己建的索引，不是包装第三方 API）。
+步骤与逐项答案存档在 `drafts/claude扩展目录-提交步骤.md`。
+
+**预期要低**：表单明写优先考虑 Node.js 构建的扩展，四条硬性偏好我们只中三条（公开 GitHub ✅、
+MIT ✅、manifest author 指向 GitHub ✅、Node.js ❌），且表单自述「does not guarantee inclusion」。
 
 ## 五、下一步发力方向（筹划）
 

@@ -20,7 +20,7 @@
 - **为什么要 0.4.0**：上架任何「一键装 / 云托管」商店的共同前提是 `uvx openhire serve` **零配置就能出数据**。此前 serve 起来是空库，必须先 `ohp bootstrap`。现在 serve 检测到空索引自动拉公开快照（实测 140 家 / 23,874 岗 / 31 s），`OPENHIRE_NO_AUTO_BOOTSTRAP=1` 可关。同时补齐商店硬性要求：五个工具 `title` + `readOnly/destructive/idempotent/openWorld` 注解、`docs/PRIVACY.md`、品牌图标、`Dockerfile`、`--transport sse|streamable-http`。
 - **商店提交（当日）**：Cline Marketplace issue cline/mcp-marketplace#2501 · Docker MCP Registry PR docker/mcp-registry#5055 · GitHub 精选 Registry 申请（github/github-mcp-server discussion #1257 评论）。
 - **魔搭 ModelScope MCP 广场已上线**：https://modelscope.cn/mcp/servers/haolu98/openhire ——自动解析 README 取到 `uvx openhire@latest serve`，**部署检测通过、五个工具全部 list 成功**（0.4.0 零配置改造的端到端验证）。遗留：详情页徽章仍显示 Local（疑缓存）、图标待补、「新建部署」会占算力配额未擅自点。
-- **仍待领导本人**：Claude Desktop 扩展目录 Google 表单（要上传 .mcpb，明示偏好 Node.js，概率偏低）。见 `drafts/marketplace-手工两步.md`。
+- **Claude Desktop 扩展目录已提交**（09-11，领导本人填表，提交 0.4.1 的 .mcpb）。表单偏好 Node.js 我们是 Python，概率偏低，等回音。步骤存档 `drafts/claude扩展目录-提交步骤.md`。
 - **调研定档（reports/025）**：腾讯云 MCP 广场「暂不提供第三方上架」；百度千帆仅企业；扣子/百炼/ChatGPT 插件目录/Claude 远程连接器目录都要公网 HTTP 端点（后者还要 Team/Enterprise 组织）→ 归为「托管期」，等有服务器再做；WorkBuddy 无公开市场，只能靠用户手填。
 - **掘金**：作者昵称「用户857732759795」→「陈灏」由领导本人提交，**审核中**（自动化填表被前端校验挡回，已交回人工）。
 - **测量口径修正**：`snapshot_dl` 不是累计——每周一工作流覆盖资产会归零计数，只代表「本周 bootstrap 次数」（已写进 growth_metrics.py 注释）。
