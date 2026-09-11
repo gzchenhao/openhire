@@ -17,6 +17,10 @@
 - **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。
 - 推送用 `gh`（keyring）；PyPI token 仅 `%USERPROFILE%\.pypirc`；`mcp-publisher` 二进制在 `.tools/mcp-publisher.exe`（gitignored，v1.8.1），其 GitHub 登录令牌会过期，过期时 `.tools/mcp-publisher login github` 重登。三者均**不进代码/git**。
 - **发版铁律：PyPI 发布必须先于快照刷新**（老客户端会带旧代码读新数据）。
+- **备份：代码/reports/style-reference/设计文档 push 到公开仓库即等于备份。** 唯一不在公开仓库的工作内容是
+  `drafts/`（gitignored，宣传文案与任务书），它镜像在私有仓库 **https://github.com/gzchenhao/openhire-private** ，
+  用 `.venv/Scripts/python.exe scripts/backup_drafts.py` 同步（幂等；检测到 `.env` 等密钥形态文件会拒绝执行）。
+  `.env` / API key **永不进任何仓库**（含私有），存密码管理器。`dist/`、`.tools/`、本地 DB 均可重建，不必备份。
 - 再发新版流程：改 README `mcp-name` 保持不变 → bump 版本 → `twine upload` → 改 `server.json` 版本 → `mcp-publisher publish`。
 
 ## 常设工作制度（持续遵守）
