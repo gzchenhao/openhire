@@ -17,6 +17,13 @@
 - **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。
 - 推送用 `gh`（keyring）；PyPI token 仅 `%USERPROFILE%\.pypirc`；`mcp-publisher` 二进制在 `.tools/mcp-publisher.exe`（gitignored，v1.8.1），其 GitHub 登录令牌会过期，过期时 `.tools/mcp-publisher login github` 重登。三者均**不进代码/git**。
 - **发版铁律：PyPI 发布必须先于快照刷新**（老客户端会带旧代码读新数据）。
+- **`ohp.exe` 文件锁（已咬三次，按这个来）：** Claude Desktop 跑着 openhire MCP 时会占住
+  `.venv\Scripts\ohp.exe`，`pip install -e .` 会在最后替换该文件时报 `WinError 32` 而中止，
+  于是**包被卸载但没装回去**，表现为 `ModuleNotFoundError: No module named 'openhire'` +
+  一片测试报错。Windows 连重命名运行中的 exe 也拒绝（`Device or resource busy`）。
+  **正确顺序：改 venv 前先在 Claude Desktop 设置 → Developer 里停掉 openhire，或退出 Claude Desktop。**
+  已经中招时：`pip install -e . --no-deps` 通常能把包装回去（只有 exe 那步失败），旧 exe 是转发壳、
+  照样加载新包，那个 ERROR 是噪音不是故障 —— 但**必须重跑一次 pytest 确认**，不能靠推断。
 - **备份：代码/reports/style-reference/设计文档 push 到公开仓库即等于备份。** 唯一不在公开仓库的工作内容是
   `drafts/`（gitignored，宣传文案与任务书），它镜像在私有仓库 **https://github.com/gzchenhao/openhire-private** ，
   用 `.venv/Scripts/python.exe scripts/backup_drafts.py` 同步（幂等；检测到 `.env` 等密钥形态文件会拒绝执行）。
