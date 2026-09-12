@@ -6,14 +6,18 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.4.0 · 2026-09-11；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.5.0 · 2026-09-12；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.4.0）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.5.0）
+- **v0.5.0（2026-09-12）：** `role_group`（同岗多城市共享的分组键，不折叠行）+ `offset` 分页，
+  两者都是给 client agent 省 `limit` 预算和 context 的；返回结构未变，老客户端不受影响。
+- **v0.4.1–0.4.3：** auto-bootstrap 改为后台线程（托管市场探测不再超时）、版本号三处对齐
+  （包 / `ohp version` / `serverInfo.version`，各有测试钉死）、幂等注解与实现对齐。
 - **v0.4.0（2026-09-11）：** `serve` 空索引自动拉快照（`uvx openhire serve` 零配置）、`--transport sse|streamable-http`、五个工具带 annotations、`Dockerfile`、`mcpb/`（Claude Desktop 扩展，uv 运行时；Release v0.4.0 附 `openhire-0.4.0.mcpb`）、`docs/PRIVACY.md`、`docs/brand/` 图标。
-- **上架进度（025）：** Cline Marketplace issue #2501 · Docker MCP Registry PR #5055 · GitHub 精选 Registry 在 github-mcp-server discussion #1257 留了申请 · 魔搭/Claude 扩展目录两项待领导本人登录操作（`drafts/marketplace-手工两步.md`）。
+- **上架进度（025/026）：** 魔搭 ✅ 已上线可部署 · Claude 扩展目录 ✅ 已提交 · Cline issue #2501 与 Docker PR #5055 审核中 · GitHub 精选 Registry 已申请排队。
 - **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`，URL 稳定不变）
-- **PyPI：** https://pypi.org/project/openhire/0.4.0/ （`pipx install openhire` / `uvx openhire@latest serve`）
-- **官方 MCP Registry：** `io.github.gzchenhao/openhire` v0.4.0（`registry.modelcontextprotocol.io`）。**推 `v*` tag 即由 `.github/workflows/publish-mcp-registry.yml` 用 OIDC 自动发布**（v0.3.1/0.3.2/0.4.0 均如此），本地 `mcp-publisher` 只作备用；PulseMCP/mcp.so 自动同步。
+- **PyPI：** https://pypi.org/project/openhire/0.5.0/ （`pipx install openhire` / `uvx openhire@latest serve`）
+- **官方 MCP Registry：** `io.github.gzchenhao/openhire` v0.5.0（`registry.modelcontextprotocol.io`）。**推 `v*` tag 即由 `.github/workflows/publish-mcp-registry.yml` 用 OIDC 自动发布**（v0.3.1 起每次均如此），本地 `mcp-publisher` 只作备用；PulseMCP/mcp.so 自动同步。
 - **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。
 - 推送用 `gh`（keyring）；PyPI token 仅 `%USERPROFILE%\.pypirc`；`mcp-publisher` 二进制在 `.tools/mcp-publisher.exe`（gitignored，v1.8.1），其 GitHub 登录令牌会过期，过期时 `.tools/mcp-publisher login github` 重登。三者均**不进代码/git**。
 - **发版铁律：PyPI 发布必须先于快照刷新**（老客户端会带旧代码读新数据）。
