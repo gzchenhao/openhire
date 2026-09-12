@@ -199,6 +199,7 @@ def search(
     currency: str = typer.Option(None, "--currency", help="Restrict to a stated-pay currency, e.g. USD."),
     require_stated_salary: bool = typer.Option(False, "--require-stated-salary", help="Drop roles with no published pay."),
     role_family: str = typer.Option(None, "--role-family", help="Only this family, e.g. engineering (keeps sales/SA out)."),
+    offset: int = typer.Option(0, "--offset", help="Skip this many ranked results (paging)."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -218,13 +219,14 @@ def search(
         + (" --require-stated-salary" if require_stated_salary else "")
         + (f" --role-family {role_family}" if role_family else "")
         + (f" --limit {limit}" if limit != 10 else "")
+        + (f" --offset {offset}" if offset else "")
     )
     with session_scope() as s:
         results = service.search_jobs(
             s, skill_list, remote or None, floor, limit,
             required_skills=req_list, currency=currency,
             require_stated_salary=require_stated_salary, remote_scope=remote_scope,
-            role_family=role_family,
+            role_family=role_family, offset=offset,
         )
     if not results:
         console.out("无匹配结果。")

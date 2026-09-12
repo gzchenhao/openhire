@@ -15,6 +15,8 @@ Protocol contracts (README §MCP 工具契约):
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
+import re
 import secrets
 from typing import Any
 
@@ -103,6 +105,29 @@ def annualise(value: int | None, period: str | None) -> int | None:
 
 
 # --- serialization ------------------------------------------------------------
+def role_group(company_id: str, title: str) -> str:
+    """Stable id shared by the same role posted in several cities.
+
+    Employers routinely list one role once per location: MongoDB carries 22 live copies of
+    "Enterprise Account Executive, Growth", Databricks 15 of one FDE role. Those rows are all
+    genuinely distinct — different job_id, different apply_channel, different city — so we do
+    NOT collapse them; a candidate with a visa or relocation constraint needs them apart.
+
+    But nothing in the payload said they were siblings, so a client agent had to guess from
+    string equality. It pays for that: ~20% of a `limit` budget goes to rows it already has
+    (measured, stable across limit 5/10/20/50), and there is no way to ask for "more, but
+    different". This field is the missing signal — group by it in one pass, then spend the
+    rest of the budget on distinct roles.
+
+    Grouping is exact on (company, case-folded title). Deliberately no clever stripping of
+    trailing city names: that would merge only 1.4% more rows while risking merges of roles
+    that are actually different. Predictable beats clever when the consumer is a machine.
+    """
+    norm = re.sub(r"\s+", " ", (title or "").strip().casefold())
+    key = f"{company_id} :: {norm}"
+    return "rg_" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:8]
+
+
 def job_posting(job: Job, company: Company | None, requested_skills: list[str], now: dt.datetime) -> dict:
     """schema.org/JobPosting + the five OpenHire fields (protocol contract)."""
     mq = match_quality(requested_skills, job.skills)
@@ -117,6 +142,8 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "title": job.title,
         "company": company.name if company else job.company_id,
         "company_id": job.company_id,
+        # Same role, several cities → same role_group. See role_group() above.
+        "role_group": role_group(job.company_id, job.title),
         "datePosted": posted.date().isoformat() if posted else None,
         "days_open": (now.date() - posted.date()).days if posted else None,
         "location": job.location,
@@ -159,6 +186,7 @@ def _filter_and_rank(
     require_stated_salary: bool = False,
     remote_scope: str | None = None,
     role_family: str | None = None,
+    offset: int = 0,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
@@ -208,7 +236,7 @@ def _filter_and_rank(
         scored.append((job, rank_score(mq, fr)))
 
     scored.sort(key=lambda t: t[1], reverse=True)
-    return scored[:limit]
+    return scored[offset:offset + limit]
 
 
 def search_jobs(
@@ -223,14 +251,16 @@ def search_jobs(
     require_stated_salary: bool = False,
     remote_scope: str | None = None,
     role_family: str | None = None,
+    offset: int = 0,
 ) -> list[dict]:
     now = _now(now)
     limit = max(1, min(int(limit), 100))
+    offset = max(0, int(offset))
     ranked = _filter_and_rank(
         session, skills, remote, min_salary, None, limit, now,
         required_skills=required_skills, currency=currency,
         require_stated_salary=require_stated_salary, remote_scope=remote_scope,
-        role_family=role_family,
+        role_family=role_family, offset=offset,
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {

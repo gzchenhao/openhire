@@ -55,14 +55,26 @@ def search_jobs(
     require_stated_salary: bool = False,
     remote_scope: str | None = None,
     role_family: str | None = None,
+    offset: int = 0,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
     The server does ONLY a hard filter plus a fixed ranking of match-quality × freshness —
     precise re-ranking is left to you, the client, which holds the user's context. Every
     result includes the five protocol fields (verified_at, source, ghost_score,
-    response_sla_days, apply_channel) plus datePosted, days_open, remote_scope and
-    eligible_regions.
+    response_sla_days, apply_channel) plus datePosted, days_open, remote_scope,
+    eligible_regions and role_group.
+
+    Two things worth knowing before you spend your budget:
+
+    * `role_group` is shared by the same role posted in several cities — one employer may
+      list one job 22 times, once per location. Those rows are genuinely distinct (each has
+      its own job_id and apply_channel, which matters when the user has a location or visa
+      constraint), but if you only need distinct opportunities, group by role_group and keep
+      one per group. Measured, about 20% of a page is same-role repeats.
+    * `offset` pages through the ranked list. After collapsing by role_group, call again
+      with offset += limit to get more distinct roles. Fewer rows than `limit` means you
+      reached the end. There is no server-side cursor to keep alive.
 
     Args:
         skills: skill tags, ANY-overlap match (union), e.g. ["rust", "k8s"].
@@ -84,7 +96,7 @@ def search_jobs(
                 s, skills, remote, min_salary, limit,
                 required_skills=required_skills, currency=currency,
                 require_stated_salary=require_stated_salary,
-                remote_scope=remote_scope, role_family=role_family,
+                remote_scope=remote_scope, role_family=role_family, offset=offset,
             )
         except OpenHireError as e:
             return e.as_dict()
