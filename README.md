@@ -37,7 +37,10 @@ This is the 「哨兵 / Sentinel」 reference implementation — see
 # 1. Install (pipx keeps it isolated and puts `ohp` on your PATH)
 pipx install openhire
 
-# 2. Get a job index. Default: download the public snapshot, then refresh it live.
+# 2. Get a job index. Downloads the public snapshot (~25 MB), then runs one incremental
+#    crawl to refresh verified_at / delisting. The crawl is the slow part: it can run for
+#    20+ minutes on a cold index and prints nothing while it works.
+#    Only needed for the CLI — `ohp serve` fetches the snapshot by itself on first start.
 ohp bootstrap                    # 139 employers · ~16k live postings · no account
 
 # 3. Use it directly…
@@ -136,6 +139,16 @@ fingerprint. No analytics, no telemetry, no third-party sharing. Full policy:
 asset — `companies` + `jobs` only, **zero** user data) and then runs one incremental crawl to
 refresh `verified_at` / delisting. `--fresh` skips the snapshot and crawls the public ATS from
 scratch with the free offline heuristic extractor. Either way: no account, no PII.
+
+Two things that surprise people:
+
+- **The incremental crawl is slow and quiet.** On a cold index it can run for 20+ minutes
+  with no output. It is working, not hung. If you only want the data, `ohp serve` skips it
+  entirely — the server downloads the snapshot on first start and is answering in seconds.
+- **The snapshot URL is pinned to the `v0.1.0` tag on purpose.** It looks stale; it is not.
+  That asset is overwritten in place every Monday by a scheduled workflow, so the URL is a
+  stable address for always-current data. Pinning it to the newest tag would break every
+  client the moment a release is cut.
 
 ## Three rules this project will never break
 

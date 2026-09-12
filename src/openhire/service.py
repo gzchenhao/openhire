@@ -15,6 +15,7 @@ Protocol contracts (README §MCP 工具契约):
 from __future__ import annotations
 
 import datetime as dt
+import difflib
 import hashlib
 import re
 import secrets
@@ -268,6 +269,86 @@ def search_jobs(
         for c in session.execute(select(Company).where(Company.id.in_(company_ids))).scalars()
     } if company_ids else {}
     return [job_posting(j, companies.get(j.company_id), skills or [], now) for j, _ in ranked]
+
+
+def diagnose_empty_search(
+    session: Session,
+    skills: list[str] | None = None,
+    required_skills: list[str] | None = None,
+    role_family: str | None = None,
+    currency: str | None = None,
+) -> dict:
+    """Explain an empty result set so the caller can tell a typo from a genuine miss.
+
+    A bare `[]` is the same answer to two very different questions: "is anyone hiring for
+    this?" and "did I spell the tag right?". A human re-reads their own command; an agent
+    cannot, so it either gives up or retries the identical query. This returns the one fact
+    that separates the cases — whether each requested tag exists anywhere in the live index
+    — plus near-misses to retry with.
+
+    Kept out of `search_jobs`, which always returns a list. Only the MCP boundary swaps in
+    this shape, and only when the list came back empty.
+    """
+    # One pass over the live tag vocabulary. This path only runs when a search came back
+    # empty, so the scan is rare and bounded by the index size.
+    vocab: set[str] = set()
+    for row in session.execute(
+        select(Job.skills).where(Job.delisted_at.is_(None))
+    ).scalars():
+        for sk in (row or []):
+            if sk:
+                vocab.add(sk)
+    lowered = {v.lower(): v for v in vocab}
+
+    wanted = [t for t in {*(skills or []), *(required_skills or [])} if t]
+    unknown, suggestions = [], {}
+    for tag in wanted:
+        low = tag.lower()
+        if low in lowered:
+            continue
+        unknown.append(tag)
+        # Substring hits first — the index tags "kubernetes operators" but not plain
+        # "kubernetes", so a substring match points at the real tag where fuzzy distance
+        # would not. Then difflib for genuine misspellings. Two-character tags are dropped:
+        # they match almost anything and are noise to a caller.
+        subs = sorted(
+            (orig for lo, orig in lowered.items() if len(lo) > 2 and low in lo),
+            key=lambda x: (len(x), x),
+        )
+        fuzzy = difflib.get_close_matches(low, [lo for lo in lowered if len(lo) > 2],
+                                          n=5, cutoff=0.72)
+        close: list[str] = []
+        for cand in [*subs, *(lowered[f] for f in fuzzy)]:
+            if cand not in close:
+                close.append(cand)
+        if close:
+            suggestions[tag] = close[:5]
+
+    if unknown:
+        hint = (
+            f"No live posting is tagged {unknown!r}. That tag does not exist in this index, "
+            "so this is almost certainly a spelling or naming mismatch rather than a dry "
+            "market — retry with one of the suggestions, or drop the tag."
+        )
+    else:
+        hint = (
+            "Every tag you asked for exists in the index, so the tags are fine: this "
+            "combination of filters genuinely has no live match right now. Loosen one "
+            "filter at a time (required_skills is the strictest — it is AND, not OR)."
+        )
+    return {
+        "results": [],
+        "matched": 0,
+        "hint": hint,
+        "unknown_skills": unknown,
+        "suggestions": suggestions,
+        "filters_applied": {
+            k: v for k, v in {
+                "skills": skills, "required_skills": required_skills,
+                "role_family": role_family, "currency": currency,
+            }.items() if v
+        },
+    }
 
 
 # --- company trust signals (aggregate only) ----------------------------------

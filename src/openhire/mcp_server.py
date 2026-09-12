@@ -75,6 +75,11 @@ def search_jobs(
     * `offset` pages through the ranked list. After collapsing by role_group, call again
       with offset += limit to get more distinct roles. Fewer rows than `limit` means you
       reached the end. There is no server-side cursor to keep alive.
+    * An empty search does NOT return a bare list. It returns an object with `results: []`
+      plus `hint`, `unknown_skills` and `suggestions`, because `[]` alone cannot tell you
+      whether you mistyped a tag or the market is genuinely dry. Read `unknown_skills`: if
+      it is non-empty those tags exist nowhere in the index and you should retry with a
+      suggestion; if it is empty your tags were fine and you should loosen a filter.
 
     Args:
         skills: skill tags, ANY-overlap match (union), e.g. ["rust", "k8s"].
@@ -86,18 +91,27 @@ def search_jobs(
             be ruled out); set require_stated_salary=true to drop them.
         currency: restrict to a stated-pay currency, e.g. "USD" (implies stated pay).
         require_stated_salary: if true, drop roles that publish no salary.
-        role_family: coarse family filter, e.g. "engineering" (v0.1: unpopulated → no-op).
+        role_family: coarse family filter, e.g. "engineering". Populated for ~99% of
+            live rows, so this is an effective way to keep sales / solutions-architect
+            roles out of an engineering search.
         limit: max results (default 20).
     """
     _await_index()
     with session_scope() as s:
         try:
-            return service.search_jobs(
+            rows = service.search_jobs(
                 s, skills, remote, min_salary, limit,
                 required_skills=required_skills, currency=currency,
                 require_stated_salary=require_stated_salary,
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
             )
+            if not rows and not offset:
+                # A bare [] answers two different questions identically. Say which one.
+                return service.diagnose_empty_search(
+                    s, skills=skills, required_skills=required_skills,
+                    role_family=role_family, currency=currency,
+                )
+            return rows
         except OpenHireError as e:
             return e.as_dict()
 
