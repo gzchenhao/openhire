@@ -16,7 +16,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from . import service
+from . import __version__, service
 from .db import init_db, session_scope
 from .errors import OpenHireError
 
@@ -33,6 +33,12 @@ mcp = FastMCP(
         "phone to any tool."
     ),
 )
+
+# FastMCP has no `version` parameter, so it reports the MCP SDK's version in serverInfo.
+# Clients show that to users as "openhire vX", which is wrong and was flagged by an
+# external tester (report 026, S2-01). The lowlevel Server it wraps does take a version,
+# so set it there. Locked by tests/test_mcp_acceptance.py::test_server_reports_own_version.
+mcp._mcp_server.version = __version__
 
 
 @mcp.tool(

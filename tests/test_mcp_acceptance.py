@@ -227,3 +227,18 @@ class _FakeSession:
 
 def _empty_index_session_scope():
     return _FakeSession()
+
+
+def test_server_reports_own_version():
+    """serverInfo.version must be OpenHire's version, not the MCP SDK's.
+
+    FastMCP takes no `version` argument, so it defaults to reporting the SDK version and
+    clients render that as "openhire v1.28.1". An external tester caught this as one of
+    three conflicting version numbers (report 026, S2-01). mcp_server.py sets the version
+    on the wrapped lowlevel Server; this pins it so a future SDK bump cannot silently
+    reintroduce the drift.
+    """
+    from openhire import __version__
+    from openhire.mcp_server import mcp
+
+    assert mcp._mcp_server.version == __version__
