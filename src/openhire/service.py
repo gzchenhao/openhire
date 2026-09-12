@@ -123,7 +123,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "remote_policy": job.remote_policy,
         "remote_scope": _rs,          # worldwide | region_locked | country_locked | null
         "eligible_regions": _regions,  # matched regions/countries ([] = worldwide/unknown)
-        "role_family": getattr(job, "role_family", None),  # null until the DeepSeek pass runs
+        "role_family": getattr(job, "role_family", None),  # populated for ~99% of live rows
         "skills": list(job.skills or []),
         "salary_min": job.salary_min,
         "salary_max": job.salary_max,
