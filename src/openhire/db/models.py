@@ -49,10 +49,10 @@ class Job(Base):
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description_raw: Mapped[str | None] = mapped_column(Text)
     skills: Mapped[list[str]] = mapped_column(StringArray, default=list)
-    # Coarse job family (sales|engineering|data|product|design|marketing|ops|other).
-    # Coarse family used to keep sales / solutions-architect roles out of engineering
-    # searches. Filled by `ohp extract-role-family` (GLM or DeepSeek) and carried in the
-    # published snapshot: ~99% of live rows have it, so the search filter is effective.
+    # Coarse job family (sales|engineering|data|product|design|marketing|ops|other) — the
+    # filter that keeps sales / solutions-architect roles out of engineering searches.
+    # Filled by `ohp extract-role-family` (GLM or DeepSeek) and carried in the published
+    # snapshot: ~99% of live rows have it, so the filter is effective, not a no-op.
     role_family: Mapped[str | None] = mapped_column(Text)
     remote_policy: Mapped[str | None] = mapped_column(Text)  # remote|hybrid|onsite|unknown
     salary_min: Mapped[int | None] = mapped_column(Integer)
