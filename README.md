@@ -10,6 +10,35 @@
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
 
+### What your agent actually sees
+
+You ask your assistant a question in plain language. It calls `search_jobs`, and every row comes
+back carrying the employer's **real** posting date — so the agent can reason about staleness
+instead of guessing.
+
+> **You:** *Any senior Python roles that are actually still open? Skip the stale ones.*
+
+```jsonc
+// one row from search_jobs — trimmed to the fields that matter here
+{
+  "title":        "Senior Python Engineer",
+  "company":      "MongoDB",
+  "datePosted":   "2026-03-31",   // from the employer's ATS, not a board's refreshed label
+  "days_open":    166,
+  "ghost_score":  0.61,           // pure f(relist_count, first_seen_at) — frozen by a test
+  "apply_channel":"https://boards.greenhouse.io/…",   // straight to the employer
+  "verified_at":  "2026-09-02T09:47:10Z"
+}
+```
+
+> **Assistant:** *This one has been open 166 days with a ghost_score of 0.61 — I'd deprioritise it.
+> Here are four posted in the last three weeks instead…*
+
+`ghost_score` measures **how long a posting has been open**, not whether the employer still intends
+to hire. A long-open role can equally mean "hard to fill". Treat it as a reason to ask, not a verdict.
+
+---
+
 An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar for
 **AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **139 employers'**
 own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka), across
