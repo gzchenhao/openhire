@@ -106,13 +106,23 @@ def test_claiming_cannot_touch_rank(seeded):
 
     from openhire import cli
 
-    # Check the code, not the prose: the docstring says the words "match, freshness"
-    # precisely to promise it does not touch them, and grepping the whole source would
-    # fail on its own disclaimer.
-    src = inspect.getsource(cli.claim)
-    body = src.replace(cli.claim.__doc__ or "", "")
-    for forbidden in ("rank_score", "match_quality", "freshness", "ghost_score"):
-        assert forbidden not in body, f"the claim path must never touch {forbidden}"
+    # Check what the code DOES, not what it says. Grepping for the words fails on the
+    # command's own promise not to touch them — first in the docstring, then in the note it
+    # prints to the operator. Assignments and calls are the thing that could actually move a
+    # score, so those are what get asserted.
+    import ast
+
+    tree = ast.parse(inspect.getsource(cli.claim).lstrip())
+    guarded = {"rank_score", "match_quality", "freshness", "ghost_score"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Store):
+            assert node.attr not in guarded, f"claim assigns to {node.attr}"
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            assert node.id not in guarded, f"claim assigns to {node.id}"
+        if isinstance(node, ast.Call):
+            fn = node.func
+            name = getattr(fn, "attr", None) or getattr(fn, "id", None)
+            assert name not in guarded, f"claim calls {name}"
 
 
 # --- durability: the claim has to survive the weekly rebuild ------------------
@@ -280,3 +290,52 @@ def test_title_match_survives_a_delete_and_repost(seeded):
         out = _with_claim(_claim(evergreen_titles=(variant,)),
                           lambda: employer_correction("claimed", "Engineer"))
         assert out and out["status"] == "evergreen", variant
+
+
+# --- authoring: a declaration that matches nothing must never be recorded quietly ---
+
+def test_preview_refuses_a_title_that_matches_nothing_and_suggests_the_real_one(seeded):
+    """The failure this prevents: the employer says "Engineer", the live posting is
+    "Staff Engineer", the declaration matches nothing, and the employer believes they have
+    been heard. Silence is the worst outcome available here."""
+    with session_scope() as s:
+        out = service.preview_claim_titles(s, "claimed", ["Engineer", "Enginer"])
+    assert out["ok"] is False
+    assert out["matched"] == {"Engineer": 1}
+    assert out["unmatched"] == ["Enginer"]
+    assert "Engineer" in out["did_you_mean"]["Enginer"]
+
+
+def test_preview_is_ok_only_when_every_title_matches(seeded):
+    with session_scope() as s:
+        assert service.preview_claim_titles(s, "claimed", ["Engineer"])["ok"] is True
+
+
+def test_preview_uses_the_same_normalisation_the_runtime_does(seeded):
+    with session_scope() as s:
+        for variant in ("engineer", "  ENGINEER  "):
+            assert service.preview_claim_titles(s, "claimed", [variant])["ok"] is True, variant
+
+
+def test_a_declaration_that_went_quiet_is_reported_not_ignored(seeded):
+    """Titles are matched by text, so a correction dies the moment the employer renames the
+    role. CI runs seeding weekly; this is what makes that death visible."""
+    from openhire.pipeline.seed_runner import stale_claim_titles
+
+    def go():
+        with session_scope() as s:
+            return stale_claim_titles(s)
+
+    assert _with_claim(_claim(evergreen_titles=("Engineer",)), go) == {}
+    stale = _with_claim(_claim(evergreen_titles=("Role We No Longer Have",)), go)
+    assert stale == {"claimed": ["Role We No Longer Have"]}
+
+
+def test_claim_command_verifies_titles_before_recording_anything(seeded):
+    import inspect
+
+    from openhire import cli
+
+    src = inspect.getsource(cli.claim)
+    assert "preview_claim_titles" in src
+    assert "ERR_TITLE_NO_MATCH" in src

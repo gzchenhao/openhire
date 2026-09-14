@@ -70,6 +70,23 @@ def seed() -> None:
         )
 
     stats = seed_companies(on_result=on_result)
+
+    # A title-matched correction goes quiet the moment the employer renames the role, and it
+    # goes quiet silently. Surface it here, where CI runs weekly, rather than letting an
+    # employer keep believing we are still saying what they asked us to say.
+    from .pipeline.seed_runner import stale_claim_titles
+
+    with session_scope() as _s:
+        stale = stale_claim_titles(_s)
+    if stale:
+        console.error(
+            "WARN_CLAIM_TITLE_STALE",
+            "以下雇主认领里声明的岗位标题已经匹配不到任何在架岗位，声明当前是哑的："
+        )
+        for cid, titles in stale.items():
+            console.out(f"  {cid}: {', '.join(titles)}")
+        console.note("请与雇主确认岗位是否改名或已下架，然后更新 seed/claims.py。")
+
     console.ok(
         f"已验证 {stats.verified} 家公司 · 共 {stats.total_jobs} 条在架 · "
         f"新增 {stats.inserted} · 拒绝 {stats.rejected}"
@@ -1150,30 +1167,38 @@ def refresh(
     console.note(f"下次可刷新时间：{res['next_allowed_at']}")
 
 
-# --- claim (maintainer applies a verified employer claim) ----------------------
+# --- claim (maintainer records a verified employer claim) ----------------------
 @app.command()
 def claim(
     company: str = typer.Argument(..., help="Employer: id or any part of the name."),
-    sla_days: int = typer.Option(None, "--sla-days", help="Response window the employer commits to."),
+    sla_days: int = typer.Option(None, "--sla-days", help="Reply window the employer commits to."),
+    evergreen: list[str] = typer.Option(None, "--evergreen", help="Title they hire for continuously (repeatable)."),
+    hard_to_fill: list[str] = typer.Option(None, "--hard-to-fill", help="Title that is open but hard to fill (repeatable)."),
+    closed: list[str] = typer.Option(None, "--closed", help="Title they are no longer hiring for (repeatable)."),
+    req_dates: bool = typer.Option(False, "--requisition-dates", help="Their ATS reports requisition-creation dates, not publish dates."),
+    note: str = typer.Option("", "--note", help="How identity was verified. No names, no addresses."),
+    show: bool = typer.Option(False, "--show", help="Show what is currently in effect for this employer."),
     unverify: bool = typer.Option(False, "--unverify", help="Withdraw a claim."),
 ) -> None:
     """(Maintainer) Record a VERIFIED employer claim — after identity proof, never payment.
 
-    Claims arrive as GitHub issues (.github/ISSUE_TEMPLATE/employer_claim.yml) and are
-    verified by corporate identity. This writes the outcome so the index reflects it:
-    `verified` on the company, and `response_sla_days` applied to their postings at read
-    time — including roles they post later, which is why it lives on the company and not
-    on each job.
+    Every declared title is checked against live postings FIRST. A title that matches
+    nothing is refused with suggestions, because a correction that silently does nothing is
+    worse than none: the employer believes they have been heard and no one finds out.
 
-    What a claim can never buy: rank. Ranking is a locked pure function of
-    (match, freshness), and no branch of this command touches it.
+    What a claim can never buy: rank, or a lower ghost_score. Both are locked pure
+    functions and no branch of this command touches either.
     """
     import datetime as _dt
 
     from .db import session_scope
+    from .seed.claims import claim_for, employer_correction
 
-    console.cmd(f"ohp claim {company}" + (f" --sla-days {sla_days}" if sla_days else "")
-                + (" --unverify" if unverify else ""))
+    console.cmd(f"ohp claim {company}" + (" --show" if show else "") + (" --unverify" if unverify else ""))
+    ev = list(evergreen or [])
+    hf = list(hard_to_fill or [])
+    cl = list(closed or [])
+
     with session_scope() as s:
         matched = service.resolve_company(s, company)
         if not matched:
@@ -1185,34 +1210,81 @@ def claim(
                 console.out(f"  {cc.id:22} {cc.name}")
             raise typer.Exit(1)
         target = matched[0]
+
+        if show:
+            rec = claim_for(target.id)
+            console.out(f"公司：{target.name}（{target.id}）")
+            console.out(f"  已认领：{'是' if target.verified else '否'}"
+                        + (f" · {target.claimed_at:%Y-%m-%d}" if target.claimed_at else ""))
+            console.out(f"  承诺回复：{target.response_sla_days or '未声明'}")
+            if rec is None:
+                console.note("claims.py 里没有这家的更正声明。")
+                return
+            live = service.search_jobs(s, company=target.id, limit=100)
+            affected = [r for r in live if employer_correction(target.id, r["title"])]
+            console.out(f"  日期口径：{rec.date_semantics or 'publish（默认）'}")
+            for label, titles in (("常青岗", rec.evergreen_titles),
+                                  ("难招岗", rec.hard_to_fill_titles),
+                                  ("已停招", rec.closed_titles)):
+                if titles:
+                    console.out(f"  {label}：{', '.join(titles)}")
+            console.ok(f"当前生效于 {len(affected)} / {len(live)} 个在架岗位（取前 100 条统计）")
+            return
+
         if unverify:
             target.verified = False
             target.response_sla_days = None
             target.claimed_at = None
-            console.ok(f"{target.name} 的认领已撤销。")
+            console.ok(f"{target.name} 的数据库标记已撤销。")
+            console.note("更正声明在 claims.py 里，要一并撤销请删掉那条 Claim 并提交。")
             return
+
+        # Verify every declared title BEFORE recording anything.
+        declared = ev + hf + cl
+        if declared:
+            pv = service.preview_claim_titles(s, target.id, declared)
+            for raw, n in pv["matched"].items():
+                console.out(f"  ✓ {raw}  命中 {n} 个在架岗位")
+            if pv["unmatched"]:
+                for raw in pv["unmatched"]:
+                    console.out(f"  × {raw}  命中 0 个")
+                    for cand in pv["did_you_mean"].get(raw, []):
+                        console.out(f"      也许是：{cand}")
+                console.error(
+                    "ERR_TITLE_NO_MATCH",
+                    "以上标题在该公司的在架岗位里一个都匹配不到。声明它等于什么都没做，"
+                    "而雇主会以为我们照办了。请用上面的候选标题重试，或先跟雇主确认原文。",
+                )
+                raise typer.Exit(1)
+
         target.verified = True
         target.claimed_at = _dt.datetime.now(_dt.timezone.utc)
         if sla_days is not None:
             target.response_sla_days = sla_days
-        console.ok(
-            f"{target.name} 已标记为已认领"
-            + (f" · 承诺 {sla_days} 天内回复" if sla_days is not None else "（未声明 SLA）")
-        )
-        console.note("排序不受影响——它是 (匹配度, 新鲜度) 的纯函数，认领买不到位次。")
-        # The DB is rebuilt weekly by CI. Only the repo file survives that, so say so here
-        # rather than letting a claim quietly evaporate next Monday.
-        sla_arg = f", response_sla_days={sla_days}" if sla_days is not None else ""
-        console.note(
-            "此改动只在本地库生效。要让它扛过每周重建，把这一行加进 "
-            "src/openhire/seed/claims.py 的 CLAIMS 里："
-        )
-        console.out(
-            f'    Claim(company_id="{target.id}", '
-            f'claimed_on=dt.date({_dt.datetime.now().year}, '
-            f'{_dt.datetime.now().month}, {_dt.datetime.now().day}), '
-            f'note="<如何验证的>"{sla_arg}),'
-        )
+        console.ok(f"{target.name} 已在本地库标记为已认领。")
+        console.note("排序与 ghost_score 均不受影响，它们是纯函数，认领买不到。")
+
+        # claims.py is the durable record; the DB is rebuilt weekly and would lose this.
+        today = _dt.date.today()
+        lines = [
+            "    Claim(",
+            f'        company_id="{target.id}",',
+            f"        claimed_on=dt.date({today.year}, {today.month}, {today.day}),",
+            f'        note="{note or "<如何验证的>"}",',
+        ]
+        if sla_days is not None:
+            lines.append(f"        response_sla_days={sla_days},")
+        if req_dates:
+            lines.append('        date_semantics="requisition_created",')
+        for field_name, vals in (("evergreen_titles", ev), ("hard_to_fill_titles", hf),
+                                 ("closed_titles", cl)):
+            if vals:
+                inner = ", ".join(f'"{v}"' for v in vals)
+                lines.append(f"        {field_name}=({inner},),")
+        lines.append("    ),")
+        console.note("把下面这段加进 src/openhire/seed/claims.py 的 CLAIMS，否则下周重建就没了：")
+        for ln in lines:
+            console.out(ln)
 
 
 # --- numbers (one source of truth for every public claim) ----------------------

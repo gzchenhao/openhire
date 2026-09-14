@@ -775,3 +775,67 @@ def refresh_company_index(
         "jobs_delisted": stats.jobs_delisted,
         "jobs_unchanged": stats.jobs_unchanged,
     }
+
+
+# --- claim authoring: verify a correction actually matches something ----------
+def preview_claim_titles(
+    session: Session, company: str, titles: list[str]
+) -> dict:
+    """Check each declared title against live postings BEFORE the claim is recorded.
+
+    The failure this exists to prevent: an employer writes "机器人算法工程师", their live
+    posting is "机器人算法工程师（具身方向）", the declaration matches nothing, and nobody
+    ever finds out. A correction that silently does nothing is worse than no correction —
+    the employer believes they have been heard.
+
+    Matching is the same normalisation `role_group` uses, so what this reports is exactly
+    what the runtime will do.
+    """
+    from .seed.claims import _norm
+
+    matched = resolve_company(session, company)
+    if not matched:
+        return {"ok": False, "reason": "unknown_company", "company": company}
+    if len(matched) > 1:
+        return {"ok": False, "reason": "ambiguous_company",
+                "candidates": [{"company_id": c.id, "name": c.name} for c in matched[:10]]}
+    target = matched[0]
+
+    live = list(session.execute(
+        select(Job.title).where(Job.company_id == target.id, Job.delisted_at.is_(None))
+    ).scalars())
+    by_norm: dict[str, int] = {}
+    for t in live:
+        by_norm[_norm(t)] = by_norm.get(_norm(t), 0) + 1
+
+    hits, misses = {}, []
+    for raw in titles:
+        n = by_norm.get(_norm(raw), 0)
+        if n:
+            hits[raw] = n
+        else:
+            misses.append(raw)
+
+    near: dict[str, list[str]] = {}
+    if misses:
+        originals = sorted({t for t in live})
+        for raw in misses:
+            key = _norm(raw)
+            subs = [t for t in originals if key and key in _norm(t)]
+            fuzzy = difflib.get_close_matches(raw, originals, n=4, cutoff=0.6)
+            cand: list[str] = []
+            for c in [*subs, *fuzzy]:
+                if c not in cand:
+                    cand.append(c)
+            if cand:
+                near[raw] = cand[:4]
+
+    return {
+        "ok": not misses,
+        "company_id": target.id,
+        "company": target.name,
+        "live_postings": len(live),
+        "matched": hits,
+        "unmatched": misses,
+        "did_you_mean": near,
+    }

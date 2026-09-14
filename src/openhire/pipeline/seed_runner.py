@@ -110,3 +110,35 @@ def apply_claims(session) -> int:
         )
         applied += 1
     return applied
+
+
+def stale_claim_titles(session) -> dict[str, list[str]]:
+    """Declared titles that no longer match any live posting, per company.
+
+    A correction is matched by title, so it goes quiet the moment an employer renames or
+    closes that role — and it goes quiet in exactly the way nobody notices: no error, just
+    an employer who thinks we are still saying what they asked us to say. CI runs this
+    weekly and prints the misses so a dead declaration surfaces instead of rotting.
+    """
+    from ..db import Job
+    from ..seed.claims import CLAIMS, _norm
+
+    out: dict[str, list[str]] = {}
+    for claim in CLAIMS:
+        declared = [
+            *claim.evergreen_titles, *claim.hard_to_fill_titles, *claim.closed_titles,
+            *claim.notes_by_title.keys(),
+        ]
+        if not declared:
+            continue
+        live = {
+            _norm(t) for t in session.execute(
+                select(Job.title).where(
+                    Job.company_id == claim.company_id, Job.delisted_at.is_(None)
+                )
+            ).scalars()
+        }
+        missing = [t for t in declared if _norm(t) not in live]
+        if missing:
+            out[claim.company_id] = missing
+    return out
