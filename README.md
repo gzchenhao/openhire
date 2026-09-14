@@ -39,7 +39,8 @@ to hire. A long-open role can equally mean "hard to fill". Treat it as a reason 
 
 ---
 
-An MCP server that turns your AI assistant (Claude, Cursor, Windsurf) into a private radar for
+An MCP server that turns **any** MCP-speaking assistant — Claude, Cursor, Windsurf, Cline,
+ChatGPT via connectors — into a private radar for
 **AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **139 employers'**
 own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka), across
 the US, Europe **and China** (Waymo, Figure, Zoox — and Unitree, XPeng, UBTECH, Mech-Mind…).
