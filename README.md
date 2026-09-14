@@ -371,4 +371,4 @@ MIT © OpenHire Protocol · PRs welcome.
 
 ---
 
-*Built by a non-coder PM-ing Claude Code — full acceptance reports in [`reports/`](reports/).*
+*Built by a deep-tech headhunter who does not write code, pair-programming with Claude Code. Full acceptance reports, including the mistakes, in [`reports/`](reports/).*
