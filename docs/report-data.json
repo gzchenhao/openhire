@@ -1,0 +1,217 @@
+{
+  "generated": "2026-09-14",
+  "employers": 139,
+  "live": 15966,
+  "median": 75,
+  "p90": 43.4,
+  "p180": 22.3,
+  "p365": 8.8,
+  "cn": {
+    "n": 1695,
+    "median": 153,
+    "p180": 41
+  },
+  "ov": {
+    "n": 14271,
+    "median": 67,
+    "p180": 20
+  },
+  "ghost_hi": 2559,
+  "ghost_hi_touched": 36,
+  "freshest": [
+    {
+      "name": "AssemblyAI",
+      "vendor": "greenhouse",
+      "n": 20,
+      "median": 24,
+      "stale": 0,
+      "touched": 85
+    },
+    {
+      "name": "Mixpanel",
+      "vendor": "greenhouse",
+      "n": 83,
+      "median": 31,
+      "stale": 1,
+      "touched": 64
+    },
+    {
+      "name": "Dropbox",
+      "vendor": "greenhouse",
+      "n": 42,
+      "median": 33,
+      "stale": 5,
+      "touched": 60
+    },
+    {
+      "name": "Instacart",
+      "vendor": "greenhouse",
+      "n": 112,
+      "median": 34,
+      "stale": 7,
+      "touched": 100
+    },
+    {
+      "name": "傅利叶 Fourier",
+      "vendor": "moka",
+      "n": 17,
+      "median": 34,
+      "stale": 12,
+      "touched": 47
+    },
+    {
+      "name": "Fivetran",
+      "vendor": "greenhouse",
+      "n": 235,
+      "median": 37,
+      "stale": 9,
+      "touched": 100
+    },
+    {
+      "name": "Tailscale",
+      "vendor": "greenhouse",
+      "n": 69,
+      "median": 37,
+      "stale": 6,
+      "touched": 45
+    },
+    {
+      "name": "Chainguard",
+      "vendor": "greenhouse",
+      "n": 85,
+      "median": 38,
+      "stale": 5,
+      "touched": 52
+    },
+    {
+      "name": "Starburst",
+      "vendor": "greenhouse",
+      "n": 23,
+      "median": 38,
+      "stale": 13,
+      "touched": 100
+    },
+    {
+      "name": "Elastic",
+      "vendor": "greenhouse",
+      "n": 342,
+      "median": 39,
+      "stale": 4,
+      "touched": 100
+    },
+    {
+      "name": "Webflow",
+      "vendor": "greenhouse",
+      "n": 31,
+      "median": 40,
+      "stale": 16,
+      "touched": 55
+    },
+    {
+      "name": "Aurora",
+      "vendor": "ashby",
+      "n": 77,
+      "median": 40,
+      "stale": 0,
+      "touched": 34
+    }
+  ],
+  "stalest": [
+    {
+      "name": "亿嘉和 YIJIAHE",
+      "vendor": "beisen",
+      "n": 134,
+      "median": 1552,
+      "stale": 100,
+      "touched": 0
+    },
+    {
+      "name": "Lightning AI",
+      "vendor": "ashby",
+      "n": 13,
+      "median": 1042,
+      "stale": 85,
+      "touched": 0
+    },
+    {
+      "name": "节卡机器人 JAKA",
+      "vendor": "beisen",
+      "n": 22,
+      "median": 794,
+      "stale": 100,
+      "touched": 0
+    },
+    {
+      "name": "WeRide",
+      "vendor": "lever",
+      "n": 30,
+      "median": 587,
+      "stale": 70,
+      "touched": 0
+    },
+    {
+      "name": "梅卡曼德 Mech-Mind",
+      "vendor": "beisen",
+      "n": 48,
+      "median": 572,
+      "stale": 79,
+      "touched": 2
+    },
+    {
+      "name": "Palantir",
+      "vendor": "lever",
+      "n": 306,
+      "median": 444,
+      "stale": 69,
+      "touched": 1
+    },
+    {
+      "name": "驭势科技 UISEE",
+      "vendor": "moka",
+      "n": 62,
+      "median": 412,
+      "stale": 69,
+      "touched": 10
+    },
+    {
+      "name": "宇树科技 Unitree",
+      "vendor": "beisen",
+      "n": 37,
+      "median": 367,
+      "stale": 59,
+      "touched": 3
+    },
+    {
+      "name": "Dexterity",
+      "vendor": "lever",
+      "n": 33,
+      "median": 338,
+      "stale": 70,
+      "touched": 9
+    },
+    {
+      "name": "优必选 UBTECH",
+      "vendor": "beisen",
+      "n": 32,
+      "median": 334,
+      "stale": 84,
+      "touched": 0
+    },
+    {
+      "name": "越疆 Dobot",
+      "vendor": "beisen",
+      "n": 129,
+      "median": 320,
+      "stale": 83,
+      "touched": 0
+    },
+    {
+      "name": "PlanetScale",
+      "vendor": "greenhouse",
+      "n": 12,
+      "median": 240,
+      "stale": 50,
+      "touched": 25
+    }
+  ]
+}
