@@ -48,3 +48,25 @@ def _as_aware(d: dt.datetime) -> dt.datetime:
     if d.tzinfo is None:
         return d.replace(tzinfo=dt.timezone.utc)
     return d
+
+
+def ghost_reason(relist_count: int, days_since_first_seen: float) -> str:
+    """Which input drove the score — the thing the number alone will not tell you.
+
+    `verified_at` and `ghost_score` answer different questions, and a caller that reads them
+    as one gets a contradiction: a posting can be confirmed live today AND score 1.0. Live
+    means the employer's ATS still returns it; the score means it has been returned for a
+    very long time, or keeps being relisted. This names which of the two is doing the work,
+    so an agent can say "open 368 days, never relisted" instead of "ghost=1.0".
+    """
+    relist_term = RELIST_WEIGHT * max(0, relist_count)
+    stale_term = max(0.0, days_since_first_seen - STALE_GRACE_DAYS) / STALE_SPAN_DAYS * STALE_WEIGHT
+    days = int(days_since_first_seen)
+    if relist_term == 0 and stale_term == 0:
+        return f"fresh: {days}d old, never relisted"
+    if relist_term == 0:
+        return f"age only: open {days}d, never relisted"
+    if stale_term == 0:
+        return f"relists only: relisted {relist_count}x in {days}d"
+    bigger = "age" if stale_term >= relist_term else "relists"
+    return f"{bigger} dominant: open {days}d, relisted {relist_count}x"

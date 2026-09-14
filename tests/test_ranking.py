@@ -77,3 +77,50 @@ def test_freshness_recent_is_high_old_is_low():
     assert freshness(now, now) == pytest.approx(1.0)
     assert freshness(now - dt.timedelta(days=15), now) == pytest.approx(0.5)
     assert freshness(now - dt.timedelta(days=60), now) == 0.0
+
+
+# --- ghost_reason (N4 from the round-2 tester report) -------------------------
+# The complaint: a posting can read `verified_at = today` and `ghost_score = 1.0` at the
+# same time, and the payload offered nothing to reconcile them. The two fields answer
+# different questions — "does the ATS still return it?" versus "how long has it been
+# returning it?" — and only one of them was ever explained.
+
+def test_ghost_reason_names_age_when_age_is_the_whole_story():
+    from openhire.pipeline.ghost_score import ghost_reason, ghost_score_from_parts
+
+    assert ghost_score_from_parts(0, 367) == 1.0
+    reason = ghost_reason(0, 367)
+    assert "age only" in reason and "367d" in reason and "never relisted" in reason
+
+
+def test_ghost_reason_names_relists_when_the_posting_is_young():
+    from openhire.pipeline.ghost_score import ghost_reason
+
+    assert "relists only" in ghost_reason(3, 10)
+
+
+def test_ghost_reason_says_fresh_when_the_score_is_zero():
+    from openhire.pipeline.ghost_score import ghost_reason, ghost_score_from_parts
+
+    assert ghost_score_from_parts(0, 14) == 0.0
+    assert "fresh" in ghost_reason(0, 14)
+
+
+def test_ghost_reason_tracks_the_same_anchor_the_pipeline_scores_on():
+    """The pipeline ages ghost_score off posted_at when the ATS supplies one, falling back
+    to first_seen_at. A reason computed off a different anchor would narrate "open 48d"
+    beside a stored 1.0 — a confident wrong explanation, worse than none."""
+    import datetime as dt
+    import inspect
+
+    from openhire import service
+
+    src = inspect.getsource(service.job_posting)
+    assert "job.posted_at or job.first_seen_at" in src
+
+    now = dt.datetime(2026, 9, 14, tzinfo=dt.timezone.utc)
+    posted = now - dt.timedelta(days=367)
+    from openhire.pipeline.ghost_score import compute_ghost_score, ghost_reason
+
+    assert compute_ghost_score(0, posted, now) == 1.0
+    assert "367d" in ghost_reason(0, (now - posted).total_seconds() / 86400.0)

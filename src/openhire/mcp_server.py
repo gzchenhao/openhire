@@ -65,7 +65,14 @@ def search_jobs(
     precise re-ranking is left to you, the client, which holds the user's context. Every
     result includes the five protocol fields (verified_at, source, ghost_score,
     response_sla_days, apply_channel) plus datePosted, days_open, remote_scope,
-    eligible_regions and role_group.
+    eligible_regions, role_group and ghost_reason.
+
+    `verified_at` and `ghost_score` answer DIFFERENT questions and routinely disagree: a
+    posting confirmed live today can score 1.0. Live means the employer's ATS still returns
+    it; the score means it has been returned for a long time, or keeps being relisted.
+    `ghost_reason` says which input drove the score ("age only: open 367d, never relisted")
+    so you can tell the user that instead of a bare number. Neither field measures intent —
+    a long-open role can equally mean hard-to-fill.
 
     To answer "what is <employer> hiring?", pass `company` — do not filter client-side.
 

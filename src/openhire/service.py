@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 
 from .db import Application, Company, Job, Watch
 from .errors import OpenHireError
+from .pipeline.ghost_score import ghost_reason
 from .pipeline.ranking import freshness, match_quality, rank_score
 
 DELIVERED_VIA = "employer_site"  # v0.1 always the employer's own channel
@@ -164,6 +165,20 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "verified_at": _aware(job.verified_at).isoformat() if job.verified_at else None,  # ①
         "source": job.source,                                                             # ②
         "ghost_score": round(job.ghost_score, 4) if job.ghost_score is not None else None,  # ③
+        # Not a protocol field — a plain-language gloss on ③, because ① and ③ can both be
+        # true at once ("confirmed live today" + "open for a year") and the pair reads as a
+        # contradiction without it.
+        "ghost_reason": (
+            # Mirror the anchor the pipeline actually scored against: the employer's own
+            # posting date when the ATS gives one, else the day we first saw it. Using
+            # first_seen_at unconditionally would narrate "open 48d" next to a stored 1.0,
+            # which is a worse answer than staying silent.
+            ghost_reason(
+                job.relist_count or 0,
+                (now - _aware(job.posted_at or job.first_seen_at)).total_seconds() / 86400.0,
+            )
+            if (job.posted_at or job.first_seen_at) else None
+        ),
         "response_sla_days": job.response_sla_days,                                        # ④
         "apply_channel": job.apply_channel,                                               # ⑤
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
