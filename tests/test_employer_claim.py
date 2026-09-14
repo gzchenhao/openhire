@@ -113,3 +113,86 @@ def test_claiming_cannot_touch_rank(seeded):
     body = src.replace(cli.claim.__doc__ or "", "")
     for forbidden in ("rank_score", "match_quality", "freshness", "ghost_score"):
         assert forbidden not in body, f"the claim path must never touch {forbidden}"
+
+
+# --- durability: the claim has to survive the weekly rebuild ------------------
+# CI rebuilds the index every Monday (`ohp seed` → `ohp ingest --all` →
+# `ohp snapshot-build`) starting from the published snapshot. A claim recorded only in a
+# maintainer's local database would never reach that, so the repo file is the source of
+# truth and `ohp seed` re-applies it every run.
+
+def test_claims_file_is_declarative_and_applied_by_seeding(seeded):
+    import datetime as _dt
+
+    from openhire.pipeline import seed_runner
+    from openhire.seed import claims as claims_mod
+
+    with session_scope() as s:
+        # Absent from the file → withdrawn, even if the DB says otherwise.
+        c = s.get(Company, "claimed")
+        c.verified, c.response_sla_days, c.claimed_at = True, 9, NOW
+        s.flush()
+        seed_runner.apply_claims(s)
+        c = s.get(Company, "claimed")
+        assert (c.verified, c.response_sla_days, c.claimed_at) == (False, None, None)
+
+    entry = claims_mod.Claim(
+        company_id="claimed", claimed_on=_dt.date(2026, 9, 14),
+        note="GitHub org membership", response_sla_days=5,
+    )
+    with session_scope() as s:
+        original = list(claims_mod.CLAIMS)
+        claims_mod.CLAIMS.append(entry)
+        try:
+            assert seed_runner.apply_claims(s) == 1
+            c = s.get(Company, "claimed")
+            assert c.verified is True and c.response_sla_days == 5
+            assert c.claimed_at.date() == _dt.date(2026, 9, 14)
+            # Idempotent — CI runs it weekly.
+            assert seed_runner.apply_claims(s) == 1
+        finally:
+            claims_mod.CLAIMS[:] = original
+
+
+def test_applying_claims_never_touches_ranking_inputs(seeded):
+    import inspect
+
+    from openhire.pipeline import seed_runner
+
+    body = inspect.getsource(seed_runner.apply_claims)
+    body = body.replace(seed_runner.apply_claims.__doc__ or "", "")
+    for forbidden in ("rank_score", "match_quality", "freshness", "ghost_score", "verified_at"):
+        assert forbidden not in body
+
+
+def test_seeding_does_not_reset_an_unrelated_companys_fields(seeded):
+    """`ohp seed` re-points employers at their current board; it must not be a reason a
+    claim disappears, so the fields it writes are checked explicitly."""
+    import inspect
+
+    from openhire.pipeline import seed_runner
+
+    src = inspect.getsource(seed_runner.seed_companies)
+    assigned = {ln.split("=")[0].strip() for ln in src.splitlines()
+                if ln.strip().startswith("company.") and "=" in ln}
+    assert assigned == {
+        "company.name", "company.ats_vendor", "company.ats_tenant", "company.careers_url",
+    }
+
+
+def test_company_info_reports_claim_status(seeded):
+    """v0.1 shipped a `verified` field that was always false — a trust signal that could
+    only ever mislead, so it was removed. It comes back only now that something real can
+    set it."""
+    with session_scope() as s:
+        before = service.get_company_info(s, "claimed", now=NOW)
+        assert before["claimed"] is False
+        assert before["claimed_at"] is None and before["response_sla_days"] is None
+
+        c = s.get(Company, "claimed")
+        c.verified, c.response_sla_days, c.claimed_at = True, 7, NOW
+        s.flush()
+        after = service.get_company_info(s, "claimed", now=NOW)
+    assert after["claimed"] is True
+    assert after["response_sla_days"] == 7
+    assert after["claimed_at"].startswith("2026-09-14")

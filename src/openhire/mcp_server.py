@@ -159,6 +159,11 @@ def get_company_info(company_id: str) -> dict:
 
     Returns ghost_score_avg, active_jobs, and index_built_at (when the index was last
     built). NEVER returns any individual candidate data — the server holds none.
+
+    `claimed` is true only when the employer has claimed this tenant and we verified them by
+    corporate identity — never by payment, and it never affects ranking. It is the only
+    signal here that comes from the employer rather than from their public ATS data, and it
+    is what makes `response_sla_days` non-null on their postings.
     """
     _await_index()
     with session_scope() as s:

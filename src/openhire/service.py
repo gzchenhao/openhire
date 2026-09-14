@@ -487,7 +487,10 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         )
     )
     # Aggregate, anonymous signals ONLY — never any individual candidate data.
-    # NOTE: `verified` was removed (it was always false in v0.1 — a false trust signal).
+    # `claimed` is back, and now it means something: it is true only once an employer has
+    # claimed this tenant and we verified them by corporate identity (never by payment).
+    # In v0.1 this field was always false, which is a worse-than-useless trust signal, so
+    # it was removed until there was a real claim path behind it.
     # `index_built_at` is when this index was last built (a batch timestamp shared across
     # companies), honestly named rather than implying a per-company crawl time.
     return {
@@ -495,6 +498,9 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         "company": company.name,
         "ghost_score_avg": round(ghost_avg, 4) if ghost_avg is not None else None,
         "active_jobs": int(active_jobs),
+        "claimed": bool(company.verified),
+        "claimed_at": _aware(company.claimed_at).isoformat() if company.claimed_at else None,
+        "response_sla_days": company.response_sla_days,
         "index_built_at": _aware(company.last_crawled_at).isoformat()
         if company.last_crawled_at else None,
     }

@@ -11,6 +11,8 @@ import asyncio
 import datetime as dt
 from dataclasses import dataclass
 
+from sqlalchemy import select
+
 from ..ats import get_client
 from ..db import Company, session_scope
 from ..seed import all_candidates
@@ -76,4 +78,35 @@ def seed_companies(on_result=None) -> SeedStats:
                 company.ats_vendor = cand.vendor
                 company.ats_tenant = cand.tenant
                 company.careers_url = client.careers_url(cand.tenant)
+
+        apply_claims(session)
     return stats
+
+
+def apply_claims(session) -> int:
+    """Make the DB match `seed/claims.py`. Declarative: an entry deleted there is withdrawn
+    here. Runs inside `ohp seed`, which CI runs weekly, so a claim survives every rebuild
+    without anyone remembering to re-apply it.
+
+    Never touches ranking. A claim sets `verified`, the employer's declared reply window,
+    and the date — nothing that could move a posting up a page.
+    """
+    from ..seed.claims import CLAIMS
+
+    claimed = {c.company_id: c for c in CLAIMS}
+    applied = 0
+    for company in session.execute(select(Company)).scalars():
+        claim = claimed.get(company.id)
+        if claim is None:
+            if company.verified or company.response_sla_days is not None or company.claimed_at:
+                company.verified = False
+                company.response_sla_days = None
+                company.claimed_at = None
+            continue
+        company.verified = True
+        company.response_sla_days = claim.response_sla_days
+        company.claimed_at = dt.datetime.combine(
+            claim.claimed_on, dt.time.min, tzinfo=dt.timezone.utc
+        )
+        applied += 1
+    return applied

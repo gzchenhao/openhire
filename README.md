@@ -163,6 +163,27 @@ Optional, entirely local: `ohp init --scan <dir>` derives a **skill fingerprint*
 own repos. You never write a résumé; the code never leaves your machine — only an anonymous
 vector does.
 
+### For employers: claim your tenant
+
+If your company is in this index, the listings came from your own public ATS — we did not
+ask, because we did not need to. What we cannot know is your side of it: whether a role is
+an evergreen talent pool rather than a stale req, or how fast you actually reply.
+
+[Claim it](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml).
+Free, verified by corporate identity — a GitHub org membership or a reply from a corporate
+domain — and **never by payment**. A claim gets you:
+
+- `claimed: true` on your company, with the date
+- `response_sla_days` on every one of your postings, including ones you post later
+- listing-status corrections (an evergreen pool carrying an unfair staleness score, say)
+
+It does **not** get you rank. Ordering is a locked pure function of (match, freshness);
+a test freezes the signature and another asserts the claim path touches no ranking symbol.
+
+Verified claims live in [`src/openhire/seed/claims.py`](src/openhire/seed/claims.py) — in
+the repo, not in a private database — so each one is a reviewable diff, and the weekly
+rebuild re-applies them instead of quietly dropping them.
+
 ### Keeping it current
 
 The index refreshes weekly, so a search can be up to seven days behind. When the user is

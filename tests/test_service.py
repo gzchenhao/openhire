@@ -122,9 +122,15 @@ def test_company_info_aggregate_only(session):
     info = service.get_company_info(session, "acme", now=NOW)
     assert set(info) == {
         "company_id", "company", "ghost_score_avg", "active_jobs", "index_built_at",
+        # Employer-DECLARED, and only ever about the employer — never about a candidate.
+        # The aggregate-only rule below still holds over the whole payload.
+        "claimed", "claimed_at", "response_sla_days",
     }
     assert info["active_jobs"] == 3
-    assert "verified" not in info  # removed: it was always false (a false trust signal)
+    # `verified` stays gone as a name; `claimed` replaces it and is only true behind a real
+    # claim — the v0.1 field was always false, which is a trust signal that can only mislead.
+    assert "verified" not in info
+    assert info["claimed"] is False and info["response_sla_days"] is None
     # No individual candidate data may appear anywhere in the payload.
     blob = str(info).lower()
     for tok in ("fingerprint", "email", "resume", "applicant", "candidate", "receipt"):

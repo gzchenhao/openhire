@@ -1200,6 +1200,19 @@ def claim(
             + (f" · 承诺 {sla_days} 天内回复" if sla_days is not None else "（未声明 SLA）")
         )
         console.note("排序不受影响——它是 (匹配度, 新鲜度) 的纯函数，认领买不到位次。")
+        # The DB is rebuilt weekly by CI. Only the repo file survives that, so say so here
+        # rather than letting a claim quietly evaporate next Monday.
+        sla_arg = f", response_sla_days={sla_days}" if sla_days is not None else ""
+        console.note(
+            "此改动只在本地库生效。要让它扛过每周重建，把这一行加进 "
+            "src/openhire/seed/claims.py 的 CLAIMS 里："
+        )
+        console.out(
+            f'    Claim(company_id="{target.id}", '
+            f'claimed_on=dt.date({_dt.datetime.now().year}, '
+            f'{_dt.datetime.now().month}, {_dt.datetime.now().day}), '
+            f'note="<如何验证的>"{sla_arg}),'
+        )
 
 
 def main() -> None:  # console-script entry
