@@ -163,6 +163,27 @@ Optional, entirely local: `ohp init --scan <dir>` derives a **skill fingerprint*
 own repos. You never write a résumé; the code never leaves your machine — only an anonymous
 vector does.
 
+### Keeping it current
+
+The index refreshes weekly, so a search can be up to seven days behind. When the user is
+about to act on one employer and wants today's truth:
+
+```bash
+ohp refresh unitree          # ~1 minute · at most one crawl per employer per 6 hours
+```
+
+Over MCP this is the `refresh_index` tool. Three rules are built in, not advisory:
+
+* **One employer per call.** A full crawl is 20+ minutes and no client waits that long. An
+  ambiguous word (`robot` → 11 matches) is refused with the candidate list, never fanned out.
+* **Six-hour throttle per employer**, checked *before* any network call, so a too-soon
+  request costs the ATS nothing and returns `last_refreshed_at` instead of an error.
+* **Not for speculative or looped calls.** Each one hits somebody else's public endpoint.
+
+That last point is the whole design constraint: our own crawl is a weekly batch we control,
+and handing refresh to callers turns it into *our users* hitting *their* endpoint on our
+behalf. The throttle is what keeps that boundary ours to keep rather than ours to spend.
+
 ### Reading the three dates
 
 Every row carries three timestamps that answer three different questions. Read together they

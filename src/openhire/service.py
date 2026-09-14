@@ -665,3 +665,89 @@ def apply(
         "apply_channel": job.apply_channel,
         "message": "Résumé never transited the server. Open apply_channel to apply as yourself.",
     }
+
+
+# --- refresh one employer (throttled) ----------------------------------------
+REFRESH_THROTTLE_HOURS = 6
+
+
+def refresh_company_index(
+    session: Session,
+    company: str,
+    now: dt.datetime | None = None,
+    throttle_hours: int = REFRESH_THROTTLE_HOURS,
+) -> dict:
+    """Re-crawl ONE employer's ATS on demand, at most once every `throttle_hours`.
+
+    Why one employer and not the index: a full crawl is 20+ minutes, which no MCP client
+    will wait for, and 0.4.1 already taught us what a blocking call does to a marketplace
+    probe. One employer is ~1 minute.
+
+    Why throttled: our own crawl is a weekly batch we control. Exposing refresh to callers
+    turns that into "our users hammering someone else's public endpoint on our behalf", and
+    the crawl-boundary rule (reports/020) is ours to keep, not to spend. The throttle is
+    checked BEFORE any network call, so a throttled request costs the ATS nothing.
+
+    Returns a dict either way — never raises for the ordinary "too soon" case, because
+    "you already have fresh data" is an answer, not an error.
+    """
+    now = _now(now)
+    matched = resolve_company(session, company)
+    if not matched:
+        return {
+            "refreshed": False,
+            "reason": "unknown_company",
+            "hint": (
+                f"This index has no company matching {company!r}. It covers employers whose "
+                "public ATS we crawl, not the whole market."
+            ),
+        }
+    if len(matched) > 1:
+        # Refusing is the point: a vague word must not fan out into several live crawls.
+        return {
+            "refreshed": False,
+            "reason": "ambiguous_company",
+            "candidates": [{"company_id": c.id, "name": c.name} for c in matched[:10]],
+            "hint": (
+                f"{company!r} matches {len(matched)} employers. Re-ask with one company_id — "
+                "this never refreshes several at once."
+            ),
+        }
+
+    target = matched[0]
+    last = _aware(target.last_crawled_at) if target.last_crawled_at else None
+    if last is not None:
+        age_h = (now - last).total_seconds() / 3600.0
+        if age_h < throttle_hours:
+            nxt = last + dt.timedelta(hours=throttle_hours)
+            return {
+                "refreshed": False,
+                "reason": "throttled",
+                "company_id": target.id,
+                "company": target.name,
+                "last_refreshed_at": last.isoformat(),
+                "next_allowed_at": nxt.isoformat(),
+                "hint": (
+                    f"{target.name} was refreshed {age_h:.1f}h ago; the limit is one crawl "
+                    f"per {throttle_hours}h per employer. The data you already have is that "
+                    "fresh — search it rather than waiting."
+                ),
+            }
+
+    from .pipeline import run_ingest
+
+    stats = run_ingest(company_ids=[target.id], respect_interval=False)
+    session.expire_all()
+    refreshed = session.get(Company, target.id)
+    new_last = _aware(refreshed.last_crawled_at) if refreshed and refreshed.last_crawled_at else now
+    return {
+        "refreshed": True,
+        "company_id": target.id,
+        "company": target.name,
+        "last_refreshed_at": new_last.isoformat(),
+        "next_allowed_at": (new_last + dt.timedelta(hours=throttle_hours)).isoformat(),
+        "jobs_new": stats.jobs_new,
+        "jobs_updated": stats.jobs_updated,
+        "jobs_delisted": stats.jobs_delisted,
+        "jobs_unchanged": stats.jobs_unchanged,
+    }

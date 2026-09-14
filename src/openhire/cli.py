@@ -1120,6 +1120,36 @@ def version() -> None:
     c.print(f"openhire {__version__}")
 
 
+# --- refresh (one employer, throttled) ----------------------------------------
+@app.command()
+def refresh(
+    company: str = typer.Argument(..., help="One employer: id or any part of the name."),
+    force: bool = typer.Option(False, "--force", help="Ignore the 6h throttle (you are the maintainer; the ATS is not yours)."),
+) -> None:
+    """Re-crawl one employer's public ATS now. ~1 minute, throttled to once per 6h."""
+    console.cmd(f"ohp refresh {company}" + (" --force" if force else ""))
+    from .db import session_scope
+
+    with session_scope() as s:
+        res = service.refresh_company_index(
+            s, company, throttle_hours=0 if force else service.REFRESH_THROTTLE_HOURS
+        )
+    if not res.get("refreshed"):
+        if res.get("reason") == "ambiguous_company":
+            console.note(res["hint"])
+            for c in res.get("candidates", []):
+                c_print = f"  {c['company_id']:22} {c['name']}"
+                console.out(c_print)
+        else:
+            console.note(res.get("hint", "未刷新。"))
+        return
+    console.ok(
+        f"{res['company']} 已刷新 · 新增 {res['jobs_new']} · 更新 {res['jobs_updated']} · "
+        f"下线 {res['jobs_delisted']} · 未变 {res['jobs_unchanged']}"
+    )
+    console.note(f"下次可刷新时间：{res['next_allowed_at']}")
+
+
 def main() -> None:  # console-script entry
     app()
 

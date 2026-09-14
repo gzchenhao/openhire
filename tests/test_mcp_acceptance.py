@@ -72,11 +72,13 @@ def seeded():
 
 async def test_all_five_acceptance_scripts(seeded):
     async with connect(mcp) as client:
-        # The client can discover exactly the four protocol tools + apply.
+        # The client can discover exactly the four protocol tools + apply + refresh.
+        # This set is pinned on purpose: a tool appearing here is a protocol change, not
+        # an implementation detail, and every client's prompt budget pays for it.
         tools = {t.name for t in (await client.list_tools()).tools}
         assert tools == {
             "search_jobs", "get_company_info", "watch_intent", "check_watches",
-            "authorize_application",
+            "authorize_application", "refresh_index",
         }
 
         # --- Script 1: search remote Rust/K8s infra jobs ----------------------

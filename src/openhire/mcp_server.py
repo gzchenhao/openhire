@@ -187,6 +187,43 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
 
 
 @mcp.tool(
+    title="Refresh one employer",
+    annotations=ToolAnnotations(title="Refresh one employer", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True),
+)
+def refresh_index(company: str) -> dict:
+    """Re-crawl ONE employer's public ATS now. Takes about a minute. Throttled to 6h.
+
+    The index is refreshed weekly, so `search_jobs` can be up to seven days behind and
+    `check_watches` has nothing new to report until it moves. This is the manual nudge for
+    the case that matters: the user is about to act on one employer and wants today's truth.
+
+    Rules worth knowing before you call it:
+
+    * ONE employer per call. A full crawl is 20+ minutes and no client will wait; a vague
+      word like "robot" is refused with the list of candidates rather than fanned out into
+      eleven live crawls.
+    * At most one crawl per employer per 6 hours. A throttled call returns immediately with
+      `refreshed: false`, `reason: "throttled"` and `last_refreshed_at` — no network request
+      is made. That is not an error: it means the data you already hold is that fresh.
+    * Do NOT call this speculatively or in a loop. Every call hits somebody else's public
+      endpoint. Search first; refresh only when the user needs today's state of one employer.
+
+    Args:
+        company: one employer — an id ("unitree") or any part of the name in either
+            language ("宇树", "XPeng"). Ambiguous input is refused, not guessed.
+
+    Returns: `refreshed` plus `last_refreshed_at` / `next_allowed_at`; when it did run, also
+    jobs_new / jobs_updated / jobs_delisted / jobs_unchanged.
+    """
+    _await_index()
+    with session_scope() as s:
+        try:
+            return service.refresh_company_index(s, company)
+        except OpenHireError as e:
+            return e.as_dict()
+
+
+@mcp.tool(
     title="Check watches",
     annotations=ToolAnnotations(title="Check watches", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )
