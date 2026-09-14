@@ -124,3 +124,30 @@ def test_ghost_reason_tracks_the_same_anchor_the_pipeline_scores_on():
 
     assert compute_ghost_score(0, posted, now) == 1.0
     assert "367d" in ghost_reason(0, (now - posted).total_seconds() / 86400.0)
+
+
+def test_payload_carries_the_employer_last_touched_date():
+    """N4's other half. ghost_score and verified_at cannot separate an abandoned req from a
+    tended evergreen one — both read "open a long time, still listed". The employer's own
+    updated_at can, and it was already stored for ~99.98% of live rows, just never emitted."""
+    import datetime as dt
+
+    from openhire import service
+    from openhire.db import Company, Job
+
+    now = dt.datetime(2026, 9, 14, tzinfo=dt.timezone.utc)
+    company = Company(id="c", name="C", ats_vendor="greenhouse", ats_tenant="c")
+    job = Job(
+        id="c:1", company_id="c", title="Staff Engineer", location="Remote",
+        remote_policy="remote", skills=["python"], source="ats_public_api",
+        first_seen_at=now - dt.timedelta(days=400),
+        posted_at=now - dt.timedelta(days=367),
+        updated_at=now - dt.timedelta(days=13),
+        verified_at=now, apply_channel="https://example.test/1", content_hash="h",
+        relist_count=0, ghost_score=1.0,
+    )
+    row = service.job_posting(job, company, [], now)
+    assert row["days_since_update"] == 13
+    assert row["updated_at"].startswith("2026-09-01")
+    # The point of the field: same ghost_score, opposite readings.
+    assert row["ghost_score"] == 1.0

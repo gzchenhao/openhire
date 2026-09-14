@@ -111,6 +111,17 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 
 First start downloads a ~25 MB index in the background; searches fill in within a few minutes.
 
+**What `uvx` costs you, every time.** `uvx` resolves the package on each invocation — measured
+at **7–8 s** per call even with a warm cache. That is paid on every MCP session start and every
+CLI command. It buys you never having to manage an install. If you would rather pay once:
+
+```bash
+pipx install openhire     # then use "command": "ohp", "args": ["serve"] — process-start latency
+```
+
+`@latest` also means your tool surface can change under you without warning. Pin it when that
+matters: `"args": ["openhire==0.5.1", "serve"]`.
+
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
 
@@ -151,6 +162,25 @@ The server **auto-downloads the public job snapshot on first run** if the index 
 Optional, entirely local: `ohp init --scan <dir>` derives a **skill fingerprint** from your
 own repos. You never write a résumé; the code never leaves your machine — only an anonymous
 vector does.
+
+### Reading the three dates
+
+Every row carries three timestamps that answer three different questions. Read together they
+separate an abandoned requisition from one somebody is still tending:
+
+| field | question it answers |
+|---|---|
+| `verified_at` | did the employer's ATS still return this the last time we looked? |
+| `datePosted` / `days_open` | how long has it been open? `ghost_score` ages off this |
+| `updated_at` / `days_since_update` | when did the employer last touch it? |
+
+`ghost_score = 1.0` alone is not a verdict. Open 367 days and untouched for 367 days reads as
+abandoned; open 327 days but touched 13 days ago reads as a tended evergreen req. On this index
+**36% of `ghost_score >= 0.99` rows were touched by the employer within the last 30 days**.
+`ghost_reason` spells out which input drove the score ("age only: open 367d, never relisted").
+
+None of these measure intent. A long-open role can equally mean hard-to-fill — treat the
+numbers as a reason to ask, not a verdict.
 
 ### Asking about one employer
 

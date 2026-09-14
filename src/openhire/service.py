@@ -168,6 +168,17 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # Not a protocol field — a plain-language gloss on ③, because ① and ③ can both be
         # true at once ("confirmed live today" + "open for a year") and the pair reads as a
         # contradiction without it.
+        # The employer's own last-touched timestamp, straight from their ATS (populated for
+        # ~99.98% of live rows). This is the third date, and it is the one that separates a
+        # tended evergreen req from an abandoned one: ghost_score says "open a long time",
+        # verified_at says "still listed", and this says "they last touched it N days ago".
+        # Honest limit: an ATS bumps it on any edit or re-publish, so it means "touched",
+        # not necessarily "content changed".
+        "updated_at": _aware(job.updated_at).isoformat() if job.updated_at else None,
+        "days_since_update": (
+            int((now - _aware(job.updated_at)).total_seconds() // 86400)
+            if job.updated_at else None
+        ),
         "ghost_reason": (
             # Mirror the anchor the pipeline actually scored against: the employer's own
             # posting date when the ATS gives one, else the day we first saw it. Using

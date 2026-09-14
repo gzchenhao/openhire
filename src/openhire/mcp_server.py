@@ -74,6 +74,13 @@ def search_jobs(
     so you can tell the user that instead of a bare number. Neither field measures intent —
     a long-open role can equally mean hard-to-fill.
 
+    `days_since_update` is the third date and the one that usually settles it: the employer's
+    own last-touched timestamp from their ATS. Two rows can both score 1.0 and mean opposite
+    things — open 367d and untouched for 367d reads as abandoned; open 327d but touched 13
+    days ago reads as a tended evergreen req. Measured on this index, 36% of ghost>=0.99 rows
+    were touched by the employer within the last 30 days. Honest limit: an ATS bumps this on
+    any edit or re-publish, so it means "touched", not necessarily "content changed".
+
     To answer "what is <employer> hiring?", pass `company` — do not filter client-side.
 
     Two things worth knowing before you spend your budget:
