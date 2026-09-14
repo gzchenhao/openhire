@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from .db import Application, Company, Job, Watch
 from .errors import OpenHireError
 from .pipeline.ghost_score import ghost_reason
+from .seed.claims import employer_correction
 from .pipeline.ranking import freshness, match_quality, rank_score
 
 DELIVERED_VIA = "employer_site"  # v0.1 always the employer's own channel
@@ -178,6 +179,15 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "days_since_update": (
             int((now - _aware(job.updated_at)).total_seconds() // 86400)
             if job.updated_at else None
+        ),
+        # What the employer said about THIS role, if they claimed and said anything. It sits
+        # beside ghost_score and never on it: the score is a locked pure function, and a
+        # claim that could move it would be a ranking parameter you can buy by other means.
+        # Absent for the overwhelming majority of rows, which is the honest default.
+        **(
+            {"employer_correction": _corr}
+            if (_corr := employer_correction(job.company_id, job.title))
+            else {}
         ),
         "ghost_reason": (
             # Mirror the anchor the pipeline actually scored against: the employer's own

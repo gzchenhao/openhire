@@ -196,3 +196,87 @@ def test_company_info_reports_claim_status(seeded):
     assert after["claimed"] is True
     assert after["response_sla_days"] == 7
     assert after["claimed_at"].startswith("2026-09-14")
+
+
+# --- what a claimed employer may actually correct ----------------------------
+# The template promised "correct listing status" from the start and nothing implemented it.
+# These pin both halves: the employer can explain, and cannot touch the score.
+
+def _claim(**kw):
+    import datetime as _dt
+
+    from openhire.seed.claims import Claim
+
+    kw.setdefault("company_id", "claimed")
+    kw.setdefault("claimed_on", _dt.date(2026, 9, 14))
+    kw.setdefault("note", "GitHub org membership")
+    return Claim(**kw)
+
+
+def _with_claim(claim, fn):
+    from openhire.seed import claims as mod
+
+    original = list(mod.CLAIMS)
+    mod.CLAIMS.append(claim)
+    try:
+        return fn()
+    finally:
+        mod.CLAIMS[:] = original
+
+
+def test_no_claim_means_no_correction_key_at_all(seeded):
+    with session_scope() as s:
+        row = service.search_jobs(s, company="unclaimed", now=NOW)[0]
+    assert "employer_correction" not in row
+
+
+def test_claim_without_a_word_about_this_title_stays_silent(seeded):
+    def go():
+        with session_scope() as s:
+            return service.search_jobs(s, company="claimed", now=NOW)[0]
+    row = _with_claim(_claim(evergreen_titles=("Some Other Role",)), go)
+    assert "employer_correction" not in row
+
+
+def test_evergreen_explains_the_score_without_changing_it(seeded):
+    def go():
+        with session_scope() as s:
+            return service.search_jobs(s, company="claimed", now=NOW)[0]
+    before = go()
+    row = _with_claim(_claim(evergreen_titles=("Engineer",)), go)
+    assert row["employer_correction"]["status"] == "evergreen"
+    assert row["employer_correction"]["note"]
+    assert row["ghost_score"] == before["ghost_score"], "a claim must never move the score"
+    assert row["rank_score"] == before["rank_score"], "nor the ranking"
+
+
+def test_closed_is_surfaced_but_the_row_is_not_hidden(seeded):
+    """The employer is authoritative about their own hiring; their ATS is authoritative
+    about what it serves. We report both rather than resolving it for the reader."""
+    def go():
+        with session_scope() as s:
+            return service.search_jobs(s, company="claimed", now=NOW)
+    rows = _with_claim(_claim(closed_titles=("Engineer",)), go)
+    assert len(rows) == 1
+    assert rows[0]["employer_correction"]["status"] == "closed"
+
+
+def test_requisition_date_semantics_is_carried_on_every_row(seeded):
+    """The fairness case: an ATS reporting requisition-creation makes every role look old."""
+    def go():
+        with session_scope() as s:
+            return service.search_jobs(s, company="claimed", now=NOW)[0]
+    row = _with_claim(_claim(date_semantics="requisition_created"), go)
+    assert row["employer_correction"]["date_semantics"] == "requisition_created"
+
+
+def test_title_match_survives_a_delete_and_repost(seeded):
+    """Titles are matched the way role_group is computed, so a declaration keeps working
+    after the employer deletes the role and re-posts it under a new ATS id — which is
+    exactly when they would otherwise have to re-file the claim."""
+    from openhire.seed.claims import employer_correction
+
+    for variant in ("Engineer", "  engineer  ", "ENGINEER", "Engineer\n"):
+        out = _with_claim(_claim(evergreen_titles=(variant,)),
+                          lambda: employer_correction("claimed", "Engineer"))
+        assert out and out["status"] == "evergreen", variant

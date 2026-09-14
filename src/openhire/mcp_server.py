@@ -80,6 +80,16 @@ def search_jobs(
     touches this server, so we cannot observe a reply even in principle. Read null as "no
     employer has claimed this tenant", never as "missing data" or "slow".
 
+    `employer_correction` appears only when the employer has claimed this tenant and said
+    something about this specific role. It is the employer's own account, verified by
+    corporate identity, and it sits BESIDE ghost_score, never on it: `status: "evergreen"`
+    explains a high score (they hire continuously, so there is no single opening to fill),
+    it does not lower it. `status: "closed"` means they say they are no longer hiring even
+    though their ATS still returns the row, so stop sending people there.
+    `date_semantics: "requisition_created"` means their ATS reports the day the req was
+    opened internally rather than the day it went live, so days_open overstates for that
+    employer. Treat all of it as the employer's claim, attributed, not as our measurement.
+
     `days_since_update` is the third date and the one that usually settles it: the employer's
     own last-touched timestamp from their ATS. Two rows can both score 1.0 and mean opposite
     things — open 367d and untouched for 367d reads as abandoned; open 327d but touched 13

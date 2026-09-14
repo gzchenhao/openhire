@@ -1,34 +1,56 @@
-name: 🏢 Employer claim — verify your company's listings
+name: 🏢 Employer claim — correct your own listings
 description: >
-  Claim your company's tenant in the OpenHire index. Claiming is free and reserves
-  verified-badge + listing-status control for your company when v0.3 ships. We verify
-  claims through corporate identity (a GitHub account associated with your company, or
-  a reply from a corporate-domain email) — never through payment.
+  Your company's postings are in this index because your own careers page serves them
+  publicly. We can see how long a role has been open; we cannot see why. Claiming is free
+  and lets you say why, in your own words, next to your own postings.
 title: "[Employer claim] <company name>"
 labels: ["employer-claim"]
 body:
   - type: markdown
     attributes:
       value: |
-        **What claiming gets you (v0.3):** a verified badge on your listings, the ability
-        to correct listing status (e.g. mark an evergreen talent pool so `ghost_score`
-        reflects reality), and optional response-SLA commitments.
+        **Read this first, because it is short and it is the whole deal.**
 
-        **What it never gets you:** ranking. Ranking is a locked pure function of
-        (match, freshness) — it is not for sale, to anyone, ever.
+        We read your public ATS (Greenhouse / Lever / Ashby / 北森 / Moka) and record the
+        posting date *your own system* reports. From that we compute how long each role has
+        been open. That number is often read as "this is a ghost job", and for a lot of
+        employers **that reading is simply wrong** — an evergreen talent pool, a genuinely
+        hard-to-fill role, or an ATS that reports the day a requisition was opened rather
+        than the day it went live all look identical from the outside.
+
+        **What claiming gets you**
+        - Your own note, attributed to you, shown beside the roles you name.
+        - `evergreen` / `hard to fill` / `closed` status on specific titles.
+        - A correction if your ATS's date field means "requisition created", not "published".
+        - `response_sla_days`, if you want to commit to a reply window.
+        - A `claimed` flag on your company.
+
+        **What claiming never gets you, and what nobody can buy**
+        - Your position in results. Ranking is a locked pure function of (match, freshness),
+          frozen by a test in this repo.
+        - A lower `ghost_score`. It is a pure function of (relist count, posting age). Your
+          note sits *beside* it and explains it; it never changes it. We would rather show
+          a high score with your explanation than a quiet score you paid for.
+
+        **Verification is by corporate identity, never by payment.** A GitHub account with
+        visible org membership, or a reply from a corporate-domain address. We check the
+        proof; we never publish it.
+
+        **It is also fine to just ask us to remove you.** Say so below. We will, and we will
+        not argue — we would rather have a smaller honest index than an unwilling one.
   - type: input
     id: company
     attributes:
       label: Company name
-      placeholder: e.g. Unitree Robotics
+      placeholder: e.g. Unitree Robotics / 宇树科技
     validations:
       required: true
   - type: input
     id: tenant
     attributes:
-      label: ATS vendor and tenant
-      description: As shown in your listings' apply URLs.
-      placeholder: e.g. beisen / unitree · greenhouse / anthropic
+      label: Your careers page URL
+      description: Whatever your postings link to. We will work out the ATS ourselves.
+      placeholder: e.g. https://unitree.zhiye.com/social
     validations:
       required: true
   - type: input
@@ -43,17 +65,61 @@ body:
     attributes:
       label: Corporate identity proof
       description: >
-        A GitHub org membership visible on your profile, or state a corporate-domain
-        email we can confirm with (we will never publish it). Claims are verified by
-        identity, not payment.
+        A GitHub org membership visible on your profile, or a corporate-domain address we
+        can confirm with. We never publish it. Claims are verified by identity, not payment.
     validations:
       required: true
   - type: textarea
-    id: corrections
+    id: evergreen
     attributes:
-      label: Listing corrections (optional)
+      label: Roles you hire for continuously (optional)
       description: >
-        Any listings whose status needs correcting now — e.g. an evergreen talent pool
-        currently carrying a high staleness score, or a closed role still showing live.
+        Exact titles, one per line. These are the ones most often misread: there is no single
+        opening to fill, so a long open duration is the design rather than neglect. We will
+        say so, in those words, next to them.
+      placeholder: |
+        机器人算法工程师
+        Senior Software Engineer
+    validations:
+      required: false
+  - type: textarea
+    id: hard_to_fill
+    attributes:
+      label: Roles that are genuinely hard to fill (optional)
+      description: Exact titles, one per line. Still open; the market is just thin.
+    validations:
+      required: false
+  - type: textarea
+    id: closed
+    attributes:
+      label: Roles you are no longer hiring for (optional)
+      description: >
+        Exact titles, one per line. If your ATS still serves them, we will keep showing the
+        row — we do not hide what your own site returns — but we will mark it closed on your
+        word so nobody else applies. You are the authority on your own hiring.
+    validations:
+      required: false
+  - type: dropdown
+    id: date_semantics
+    attributes:
+      label: What does your ATS's posting date actually mean?
+      description: >
+        If it records the day a requisition was opened internally, every one of your roles
+        looks far older than it is. This is the single most unfair misreading in the index,
+        and it is not your fault. If you are not sure, leave it as "not sure" and we will
+        check with you.
+      options:
+        - The day the role went live (normal)
+        - The day the requisition was opened internally
+        - Not sure
+    validations:
+      required: false
+  - type: textarea
+    id: note
+    attributes:
+      label: Anything you want said in your own words (optional)
+      description: >
+        Shown attributed to you, next to the titles you name above. Keep it factual; we will
+        not publish marketing copy, and we will not edit what you write beyond that.
     validations:
       required: false

@@ -173,12 +173,24 @@ an evergreen talent pool rather than a stale req, or how fast you actually reply
 Free, verified by corporate identity — a GitHub org membership or a reply from a corporate
 domain — and **never by payment**. A claim gets you:
 
-- `claimed: true` on your company, with the date
+- **Your own note, attributed to you, beside the roles you name.** We can see how long a
+  role has been open; we cannot see why. An evergreen talent pool, a genuinely hard-to-fill
+  role, and a neglected one look identical from outside, and only you can tell them apart.
+- `evergreen` / `hard to fill` / `closed` status on specific titles. A `closed` role stays
+  visible while your ATS still serves it — we do not hide what your own site returns — but
+  it is marked closed on your word so nobody else applies.
+- A correction if your ATS's date field means "requisition opened", not "went live". That
+  one misreading makes every role you have look years old, and it is not your fault.
 - `response_sla_days` on every one of your postings, including ones you post later
-- listing-status corrections (an evergreen pool carrying an unfair staleness score, say)
+- `claimed: true` on your company, with the date
 
-It does **not** get you rank. Ordering is a locked pure function of (match, freshness);
-a test freezes the signature and another asserts the claim path touches no ranking symbol.
+It does **not** get you rank, and it does **not** lower your `ghost_score`. Ordering is a
+locked pure function of (match, freshness) and the score is a pure function of (relist
+count, posting age); tests freeze both and assert the claim path touches neither. Your note
+sits beside the score and explains it. We would rather show a high score with your
+explanation than a quiet score somebody paid for.
+
+Asking to be removed entirely is also fine, and we will not argue about it.
 
 Verified claims live in [`src/openhire/seed/claims.py`](src/openhire/seed/claims.py) — in
 the repo, not in a private database — so each one is a reviewable diff, and the weekly
