@@ -238,3 +238,31 @@ def test_version_flag_exists_alongside_the_subcommand():
         res = runner.invoke(app, argv)
         assert res.exit_code == 0, argv
         assert openhire.__version__ in res.stdout, argv
+
+
+def test_numbers_export_names_what_each_figure_counts():
+    """Round 3 caught "139 employers" in every article against 140 rows in the table. It was
+    never a wrong number — it was two different questions wearing one label. This file is
+    the single source for public claims, so each key has to say what it counts."""
+    import json
+
+    from typer.testing import CliRunner
+
+    from openhire.cli import app
+
+    import tempfile
+    from pathlib import Path
+
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "n.json"
+        res = runner.invoke(app, ["numbers", "--out", str(out)])
+        assert res.exit_code == 0, res.output
+        data = json.loads(out.read_text(encoding="utf-8"))
+
+    # The two counts that were conflated must both exist, separately named.
+    assert "companies_in_index" in data
+    assert "employers_with_live_postings" in data
+    assert data["employers_with_live_postings"] <= data["companies_in_index"]
+    for key in ("live_postings", "median_days_open", "pct_open_over_180d", "generated_at"):
+        assert key in data

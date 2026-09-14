@@ -1215,6 +1215,73 @@ def claim(
         )
 
 
+# --- numbers (one source of truth for every public claim) ----------------------
+@app.command()
+def numbers(
+    out: str = typer.Option("docs/numbers.json", "--out", help="Where to write the file."),
+) -> None:
+    """Export the figures our public writing is allowed to quote.
+
+    Every article said "139 employers"; the companies table held 140, and two review rounds
+    caught the mismatch. The numbers were being retyped from memory into each post, so they
+    drifted the moment the index moved. This makes them derivable instead: one command, one
+    file, and any claim that disagrees with it is wrong by definition.
+
+    Each figure is named for exactly what it counts, because "139 vs 140" was never a wrong
+    number — it was two different questions sharing one label.
+    """
+    import datetime as _dt
+    import json as _json
+    from pathlib import Path as _Path
+
+    from sqlalchemy import func, select
+
+    from .db import Job, session_scope
+    from .db.models import Company
+
+    console.cmd(f"ohp numbers --out {out}")
+    today = _dt.datetime.now(_dt.timezone.utc)
+    with session_scope() as s:
+        companies_total = s.execute(select(func.count()).select_from(Company)).scalar_one()
+        employers_hiring = s.execute(
+            select(func.count(func.distinct(Job.company_id))).where(Job.delisted_at.is_(None))
+        ).scalar_one()
+        live = s.execute(
+            select(func.count()).select_from(Job).where(Job.delisted_at.is_(None))
+        ).scalar_one()
+        posted = [
+            (today - (p if p.tzinfo else p.replace(tzinfo=_dt.timezone.utc))).days
+            for p in s.execute(
+                select(Job.posted_at).where(Job.delisted_at.is_(None), Job.posted_at.isnot(None))
+            ).scalars()
+        ]
+    posted.sort()
+    n = len(posted) or 1
+
+    def _pct(cut: int) -> float:
+        return round(sum(1 for d in posted if d > cut) / n * 100, 1)
+
+    data = {
+        "generated_at": today.isoformat(),
+        "companies_in_index": companies_total,
+        "employers_with_live_postings": employers_hiring,
+        "live_postings": live,
+        "postings_with_employer_posting_date": len(posted),
+        "median_days_open": posted[n // 2] if posted else None,
+        "pct_open_over_90d": _pct(90),
+        "pct_open_over_180d": _pct(180),
+        "pct_open_over_365d": _pct(365),
+    }
+    path = _Path(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    console.ok(f"已写入 {path}")
+    for k, v in data.items():
+        if k != "generated_at":
+            console.out(f"  {k:38} {v}")
+    console.note("对外文案只准引用这个文件里的数字。数字变了就重跑一次，不要凭记忆写。")
+
+
 def main() -> None:  # console-script entry
     app()
 
