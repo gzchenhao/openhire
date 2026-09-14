@@ -91,7 +91,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop** — download [`openhire-0.5.1.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop** — download [`openhire-0.6.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor / Claude Code** — paste this to your agent: *"Install the MCP server at
 > github.com/gzchenhao/openhire. Install `uv` first if it is missing, then add
@@ -120,7 +120,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.5.1", "serve"]`.
+matters: `"args": ["openhire==0.6.0", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
