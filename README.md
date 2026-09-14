@@ -89,9 +89,26 @@ Then point your MCP client at it — see **[Works with](#works-with)** below.
 All clients use the same MCP entry. The canonical, zero-install config (needs
 [uv](https://docs.astral.sh/uv/)) works in every MCP client:
 
+> **New to MCP? Two shortcuts before the config below.**
+> **Claude Desktop** — download [`openhire-0.5.1.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> and double-click it. No terminal, no Python.
+> **Cursor / Claude Code** — paste this to your agent: *"Install the MCP server at
+> github.com/gzchenhao/openhire. Install `uv` first if it is missing, then add
+> `uvx openhire@latest serve` to my MCP config and tell me which file you changed."*
+
+**Prerequisite:** `uvx` ships with [uv](https://docs.astral.sh/uv/). Without it the config
+below fails with nothing but "server failed to start" in your client — install uv first:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux
+irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
+```
+
 ```json
 { "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire@latest", "serve"] } } }
 ```
+
+First start downloads a ~25 MB index in the background; searches fill in within a few minutes.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
