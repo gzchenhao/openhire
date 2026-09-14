@@ -223,3 +223,18 @@ def test_version_matches_pyproject():
         f"openhire.__version__={openhire.__version__} but pyproject says {declared}. "
         "Run `pip install -e .` after a version bump."
     )
+
+
+def test_version_flag_exists_alongside_the_subcommand():
+    """`--version` is the convention every CLI user reaches for first. The subcommand
+    existed; the flag did not, and `ohp --version` answered "No such option"."""
+    from typer.testing import CliRunner
+
+    import openhire
+    from openhire.cli import app
+
+    runner = CliRunner()
+    for argv in (["--version"], ["-V"]):
+        res = runner.invoke(app, argv)
+        assert res.exit_code == 0, argv
+        assert openhire.__version__ in res.stdout, argv

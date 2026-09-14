@@ -174,6 +174,27 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
 
 
 # --- hard filter + fixed ranking ---------------------------------------------
+def resolve_company(session: Session, query: str) -> list[Company]:
+    """Turn what a caller actually types into company rows.
+
+    Agents ask "what is Unitree hiring?", never "company_id='unitree'". Names in this index
+    are bilingual ("宇树科技 Unitree", "小鹏汽车 XPeng"), so a caseless substring over the
+    name catches either half, and an exact id match keeps the machine-readable path working.
+    Exact hits win outright — otherwise searching "Robotics" would drown a company actually
+    named Robotics in every other firm with the word in its name.
+    """
+    q = (query or "").strip()
+    if not q:
+        return []
+    low = q.casefold()
+    rows = list(session.execute(select(Company)).scalars())
+    exact = [c for c in rows if c.id.casefold() == low or (c.name or "").casefold() == low]
+    if exact:
+        return exact
+    return [c for c in rows
+            if low in c.id.casefold() or low in (c.name or "").casefold()]
+
+
 def _filter_and_rank(
     session: Session,
     skills: list[str] | None,
@@ -188,11 +209,16 @@ def _filter_and_rank(
     remote_scope: str | None = None,
     role_family: str | None = None,
     offset: int = 0,
+    company_ids: list[str] | None = None,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
     stmt = select(Job).where(Job.delisted_at.is_(None))
 
+    if company_ids is not None:
+        # An empty list means the caller named a company that does not exist. Filtering on
+        # an empty IN would be a silent no-op, which is the one answer we must not give.
+        stmt = stmt.where(Job.company_id.in_(company_ids))
     if remote is True:
         stmt = stmt.where(Job.remote_policy == "remote")
     if min_salary is not None:
@@ -253,22 +279,43 @@ def search_jobs(
     remote_scope: str | None = None,
     role_family: str | None = None,
     offset: int = 0,
+    company: str | None = None,
+    collapse_role_group: bool = False,
 ) -> list[dict]:
     now = _now(now)
     limit = max(1, min(int(limit), 100))
     offset = max(0, int(offset))
+    company_ids = None
+    if company:
+        company_ids = [c.id for c in resolve_company(session, company)]
     ranked = _filter_and_rank(
         session, skills, remote, min_salary, None, limit, now,
         required_skills=required_skills, currency=currency,
         require_stated_salary=require_stated_salary, remote_scope=remote_scope,
-        role_family=role_family, offset=offset,
+        role_family=role_family, offset=offset, company_ids=company_ids,
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
         c.id: c
         for c in session.execute(select(Company).where(Company.id.in_(company_ids))).scalars()
     } if company_ids else {}
-    return [job_posting(j, companies.get(j.company_id), skills or [], now) for j, _ in ranked]
+    rows = [job_posting(j, companies.get(j.company_id), skills or [], now) for j, _ in ranked]
+    if collapse_role_group:
+        # Keep the highest-ranked row per group and say how many it stands for. The siblings
+        # are NOT hidden state: `role_group` still identifies the group, so a caller that
+        # needs every city can re-ask with collapse_role_group=false.
+        seen: dict[str, dict] = {}
+        counts: dict[str, int] = {}
+        for r in rows:
+            g = r.get("role_group") or r["job_id"]
+            counts[g] = counts.get(g, 0) + 1
+            seen.setdefault(g, r)
+        rows = []
+        for g, r in seen.items():
+            r = dict(r)
+            r["role_group_size"] = counts[g]
+            rows.append(r)
+    return rows
 
 
 def diagnose_empty_search(
@@ -277,6 +324,7 @@ def diagnose_empty_search(
     required_skills: list[str] | None = None,
     role_family: str | None = None,
     currency: str | None = None,
+    company: str | None = None,
 ) -> dict:
     """Explain an empty result set so the caller can tell a typo from a genuine miss.
 
@@ -289,6 +337,38 @@ def diagnose_empty_search(
     Kept out of `search_jobs`, which always returns a list. Only the MCP boundary swaps in
     this shape, and only when the list came back empty.
     """
+    # A company that does not resolve explains the empty list by itself, and no amount of
+    # tag advice helps — answer that first and stop.
+    if company:
+        matched = resolve_company(session, company)
+        if not matched:
+            names = sorted(
+                (c.name for c in session.execute(select(Company)).scalars() if c.name),
+                key=str.casefold,
+            )
+            close = difflib.get_close_matches(company, names, n=5, cutoff=0.55)
+            if not close:
+                low = company.casefold()
+                close = [n for n in names if low[:3] and low[:3] in n.casefold()][:5]
+            return {
+                "results": [],
+                "matched": 0,
+                "hint": (
+                    f"This index has no company matching {company!r}. It covers 139 employers, "
+                    "not the whole market, so the company is most likely simply not indexed — "
+                    "retry with one of unknown_companies' suggestions, or drop the company filter."
+                ),
+                "unknown_companies": [company],
+                "suggestions": {company: close} if close else {},
+                "filters_applied": {
+                    k: v for k, v in {
+                        "company": company, "skills": skills,
+                        "required_skills": required_skills,
+                        "role_family": role_family, "currency": currency,
+                    }.items() if v
+                },
+            }
+
     # One pass over the live tag vocabulary. This path only runs when a search came back
     # empty, so the scan is rare and bounded by the index size.
     vocab: set[str] = set()
@@ -336,6 +416,11 @@ def diagnose_empty_search(
             "combination of filters genuinely has no live match right now. Loosen one "
             "filter at a time (required_skills is the strictest — it is AND, not OR)."
         )
+        if company:
+            hint = (
+                f"{company!r} is in the index, but none of its live postings match the rest "
+                "of these filters. Drop the other filters to see everything it has open."
+            )
     return {
         "results": [],
         "matched": 0,
@@ -344,7 +429,8 @@ def diagnose_empty_search(
         "suggestions": suggestions,
         "filters_applied": {
             k: v for k, v in {
-                "skills": skills, "required_skills": required_skills,
+                "company": company, "skills": skills,
+                "required_skills": required_skills,
                 "role_family": role_family, "currency": currency,
             }.items() if v
         },

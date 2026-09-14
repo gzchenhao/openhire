@@ -5,7 +5,7 @@
 > **A job-search radar for your AI assistant — first-party listings, ghost jobs scored, and your résumé never touches our servers.**
 > 让 AI 助手替你盯岗的求职雷达 —— 一手职位、幽灵岗位打分，简历不经过我们的服务器。
 
-![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![139 employers](https://img.shields.io/badge/employers-139-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
+![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![139 employers hiring](https://img.shields.io/badge/employers%20hiring-139-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
 
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
@@ -151,6 +151,22 @@ The server **auto-downloads the public job snapshot on first run** if the index 
 Optional, entirely local: `ohp init --scan <dir>` derives a **skill fingerprint** from your
 own repos. You never write a résumé; the code never leaves your machine — only an anonymous
 vector does.
+
+### Asking about one employer
+
+`search_jobs(company=...)` takes whatever the user actually said — an id (`unitree`), or any
+part of the name in either language (`宇树`, `Unitree`, `XPeng`). A name this index does not
+carry comes back as the empty-result object naming the company, never as an unfiltered search.
+
+```bash
+ohp search --company 宇树 --role-family engineering
+ohp search --company waymo --distinct          # one row per role, not one per city
+```
+
+`--distinct` (`collapse_role_group` over MCP) keeps one row per `role_group` and adds
+`role_group_size`. About 20% of a page is the same role listed once per city; folding is
+opt-in because each city row has its own `job_id` and `apply_channel`, which matters under a
+location or visa constraint.
 
 ## The five protocol fields
 

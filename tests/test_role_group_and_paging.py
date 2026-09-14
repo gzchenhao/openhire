@@ -93,3 +93,31 @@ def test_offset_is_clamped_not_fatal(seeded):
         assert service.search_jobs(s, skills=["k8s"], limit=3, offset=-5), \
             "a negative offset must clamp to 0, not empty the result"
         assert service.search_jobs(s, skills=["k8s"], limit=3, offset=10_000) == []
+
+
+# --- collapse_role_group (N5 from the round-2 tester report) ------------------
+# The grouping key alone made every caller pay to do the same fold. This makes the
+# fold a server-side option, without ever hiding the sibling rows from a caller
+# who needs them (location and visa constraints make each city row real).
+
+def test_collapse_keeps_one_row_per_group_and_counts_the_rest(seeded):
+    with session_scope() as s:
+        full = service.search_jobs(s, skills=["k8s"], limit=50)
+        folded = service.search_jobs(s, skills=["k8s"], limit=50, collapse_role_group=True)
+        assert len(full) == 7, "seed: 3 city rows + 4 distinct"
+        assert len(folded) == 5, "the 3 city rows fold into 1"
+        same = [r for r in folded if r["title"] == "Staff Platform Engineer"]
+        assert len(same) == 1 and same[0]["role_group_size"] == 3
+
+
+def test_collapse_is_off_by_default(seeded):
+    with session_scope() as s:
+        rows = service.search_jobs(s, skills=["k8s"], limit=50)
+        assert all("role_group_size" not in r for r in rows)
+
+
+def test_collapsed_row_still_carries_its_group_key(seeded):
+    """A caller that folded and then needs every city must be able to ask again."""
+    with session_scope() as s:
+        folded = service.search_jobs(s, skills=["k8s"], limit=50, collapse_role_group=True)
+        assert all(r.get("role_group") for r in folded)

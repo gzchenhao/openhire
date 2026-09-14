@@ -26,6 +26,22 @@ app = typer.Typer(
 )
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        c.print(f"openhire {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def _root(
+    version: bool = typer.Option(
+        None, "--version", "-V", callback=_version_callback, is_eager=True,
+        help="Print version and exit.",
+    ),
+) -> None:
+    """`--version` is what everyone reaches for first; the `version` subcommand stays."""
+
+
 def _banner() -> None:
     c.print(f"[accent]OPENHIRE[/] [risk]v{__version__} 哨兵 SENTINEL[/]  [muted]· 仅公开 ATS · 简历不经过我们服务器[/]")
 
@@ -200,6 +216,8 @@ def search(
     require_stated_salary: bool = typer.Option(False, "--require-stated-salary", help="Drop roles with no published pay."),
     role_family: str = typer.Option(None, "--role-family", help="Only this family, e.g. engineering (keeps sales/SA out)."),
     offset: int = typer.Option(0, "--offset", help="Skip this many ranked results (paging)."),
+    company: str = typer.Option(None, "--company", help="One employer: id or any part of the name, e.g. unitree / 宇树 / XPeng."),
+    distinct: bool = typer.Option(False, "--distinct", help="One row per role instead of one per city."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -220,13 +238,16 @@ def search(
         + (f" --role-family {role_family}" if role_family else "")
         + (f" --limit {limit}" if limit != 10 else "")
         + (f" --offset {offset}" if offset else "")
+        + (f" --company {company}" if company else "")
+        + (" --distinct" if distinct else "")
     )
     with session_scope() as s:
         results = service.search_jobs(
             s, skill_list, remote or None, floor, limit,
             required_skills=req_list, currency=currency,
             require_stated_salary=require_stated_salary, remote_scope=remote_scope,
-            role_family=role_family, offset=offset,
+            role_family=role_family, offset=offset, company=company,
+            collapse_role_group=distinct,
         )
     if not results:
         console.out("无匹配结果。")

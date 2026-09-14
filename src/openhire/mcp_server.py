@@ -56,6 +56,8 @@ def search_jobs(
     remote_scope: str | None = None,
     role_family: str | None = None,
     offset: int = 0,
+    company: str | None = None,
+    collapse_role_group: bool = False,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -64,6 +66,8 @@ def search_jobs(
     result includes the five protocol fields (verified_at, source, ghost_score,
     response_sla_days, apply_channel) plus datePosted, days_open, remote_scope,
     eligible_regions and role_group.
+
+    To answer "what is <employer> hiring?", pass `company` — do not filter client-side.
 
     Two things worth knowing before you spend your budget:
 
@@ -94,6 +98,15 @@ def search_jobs(
         role_family: coarse family filter, e.g. "engineering". Populated for ~99% of
             live rows, so this is an effective way to keep sales / solutions-architect
             roles out of an engineering search.
+        collapse_role_group: keep one row per role_group instead of one per city, and add
+            `role_group_size` saying how many postings that row stands for. Cheaper when
+            the user wants distinct opportunities; leave it false when location or visa
+            matters, because each city row has its own job_id and apply_channel.
+        company: restrict to one employer. Pass whatever the user said — an id
+            ("unitree"), or any part of the name in either language ("宇树", "Unitree",
+            "XPeng"). Exact id/name hits win; otherwise it is a caseless substring, so a
+            broad word can match several employers. A name this index does not carry comes
+            back as the empty-result object with `unknown_companies` and suggestions.
         limit: max results (default 20).
     """
     _await_index()
@@ -104,12 +117,13 @@ def search_jobs(
                 required_skills=required_skills, currency=currency,
                 require_stated_salary=require_stated_salary,
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
+                company=company, collapse_role_group=collapse_role_group,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
                 return service.diagnose_empty_search(
                     s, skills=skills, required_skills=required_skills,
-                    role_family=role_family, currency=currency,
+                    role_family=role_family, currency=currency, company=company,
                 )
             return rows
         except OpenHireError as e:
