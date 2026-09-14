@@ -87,8 +87,8 @@ Then point your MCP client at it — see **[Works with](#works-with)** below.
 
 ## Works with
 
-All clients use the same MCP entry. The canonical, zero-install config (needs
-[uv](https://docs.astral.sh/uv/)) works in every MCP client:
+All clients use the same MCP entry. The config below works in every MCP client and pulls
+the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
 > **Claude Desktop** — download [`openhire-0.5.1.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
