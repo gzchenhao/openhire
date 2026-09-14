@@ -228,7 +228,16 @@ Every listing is valid `schema.org/JobPosting`, plus:
 - `ghost_score` — 0–1 listing-activity signal, aged off the **real** posting date (lower =
   fresher). A noise filter, not an accusation: long-open listings are often evergreen talent
   pools or slow pipelines — the score simply lets agents down-rank low-activity noise
-- `response_sla_days` — employer's committed response window (v0.1: always null)
+- `response_sla_days` — the employer's OWN committed reply window. **Null on almost every
+  row, and that null is meaningful**: it is set only when an employer claims their tenant.
+  We never infer or estimate it, because we cannot observe a reply even in principle — the
+  application deep-links to the employer and never touches this server. Read null as "no
+  employer has claimed this tenant", not as "missing" or "slow".
+  [Employers: claim yours](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml)
+  — free, verified by corporate identity, never by payment. It buys a verified badge, the
+  ability to correct listing status (an evergreen pool carrying an unfair staleness score,
+  say), and this field. It does not buy rank: ranking is a locked pure function of
+  (match, freshness), and a test freezes that signature.
 - `apply_channel` — always the employer's own application URL, deep-linked to the specific job
 
 ## Privacy Policy

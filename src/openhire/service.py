@@ -190,7 +190,15 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             )
             if (job.posted_at or job.first_seen_at) else None
         ),
-        "response_sla_days": job.response_sla_days,                                        # ④
+        # ④ The employer's own commitment. Falls back to what they declared for the whole
+        # company when they claimed it, so a claim covers roles posted afterwards too.
+        # Null means "no employer has claimed this tenant" — never "we could not work it
+        # out", because working it out is not something we are able or willing to do.
+        "response_sla_days": (
+            job.response_sla_days
+            if job.response_sla_days is not None
+            else (company.response_sla_days if company is not None else None)
+        ),
         "apply_channel": job.apply_channel,                                               # ⑤
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
         "match_quality": round(mq, 4),

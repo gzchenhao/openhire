@@ -1150,6 +1150,58 @@ def refresh(
     console.note(f"下次可刷新时间：{res['next_allowed_at']}")
 
 
+# --- claim (maintainer applies a verified employer claim) ----------------------
+@app.command()
+def claim(
+    company: str = typer.Argument(..., help="Employer: id or any part of the name."),
+    sla_days: int = typer.Option(None, "--sla-days", help="Response window the employer commits to."),
+    unverify: bool = typer.Option(False, "--unverify", help="Withdraw a claim."),
+) -> None:
+    """(Maintainer) Record a VERIFIED employer claim — after identity proof, never payment.
+
+    Claims arrive as GitHub issues (.github/ISSUE_TEMPLATE/employer_claim.yml) and are
+    verified by corporate identity. This writes the outcome so the index reflects it:
+    `verified` on the company, and `response_sla_days` applied to their postings at read
+    time — including roles they post later, which is why it lives on the company and not
+    on each job.
+
+    What a claim can never buy: rank. Ranking is a locked pure function of
+    (match, freshness), and no branch of this command touches it.
+    """
+    import datetime as _dt
+
+    from .db import session_scope
+
+    console.cmd(f"ohp claim {company}" + (f" --sla-days {sla_days}" if sla_days else "")
+                + (" --unverify" if unverify else ""))
+    with session_scope() as s:
+        matched = service.resolve_company(s, company)
+        if not matched:
+            console.error("ERR_COMPANY_NOT_FOUND", f"没有匹配 {company!r} 的公司。")
+            raise typer.Exit(1)
+        if len(matched) > 1:
+            console.note(f"{company!r} 匹配 {len(matched)} 家，请用确切的 company_id：")
+            for cc in matched[:10]:
+                console.out(f"  {cc.id:22} {cc.name}")
+            raise typer.Exit(1)
+        target = matched[0]
+        if unverify:
+            target.verified = False
+            target.response_sla_days = None
+            target.claimed_at = None
+            console.ok(f"{target.name} 的认领已撤销。")
+            return
+        target.verified = True
+        target.claimed_at = _dt.datetime.now(_dt.timezone.utc)
+        if sla_days is not None:
+            target.response_sla_days = sla_days
+        console.ok(
+            f"{target.name} 已标记为已认领"
+            + (f" · 承诺 {sla_days} 天内回复" if sla_days is not None else "（未声明 SLA）")
+        )
+        console.note("排序不受影响——它是 (匹配度, 新鲜度) 的纯函数，认领买不到位次。")
+
+
 def main() -> None:  # console-script entry
     app()
 

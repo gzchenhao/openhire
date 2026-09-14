@@ -74,6 +74,12 @@ def search_jobs(
     so you can tell the user that instead of a bare number. Neither field measures intent —
     a long-open role can equally mean hard-to-fill.
 
+    `response_sla_days` is null on almost every row, and that is a meaningful null: it is
+    the employer's OWN committed reply window, set only when they claim their tenant. We
+    never infer or estimate it — the application deep-links to the employer and never
+    touches this server, so we cannot observe a reply even in principle. Read null as "no
+    employer has claimed this tenant", never as "missing data" or "slow".
+
     `days_since_update` is the third date and the one that usually settles it: the employer's
     own last-touched timestamp from their ATS. Two rows can both score 1.0 and mean opposite
     things — open 367d and untouched for 367d reads as abandoned; open 327d but touched 13

@@ -27,6 +27,14 @@ _EXTRACTION_COLUMNS = {
     "salary_period": ("TEXT", "TEXT"),
 }
 
+# Employer-declared, never inferred. Protocol field ④ is the employer's own commitment, so
+# it lives on the company and is applied to their postings at read time — that way it
+# survives every re-crawl and automatically covers roles they post later.
+_COMPANY_COLUMNS = {
+    "response_sla_days": ("INTEGER", "INT"),
+    "claimed_at": ("TIMESTAMP", "TIMESTAMPTZ"),
+}
+
 
 def ensure_schema() -> list[str]:
     """Create tables if absent, then add any missing columns. Returns columns added."""
@@ -60,4 +68,13 @@ def ensure_schema() -> list[str]:
                     "(SELECT id FROM companies WHERE ats_vendor = 'beisen')"
                 )
             )
+
+    existing_c = {c["name"] for c in inspect(engine).get_columns("companies")}
+    with engine.begin() as conn:
+        for name, (sqlite_t, pg_t) in _COMPANY_COLUMNS.items():
+            if name in existing_c:
+                continue
+            col_type = pg_t if dialect == "postgresql" else sqlite_t
+            conn.execute(text(f"ALTER TABLE companies ADD COLUMN {name} {col_type}"))
+            added.append(f"companies.{name}")
     return added

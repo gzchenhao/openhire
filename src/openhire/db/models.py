@@ -37,8 +37,13 @@ class Company(Base):
     ats_vendor: Mapped[str] = mapped_column(Text, nullable=False)  # greenhouse|lever|ashby
     ats_tenant: Mapped[str] = mapped_column(Text, nullable=False)
     careers_url: Mapped[str | None] = mapped_column(Text)
-    verified: Mapped[bool] = mapped_column(Boolean, default=False)  # reserved for v0.3
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)  # set by an employer claim
     last_crawled_at: Mapped[dt.datetime | None] = mapped_column(TZDateTime)
+    # Protocol field ④, employer-declared. NEVER inferred, estimated, or bought: we cannot
+    # observe a reply (the application goes straight to the employer and never touches us),
+    # so the only honest source is the employer saying it themselves when they claim.
+    response_sla_days: Mapped[int | None] = mapped_column(Integer)
+    claimed_at: Mapped[dt.datetime | None] = mapped_column(TZDateTime)
 
 
 class Job(Base):
