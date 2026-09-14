@@ -68,8 +68,8 @@ This is the 「哨兵 / Sentinel」 reference implementation — see
 pipx install openhire
 
 # 2. Get a job index. Downloads the public snapshot (~25 MB), then runs one incremental
-#    crawl to refresh verified_at / delisting. The crawl is the slow part: it can run for
-#    20+ minutes on a cold index and prints nothing while it works.
+#    crawl to refresh verified_at / delisting. The crawl is the slow part: it prints one
+#    line per employer and can run 20+ minutes on a cold index.
 #    Only needed for the CLI — `ohp serve` fetches the snapshot by itself on first start.
 ohp bootstrap                    # 139 employers · ~16k live postings · no account
 

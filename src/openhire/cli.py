@@ -954,11 +954,24 @@ def bootstrap(
         console.out("已取消。")
         raise typer.Exit(0)
 
+    # The crawl is the slow part — 20+ minutes on a cold index. It used to print nothing at
+    # all, so a first-time user could not tell a working crawl from a hung one and the only
+    # rational move was Ctrl-C. `ingest` already had the callback; bootstrap just never
+    # passed one. One line per company, same shape as `ohp ingest`.
+    def _crawl_progress(phase, company_ref, result):
+        if phase == "fetch" and company_ref is not None:
+            mark = "ok" if result.ok else "errmsg"
+            glyph = "✓" if result.ok else "×"
+            c.print(
+                f"  [{mark}]{glyph}[/] [muted]{company_ref.name}[/] "
+                f"[out]{'jobs=' + str(result.count) if result.ok else result.error}[/]"
+            )
+
     if fresh:
         console.out("① 校验并注册公开 ATS 种子…")
         seed_companies()
-        console.out("② 抓取入库…")
-        stats = run_ingest(respect_interval=False)
+        console.out("② 抓取入库…（每家一行，20 分钟以上属正常）")
+        stats = run_ingest(respect_interval=False, on_progress=_crawl_progress)
         console.ok(f"现抓完成 · 新增 {stats.jobs_new} · 公司 {stats.companies_crawled}")
         return
 
@@ -982,8 +995,8 @@ def bootstrap(
         raise typer.Exit(1)
     age = f"{res.age_days} 天前" if res.age_days is not None else "未知"
     console.ok(f"快照就绪 · 公司 {res.companies} · 职位 {res.jobs} · 数据截至 {res.data_as_of}（龄 {age}）")
-    console.out("② 增量刷新（现抓一次，更新 verified_at / 下线）…")
-    stats = run_ingest(respect_interval=False)
+    console.out("② 增量刷新（现抓一次，更新 verified_at / 下线）…每家一行，20 分钟以上属正常")
+    stats = run_ingest(respect_interval=False, on_progress=_crawl_progress)
     console.ok(f"刷新完成 · 新增 {stats.jobs_new} · 更新 {stats.jobs_updated} · 下线 {stats.jobs_delisted} · 公司 {stats.companies_crawled}")
     console.note("接着可 `ohp serve` 接入 Claude Desktop，或 `ohp search …` 直接用。")
 

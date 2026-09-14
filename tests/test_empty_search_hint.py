@@ -79,3 +79,24 @@ def test_filters_applied_is_echoed_back(tiny_index):
 def test_search_jobs_itself_still_always_returns_a_list(tiny_index):
     with session_scope() as s:
         assert service.search_jobs(s, required_skills=["notaskill_xyz"]) == []
+
+
+# --- bootstrap progress (N2c from the round-2 tester report) ------------------
+
+def test_bootstrap_passes_a_progress_callback_to_the_crawl():
+    """The crawl runs 20+ minutes. `ingest` reported per-company progress; `bootstrap`
+    called the same function without a callback and printed nothing for the whole run, so
+    a first-time user could not tell work from a hang. Documenting the silence was the
+    stopgap; passing the callback is the fix."""
+    import inspect
+
+    from openhire import cli
+
+    src = inspect.getsource(cli.bootstrap)
+    assert "_crawl_progress" in src, "bootstrap must define a progress callback"
+    assert src.count("on_progress=_crawl_progress") == 2, (
+        "both crawl paths (--fresh and the post-snapshot refresh) must report progress"
+    )
+    assert "run_ingest(respect_interval=False)" not in src, (
+        "no crawl path may stay silent"
+    )
