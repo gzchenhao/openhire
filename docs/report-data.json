@@ -21,6 +21,7 @@
   "ghost_hi_touched": 67,
   "freshest": [
     {
+      "cid": "assemblyai",
       "name": "AssemblyAI",
       "vendor": "greenhouse",
       "n": 20,
@@ -29,6 +30,7 @@
       "touched": 62
     },
     {
+      "cid": "mixpanel",
       "name": "Mixpanel",
       "vendor": "greenhouse",
       "n": 83,
@@ -37,6 +39,7 @@
       "touched": 56
     },
     {
+      "cid": "dropbox",
       "name": "Dropbox",
       "vendor": "greenhouse",
       "n": 42,
@@ -45,6 +48,7 @@
       "touched": 36
     },
     {
+      "cid": "fftai",
       "name": "傅利叶 Fourier",
       "vendor": "moka",
       "n": 17,
@@ -53,6 +57,7 @@
       "touched": 53
     },
     {
+      "cid": "instacart",
       "name": "Instacart",
       "vendor": "greenhouse",
       "n": 112,
@@ -61,6 +66,7 @@
       "touched": 100
     },
     {
+      "cid": "fivetran",
       "name": "Fivetran",
       "vendor": "greenhouse",
       "n": 235,
@@ -69,6 +75,7 @@
       "touched": 100
     },
     {
+      "cid": "chainguard",
       "name": "Chainguard",
       "vendor": "greenhouse",
       "n": 85,
@@ -77,6 +84,7 @@
       "touched": 57
     },
     {
+      "cid": "tailscale",
       "name": "Tailscale",
       "vendor": "greenhouse",
       "n": 69,
@@ -85,6 +93,7 @@
       "touched": 32
     },
     {
+      "cid": "elastic",
       "name": "Elastic",
       "vendor": "greenhouse",
       "n": 342,
@@ -93,6 +102,7 @@
       "touched": 100
     },
     {
+      "cid": "starburst",
       "name": "Starburst",
       "vendor": "greenhouse",
       "n": 23,
@@ -101,6 +111,7 @@
       "touched": 100
     },
     {
+      "cid": "webflow",
       "name": "Webflow",
       "vendor": "greenhouse",
       "n": 31,
@@ -109,6 +120,7 @@
       "touched": 28
     },
     {
+      "cid": "aurorainnovation",
       "name": "Aurora",
       "vendor": "ashby",
       "n": 77,
@@ -119,6 +131,7 @@
   ],
   "stalest": [
     {
+      "cid": "yijiahe",
       "name": "亿嘉和 YIJIAHE",
       "vendor": "beisen",
       "n": 134,
@@ -127,6 +140,7 @@
       "touched": null
     },
     {
+      "cid": "lightning",
       "name": "Lightning AI",
       "vendor": "ashby",
       "n": 13,
@@ -135,6 +149,7 @@
       "touched": null
     },
     {
+      "cid": "jaka",
       "name": "节卡机器人 JAKA",
       "vendor": "beisen",
       "n": 22,
@@ -143,6 +158,7 @@
       "touched": null
     },
     {
+      "cid": "weride",
       "name": "WeRide",
       "vendor": "lever",
       "n": 30,
@@ -151,6 +167,7 @@
       "touched": null
     },
     {
+      "cid": "mechmind",
       "name": "梅卡曼德 Mech-Mind",
       "vendor": "beisen",
       "n": 48,
@@ -159,6 +176,7 @@
       "touched": null
     },
     {
+      "cid": "palantir",
       "name": "Palantir",
       "vendor": "lever",
       "n": 306,
@@ -167,6 +185,7 @@
       "touched": null
     },
     {
+      "cid": "yushi",
       "name": "驭势科技 UISEE",
       "vendor": "moka",
       "n": 62,
@@ -175,6 +194,7 @@
       "touched": 10
     },
     {
+      "cid": "unitree",
       "name": "宇树科技 Unitree",
       "vendor": "beisen",
       "n": 37,
@@ -183,6 +203,7 @@
       "touched": null
     },
     {
+      "cid": "dexterity",
       "name": "Dexterity",
       "vendor": "lever",
       "n": 33,
@@ -191,6 +212,7 @@
       "touched": null
     },
     {
+      "cid": "ubtrobot",
       "name": "优必选 UBTECH",
       "vendor": "beisen",
       "n": 32,
@@ -199,6 +221,7 @@
       "touched": 0
     },
     {
+      "cid": "dobot",
       "name": "越疆 Dobot",
       "vendor": "beisen",
       "n": 129,
@@ -207,6 +230,7 @@
       "touched": 0
     },
     {
+      "cid": "planetscale",
       "name": "PlanetScale",
       "vendor": "greenhouse",
       "n": 12,

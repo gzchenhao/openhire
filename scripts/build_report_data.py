@@ -55,7 +55,7 @@ for cid, v in per.items():
     ds = sorted(x["d_open"] for x in v)
     known = [x for x in v if x["d_upd"] is not None]
     touched = sum(1 for x in known if x["d_upd"] <= 30)
-    tbl.append(dict(name=v[0]["name"], vendor=v[0]["vendor"], n=len(v),
+    tbl.append(dict(cid=cid, name=v[0]["name"], vendor=v[0]["vendor"], n=len(v),
                     median=ds[len(ds)//2],
                     stale=round(100*sum(1 for d in ds if d > 180)/len(ds)),
                     # None means this employer's ATS does not report it at all.
