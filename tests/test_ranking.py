@@ -151,3 +151,34 @@ def test_payload_carries_the_employer_last_touched_date():
     assert row["updated_at"].startswith("2026-09-01")
     # The point of the field: same ghost_score, opposite readings.
     assert row["ghost_score"] == 1.0
+
+
+def test_an_ats_that_echoes_posted_at_reports_unknown_not_untouched():
+    """The trap this closes: Ashby and Lever return the posting date again as updated_at,
+    and Beisen does for 97% of rows. Reading that back as "untouched for 368 days" describes
+    the vendor's API while it reads as an accusation about the employer."""
+    import datetime as dt
+
+    from openhire import service
+    from openhire.db import Company, Job
+
+    now = dt.datetime(2026, 9, 15, tzinfo=dt.timezone.utc)
+    posted = now - dt.timedelta(days=368)
+    company = Company(id="c", name="C", ats_vendor="beisen", ats_tenant="c")
+
+    def _job(updated):
+        return Job(
+            id="c:1", company_id="c", title="Engineer", location="Remote",
+            remote_policy="remote", skills=["python"], source="ats_public_api",
+            first_seen_at=posted, posted_at=posted, updated_at=updated,
+            verified_at=now, apply_channel="https://x.test/1", content_hash="h",
+            relist_count=0, ghost_score=1.0,
+        )
+
+    echoed = service.job_posting(_job(posted), company, [], now)
+    assert echoed["days_since_update"] is None
+    assert echoed["update_signal"] == "not_reported_by_ats"
+
+    real = service.job_posting(_job(now - dt.timedelta(days=13)), company, [], now)
+    assert real["days_since_update"] == 13
+    assert "update_signal" not in real

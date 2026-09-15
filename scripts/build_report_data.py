@@ -26,9 +26,14 @@ def days(x):
 recs = []
 for cid, title, posted, updated, ghost, relist, rf in rows:
     c = companies.get(cid)
+    # An ATS that echoes posted_at back as updated_at is not telling us the employer has
+    # gone quiet; it is telling us nothing. Ashby and Lever never differ, Beisen differs on
+    # 3% of rows. Counting those as "untouched" would publish a column about the vendor's
+    # API while it reads as an accusation about the employer.
+    real_upd = bool(posted and updated and posted != updated)
     recs.append(dict(cid=cid, name=c.name if c else cid,
                      vendor=c.ats_vendor if c else "?", title=title,
-                     d_open=days(posted), d_upd=days(updated),
+                     d_open=days(posted), d_upd=days(updated) if real_upd else None,
                      ghost=ghost or 0.0, relist=relist or 0, rf=rf))
 
 live = [r for r in recs if r["d_open"] is not None]
@@ -48,15 +53,18 @@ tbl = []
 for cid, v in per.items():
     if len(v) < 10: continue
     ds = sorted(x["d_open"] for x in v)
-    touched = sum(1 for x in v if x["d_upd"] is not None and x["d_upd"] <= 30)
+    known = [x for x in v if x["d_upd"] is not None]
+    touched = sum(1 for x in known if x["d_upd"] <= 30)
     tbl.append(dict(name=v[0]["name"], vendor=v[0]["vendor"], n=len(v),
                     median=ds[len(ds)//2],
                     stale=round(100*sum(1 for d in ds if d > 180)/len(ds)),
-                    touched=round(100*touched/len(v))))
+                    # None means this employer's ATS does not report it at all.
+                    touched=(round(100*touched/len(known)) if known else None)))
 tbl.sort(key=lambda x: x["median"])
 
 hi = [r for r in live if r["ghost"] >= 0.99]
-hi_touched = sum(1 for r in hi if r["d_upd"] is not None and r["d_upd"] <= 30)
+hi_known = [r for r in hi if r["d_upd"] is not None]
+hi_touched = sum(1 for r in hi_known if r["d_upd"] <= 30)
 
 out = dict(
     generated=now.date().isoformat(),
@@ -65,7 +73,8 @@ out = dict(
     p180=pct(lambda r: r["d_open"] > 180), p365=pct(lambda r: r["d_open"] > 365),
     cn=dict(n=len(cn), median=med(cn), p180=round(100*sum(1 for r in cn if r["d_open"]>180)/max(1,len(cn)))),
     ov=dict(n=len(ov), median=med(ov), p180=round(100*sum(1 for r in ov if r["d_open"]>180)/max(1,len(ov)))),
-    ghost_hi=len(hi), ghost_hi_touched=round(100*hi_touched/max(1,len(hi))),
+    ghost_hi=len(hi), ghost_hi_known=len(hi_known),
+    ghost_hi_touched=round(100*hi_touched/max(1,len(hi_known))),
     freshest=tbl[:12], stalest=sorted(tbl, key=lambda x:-x["median"])[:12],
 )
 io.open(r"C:\openhire\docs\report-data.json","w",encoding="utf-8").write(json.dumps(out, ensure_ascii=False, indent=2))

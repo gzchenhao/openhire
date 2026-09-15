@@ -169,16 +169,25 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # Not a protocol field — a plain-language gloss on ③, because ① and ③ can both be
         # true at once ("confirmed live today" + "open for a year") and the pair reads as a
         # contradiction without it.
-        # The employer's own last-touched timestamp, straight from their ATS (populated for
-        # ~99.98% of live rows). This is the third date, and it is the one that separates a
-        # tended evergreen req from an abandoned one: ghost_score says "open a long time",
-        # verified_at says "still listed", and this says "they last touched it N days ago".
-        # Honest limit: an ATS bumps it on any edit or re-publish, so it means "touched",
-        # not necessarily "content changed".
-        "updated_at": _aware(job.updated_at).isoformat() if job.updated_at else None,
-        "days_since_update": (
-            int((now - _aware(job.updated_at)).total_seconds() // 86400)
-            if job.updated_at else None
+        # The employer's own last-touched timestamp. Only some ATSes report one: Greenhouse
+        # and Moka do (91% / 96% of their rows differ from posted_at), while Ashby, Lever and
+        # Beisen return the posting date again (0% / 0% / 3%). When it merely echoes
+        # posted_at we must NOT present it as "last touched", because "untouched for 368
+        # days" would then describe the vendor's API rather than the employer, and it reads
+        # as an accusation. Null here means "this ATS does not report it", never "abandoned".
+        # Honest limit even when real: an ATS bumps it on any edit or re-publish, so it means
+        # "touched", not necessarily "content changed".
+        **(
+            {
+                "updated_at": _aware(job.updated_at).isoformat(),
+                "days_since_update": int(
+                    (now - _aware(job.updated_at)).total_seconds() // 86400
+                ),
+            }
+            if (job.updated_at and job.posted_at
+                and _aware(job.updated_at) != _aware(job.posted_at))
+            else {"updated_at": None, "days_since_update": None,
+                  "update_signal": "not_reported_by_ats"}
         ),
         # What the employer said about THIS role, if they claimed and said anything. It sits
         # beside ghost_score and never on it: the score is a locked pure function, and a

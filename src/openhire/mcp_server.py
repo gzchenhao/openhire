@@ -93,9 +93,14 @@ def search_jobs(
     `days_since_update` is the third date and the one that usually settles it: the employer's
     own last-touched timestamp from their ATS. Two rows can both score 1.0 and mean opposite
     things — open 367d and untouched for 367d reads as abandoned; open 327d but touched 13
-    days ago reads as a tended evergreen req. Measured on this index, 36% of ghost>=0.99 rows
-    were touched by the employer within the last 30 days. Honest limit: an ATS bumps this on
-    any edit or re-publish, so it means "touched", not necessarily "content changed".
+    days ago reads as a tended evergreen req. Among rows where the ATS reports one at all,
+    67% of ghost>=0.99 postings were touched by the employer inside 30 days.
+
+    Null is NOT "abandoned": Ashby, Lever and Beisen do not report a last-touched date, and
+    those rows carry `update_signal: "not_reported_by_ats"` instead. Treating that null as
+    "nobody has touched this in a year" would describe the vendor's API, not the employer.
+    Honest limit even when present: an ATS bumps it on any edit or re-publish, so it means
+    "touched", not necessarily "content changed".
 
     To answer "what is <employer> hiring?", pass `company` — do not filter client-side.
 

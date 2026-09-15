@@ -226,11 +226,11 @@ separate an abandoned requisition from one somebody is still tending:
 |---|---|
 | `verified_at` | did the employer's ATS still return this the last time we looked? |
 | `datePosted` / `days_open` | how long has it been open? `ghost_score` ages off this |
-| `updated_at` / `days_since_update` | when did the employer last touch it? |
+| `updated_at` / `days_since_update` | when did the employer last touch it? **Null when their ATS does not report one** (Ashby, Lever and Beisen do not; Greenhouse and Moka do) — read null as "unknown", never as "abandoned" |
 
 `ghost_score = 1.0` alone is not a verdict. Open 367 days and untouched for 367 days reads as
-abandoned; open 327 days but touched 13 days ago reads as a tended evergreen req. On this index
-**36% of `ghost_score >= 0.99` rows were touched by the employer within the last 30 days**.
+abandoned; open 327 days but touched 13 days ago reads as a tended evergreen req. Among the rows where the ATS actually reports a last-touched date,
+**67% of `ghost_score >= 0.99` postings were touched by the employer within the last 30 days**.
 `ghost_reason` spells out which input drove the score ("age only: open 367d, never relisted").
 
 None of these measure intent. A long-open role can equally mean hard-to-fill — treat the

@@ -1,10 +1,10 @@
 {
-  "generated": "2026-09-14",
+  "generated": "2026-09-15",
   "employers": 139,
   "live": 15966,
-  "median": 75,
-  "p90": 43.4,
-  "p180": 22.3,
+  "median": 76,
+  "p90": 43.7,
+  "p180": 22.4,
   "p365": 8.8,
   "cn": {
     "n": 1695,
@@ -13,19 +13,20 @@
   },
   "ov": {
     "n": 14271,
-    "median": 67,
+    "median": 68,
     "p180": 20
   },
   "ghost_hi": 2559,
-  "ghost_hi_touched": 36,
+  "ghost_hi_known": 1389,
+  "ghost_hi_touched": 67,
   "freshest": [
     {
       "name": "AssemblyAI",
       "vendor": "greenhouse",
       "n": 20,
-      "median": 24,
+      "median": 25,
       "stale": 0,
-      "touched": 85
+      "touched": 62
     },
     {
       "name": "Mixpanel",
@@ -33,23 +34,15 @@
       "n": 83,
       "median": 31,
       "stale": 1,
-      "touched": 64
+      "touched": 56
     },
     {
       "name": "Dropbox",
       "vendor": "greenhouse",
       "n": 42,
-      "median": 33,
-      "stale": 5,
-      "touched": 60
-    },
-    {
-      "name": "Instacart",
-      "vendor": "greenhouse",
-      "n": 112,
       "median": 34,
-      "stale": 7,
-      "touched": 100
+      "stale": 5,
+      "touched": 36
     },
     {
       "name": "傅利叶 Fourier",
@@ -57,23 +50,23 @@
       "n": 17,
       "median": 34,
       "stale": 12,
-      "touched": 47
+      "touched": 53
+    },
+    {
+      "name": "Instacart",
+      "vendor": "greenhouse",
+      "n": 112,
+      "median": 35,
+      "stale": 7,
+      "touched": 100
     },
     {
       "name": "Fivetran",
       "vendor": "greenhouse",
       "n": 235,
-      "median": 37,
+      "median": 38,
       "stale": 9,
       "touched": 100
-    },
-    {
-      "name": "Tailscale",
-      "vendor": "greenhouse",
-      "n": 69,
-      "median": 37,
-      "stale": 6,
-      "touched": 45
     },
     {
       "name": "Chainguard",
@@ -81,15 +74,15 @@
       "n": 85,
       "median": 38,
       "stale": 5,
-      "touched": 52
+      "touched": 57
     },
     {
-      "name": "Starburst",
+      "name": "Tailscale",
       "vendor": "greenhouse",
-      "n": 23,
+      "n": 69,
       "median": 38,
-      "stale": 13,
-      "touched": 100
+      "stale": 6,
+      "touched": 32
     },
     {
       "name": "Elastic",
@@ -100,20 +93,28 @@
       "touched": 100
     },
     {
+      "name": "Starburst",
+      "vendor": "greenhouse",
+      "n": 23,
+      "median": 39,
+      "stale": 13,
+      "touched": 100
+    },
+    {
       "name": "Webflow",
       "vendor": "greenhouse",
       "n": 31,
       "median": 40,
       "stale": 16,
-      "touched": 55
+      "touched": 28
     },
     {
       "name": "Aurora",
       "vendor": "ashby",
       "n": 77,
-      "median": 40,
+      "median": 41,
       "stale": 0,
-      "touched": 34
+      "touched": null
     }
   ],
   "stalest": [
@@ -123,15 +124,15 @@
       "n": 134,
       "median": 1552,
       "stale": 100,
-      "touched": 0
+      "touched": null
     },
     {
       "name": "Lightning AI",
       "vendor": "ashby",
       "n": 13,
-      "median": 1042,
+      "median": 1043,
       "stale": 85,
-      "touched": 0
+      "touched": null
     },
     {
       "name": "节卡机器人 JAKA",
@@ -139,7 +140,7 @@
       "n": 22,
       "median": 794,
       "stale": 100,
-      "touched": 0
+      "touched": null
     },
     {
       "name": "WeRide",
@@ -147,7 +148,7 @@
       "n": 30,
       "median": 587,
       "stale": 70,
-      "touched": 0
+      "touched": null
     },
     {
       "name": "梅卡曼德 Mech-Mind",
@@ -155,21 +156,21 @@
       "n": 48,
       "median": 572,
       "stale": 79,
-      "touched": 2
+      "touched": null
     },
     {
       "name": "Palantir",
       "vendor": "lever",
       "n": 306,
-      "median": 444,
+      "median": 445,
       "stale": 69,
-      "touched": 1
+      "touched": null
     },
     {
       "name": "驭势科技 UISEE",
       "vendor": "moka",
       "n": 62,
-      "median": 412,
+      "median": 413,
       "stale": 69,
       "touched": 10
     },
@@ -177,24 +178,24 @@
       "name": "宇树科技 Unitree",
       "vendor": "beisen",
       "n": 37,
-      "median": 367,
+      "median": 368,
       "stale": 59,
-      "touched": 3
+      "touched": null
     },
     {
       "name": "Dexterity",
       "vendor": "lever",
       "n": 33,
-      "median": 338,
+      "median": 339,
       "stale": 70,
-      "touched": 9
+      "touched": null
     },
     {
       "name": "优必选 UBTECH",
       "vendor": "beisen",
       "n": 32,
-      "median": 334,
-      "stale": 84,
+      "median": 335,
+      "stale": 88,
       "touched": 0
     },
     {
@@ -209,9 +210,9 @@
       "name": "PlanetScale",
       "vendor": "greenhouse",
       "n": 12,
-      "median": 240,
+      "median": 241,
       "stale": 50,
-      "touched": 25
+      "touched": 18
     }
   ]
 }
