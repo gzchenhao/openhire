@@ -1,77 +1,95 @@
 {
   "generated": "2026-09-15",
   "employers": 139,
-  "live": 15966,
-  "median": 76,
-  "p90": 43.7,
-  "p180": 22.4,
-  "p365": 8.8,
+  "live": 16153,
+  "median": 62,
+  "p90": 39.7,
+  "p180": 20.8,
+  "p365": 8.4,
   "cn": {
-    "n": 1695,
-    "median": 153,
+    "n": 1655,
+    "median": 154,
     "p180": 41
   },
   "ov": {
-    "n": 14271,
-    "median": 68,
-    "p180": 20
+    "n": 14498,
+    "median": 56,
+    "p180": 18
   },
-  "ghost_hi": 2559,
-  "ghost_hi_known": 1389,
-  "ghost_hi_touched": 67,
+  "ghost_hi": 2626,
+  "ghost_hi_known": 1452,
+  "ghost_hi_touched": 75,
   "freshest": [
     {
       "cid": "assemblyai",
       "name": "AssemblyAI",
       "vendor": "greenhouse",
-      "n": 20,
-      "median": 25,
+      "n": 18,
+      "median": 18,
       "stale": 0,
-      "touched": 62
-    },
-    {
-      "cid": "mixpanel",
-      "name": "Mixpanel",
-      "vendor": "greenhouse",
-      "n": 83,
-      "median": 31,
-      "stale": 1,
-      "touched": 56
+      "touched": 100
     },
     {
       "cid": "dropbox",
       "name": "Dropbox",
       "vendor": "greenhouse",
-      "n": 42,
-      "median": 34,
+      "n": 39,
+      "median": 25,
       "stale": 5,
-      "touched": 36
+      "touched": 100
     },
     {
-      "cid": "fftai",
-      "name": "傅利叶 Fourier",
-      "vendor": "moka",
-      "n": 17,
-      "median": 34,
-      "stale": 12,
-      "touched": 53
+      "cid": "elastic",
+      "name": "Elastic",
+      "vendor": "greenhouse",
+      "n": 359,
+      "median": 27,
+      "stale": 3,
+      "touched": 100
+    },
+    {
+      "cid": "mixpanel",
+      "name": "Mixpanel",
+      "vendor": "greenhouse",
+      "n": 88,
+      "median": 28,
+      "stale": 1,
+      "touched": 59
     },
     {
       "cid": "instacart",
       "name": "Instacart",
       "vendor": "greenhouse",
-      "n": 112,
-      "median": 35,
+      "n": 104,
+      "median": 31,
+      "stale": 6,
+      "touched": 100
+    },
+    {
+      "cid": "sofi",
+      "name": "SoFi",
+      "vendor": "greenhouse",
+      "n": 57,
+      "median": 31,
       "stale": 7,
       "touched": 100
     },
     {
-      "cid": "fivetran",
-      "name": "Fivetran",
+      "cid": "aurorainnovation",
+      "name": "Aurora",
+      "vendor": "ashby",
+      "n": 82,
+      "median": 33,
+      "stale": 0,
+      "touched": null
+    },
+    {
+      "cid": "gitlab",
+      "name": "GitLab",
       "vendor": "greenhouse",
-      "n": 235,
-      "median": 38,
-      "stale": 9,
+      "n": 223,
+      "median": 34,
+      "stale": 1,
       "touched": 100
     },
     {
@@ -79,54 +97,36 @@
       "name": "Chainguard",
       "vendor": "greenhouse",
       "n": 85,
-      "median": 38,
+      "median": 34,
       "stale": 5,
-      "touched": 57
+      "touched": 71
     },
     {
-      "cid": "tailscale",
-      "name": "Tailscale",
+      "cid": "mercury",
+      "name": "Mercury",
       "vendor": "greenhouse",
-      "n": 69,
-      "median": 38,
+      "n": 61,
+      "median": 34,
+      "stale": 2,
+      "touched": 100
+    },
+    {
+      "cid": "huntress",
+      "name": "Huntress",
+      "vendor": "greenhouse",
+      "n": 36,
+      "median": 34,
       "stale": 6,
-      "touched": 32
-    },
-    {
-      "cid": "elastic",
-      "name": "Elastic",
-      "vendor": "greenhouse",
-      "n": 342,
-      "median": 39,
-      "stale": 4,
       "touched": 100
     },
     {
-      "cid": "starburst",
-      "name": "Starburst",
+      "cid": "cockroachlabs",
+      "name": "Cockroach Labs",
       "vendor": "greenhouse",
-      "n": 23,
-      "median": 39,
-      "stale": 13,
-      "touched": 100
-    },
-    {
-      "cid": "webflow",
-      "name": "Webflow",
-      "vendor": "greenhouse",
-      "n": 31,
-      "median": 40,
-      "stale": 16,
-      "touched": 28
-    },
-    {
-      "cid": "aurorainnovation",
-      "name": "Aurora",
-      "vendor": "ashby",
-      "n": 77,
-      "median": 41,
-      "stale": 0,
-      "touched": null
+      "n": 21,
+      "median": 34,
+      "stale": 14,
+      "touched": 69
     }
   ],
   "stalest": [
@@ -143,9 +143,18 @@
       "cid": "lightning",
       "name": "Lightning AI",
       "vendor": "ashby",
-      "n": 13,
+      "n": 14,
       "median": 1043,
-      "stale": 85,
+      "stale": 79,
+      "touched": null
+    },
+    {
+      "cid": "weride",
+      "name": "WeRide",
+      "vendor": "lever",
+      "n": 16,
+      "median": 902,
+      "stale": 56,
       "touched": null
     },
     {
@@ -158,15 +167,6 @@
       "touched": null
     },
     {
-      "cid": "weride",
-      "name": "WeRide",
-      "vendor": "lever",
-      "n": 30,
-      "median": 587,
-      "stale": 70,
-      "touched": null
-    },
-    {
       "cid": "mechmind",
       "name": "梅卡曼德 Mech-Mind",
       "vendor": "beisen",
@@ -176,22 +176,22 @@
       "touched": null
     },
     {
-      "cid": "palantir",
-      "name": "Palantir",
-      "vendor": "lever",
-      "n": 306,
-      "median": 445,
-      "stale": 69,
-      "touched": null
-    },
-    {
       "cid": "yushi",
       "name": "驭势科技 UISEE",
       "vendor": "moka",
-      "n": 62,
-      "median": 413,
-      "stale": 69,
-      "touched": 10
+      "n": 51,
+      "median": 449,
+      "stale": 73,
+      "touched": 16
+    },
+    {
+      "cid": "palantir",
+      "name": "Palantir",
+      "vendor": "lever",
+      "n": 314,
+      "median": 445,
+      "stale": 68,
+      "touched": null
     },
     {
       "cid": "unitree",
@@ -206,9 +206,9 @@
       "cid": "dexterity",
       "name": "Dexterity",
       "vendor": "lever",
-      "n": 33,
-      "median": 339,
-      "stale": 70,
+      "n": 31,
+      "median": 355,
+      "stale": 74,
       "touched": null
     },
     {
@@ -224,19 +224,19 @@
       "cid": "dobot",
       "name": "越疆 Dobot",
       "vendor": "beisen",
-      "n": 129,
-      "median": 321,
-      "stale": 83,
+      "n": 96,
+      "median": 322,
+      "stale": 95,
       "touched": 0
     },
     {
-      "cid": "planetscale",
-      "name": "PlanetScale",
+      "cid": "cresta",
+      "name": "Cresta",
       "vendor": "greenhouse",
-      "n": 12,
-      "median": 241,
-      "stale": 50,
-      "touched": 18
+      "n": 94,
+      "median": 217,
+      "stale": 61,
+      "touched": 91
     }
   ]
 }
