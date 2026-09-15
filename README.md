@@ -25,7 +25,7 @@ instead of guessing.
   "company":      "MongoDB",
   "datePosted":   "2026-03-31",   // from the employer's ATS, not a board's refreshed label
   "days_open":    166,
-  "ghost_score":  0.61,           // pure f(relist_count, first_seen_at) — frozen by a test
+  "ghost_score":  0.61,           // pure f(relist_count, datePosted) — frozen by a test
   "apply_channel":"https://boards.greenhouse.io/…",   // straight to the employer
   "verified_at":  "2026-09-02T09:47:10Z"
 }
@@ -230,7 +230,7 @@ separate an abandoned requisition from one somebody is still tending:
 
 `ghost_score = 1.0` alone is not a verdict. Open 367 days and untouched for 367 days reads as
 abandoned; open 327 days but touched 13 days ago reads as a tended evergreen req. Among the rows where the ATS actually reports a last-touched date,
-**67% of `ghost_score >= 0.99` postings were touched by the employer within the last 30 days**.
+**75% of `ghost_score >= 0.99` postings were touched by the employer within the last 30 days** (measured 2026-09-15).
 `ghost_reason` spells out which input drove the score ("age only: open 367d, never relisted").
 
 None of these measure intent. A long-open role can equally mean hard-to-fill — treat the

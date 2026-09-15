@@ -18,7 +18,7 @@ from openhire.pipeline.ghost_score import (
 
 
 def test_fresh_never_relisted_is_zero():
-    assert ghost_score_from_parts(relist_count=0, days_since_first_seen=0) == 0.0
+    assert ghost_score_from_parts(relist_count=0, days_open=0) == 0.0
 
 
 def test_within_grace_window_no_staleness_penalty():
@@ -92,3 +92,25 @@ def test_naive_datetime_is_treated_as_utc():
     fs_naive = now_naive - dt.timedelta(days=135)
     # Should not raise on naive/aware mixing and should match the aware result.
     assert compute_ghost_score(0, fs_naive, now_naive) == pytest.approx(0.5, abs=1e-6)
+
+
+def test_the_score_ages_off_the_employers_posting_date_not_our_crawl_date():
+    """Round 4's reviewer read `first_seen_at` in this module's signature and concluded we
+    score employers off OUR crawl date. We do not — every caller passes
+    `posted_at or first_seen_at` — but the parameter name said otherwise, and a name that
+    contradicts the behaviour is a real defect when the behaviour is what employers will
+    challenge us on. This pins the two together so the name can never drift back.
+    """
+    import inspect
+
+    from openhire.pipeline import backfill, ghost_score as gs, ingest
+
+    sig = inspect.signature(gs.compute_ghost_score)
+    assert list(sig.parameters) == ["relist_count", "age_anchor", "now"]
+
+    # And the two production call sites still choose posted_at first.
+    for mod in (ingest, backfill):
+        src = inspect.getsource(mod)
+        assert "job.posted_at if job.posted_at else _aware(job.first_seen_at)" in src.replace(
+            "_aware(job.posted_at)", "job.posted_at"
+        ), f"{mod.__name__} no longer anchors on the employer's posting date"

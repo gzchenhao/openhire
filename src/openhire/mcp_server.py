@@ -94,7 +94,7 @@ def search_jobs(
     own last-touched timestamp from their ATS. Two rows can both score 1.0 and mean opposite
     things — open 367d and untouched for 367d reads as abandoned; open 327d but touched 13
     days ago reads as a tended evergreen req. Among rows where the ATS reports one at all,
-    67% of ghost>=0.99 postings were touched by the employer inside 30 days.
+    75% of ghost>=0.99 postings were touched by the employer inside 30 days (2026-09-15).
 
     Null is NOT "abandoned": Ashby, Lever and Beisen do not report a last-touched date, and
     those rows carry `update_signal: "not_reported_by_ats"` instead. Treating that null as
