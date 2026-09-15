@@ -39,6 +39,21 @@ _COMPANY_COLUMNS = {
 def ensure_schema() -> list[str]:
     """Create tables if absent, then add any missing columns. Returns columns added."""
     init_db()
+    return add_missing_columns()
+
+
+def add_missing_columns() -> list[str]:
+    """The ALTERs alone, without create_all. Called from init_db(), so EVERY entry point
+    that opens a database gets them — that is the point.
+
+    2026-09-14/15: v0.6.0 shipped to PyPI with two new `companies` columns while the
+    published snapshot still predated them. Since a new user bootstraps from that
+    snapshot, `uvx openhire@latest serve` then crashed on the first search with
+    `no such column: companies.response_sla_days`, and the weekly refresh workflow died
+    the same way. The release rule we had ("publish to PyPI before refreshing the
+    snapshot") only guards old client + new data; this is new client + old data, the
+    same fault through the other door. Migrating on open closes both.
+    """
     engine = get_engine()
     dialect = engine.dialect.name
     added: list[str] = []

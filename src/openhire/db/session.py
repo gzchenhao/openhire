@@ -56,8 +56,18 @@ def get_engine():
 
 
 def init_db() -> None:
-    """Create all tables if they do not exist (idempotent)."""
+    """Create all tables if they do not exist, then add any columns this build expects.
+
+    The migration is here and not at each call site because the database we open is very
+    often NOT one we created: a new user bootstraps from the published snapshot, which was
+    built by whatever version was current when it was last refreshed. Creating the tables
+    but not migrating them is what let v0.6.0 crash on first search against the 09-07
+    snapshot. Both halves are idempotent and cost two PRAGMA reads on an up-to-date file.
+    """
     Base.metadata.create_all(get_engine())
+    from .migrate import add_missing_columns  # local: migrate imports this module
+
+    add_missing_columns()
 
 
 def dispose_engine() -> None:
