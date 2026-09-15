@@ -13,7 +13,12 @@ def rows(items, extra_class=""):
             f'<tr class="{extra_class}"><td>{html.escape(t["name"])}'
             f'{"<span class=tag>国内</span>" if cn else ""}{flag}</td>'
             f'<td class=num>{t["n"]}</td><td class=num><b>{t["median"]}</b></td>'
-            f'<td class=num>{t["stale"]}%</td><td class=num>{t["touched"]}%</td></tr>'
+            f'<td class=num>{t["stale"]}%</td>'
+            # None means the ATS never reports a last-touched time. "—" says
+            # "we do not know"; printing 0% would say "nobody has touched these",
+            # which is an accusation we have no evidence for.
+            f'<td class=num title="{"该招聘系统不提供最后改动时间" if t["touched"] is None else ""}">'
+            f'{"—" if t["touched"] is None else str(t["touched"]) + "%"}</td></tr>'
         )
     return "\n".join(out)
 

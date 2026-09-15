@@ -138,7 +138,7 @@
       "name": "节卡机器人 JAKA",
       "vendor": "beisen",
       "n": 22,
-      "median": 794,
+      "median": 795,
       "stale": 100,
       "touched": null
     },
@@ -202,7 +202,7 @@
       "name": "越疆 Dobot",
       "vendor": "beisen",
       "n": 129,
-      "median": 320,
+      "median": 321,
       "stale": 83,
       "touched": 0
     },
