@@ -4,6 +4,19 @@ import io, json, html
 
 d = json.load(io.open(r"C:\openhire\docs\report-data.json", encoding="utf-8"))
 
+# Moka reports a last-touched time on 96% of rows; Beisen on 3%, i.e. not at all.
+# So a Beisen company can never earn a number in the last column no matter how
+# actively it maintains its postings. That is a gap in its vendor's API, not a
+# fact about the employer, and the tag has to say so.
+BEISEN_NOTE = ("本列的「—」是因为北森不提供最后改动时间，"
+               "不代表该公司更不活跃。")
+
+def cn_tag(t, cn):
+    if not cn:
+        return ""
+    note = BEISEN_NOTE if t["touched"] is None else ""
+    return f'<span class=tag title="{note}">国内{"*" if note else ""}</span>'
+
 def rows(items, extra_class=""):
     out = []
     for t in items:
@@ -11,7 +24,7 @@ def rows(items, extra_class=""):
         flag = ' <span class="tag warnflag">口径存疑</span>' if t["median"] > 730 else ""
         out.append(
             f'<tr class="{extra_class}"><td>{html.escape(t["name"])}'
-            f'{"<span class=tag>国内</span>" if cn else ""}{flag}</td>'
+            f'{cn_tag(t, cn)}{flag}</td>'
             f'<td class=num>{t["n"]}</td><td class=num><b>{t["median"]}</b></td>'
             f'<td class=num>{t["stale"]}%</td>'
             # None means the ATS never reports a last-touched time. "—" says
@@ -123,7 +136,7 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 不是所有招聘系统都提供「最后改动时间」。Greenhouse 和 Moka 提供，
 <b>Ashby、Lever、北森不提供</b>，它们把发布日原样返回。
 对这些公司我们标「—」，意思是<b>不知道</b>，绝不是「没人管」。
-把「系统不告诉我们」当成「雇主不管了」，那是在用别人家 API 的缺陷去指控一家公司。
+把「系统不告诉我们」当成「雇主不管了」，那是在用别人家 API 的缺陷去指控一家公司。<br><br>这一点对国内公司特别不公平：<b>本列是全表唯一能显示「这家在维护」的一列</b>，而用北森的公司无论维护得多勤，都只能拿到「—」。表里标<b>「国内*」</b>的就是这种情况，请不要拿它们的「—」和海外公司的百分比作比较。
 </div>
 
 <h2>你可以怎么用</h2>
