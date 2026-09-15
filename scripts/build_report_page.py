@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Render the monthly ghost-jobs report page from report-data.json."""
+"""Render the monthly open-duration report page from report-data.json."""
 import io, json, html
 
 d = json.load(io.open(r"C:\openhire\report-draft\report-data.json", encoding="utf-8"))

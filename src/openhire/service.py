@@ -505,6 +505,36 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
             Job.company_id == company_id, Job.delisted_at.is_(None)
         )
     )
+    # A bare ghost_score_avg of 0.87 reads as "87% of this company is fake", which is not
+    # what it measures and is not something we can support. These three companions say what
+    # actually drove it, so the number arrives with its own limits attached:
+    #   * median_days_open — the input the score is mostly made of;
+    #   * relisted_postings — 0 means the score is age ONLY, which is the evergreen case;
+    #   * last_touched_reported_by_ats — False (Ashby, Lever, 北森) means we cannot tell a
+    #     tended req from an abandoned one for this employer at all, so nobody should read
+    #     the average as evidence of neglect.
+    days_open = [
+        d for (d,) in session.execute(
+            select(
+                func.julianday(_now(now)) - func.julianday(
+                    func.coalesce(Job.posted_at, Job.first_seen_at)
+                )
+            ).where(Job.company_id == company_id, Job.delisted_at.is_(None))
+        ) if d is not None
+    ]
+    days_open.sort()
+    relisted = session.scalar(
+        select(func.count()).where(
+            Job.company_id == company_id, Job.delisted_at.is_(None), Job.relist_count > 0
+        )
+    ) or 0
+    touch_reported = session.scalar(
+        select(func.count()).where(
+            Job.company_id == company_id, Job.delisted_at.is_(None),
+            Job.updated_at.is_not(None), Job.updated_at != Job.posted_at,
+        )
+    ) or 0
+
     # Aggregate, anonymous signals ONLY — never any individual candidate data.
     # `claimed` is back, and now it means something: it is true only once an employer has
     # claimed this tenant and we verified them by corporate identity (never by payment).
@@ -516,6 +546,11 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         "company_id": company.id,
         "company": company.name,
         "ghost_score_avg": round(ghost_avg, 4) if ghost_avg is not None else None,
+        # What the average is made of. A score is a question to ask this employer, never a
+        # finding about them.
+        "median_days_open": int(days_open[len(days_open) // 2]) if days_open else None,
+        "relisted_postings": int(relisted),
+        "last_touched_reported_by_ats": bool(touch_reported),
         "active_jobs": int(active_jobs),
         "claimed": bool(company.verified),
         "claimed_at": _aware(company.claimed_at).isoformat() if company.claimed_at else None,

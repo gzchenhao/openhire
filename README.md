@@ -2,13 +2,22 @@
 
 # OpenHire · 开聘
 
-> **A job-search radar for your AI assistant — first-party listings, ghost jobs scored, and your résumé never touches our servers.**
-> 让 AI 助手替你盯岗的求职雷达 —— 一手职位、幽灵岗位打分，简历不经过我们的服务器。
+> **A job-search radar for your AI assistant — first-party listings, every posting's real age, and your résumé never touches our servers.**
+> 让 AI 助手替你盯岗的求职雷达 —— 一手职位、岗位在架时长打分，简历不经过我们的服务器。
 
 ![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![139 employers hiring](https://img.shields.io/badge/employers%20hiring-139-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
 
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
+
+> **Is your company in here, and you did not put it here?**
+> Your postings are in this index because your own careers page serves them publicly. We
+> can measure how long a role has been open; we cannot see why, and a long-open role is a
+> question, not a verdict. [Claim your company](#for-employers-claim-your-tenant) — free,
+> no payment, ever — and say why in your own words, or ask us to remove you and we will,
+> without arguing.
+> 贵司被收录了、而且不是贵司提交的？[点这里认领](#for-employers-claim-your-tenant)，免费，
+> 可以用自己的话解释，也可以直接要求我们移除。
 
 ### What your agent actually sees
 
@@ -48,7 +57,7 @@ the US, Europe **and China** (Waymo, Figure, Zoox — and Unitree, XPeng, UBTECH
 
 Three things a job board won't do for you:
 
-- **Kills ghost-job noise.** Every listing carries a `ghost_score` aged off the employer's
+- **Surfaces how long each role has really been open.** Every listing carries a `ghost_score` aged off the employer's
   **real** posting date — the "2 days ago" a board shows you can be 300 days old in the ATS.
 - **Structural privacy, not a pinky-promise.** There is no résumé field in the protocol; a CI
   test fails the build if anyone adds one. Matching runs on your machine — only an anonymous
@@ -169,9 +178,13 @@ If your company is in this index, the listings came from your own public ATS —
 ask, because we did not need to. What we cannot know is your side of it: whether a role is
 an evergreen talent pool rather than a stale req, or how fast you actually reply.
 
-[Claim it](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml).
+[Claim it](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml)
+（[中文表单](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml)）.
 Free, verified by corporate identity — a GitHub org membership or a reply from a corporate
-domain — and **never by payment**. A claim gets you:
+domain — and **never by payment**. We answer within 3 business days, claiming leads to no
+paid follow-up of any kind, and your proof is used to verify and then nothing else. No
+GitHub account? Anyone may file on your behalf; what we verify is the company, not the
+filer. A claim gets you:
 
 - **Your own note, attributed to you, beside the roles you name.** We can see how long a
   role has been open; we cannot see why. An evergreen talent pool, a genuinely hard-to-fill

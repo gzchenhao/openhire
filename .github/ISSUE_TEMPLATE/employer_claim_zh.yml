@@ -1,0 +1,133 @@
+name: 🏢 雇主认领 — 更正贵司岗位状态（中文）
+description: >
+  贵司的岗位出现在这个索引里，是因为贵司官网招聘页的公开接口返回了它们。我们能量出一个岗位挂了多久，
+  量不出为什么。认领免费，让贵司用自己的话，在自己的岗位旁边解释原因。
+title: "[雇主认领] <公司名称>"
+labels: ["employer-claim"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **先看这段，很短，而且这就是全部的交易条件。**
+
+        我们读取贵司的公开招聘系统（Greenhouse / Lever / Ashby / 北森 / Moka），记录
+        **贵司自己系统返回的发布日期**，据此算出每个岗位挂了多久。这个数字常被读成
+        「这是幽灵岗位」，而对很多雇主来说**这个读法就是错的** —— 常青岗、真的难招的岗位、
+        以及把「需求创建日」当成发布日的招聘系统，从外面看完全一样。
+
+        **认领能得到什么**
+        - 贵司自己的说明，署贵司的名，显示在贵司指定的岗位旁边。
+        - 对具体职位标注「常年开放」/「难招但在招」/「已停止招聘」。
+        - 如果贵司系统里那个日期字段记的是「需求创建日」而不是「上线日」，我们标注更正。
+        - `response_sla_days`（回复时限承诺），如果贵司愿意承诺的话。
+        - 公司层面的 `claimed` 标记。
+
+        **认领永远得不到什么，而且谁也买不到**
+        - 排序位置。排序是 f(匹配度, 新鲜度) 的纯函数，被仓库里的测试锁死。
+        - 更低的 `ghost_score`。它是 f(重挂次数, 在架天数) 的纯函数。贵司的说明显示在它
+          **旁边**解释它，永远不改它。我们宁可展示一个高分加上贵司的解释，也不要一个买来的低分。
+
+        **三条承诺**
+        1. **完全免费，并且认领不会带来任何付费后续。** 我们不会在认领之后向贵司推销任何东西，
+           也没有任何付费档位可以买。v0.1 到今天没有一行计费代码。
+        2. **3 个工作日内给出结论**（确认、追问、或说明为什么做不到）。
+        3. **身份材料只用于核验，绝不公开、绝不留存、绝不转作他用。**
+
+        **贵司也可以直接要求我们把贵司从索引里移除。** 在下面说一句就行。我们会照做，不会争辩 ——
+        我们宁可要一个更小的、诚实的索引，也不要一个不情愿的。
+
+        **没有 GitHub 账号怎么办？** 这个表单需要 GitHub 账号，我们知道国内 HR 通常没有。
+        可以请贵司任何一位同事（或技术同事）代为提交，内容由贵司提供即可 —— 我们核验的是
+        **企业身份**，不是提交人的账号。
+  - type: input
+    id: company
+    attributes:
+      label: 公司名称
+      placeholder: 例：宇树科技 Unitree
+    validations:
+      required: true
+  - type: input
+    id: tenant
+    attributes:
+      label: 贵司招聘页网址
+      description: 贵司岗位链接指向的地址即可，我们自己判断是哪家招聘系统。
+      placeholder: 例：https://unitree.zhiye.com/social/jobs
+    validations:
+      required: true
+  - type: input
+    id: role
+    attributes:
+      label: 您在公司的职务
+      placeholder: 例：招聘负责人 / HRBP / 技术经理
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: 企业身份核验方式
+      description: >
+        以下任选其一：① 用企业域名邮箱回复我们（在下面写明邮箱后缀，例如 @unitree.com，
+        我们会发一封确认信，请勿在此处填写完整邮箱地址）；② GitHub 账号上可见的公司组织归属。
+        我们只核验，不公开、不留存。**核验方式与付费无关，我们不接受任何付费认领。**
+      placeholder: |
+        企业邮箱后缀：@example.com
+        （或）GitHub 组织：https://github.com/orgs/example/people
+    validations:
+      required: true
+  - type: textarea
+    id: evergreen
+    attributes:
+      label: 常年开放的岗位（可选）
+      description: >
+        请填写**与贵司招聘页完全一致的职位名称**，一行一个。这类岗位最容易被误读：它没有一个
+        具体的坑位要填，挂得久是设计，不是没人管。我们会用这句话标注在它们旁边。
+      placeholder: |
+        机器人算法工程师
+        嵌入式软件工程师
+    validations:
+      required: false
+  - type: textarea
+    id: hard_to_fill
+    attributes:
+      label: 确实在招但很难招的岗位（可选）
+      description: 职位名称一行一个，需与招聘页完全一致。
+    validations:
+      required: false
+  - type: textarea
+    id: closed
+    attributes:
+      label: 已经不招了的岗位（可选）
+      description: >
+        职位名称一行一个。如果贵司系统仍在对外返回它们，我们不会隐藏（我们不隐藏贵司官网自己返回的
+        内容），但会按贵司的说法标为已停止招聘，避免其他人白投。贵司对自己的招聘有最终解释权。
+    validations:
+      required: false
+  - type: dropdown
+    id: date_semantics
+    attributes:
+      label: 贵司招聘系统里的「发布日期」实际是什么意思？
+      description: >
+        如果它记的是内部需求创建的那天，那贵司每一个岗位看起来都会比实际老得多。
+        这是整个索引里对雇主最不公平的一种误读，而且不是贵司的错。不确定就选「不确定」，我们来核。
+      options:
+        - 岗位对外上线的那天（常规）
+        - 内部需求创建的那天
+        - 不确定
+    validations:
+      required: false
+  - type: textarea
+    id: note
+    attributes:
+      label: 贵司想用自己的话说明的内容（可选）
+      description: >
+        会署贵司的名，显示在上面指定的职位旁边。请写事实性内容；我们不发布营销文案，
+        除此之外不会改动贵司写的任何一个字。
+    validations:
+      required: false
+  - type: checkboxes
+    id: removal
+    attributes:
+      label: 或者，直接要求移除
+      options:
+        - label: 请把本公司从索引中完全移除。（勾选后以上各项都不必填。）
+          required: false
