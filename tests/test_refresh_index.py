@@ -64,13 +64,17 @@ def test_throttle_window_is_exactly_six_hours(seeded, monkeypatch):
     crawled 1h before NOW, so NOW+4h is 5h old (blocked) and NOW+5h01m is 6h01m old (allowed)."""
     import openhire.pipeline as pipeline
 
+    from openhire.pipeline.ingest import IngestStats
+
     calls: list[list[str]] = []
 
-    class _Stats:
-        jobs_new = jobs_updated = jobs_delisted = jobs_unchanged = 0
-
-    monkeypatch.setattr(pipeline, "run_ingest",
-                        lambda company_ids=None, **k: (calls.append(company_ids), _Stats())[1])
+    # The real stats object, not a hand-rolled stub: a stub that only carries the four
+    # counters is how the "crawl failed but we reported success" bug survived a green suite.
+    monkeypatch.setattr(
+        pipeline, "run_ingest",
+        lambda company_ids=None, **k: (calls.append(company_ids),
+                                       IngestStats(companies_crawled=1))[1],
+    )
 
     assert service.REFRESH_THROTTLE_HOURS == 6
     with session_scope() as s:
@@ -112,3 +116,31 @@ def test_tool_is_annotated_as_writing_and_reaching_the_network(seeded):
 
     tool = mcp_server.refresh_index
     assert callable(tool.fn if hasattr(tool, "fn") else tool)
+
+
+def test_a_crawl_that_failed_is_not_reported_as_a_refresh(seeded, monkeypatch):
+    """2026-09-15: Beisen stopped answering us. run_ingest returned companies_failed=1 and
+    every counter at 0 — byte-identical to an employer whose postings genuinely had not
+    changed — and refresh_company_index passed that through as {"refreshed": True}. Six
+    employers printed "✓ 已刷新 · 新增 0 · 下线 0" while their ATS had said nothing at all.
+
+    A refresh that silently does not happen is worse than one that errors: it launders a
+    stale index into a fresh-looking one, and the freshness claim is the product.
+    """
+    import openhire.pipeline as pipeline
+    from openhire.pipeline.ingest import IngestStats
+
+    monkeypatch.setattr(
+        pipeline, "run_ingest",
+        lambda **kw: IngestStats(companies_crawled=0, companies_failed=1,
+                                 failed_tenants=["beisen:unitree"]),
+    )
+    with session_scope() as s:
+        out = service.refresh_company_index(s, "unitree", now=NOW, throttle_hours=0)
+
+    assert out["refreshed"] is False
+    assert out["reason"] == "ats_unreachable"
+    assert out["failed_tenants"] == ["beisen:unitree"]
+    # It must also say how old the data the caller still holds actually is.
+    assert out["data_age_days"] == 0
+    assert "jobs_new" not in out  # no counters, because nothing was counted

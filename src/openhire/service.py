@@ -770,6 +770,26 @@ def refresh_company_index(
     from .pipeline import run_ingest
 
     stats = run_ingest(company_ids=[target.id], respect_interval=False)
+    if stats.companies_crawled == 0 and stats.companies_failed:
+        # The crawl did not happen. Reporting "refreshed" here is how a stale index
+        # gets published as a fresh one: every counter reads 0, which is exactly what
+        # a genuinely unchanged employer looks like. Say the ATS was unreachable, and
+        # say how old the data the caller still has actually is.
+        return {
+            "refreshed": False,
+            "reason": "ats_unreachable",
+            "company_id": target.id,
+            "company": target.name,
+            "failed_tenants": list(stats.failed_tenants),
+            "last_refreshed_at": last.isoformat() if last else None,
+            "data_age_days": (int((now - last).total_seconds() // 86400)
+                              if last else None),
+            "hint": (
+                f"{target.name}'s ATS did not answer, so nothing was re-crawled. The rows "
+                "you have are unchanged and carry their original verified_at - treat them "
+                "as that old, not as confirmed today."
+            ),
+        }
     session.expire_all()
     refreshed = session.get(Company, target.id)
     new_last = _aware(refreshed.last_crawled_at) if refreshed and refreshed.last_crawled_at else now

@@ -1157,6 +1157,15 @@ def refresh(
             for c in res.get("candidates", []):
                 c_print = f"  {c['company_id']:22} {c['name']}"
                 console.out(c_print)
+        elif res.get("reason") == "ats_unreachable":
+            # A failed crawl used to print the same "✓ 已刷新 · 新增 0 · 下线 0" as a
+            # genuinely unchanged employer. Loud, on stderr, and non-zero exit, so a
+            # batch loop cannot walk past it.
+            console.error("ERR_ATS_UNREACHABLE", res["hint"])
+            age = res.get("data_age_days")
+            if age is not None:
+                console.note(f"{res['company']} 现有数据仍是 {age} 天前的，未被本次刷新改变。")
+            raise typer.Exit(code=1)
         else:
             console.note(res.get("hint", "未刷新。"))
         return
