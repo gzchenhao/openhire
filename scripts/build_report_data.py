@@ -77,7 +77,7 @@ out = dict(
     ghost_hi_touched=round(100*hi_touched/max(1,len(hi_known))),
     freshest=tbl[:12], stalest=sorted(tbl, key=lambda x:-x["median"])[:12],
 )
-io.open(r"C:\openhire\docs\report-data.json","w",encoding="utf-8").write(json.dumps(out, ensure_ascii=False, indent=2))
+io.open(r"C:\openhire\report-draft\report-data.json","w",encoding="utf-8").write(json.dumps(out, ensure_ascii=False, indent=2))
 print(json.dumps({k:v for k,v in out.items() if k not in ("freshest","stalest")}, ensure_ascii=False, indent=1))
 print("\n最快摘牌 6 家:"); [print(f"  {t['name'][:22]:24} n={t['n']:4} 中位{t['median']:4}天 超半年{t['stale']:3}% 近30天被动过{('  —' if t['touched'] is None else str(t['touched'])+'%'):>4}") for t in tbl[:6]]
 print("\n最久未摘 6 家:"); [print(f"  {t['name'][:22]:24} n={t['n']:4} 中位{t['median']:4}天 超半年{t['stale']:3}% 近30天被动过{('  —' if t['touched'] is None else str(t['touched'])+'%'):>4}") for t in sorted(tbl,key=lambda x:-x['median'])[:6]]

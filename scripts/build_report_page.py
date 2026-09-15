@@ -2,7 +2,7 @@
 """Render the monthly ghost-jobs report page from report-data.json."""
 import io, json, html
 
-d = json.load(io.open(r"C:\openhire\docs\report-data.json", encoding="utf-8"))
+d = json.load(io.open(r"C:\openhire\report-draft\report-data.json", encoding="utf-8"))
 
 # Moka reports a last-touched time on 96% of rows; Beisen on 3%, i.e. not at all.
 # So a Beisen company can never earn a number in the last column no matter how
@@ -163,5 +163,5 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 
 </div></body></html>
 """
-io.open(r"C:\openhire\docs\report\index.html", "w", encoding="utf-8").write(HTML)
+io.open(r"C:\openhire\report-draft\index.html", "w", encoding="utf-8").write(HTML)
 print("wrote docs/report/index.html", len(HTML), "bytes")
