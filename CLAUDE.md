@@ -6,9 +6,13 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.5.0 · 2026-09-12；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.0 · 2026-09-14；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.5.0）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.0）
+- **v0.6.0（2026-09-14）：** 雇主认领落地（`seed/claims.py` + SLA + 四类更正 + `--unverify`）、
+  `refresh_index` 工具（单雇主、6h 节流）、`ohp numbers` 管道、`ghost_reason`、`--company` 过滤、`collapse`。
+- **GitHub Pages（2026-09-15 开启）：** https://gzchenhao.github.io/openhire/ ，源 = `main` 分支 `/docs`。
+  **注意：`docs/` 整个目录就是站点根，放进去即等于公开发布。** 月报页因此被误发过一次，已撤到 `report-draft/`。
 - **v0.5.0（2026-09-12）：** `role_group`（同岗多城市共享的分组键，不折叠行）+ `offset` 分页，
   两者都是给 client agent 省 `limit` 预算和 context 的；返回结构未变，老客户端不受影响。
 - **v0.4.1–0.4.3：** auto-bootstrap 改为后台线程（托管市场探测不再超时）、版本号三处对齐
@@ -21,6 +25,12 @@
 - **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。
 - 推送用 `gh`（keyring）；PyPI token 仅 `%USERPROFILE%\.pypirc`；`mcp-publisher` 二进制在 `.tools/mcp-publisher.exe`（gitignored，v1.8.1），其 GitHub 登录令牌会过期，过期时 `.tools/mcp-publisher login github` 重登。三者均**不进代码/git**。
 - **发版铁律：PyPI 发布必须先于快照刷新**（老客户端会带旧代码读新数据）。
+  **反过来同样会咬：新代码读老快照。** 2026-09-15 v0.6.0 带着 `companies` 的两个新列上了 PyPI，
+  而已发布快照还是加列之前建的，于是新用户 `uvx openhire@latest serve` 第一次搜索就 
+  `no such column: companies.response_sla_days`，每周快照工作流同时挂在 `ohp seed`。
+  **已从根上修掉**：`init_db()` 现在会跑前向迁移（`db/migrate.py`），打开任何数据库都先补列，
+  因为我们打开的库往往不是我们建的。加列之后**不需要**记第三条规矩，但要记得：
+  改了模型列就跑一次 `gh workflow run refresh-snapshot.yml`，让公开快照带上新列。
 - **`ohp.exe` 文件锁（已咬三次，按这个来）：** Claude Desktop 跑着 openhire MCP 时会占住
   `.venv\Scripts\ohp.exe`，`pip install -e .` 会在最后替换该文件时报 `WinError 32` 而中止，
   于是**包被卸载但没装回去**，表现为 `ModuleNotFoundError: No module named 'openhire'` +
@@ -59,7 +69,7 @@
    ```
    跑完按 `docs/maintainer-snapshot-refresh.md` 手动 build + upload 一次，让精抽结果进到公开快照。
 
-## 对外文案的两条硬规矩（体验官 Round 3 定）
+## 对外文案的四条硬规矩（体验官 Round 3 定，第 4 条 2026-09-15 补）
 
 1. **数字只准引用 `docs/numbers.json`。** 跑 `ohp numbers` 生成，写文案时照抄，**不准凭记忆写**。
    「139 家」在所有文章里出现过，而表里是 140 行——那不是写错数，是**两个不同的问题共用了一个标签**。
@@ -70,6 +80,15 @@
    同一个号在一个月里出现三张名片，读者连着刷到会觉得「这人谱系好满」，可信度反而掉。
 3. **零破折号。** 这是 023 号定的行文规矩，但 Round 3 实测四篇文章里有 11 处——**规矩是我们自己破的**。
    已全部清零，往后写完自查一遍。
+4. **描述雇主行为的动词，必须有对应字段撑着。** 尤其是「重挂 / 反复重新发布 / 刷新排序」——
+   这类词说的是**雇主主动做了一件事**，只有 `relist_count > 0` 的行才配得上。
+   全库 16,153 条在架里只有 279 条（1.73%）重挂过，**国内（北森 + Moka）1,655 条里是 0 条**。
+   脉脉第一条帖写了「国内 39.5% 挂了很久**且反复重挂**」——那个 39.5% 是 `ghost_score` 超阈值的比例，
+   而国内岗位的 ghost_score 里重挂项恒为 0，**「且反复重挂」四个字是凭空加的**。
+   这和规矩 1 是同一类错误：规矩 1 是数字凭记忆写，这条是**动词凭印象写**，而后者更危险——
+   数字写错是失准，**动词写错是指控**，雇主可以拿它来质疑我们全部内容的公信力。
+   自查方法：文案里每出现一个描述雇主主观意图的词（重挂、不管了、弃坑、刷排序），
+   先回答「哪个字段能证明」；答不上来就删掉，改写成我们真正量到的东西（在架天数）。
 
 ## 三条隐私红线（CI 强制，永不可破）
 
