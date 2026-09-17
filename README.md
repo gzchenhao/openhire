@@ -182,9 +182,14 @@ an evergreen talent pool rather than a stale req, or how fast you actually reply
 （[中文表单](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml)）.
 Free, verified by corporate identity — a GitHub org membership or a reply from a corporate
 domain — and **never by payment**. We answer within 3 business days, claiming leads to no
-paid follow-up of any kind, and your proof is used to verify and then nothing else. No
-GitHub account? Anyone may file on your behalf; what we verify is the company, not the
-filer. A claim gets you:
+paid follow-up of any kind, and your proof is used to verify and then nothing else.
+
+No GitHub account? **Email gdchenhao@qq.com** with "Employer claim" and your company name in the
+subject — sending from your corporate domain is itself the verification — or have anyone
+file the form on your behalf, since what we verify is the company and not the filer.
+没有 GitHub 账号？**直接发邮件到 gdchenhao@qq.com**，用贵司企业邮箱发出来即完成身份核验。
+
+A claim gets you:
 
 - **Your own note, attributed to you, beside the roles you name.** We can see how long a
   role has been open; we cannot see why. An evergreen talent pool, a genuinely hard-to-fill
