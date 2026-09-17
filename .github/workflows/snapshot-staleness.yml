@@ -1,0 +1,84 @@
+# Alarm for the failure the weekly refresh cannot report: not running at all.
+#
+# refresh-snapshot.yml emails the repo owner when a run FAILS. It says nothing when a run
+# never happens — GitHub drops or defers scheduled runs under load, and a skipped week is
+# indistinguishable from a quiet one. The published snapshot is what every new user
+# bootstraps from, so a silently ageing asset ships stale data to strangers while every
+# dashboard stays green.
+#
+# This checks the asset's age from the Releases API (no download) and opens ONE issue when
+# it goes stale, closing it again once a refresh lands. An issue notifies the owner through
+# the same channel a failure does, so the "no run" case finally has a voice.
+#
+# ZERO SECRETS, like the refresh itself: only GitHub's automatic per-run token.
+name: Snapshot staleness alarm
+
+on:
+  schedule:
+    # Daily, well after the Monday 06:10 refresh has had time to finish.
+    - cron: "40 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  SNAPSHOT_TAG: v0.1.0
+  SNAPSHOT_ASSET: openhire-index.db.gz
+  # The refresh is weekly, so 7 days is normal and 8 is a late run. 9 means a week was
+  # missed outright — the case this alarm exists for.
+  MAX_AGE_DAYS: "9"
+  ALARM_TITLE: "Published snapshot is stale"
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Measure the published asset's age
+        id: age
+        run: |
+          updated=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$SNAPSHOT_TAG" \
+            --jq ".assets[] | select(.name==\"$SNAPSHOT_ASSET\") | .updated_at")
+          if [ -z "$updated" ]; then
+            echo "::error::asset $SNAPSHOT_ASSET not found on tag $SNAPSHOT_TAG"
+            exit 1
+          fi
+          age=$(( ( $(date -u +%s) - $(date -u -d "$updated" +%s) ) / 86400 ))
+          echo "published asset last updated $updated (${age}d ago), limit ${MAX_AGE_DAYS}d"
+          echo "updated=$updated" >> "$GITHUB_OUTPUT"
+          echo "days=$age" >> "$GITHUB_OUTPUT"
+
+      - name: Open or close the alarm issue
+        env:
+          DAYS: ${{ steps.age.outputs.days }}
+          UPDATED: ${{ steps.age.outputs.updated }}
+        run: |
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "\"$ALARM_TITLE\" in:title" --json number --jq '.[0].number // empty')
+
+          if [ "$DAYS" -le "$MAX_AGE_DAYS" ]; then
+            echo "fresh enough (${DAYS}d)"
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --repo "$GITHUB_REPOSITORY" \
+                --comment "A refresh landed: the published snapshot is now ${DAYS} days old (updated ${UPDATED}). Closing."
+            fi
+            exit 0
+          fi
+
+          body=$(printf '%s\n' \
+            "The published \`$SNAPSHOT_ASSET\` on tag \`$SNAPSHOT_TAG\` was last updated **$UPDATED**, which is **${DAYS} days** ago. The refresh is weekly, so this means a scheduled run did not happen — not that one failed, which would have emailed already." \
+            "" \
+            "Every new user bootstraps from this asset, so they are being handed data ${DAYS} days old." \
+            "" \
+            "Fix: \`gh workflow run refresh-snapshot.yml --ref main\`, then check the run. This issue closes itself once the asset is fresh again.")
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$ALARM_TITLE" --body "$body"
+          fi
+          echo "::error::published snapshot is ${DAYS} days old (limit ${MAX_AGE_DAYS})"
+          exit 1

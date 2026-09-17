@@ -72,25 +72,50 @@ This is the 「哨兵 / Sentinel」 reference implementation — see
 
 ## Quickstart — under a minute
 
-```bash
-# 1. Install (pipx keeps it isolated and puts `ohp` on your PATH)
-pipx install openhire
+**Nothing to install, and no crawl to sit through.** Add this to your MCP client's config:
 
-# 2. Get a job index. Downloads the public snapshot (~25 MB), then runs one incremental
-#    crawl to refresh verified_at / delisting. The crawl is the slow part: it prints one
-#    line per employer and can run 20+ minutes on a cold index.
-#    Only needed for the CLI — `ohp serve` fetches the snapshot by itself on first start.
-ohp bootstrap                    # 139 employers · ~16k live postings · no account
-
-# 3. Use it directly…
-ohp search --required-skills rust,k8s --remote --role-family engineering
-ohp search --currency CNY --role-family engineering   # e.g. CN autonomous-driving / robotics roles
-
-# …or connect it to an MCP client:
-ohp serve
+```json
+{ "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire@latest", "serve"] } } }
 ```
 
-Then point your MCP client at it — see **[Works with](#works-with)** below.
+Then ask your assistant for a job. That is the whole setup. The server downloads the ~25 MB
+public index by itself in the background on first start, so searches fill in within a couple
+of minutes while you are already talking to it. No account, no signup, no résumé upload.
+
+The one prerequisite is [uv](https://docs.astral.sh/uv/) (it provides `uvx`). Without it the
+config above fails with nothing but "server failed to start", so install it first:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux
+irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
+```
+
+**On Claude Desktop you can skip even that** — download
+[`openhire-0.6.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+double-click it. No terminal, no Python, no uv.
+
+Per-client config paths and the trade-offs of `uvx` vs a one-time install are in
+**[Works with](#works-with)** below.
+
+<details>
+<summary><b>Prefer a terminal?</b> The same index from a CLI.</summary>
+
+```bash
+pipx install openhire      # keeps it isolated and puts `ohp` on your PATH
+ohp bootstrap              # 139 employers · ~16k live postings · no account
+
+ohp search --required-skills rust,k8s --remote --role-family engineering
+ohp search --currency CNY --role-family engineering   # e.g. CN 智驾 / robotics roles
+```
+
+`ohp bootstrap` downloads the public snapshot (~25 MB, no account) and then runs one
+incremental crawl to refresh `verified_at` and catch delistings. **The crawl is the slow
+part** — a line per employer, 20+ minutes on a cold index — and you can stop it once the
+snapshot is in; the index is already usable, just verified as of the last weekly refresh
+rather than today. The MCP path above needs none of this: `serve` fetches the snapshot by
+itself in the background.
+
+</details>
 
 ---
 

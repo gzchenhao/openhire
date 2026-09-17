@@ -390,6 +390,33 @@ def diagnose_empty_search(
     Kept out of `search_jobs`, which always returns a list. Only the MCP boundary swaps in
     this shape, and only when the list came back empty.
     """
+    # An empty INDEX explains an empty result on its own, and every other diagnosis below
+    # would be actively misleading: with no rows to scan, every tag the caller asked for
+    # looks "unknown" and we would tell them to fix a spelling that was never wrong. A new
+    # CLI user got "no matches" for "you have no index yet" — the same failure shape we
+    # keep finding elsewhere, where a missing prerequisite reads as a genuine answer.
+    if not session.scalar(select(func.count()).select_from(Job)):
+        return {
+            "results": [],
+            "matched": 0,
+            "index_empty": True,
+            "hint": (
+                "There is no job index on this machine yet, so this is not a miss: there was "
+                "nothing to search. Run `ohp bootstrap` to download the public snapshot "
+                "(~25 MB, no account), or start the MCP server with `ohp serve`, which fetches "
+                "it by itself on first run. "
+                "本机还没有职位索引，所以这不是「没找到」，是「没得找」。跑 `ohp bootstrap` "
+                "下载公开快照（约 25 MB，无需注册），或直接 `ohp serve`，服务器会自己拉。"
+            ),
+            "filters_applied": {
+                k: v for k, v in {
+                    "company": company, "skills": skills,
+                    "required_skills": required_skills,
+                    "role_family": role_family, "currency": currency,
+                }.items() if v
+            },
+        }
+
     # A company that does not resolve explains the empty list by itself, and no amount of
     # tag advice helps — answer that first and stop.
     if company:

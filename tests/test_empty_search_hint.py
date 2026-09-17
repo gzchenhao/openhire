@@ -100,3 +100,29 @@ def test_bootstrap_passes_a_progress_callback_to_the_crawl():
     assert "run_ingest(respect_interval=False)" not in src, (
         "no crawl path may stay silent"
     )
+
+
+def test_an_empty_index_says_so_instead_of_reporting_a_miss(tmp_path, monkeypatch):
+    """A brand-new CLI user ran `ohp search` and got "无匹配结果。" — the same sentence
+    they would get for a typo or for a role nobody is hiring for. The index was simply
+    not downloaded yet. Every tag-level diagnosis below is also actively wrong on an
+    empty index: with no rows to scan, every requested tag looks unknown and we would
+    tell them to fix a spelling that was never wrong."""
+    from openhire.db import session as session_mod
+    from openhire import config
+
+    monkeypatch.setattr(
+        config, "DATABASE_URL", f"sqlite+pysqlite:///{(tmp_path / 'empty.db').as_posix()}"
+    )
+    session_mod.dispose_engine()
+    try:
+        session_mod.init_db()
+        with session_mod.session_scope() as s:
+            out = service.diagnose_empty_search(s, required_skills=["rust"])
+        assert out["index_empty"] is True
+        assert "bootstrap" in out["hint"]
+        # It must NOT claim the tag is unknown: there was nothing to compare it against.
+        assert not out.get("unknown_skills")
+        assert not out.get("suggestions")
+    finally:
+        session_mod.dispose_engine()
