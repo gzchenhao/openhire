@@ -266,3 +266,18 @@ def test_numbers_export_names_what_each_figure_counts():
     assert data["employers_with_live_postings"] <= data["companies_in_index"]
     for key in ("live_postings", "median_days_open", "pct_open_over_180d", "generated_at"):
         assert key in data
+
+
+def test_shipped_cli_copy_does_not_carry_the_retired_persona():
+    """Outward-copy rule 2 (CLAUDE.md): the narrative is "deep-tech recruiter". "一个不写
+    代码的 PM" was the identity we retired, and it was still in the one-time star hint —
+    the single most-read piece of outward copy we ship, since every CLI user sees it once.
+    A rule we break in the product is not a rule."""
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[1] / "src" / "openhire"
+    offenders = [
+        p.name for p in src.rglob("*.py")
+        if "不写代码" in p.read_text(encoding="utf-8")
+    ]
+    assert not offenders, f"retired persona still shipped in: {offenders}"

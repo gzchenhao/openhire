@@ -298,7 +298,11 @@ def _maybe_star_hint() -> None:
         return
     console.rule()
     console.console.print(
-        "[ok]★[/] OpenHire 由一个不写代码的 PM 与 AI 结对维护，数据每周自动刷新。"
+        # Outward-copy rule 2: the narrative is "deep-tech recruiter", and "a PM who does
+        # not write code" is the second business card that rule exists to stop. This line
+        # ships to every CLI user, so it was the most-read place we were breaking our own
+        # rule. What matters to a reader here is the data, not who maintains it.
+        "[ok]★[/] OpenHire 的岗位数据每周自动刷新，全部来自雇主官网的公开接口。"
         "觉得有用？给个 star："
     )
     console.console.print(
