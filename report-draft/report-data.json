@@ -1,20 +1,20 @@
 {
-  "generated": "2026-09-15",
+  "generated": "2026-09-18",
   "employers": 139,
   "live": 16153,
-  "median": 62,
-  "p90": 39.7,
-  "p180": 20.8,
+  "median": 65,
+  "p90": 41.1,
+  "p180": 21.4,
   "p365": 8.4,
   "cn": {
     "n": 1655,
-    "median": 154,
-    "p180": 41
+    "median": 156,
+    "p180": 42
   },
   "ov": {
     "n": 14498,
-    "median": 56,
-    "p180": 18
+    "median": 59,
+    "p180": 19
   },
   "ghost_hi": 2626,
   "ghost_hi_known": 1452,
@@ -25,8 +25,11 @@
       "name": "AssemblyAI",
       "vendor": "greenhouse",
       "n": 18,
-      "median": 18,
+      "median": 21,
       "stale": 0,
+      "batch_day": "2026-08-20",
+      "batch_n": 6,
+      "batch_share": 33,
       "touched": 100
     },
     {
@@ -34,8 +37,11 @@
       "name": "Dropbox",
       "vendor": "greenhouse",
       "n": 39,
-      "median": 25,
+      "median": 28,
       "stale": 5,
+      "batch_day": "2026-08-20",
+      "batch_n": 4,
+      "batch_share": 10,
       "touched": 100
     },
     {
@@ -43,8 +49,11 @@
       "name": "Elastic",
       "vendor": "greenhouse",
       "n": 359,
-      "median": 27,
-      "stale": 3,
+      "median": 30,
+      "stale": 4,
+      "batch_day": "2026-08-27",
+      "batch_n": 51,
+      "batch_share": 14,
       "touched": 100
     },
     {
@@ -52,17 +61,23 @@
       "name": "Mixpanel",
       "vendor": "greenhouse",
       "n": 88,
-      "median": 28,
+      "median": 31,
       "stale": 1,
-      "touched": 59
+      "batch_day": "2026-08-20",
+      "batch_n": 16,
+      "batch_share": 18,
+      "touched": 58
     },
     {
       "cid": "instacart",
       "name": "Instacart",
       "vendor": "greenhouse",
       "n": 104,
-      "median": 31,
+      "median": 34,
       "stale": 6,
+      "batch_day": "2026-08-20",
+      "batch_n": 7,
+      "batch_share": 7,
       "touched": 100
     },
     {
@@ -70,8 +85,11 @@
       "name": "SoFi",
       "vendor": "greenhouse",
       "n": 57,
-      "median": 31,
+      "median": 34,
       "stale": 7,
+      "batch_day": "2026-08-25",
+      "batch_n": 4,
+      "batch_share": 7,
       "touched": 100
     },
     {
@@ -79,8 +97,11 @@
       "name": "Aurora",
       "vendor": "ashby",
       "n": 82,
-      "median": 33,
+      "median": 36,
       "stale": 0,
+      "batch_day": "2026-08-04",
+      "batch_n": 26,
+      "batch_share": 32,
       "touched": null
     },
     {
@@ -88,8 +109,11 @@
       "name": "GitLab",
       "vendor": "greenhouse",
       "n": 223,
-      "median": 34,
+      "median": 37,
       "stale": 1,
+      "batch_day": "2026-09-02",
+      "batch_n": 12,
+      "batch_share": 5,
       "touched": 100
     },
     {
@@ -97,8 +121,11 @@
       "name": "Chainguard",
       "vendor": "greenhouse",
       "n": 85,
-      "median": 34,
+      "median": 37,
       "stale": 5,
+      "batch_day": "2026-09-11",
+      "batch_n": 7,
+      "batch_share": 8,
       "touched": 71
     },
     {
@@ -106,8 +133,11 @@
       "name": "Mercury",
       "vendor": "greenhouse",
       "n": 61,
-      "median": 34,
+      "median": 37,
       "stale": 2,
+      "batch_day": "2026-07-01",
+      "batch_n": 5,
+      "batch_share": 8,
       "touched": 100
     },
     {
@@ -115,8 +145,11 @@
       "name": "Huntress",
       "vendor": "greenhouse",
       "n": 36,
-      "median": 34,
+      "median": 37,
       "stale": 6,
+      "batch_day": "2026-06-18",
+      "batch_n": 4,
+      "batch_share": 11,
       "touched": 100
     },
     {
@@ -124,8 +157,11 @@
       "name": "Cockroach Labs",
       "vendor": "greenhouse",
       "n": 21,
-      "median": 34,
+      "median": 37,
       "stale": 14,
+      "batch_day": "2026-08-11",
+      "batch_n": 3,
+      "batch_share": 14,
       "touched": 69
     }
   ],
@@ -135,8 +171,11 @@
       "name": "亿嘉和 YIJIAHE",
       "vendor": "beisen",
       "n": 134,
-      "median": 1552,
+      "median": 1555,
       "stale": 100,
+      "batch_day": "2021-01-19",
+      "batch_n": 13,
+      "batch_share": 10,
       "touched": null
     },
     {
@@ -144,8 +183,11 @@
       "name": "Lightning AI",
       "vendor": "ashby",
       "n": 14,
-      "median": 1043,
+      "median": 1046,
       "stale": 79,
+      "batch_day": "2021-12-16",
+      "batch_n": 3,
+      "batch_share": 21,
       "touched": null
     },
     {
@@ -153,8 +195,11 @@
       "name": "WeRide",
       "vendor": "lever",
       "n": 16,
-      "median": 902,
+      "median": 905,
       "stale": 56,
+      "batch_day": "2020-05-02",
+      "batch_n": 4,
+      "batch_share": 25,
       "touched": null
     },
     {
@@ -162,8 +207,11 @@
       "name": "节卡机器人 JAKA",
       "vendor": "beisen",
       "n": 22,
-      "median": 795,
+      "median": 797,
       "stale": 100,
+      "batch_day": "2024-07-22",
+      "batch_n": 6,
+      "batch_share": 27,
       "touched": null
     },
     {
@@ -171,8 +219,11 @@
       "name": "梅卡曼德 Mech-Mind",
       "vendor": "beisen",
       "n": 48,
-      "median": 572,
+      "median": 575,
       "stale": 79,
+      "batch_day": "2023-04-11",
+      "batch_n": 3,
+      "batch_share": 6,
       "touched": null
     },
     {
@@ -180,8 +231,11 @@
       "name": "驭势科技 UISEE",
       "vendor": "moka",
       "n": 51,
-      "median": 449,
+      "median": 452,
       "stale": 73,
+      "batch_day": "2025-03-10",
+      "batch_n": 5,
+      "batch_share": 10,
       "touched": 16
     },
     {
@@ -189,8 +243,11 @@
       "name": "Palantir",
       "vendor": "lever",
       "n": 314,
-      "median": 445,
-      "stale": 68,
+      "median": 448,
+      "stale": 69,
+      "batch_day": "2021-07-01",
+      "batch_n": 8,
+      "batch_share": 3,
       "touched": null
     },
     {
@@ -198,8 +255,11 @@
       "name": "宇树科技 Unitree",
       "vendor": "beisen",
       "n": 37,
-      "median": 368,
-      "stale": 59,
+      "median": 371,
+      "stale": 62,
+      "batch_day": "2025-09-11",
+      "batch_n": 20,
+      "batch_share": 54,
       "touched": null
     },
     {
@@ -207,8 +267,11 @@
       "name": "Dexterity",
       "vendor": "lever",
       "n": 31,
-      "median": 355,
+      "median": 358,
       "stale": 74,
+      "batch_day": "2025-10-31",
+      "batch_n": 2,
+      "batch_share": 6,
       "touched": null
     },
     {
@@ -216,8 +279,11 @@
       "name": "优必选 UBTECH",
       "vendor": "beisen",
       "n": 32,
-      "median": 335,
+      "median": 338,
       "stale": 88,
+      "batch_day": "2025-10-13",
+      "batch_n": 7,
+      "batch_share": 22,
       "touched": 0
     },
     {
@@ -225,8 +291,11 @@
       "name": "越疆 Dobot",
       "vendor": "beisen",
       "n": 96,
-      "median": 322,
+      "median": 325,
       "stale": 95,
+      "batch_day": "2025-10-27",
+      "batch_n": 57,
+      "batch_share": 59,
       "touched": 0
     },
     {
@@ -234,8 +303,11 @@
       "name": "Cresta",
       "vendor": "greenhouse",
       "n": 94,
-      "median": 217,
+      "median": 220,
       "stale": 61,
+      "batch_day": "2024-09-10",
+      "batch_n": 3,
+      "batch_share": 3,
       "touched": 91
     }
   ]

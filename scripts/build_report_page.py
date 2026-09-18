@@ -17,23 +17,39 @@ def cn_tag(t, cn):
     note = BEISEN_NOTE if t["touched"] is None else ""
     return f'<span class=tag title="{note}">国内{"*" if note else ""}</span>'
 
+# Above this share of one employer's live roles sharing a single posting date, the median
+# is mostly reporting one event. Half is deliberately conservative: at 54% (Unitree) and
+# 59% (Dobot) the batch dominates, while every other named employer here sits under 27%.
+BATCH_THRESHOLD = 50
+
+
 def rows(items, extra_class=""):
     out = []
     for t in items:
         cn = " cn" if t["vendor"] in ("beisen", "moka") else ""
         flag = ' <span class="tag warnflag">口径存疑</span>' if t["median"] > 730 else ""
+        # When most of an employer's postings carry ONE date, the median is reporting a
+        # single publishing event once per row. Unitree: 20 of 37 on 2025-09-11. Dobot:
+        # 57 of 96 on 2025-10-27. Reading that as "N roles each sat for a year" is a claim
+        # the employer can disprove from their own calendar, so the table says it first.
+        if t.get("batch_share", 0) >= BATCH_THRESHOLD:
+            note = (f'{t["batch_n"]}/{t["n"]} 个岗位的发布日都是 {t["batch_day"]}，'
+                    f'这更像一次集中发布，不是 {t["batch_n"]} 个岗位各自挂了这么久。')
+            flag += (f' <span class="tag warnflag" title="{note}">'
+                     f'批量发布 {t["batch_share"]}%</span>')
         out.append(
             f'<tr class="{extra_class}"><td>{html.escape(t["name"])}'
             f'{cn_tag(t, cn)}{flag}</td>'
             f'<td class=num>{t["n"]}</td><td class=num><b>{t["median"]}</b></td>'
             f'<td class=num>{t["stale"]}%</td>'
-            # None means the ATS never reports a last-touched time. "—" says
-            # "we do not know"; printing 0% would say "nobody has touched these",
-            # which is an accusation we have no evidence for.
+            # None means the ATS never reports a last-touched time. "—" says "we do not
+            # know"; printing 0% would say "nobody has touched these", which is an
+            # accusation we have no evidence for.
             f'<td class=num title="{"该招聘系统不提供最后改动时间" if t["touched"] is None else ""}">'
             f'{"—" if t["touched"] is None else str(t["touched"]) + "%"}</td></tr>'
         )
     return "\n".join(out)
+
 
 HTML = f"""<!doctype html>
 <html lang="zh-CN">
@@ -101,8 +117,9 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 下面那张「挂得最久」的表里，排前两位的就属于这种情况，我们标出来了。</p>
 
 <h2>摘牌最快的公司</h2>
-<p>这张表比「谁挂得久」有用得多。<b>岗位会被摘下来，通常只有一个原因：招到人了。</b>
-中位数三四十天，说明这家公司的招聘流程是真的转得动的。（只统计在架岗位 ≥10 个的公司。）</p>
+<p>这张表比「谁挂得久」有用得多。<b>岗位会被摘下来，说明这家公司在主动维护自己的岗位列表</b>
+（是招到了、还是需求取消了，我们看不出来）。中位数三四十天，说明这家的招聘流程是转得动的。
+（只统计在架岗位 ≥10 个的公司。）</p>
 <div class="tblwrap"><table>
 <tr><th>公司</th><th class=num>在架岗位</th><th class=num>中位在架</th><th class=num>超半年占比</th><th class=num>近 30 天被雇主动过</th></tr>
 {rows(d['freshest'])}
@@ -130,6 +147,20 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 有 {d['ghost_hi_known']:,} 个的招聘系统会告诉我们最后改动时间。在这些能看到的里面，
 <b>{d['ghost_hi_touched']}% 在最近 30 天被雇主动过</b>。
 也就是说，光看「挂得久」这一个指标，会把其中<b>三分之二</b>判错。</p>
+
+<div class="note">
+<b>标了「批量发布 N%」的公司，请这样读。</b><br>
+这些公司的在架岗位里，有一多半的发布日期是<b>同一天</b>。最合理的解释是当时一次集中发布
+（换系统、批量导入、或一次集中放岗），<b>而不是这么多岗位各自被遗忘了一年</b>。
+我们算中位数时，那一次发布会被重复计入每一行，把整家公司的数字一起抬高。
+这是我们算法的局限，不是这些公司的问题，所以标出来。
+</div>
+
+<div class="note">
+<b>顺便说清楚 45 天这个阈值。</b><br>
+评分里「超过 45 天开始加分」的这个 45，是<b>我们自己定的经验值，没有行业依据</b>。
+所以满分从来不是结论，只是「值得问一句」。谁要是拿这个分数当证据用，那是误用，我们先说在前面。
+</div>
 
 <div class="note">
 <b>最后一列为什么有些公司是「—」。</b><br>

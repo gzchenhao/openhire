@@ -33,6 +33,7 @@ for cid, title, posted, updated, ghost, relist, rf in rows:
     real_upd = bool(posted and updated and posted != updated)
     recs.append(dict(cid=cid, name=c.name if c else cid,
                      vendor=c.ats_vendor if c else "?", title=title,
+                     posted_day=posted.date().isoformat() if posted else None,
                      d_open=days(posted), d_upd=days(updated) if real_upd else None,
                      ghost=ghost or 0.0, relist=relist or 0, rf=rf))
 
@@ -55,9 +56,17 @@ for cid, v in per.items():
     ds = sorted(x["d_open"] for x in v)
     known = [x for x in v if x["d_upd"] is not None]
     touched = sum(1 for x in known if x["d_upd"] <= 30)
+    # How much of this employer's "age" is one event. Unitree has 37 live roles and 20 of
+    # them carry the same posting date: that is one publish, not 20 neglected reqs, and
+    # the median reports it 20 times. Without this column the table says something about
+    # an employer that the employer can disprove from their own calendar.
+    by_day = collections.Counter(x["posted_day"] for x in v if x["posted_day"])
+    top_day, top_n = (by_day.most_common(1)[0] if by_day else (None, 0))
     tbl.append(dict(cid=cid, name=v[0]["name"], vendor=v[0]["vendor"], n=len(v),
                     median=ds[len(ds)//2],
                     stale=round(100*sum(1 for d in ds if d > 180)/len(ds)),
+                    batch_day=top_day, batch_n=top_n,
+                    batch_share=round(100*top_n/len(v)) if v else 0,
                     # None means this employer's ATS does not report it at all.
                     touched=(round(100*touched/len(known)) if known else None)))
 tbl.sort(key=lambda x: x["median"])
