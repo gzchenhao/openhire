@@ -220,6 +220,14 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         ),
         "apply_channel": job.apply_channel,                                               # ⑤
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
+        # WHICH requested skills this row actually carries. A reviewer searched `rust`,
+        # got ten rows all titled "Security Engineer", and filed a filter bug; the filter
+        # was right and the titles simply did not show the reason. A match_quality of 1.0
+        # with no way to see what matched asks the reader to trust a number over their own
+        # eyes, and when the two disagree they are right to trust their eyes.
+        "matched_skills": sorted(
+            {s.lower() for s in (requested_skills or [])} & {s.lower() for s in (job.skills or [])}
+        ),
         "match_quality": round(mq, 4),
         "freshness": round(fr, 4),
         "rank_score": round(rank_score(mq, fr), 6),
@@ -352,7 +360,12 @@ def search_jobs(
         c.id: c
         for c in session.execute(select(Company).where(Company.id.in_(company_ids))).scalars()
     } if company_ids else {}
-    rows = [job_posting(j, companies.get(j.company_id), skills or [], now) for j, _ in ranked]
+    # The SAME list the ranker scored with. Passing only `skills` here meant a caller who
+    # used required_skills alone got match_quality 1.0 on every row — the neutral value for
+    # "nothing was requested" — while the ranking had used the required set. The number
+    # shown was not the number that ordered the list.
+    scored_against = list(skills or []) or list(required_skills or [])
+    rows = [job_posting(j, companies.get(j.company_id), scored_against, now) for j, _ in ranked]
     if collapse_role_group:
         # Keep the highest-ranked row per group and say how many it stands for. The siblings
         # are NOT hidden state: `role_group` still identifies the group, so a caller that

@@ -116,3 +116,22 @@ def test_status_shows_identity_and_receipts():
     assert r.exit_code == 0
     assert "w_" in r.stdout        # watch listed
     assert "r_" in r.stdout        # receipt listed
+
+
+def test_every_command_is_in_a_help_panel():
+    """`ohp --help` used to print 26 commands as one flat list, so `extract-rollback` and
+    `search` looked equally likely as a next step. Panels fix that only while every command
+    has one: a new command with no panel silently lands in an unnamed group at the bottom,
+    and the wall grows back one command at a time."""
+    from openhire import cli
+
+    unpanelled = sorted(
+        cmd.name or cmd.callback.__name__.replace("_", "-")
+        for cmd in cli.app.registered_commands
+        if cmd.rich_help_panel is None
+    )
+    assert not unpanelled, f"commands with no help panel: {unpanelled}"
+    # And the panels are the three we mean, not a typo that quietly makes a fourth.
+    assert {c.rich_help_panel for c in cli.app.registered_commands} == {
+        cli.FIND_PANEL, cli.INDEX_PANEL, cli.LAB_PANEL
+    }

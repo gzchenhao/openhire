@@ -255,3 +255,32 @@ def test_apply_rejects_resume_crammed_into_fingerprint(session):
     with pytest.raises(OpenHireError) as e:
         service.apply(session, "acme:1", resume, True, now=NOW)
     assert e.value.code == "ERR_RESUME_NEVER_TRANSMITTED"
+
+
+def test_a_result_says_which_requested_skill_it_carries(session):
+    """A reviewer searched `rust`, got ten rows all titled "Security Engineer" and filed a
+    filter bug. The filter was right; the titles simply could not show why. A payload that
+    reports match_quality without naming the hit asks the reader to trust a number over
+    their own eyes."""
+    rows = service.search_jobs(session, skills=["rust"], now=NOW)
+    assert rows, "fixture should match something"
+    for r in rows:
+        assert "rust" in r["matched_skills"]
+
+
+def test_match_quality_is_scored_against_what_the_ranker_used(session):
+    """required_skills alone used to produce match_quality 1.0 on every row: job_posting
+    was handed only `skills`, which was empty, and an empty request means "neutral".
+    The number shown was not the number that ordered the list."""
+    rows = service.search_jobs(session, required_skills=["rust"], now=NOW)
+    assert rows
+    for r in rows:
+        assert r["matched_skills"] == ["rust"]
+        assert r["match_quality"] == 1.0  # genuinely earned now, not the empty-request default
+
+    # And a row matching one of two requested skills must not read as a perfect match.
+    partial = service.search_jobs(session, skills=["rust", "cobol"], now=NOW)
+    assert partial
+    for r in partial:
+        assert r["match_quality"] < 1.0
+        assert r["matched_skills"] == ["rust"]

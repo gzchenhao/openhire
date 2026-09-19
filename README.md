@@ -145,6 +145,15 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 
 First start downloads a ~25 MB index in the background; searches fill in within a few minutes.
 
+> **Editing the config may not be the last step.** Several clients require you to enable or
+> trust a newly added server before its tools load — the config is saved, the server never
+> starts, and the only symptom is that your assistant does not seem to know about the tools.
+> If a search does nothing, open your client's MCP/connectors panel and check that
+> **openhire** is listed *and* switched on. (Claude Desktop needs a full quit and reopen;
+> Cursor and Windsurf pick it up on reload; some clients show a per-server toggle.)
+> 改完配置不一定就完事：**部分客户端需要你在设置里手动「信任 / 启用」这个 server**，
+> 工具才会加载。症状是配置明明在、助手却完全不知道有这些工具。
+
 **What `uvx` costs you, every time.** `uvx` resolves the package on each invocation — measured
 at **7–8 s** per call even with a warm cache. That is paid on every MCP session start and every
 CLI command. It buys you never having to manage an install. If you would rather pay once:

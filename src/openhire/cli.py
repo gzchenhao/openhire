@@ -19,7 +19,29 @@ from .console import console as c
 from .db import Company, Job, Watch, init_db, session_scope
 from .errors import OpenHireError
 
+# Help panels, in the order a reader should meet them. Rich orders panels by the order the
+# commands are REGISTERED, which is source order, and source order is historical: `seed`
+# and `ingest` were written first, so a job seeker opening `ohp --help` met the index
+# maintenance commands before `search`. This group sorts registration into panel order
+# instead, so the flat 26-command wall becomes three lists with the user's one on top.
+FIND_PANEL = "求职者：从这里开始"
+INDEX_PANEL = "索引维护（维护者）"
+LAB_PANEL = "抽取实验（维护者）"
+_PANEL_ORDER = [FIND_PANEL, INDEX_PANEL, LAB_PANEL]
+
+
+class _PanelOrderedGroup(typer.core.TyperGroup):
+    def list_commands(self, ctx):  # noqa: D102 - click hook
+        def key(name: str) -> tuple[int, int]:
+            panel = getattr(self.commands[name], "rich_help_panel", None)
+            rank = _PANEL_ORDER.index(panel) if panel in _PANEL_ORDER else len(_PANEL_ORDER)
+            return (rank, list(self.commands).index(name))
+
+        return sorted(self.commands, key=key)
+
+
 app = typer.Typer(
+    cls=_PanelOrderedGroup,
     add_completion=False,
     no_args_is_help=True,
     help="OpenHire 「哨兵」— agent-native job protocol. Your résumé never passes through our servers, and we never store it.",
@@ -47,7 +69,7 @@ def _banner() -> None:
 
 
 # --- seed ---------------------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=INDEX_PANEL)
 def seed() -> None:
     """Validate the seed roster against live public ATS APIs and register companies."""
     from .pipeline import seed_companies
@@ -95,7 +117,7 @@ def seed() -> None:
 
 
 # --- ingest -------------------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=INDEX_PANEL)
 def ingest(
     all_companies: bool = typer.Option(
         False, "--all", "-a", help="Crawl every company now, ignoring freshness tiers."
@@ -202,7 +224,7 @@ def _run_daemon() -> None:
 
 
 # --- serve --------------------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def serve(
     transport: str = typer.Option(
         "stdio", "--transport", "-t",
@@ -222,7 +244,7 @@ def serve(
 
 
 # --- search -------------------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def search(
     skills: str = typer.Option(None, "--skills", help="Comma-separated skills (ANY overlap), or 'auto'."),
     required_skills: str = typer.Option(None, "--required-skills", help="Comma-separated skills that must ALL be present (AND)."),
@@ -312,7 +334,7 @@ def _maybe_star_hint() -> None:
     client.mark_star_hint_shown()
 
 
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def star(
     no_open: bool = typer.Option(False, "--no-open", help="Print the URL only; don't open a browser."),
 ) -> None:
@@ -371,17 +393,22 @@ def _print_job(r: dict) -> None:
         f"  [accent]⬥[/] [text]{r['company']}[/] · {r['title']} "
         f"[out]({r.get('remote_policy')}{scope_str}{sal})[/]"
     )
+    # Say WHY this row matched. A reviewer searched `rust`, saw ten "Security Engineer"
+    # titles and filed a filter bug; the filter was correct and the titles just could not
+    # show it. `match=1.0` alone asks the reader to trust a number over their own eyes.
+    hit = r.get("matched_skills") or []
+    hit_str = f" · 命中 {', '.join(hit)}" if hit else ""
     c.print(
         f"     [muted]id={r['job_id']} · datePosted={r.get('datePosted')} · "
         f"days_open={r.get('days_open')} · ghost_score={r['ghost_score']} · "
-        f"match={r['match_quality']}[/]"
+        f"match={r['match_quality']}{hit_str}[/]"
     )
     c.print(f"     [out]▸ {r['apply_channel']}[/]")
     c.print(f"     [muted]# 投递：ohp apply {r['job_id']}[/]")
 
 
 # --- init (fingerprint) -------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def init(
     scan: str = typer.Option(None, "--scan", help="Local repo directory to derive skills from."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt."),
@@ -426,7 +453,7 @@ def init(
 
 
 # --- watch (register standing intent) ----------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def watch(
     skills: str = typer.Option("auto", "--skills", help="Comma-separated (ANY overlap), or 'auto' (fingerprint)."),
     required_skills: str = typer.Option(None, "--required-skills", help="Comma-separated skills that must ALL be present (AND)."),
@@ -500,7 +527,7 @@ def _watch_daemon(fp) -> None:
 
 
 # --- check (pull new hits) ----------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def check() -> None:
     """Pull new matches since your last check (client-pull; stdio has no server push)."""
     init_db()
@@ -530,7 +557,7 @@ def _print_check_results(res: dict) -> None:
 
 
 # --- apply --------------------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def apply(
     job_id: str = typer.Argument(..., help="Job id from search / check."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip the authorization prompt."),
@@ -639,7 +666,7 @@ def _jd_points(desc: str, n: int = 3, width: int = 100) -> list[str]:
 
 
 # --- status -------------------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def status() -> None:
     """Show your local identity — fingerprint, standing watches, application receipts."""
     init_db()
@@ -676,7 +703,7 @@ def status() -> None:
 
 
 # --- index-status -------------------------------------------------------------
-@app.command(name="index-status")
+@app.command(name="index-status", rich_help_panel=INDEX_PANEL)
 def index_status() -> None:
     """Show the local index — companies, live jobs, protocol-field coverage."""
     init_db()
@@ -727,7 +754,7 @@ def _cov(label: str, have: int, total: int) -> None:
 
 
 # --- fix-apply-channels -------------------------------------------------------
-@app.command(name="fix-apply-channels")
+@app.command(name="fix-apply-channels", rich_help_panel=INDEX_PANEL)
 def fix_apply_channels() -> None:
     """Regenerate every apply_channel so it deep-links to the specific job.
 
@@ -753,7 +780,7 @@ def fix_apply_channels() -> None:
 
 
 # --- extract-sample -----------------------------------------------------------
-@app.command(name="extract-sample")
+@app.command(name="extract-sample", rich_help_panel=LAB_PANEL)
 def extract_sample(
     n: int = typer.Option(100, "--n", help="How many jobs to sample."),
     workers: int = typer.Option(8, "--workers", help="Concurrent API calls."),
@@ -806,7 +833,7 @@ def extract_sample(
 
 
 # --- extract-compare ----------------------------------------------------------
-@app.command(name="extract-compare")
+@app.command(name="extract-compare", rich_help_panel=LAB_PANEL)
 def extract_compare(
     n: int = typer.Option(100, "--n", help="Jobs to sample (all backends see the same set)."),
     cn_min: int = typer.Option(30, "--cn-min", help="Minimum Chinese-language JDs in the sample."),
@@ -871,7 +898,7 @@ def _cfg_ceiling() -> float:
 
 
 # --- extract-rebuild ----------------------------------------------------------
-@app.command(name="extract-rebuild")
+@app.command(name="extract-rebuild", rich_help_panel=LAB_PANEL)
 def extract_rebuild(
     batch: int = typer.Option(50, "--batch", help="Jobs committed per batch (resumable)."),
     workers: int = typer.Option(8, "--workers", help="Concurrent API calls."),
@@ -915,7 +942,7 @@ def extract_rebuild(
 
 
 # --- extract-rollback ---------------------------------------------------------
-@app.command(name="extract-rollback")
+@app.command(name="extract-rollback", rich_help_panel=LAB_PANEL)
 def extract_rollback() -> None:
     """Restore heuristic extraction values from the fallback columns."""
     from .pipeline import rollback_extraction
@@ -936,7 +963,7 @@ def _sqlite_db_path() -> str | None:
     return url.split(":///", 1)[-1]
 
 
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def bootstrap(
     fresh: bool = typer.Option(False, "--fresh", help="Skip the snapshot; crawl the public ATS live (heuristic, free)."),
     deepseek: bool = typer.Option(False, "--deepseek", help="Use DeepSeek extraction (needs your own DEEPSEEK_API_KEY)."),
@@ -1037,7 +1064,7 @@ def bootstrap(
 
 
 # --- snapshot-build (maintainer) ----------------------------------------------
-@app.command(name="snapshot-build")
+@app.command(name="snapshot-build", rich_help_panel=INDEX_PANEL)
 def snapshot_build(
     out: str = typer.Option("dist/openhire-index.db.gz", "--out", help="Output .db.gz path."),
 ) -> None:
@@ -1066,7 +1093,7 @@ def snapshot_build(
 
 
 # --- extract-role-family ------------------------------------------------------
-@app.command(name="extract-role-family")
+@app.command(name="extract-role-family", rich_help_panel=LAB_PANEL)
 def extract_role_family(
     batch: int = typer.Option(100, "--batch", help="Jobs committed per batch (resumable)."),
     workers: int = typer.Option(12, "--workers", help="Concurrent API calls."),
@@ -1119,7 +1146,7 @@ def extract_role_family(
 
 
 # --- backfill-dates -----------------------------------------------------------
-@app.command(name="backfill-dates")
+@app.command(name="backfill-dates", rich_help_panel=INDEX_PANEL)
 def backfill_dates() -> None:
     """Re-fetch public ATS to fill real posting dates (datePosted) + recompute ghost_score.
 
@@ -1149,14 +1176,14 @@ def backfill_dates() -> None:
 
 
 # --- version ------------------------------------------------------------------
-@app.command()
+@app.command(rich_help_panel=FIND_PANEL)
 def version() -> None:
     """Print version."""
     c.print(f"openhire {__version__}")
 
 
 # --- refresh (one employer, throttled) ----------------------------------------
-@app.command()
+@app.command(rich_help_panel=INDEX_PANEL)
 def refresh(
     company: str = typer.Argument(..., help="One employer: id or any part of the name."),
     force: bool = typer.Option(False, "--force", help="Ignore the 6h throttle (you are the maintainer; the ATS is not yours)."),
@@ -1195,7 +1222,7 @@ def refresh(
 
 
 # --- claim (maintainer records a verified employer claim) ----------------------
-@app.command()
+@app.command(rich_help_panel=INDEX_PANEL)
 def claim(
     company: str = typer.Argument(..., help="Employer: id or any part of the name."),
     sla_days: int = typer.Option(None, "--sla-days", help="Reply window the employer commits to."),
@@ -1315,7 +1342,7 @@ def claim(
 
 
 # --- numbers (one source of truth for every public claim) ----------------------
-@app.command()
+@app.command(rich_help_panel=INDEX_PANEL)
 def numbers(
     out: str = typer.Option("docs/numbers.json", "--out", help="Where to write the file."),
 ) -> None:
