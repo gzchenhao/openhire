@@ -7,6 +7,9 @@ from openhire.db import init_db, session_scope, Job
 from openhire.db.models import Company
 
 CN_VENDORS = {"beisen", "moka"}
+# Share of a company's live rows that must report a last-touched time before we will
+# quote a percentage for it. Below this we say "we do not know" instead.
+MIN_TOUCH_COVERAGE = 0.20
 init_db()
 now = dt.datetime.now(dt.timezone.utc)
 
@@ -56,6 +59,13 @@ for cid, v in per.items():
     ds = sorted(x["d_open"] for x in v)
     known = [x for x in v if x["d_upd"] is not None]
     touched = sum(1 for x in known if x["d_upd"] <= 30)
+    # A percentage needs a denominator the reader can trust. UBTECH reports a last-touched
+    # time on 2 of 32 live rows and Dobot on 2 of 97: both would have printed "0%" beside
+    # a three-digit posting count, and "0% of 97" reads as "nobody touched any of them".
+    # That is the exact misreading this page exists to argue against, published by us.
+    # Below this coverage the honest answer is the same "—" we give a vendor that reports
+    # nothing at all, because a 2-row sample tells us nothing about the other 95.
+    coverage = len(known) / len(v) if v else 0.0
     # How much of this employer's "age" is one event. Unitree has 37 live roles and 20 of
     # them carry the same posting date: that is one publish, not 20 neglected reqs, and
     # the median reports it 20 times. Without this column the table says something about
@@ -67,8 +77,11 @@ for cid, v in per.items():
                     stale=round(100*sum(1 for d in ds if d > 180)/len(ds)),
                     batch_day=top_day, batch_n=top_n,
                     batch_share=round(100*top_n/len(v)) if v else 0,
-                    # None means this employer's ATS does not report it at all.
-                    touched=(round(100*touched/len(known)) if known else None)))
+                    # None means we cannot tell: either the ATS reports nothing, or it
+                    # reports on too few rows to say anything about the company.
+                    touched_known=len(known),
+                    touched=(round(100*touched/len(known))
+                             if known and coverage >= MIN_TOUCH_COVERAGE else None)))
 tbl.sort(key=lambda x: x["median"])
 
 hi = [r for r in live if r["ghost"] >= 0.99]
@@ -86,7 +99,7 @@ out = dict(
     ghost_hi_touched=round(100*hi_touched/max(1,len(hi_known))),
     freshest=tbl[:12], stalest=sorted(tbl, key=lambda x:-x["median"])[:12],
 )
-io.open(r"C:\openhire\report-draft\report-data.json","w",encoding="utf-8").write(json.dumps(out, ensure_ascii=False, indent=2))
+io.open(r"C:\openhire\docs\report-data.json","w",encoding="utf-8").write(json.dumps(out, ensure_ascii=False, indent=2))
 print(json.dumps({k:v for k,v in out.items() if k not in ("freshest","stalest")}, ensure_ascii=False, indent=1))
 print("\n最快摘牌 6 家:"); [print(f"  {t['name'][:22]:24} n={t['n']:4} 中位{t['median']:4}天 超半年{t['stale']:3}% 近30天被动过{('  —' if t['touched'] is None else str(t['touched'])+'%'):>4}") for t in tbl[:6]]
 print("\n最久未摘 6 家:"); [print(f"  {t['name'][:22]:24} n={t['n']:4} 中位{t['median']:4}天 超半年{t['stale']:3}% 近30天被动过{('  —' if t['touched'] is None else str(t['touched'])+'%'):>4}") for t in sorted(tbl,key=lambda x:-x['median'])[:6]]

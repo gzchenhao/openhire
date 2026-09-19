@@ -1411,6 +1411,29 @@ def numbers(
                 select(Job.posted_at).where(Job.delisted_at.is_(None), Job.posted_at.isnot(None))
             ).scalars()
         ]
+        # The most-quoted and most-fragile figure we publish: of the highest-scoring
+        # postings, how many did the employer actually touch recently. It has moved 36 →
+        # 67 → 75 → 67 in a week, and it was hardcoded in the README and the MCP docstring
+        # both times, so it shipped stale twice. A number that moves every refresh belongs
+        # here, where it is regenerated, and nowhere else.
+        #
+        # Denominator is ONLY the rows whose ATS reports a distinct last-touched time.
+        # Ashby and Lever never do and Beisen does on 3% of rows; counting their silence
+        # as "untouched" is what made the first version wrong by nearly 2x, in the
+        # direction that made employers look worse.
+        hi = list(s.execute(
+            select(Job.posted_at, Job.updated_at).where(
+                Job.delisted_at.is_(None), Job.ghost_score >= 0.99
+            )
+        ))
+        hi_known = [
+            (pa, up) for pa, up in hi
+            if up is not None and pa is not None and up != pa
+        ]
+        hi_touched = sum(
+            1 for _pa, up in hi_known
+            if (today - (up if up.tzinfo else up.replace(tzinfo=_dt.timezone.utc))).days <= 30
+        )
     posted.sort()
     n = len(posted) or 1
 
@@ -1427,6 +1450,11 @@ def numbers(
         "pct_open_over_90d": _pct(90),
         "pct_open_over_180d": _pct(180),
         "pct_open_over_365d": _pct(365),
+        "ghost_hi_postings": len(hi),
+        "ghost_hi_with_last_touched_reported": len(hi_known),
+        "pct_ghost_hi_touched_within_30d": (
+            round(100 * hi_touched / len(hi_known)) if hi_known else None
+        ),
     }
     path = _Path(out)
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,7 @@
 """Render the monthly open-duration report page from report-data.json."""
 import io, json, html
 
-d = json.load(io.open(r"C:\openhire\report-draft\report-data.json", encoding="utf-8"))
+d = json.load(io.open(r"C:\openhire\docs\report-data.json", encoding="utf-8"))
 
 # Moka reports a last-touched time on 96% of rows; Beisen on 3%, i.e. not at all.
 # So a Beisen company can never earn a number in the last column no matter how
@@ -21,6 +21,16 @@ def cn_tag(t, cn):
 # is mostly reporting one event. Half is deliberately conservative: at 54% (Unitree) and
 # 59% (Dobot) the batch dominates, while every other named employer here sits under 27%.
 BATCH_THRESHOLD = 50
+
+
+def unknown_note(t):
+    """Why this cell is a dash. There are two reasons and they are not the same."""
+    if t["touched"] is not None:
+        return ""
+    if not t.get("touched_known"):
+        return "该招聘系统不提供最后改动时间，所以我们无从判断"
+    return (f'该公司 {t["n"]} 个在架岗位里只有 {t["touched_known"]} 个带最后改动时间，'
+            f'样本太小，不足以代表这家公司')
 
 
 def rows(items, extra_class=""):
@@ -45,7 +55,7 @@ def rows(items, extra_class=""):
             # None means the ATS never reports a last-touched time. "—" says "we do not
             # know"; printing 0% would say "nobody has touched these", which is an
             # accusation we have no evidence for.
-            f'<td class=num title="{"该招聘系统不提供最后改动时间" if t["touched"] is None else ""}">'
+            f'<td class=num title="{unknown_note(t)}">'
             f'{"—" if t["touched"] is None else str(t["touched"]) + "%"}</td></tr>'
         )
     return "\n".join(out)
@@ -102,7 +112,7 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 <div class="note">
 <b>先说这份数据不能证明什么。</b><br>
 我们量得到「这个岗位挂了多久」，量不到「雇主还想不想招」。挂得久可能是没打算招，
-也可能是真的招不到人（技术岗尤其常见），还可能是常青岗——公司为高频岗位常年挂一个入口，随到随收。
+也可能是真的招不到人（技术岗尤其常见），还可能是常青岗，也就是公司为高频岗位常年挂一个入口，随到随收。
 这三种从在架天数上分不开。<b>所以下面的数字是「值得你去问」的依据，不是「这些是幽灵岗位」的结论。</b>
 </div>
 
@@ -113,8 +123,8 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 <tr><td>海外（Greenhouse / Lever / Ashby）</td><td class=num>{d['ov']['n']:,}</td><td class=num><b>{d['ov']['median']} 天</b></td><td class=num>{d['ov']['p180']}%</td></tr>
 </table></div>
 <p>差距是真实的，但别急着下价值判断：两边的招聘系统对「发布日」这个字段的语义并不统一，
-国内有少数公司记的可能是「需求创建日」而不是「上线日」，这会把它们的天数整体抬高。
-下面那张「挂得最久」的表里，排前两位的就属于这种情况，我们标出来了。</p>
+有些公司记的可能是「需求创建日」而不是「上线日」，这会把它们的天数整体抬高，国内外都有这种情况。
+下面那张「挂得最久」的表里标了<span class="tag warnflag">口径存疑</span>的，就属于这种情况。</p>
 
 <h2>摘牌最快的公司</h2>
 <p>这张表比「谁挂得久」有用得多。<b>岗位会被摘下来，说明这家公司在主动维护自己的岗位列表</b>
@@ -128,8 +138,10 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 <h2>在架时间最长的公司</h2>
 <p><b>这张表不是一份指控名单，请连着最后一列一起读。</b>在架时间长本身不说明任何意图，
 它只说明「值得在面试时问一句」。标了<span class="tag warnflag">口径存疑</span>的公司，
-中位数超过两年，这在真实招聘里几乎不可能——最合理的解释不是它们在挂鬼岗，
-而是<b>它们的招聘系统把「需求创建日」当成了发布日</b>，国内 ATS 对这个字段的语义本来就不统一。
+中位数超过两年，这在真实招聘里几乎不可能。最合理的解释不是它们在挂鬼岗，
+而是<b>它们的招聘系统把「需求创建日」当成了发布日</b>。
+这个字段的语义<b>国内外都不统一</b>，被标记的公司里既有用北森的国内公司，也有用 Ashby、Lever 的海外公司，
+所以这不是「国内 ATS 比较差」，是整个行业对这个字段就没有统一定义。
 我们把它们留在表里而不是删掉，是因为删掉等于替你做判断；标出来，你自己判断。</p>
 <div class="tblwrap"><table>
 <tr><th>公司</th><th class=num>在架岗位</th><th class=num>中位在架</th><th class=num>超半年占比</th><th class=num>近 30 天被雇主动过</th></tr>
@@ -146,7 +158,7 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 <p>全库里在架时长评分最高（<code>ghost_score ≥ 0.99</code>）的 {d['ghost_hi']:,} 个岗位中，
 有 {d['ghost_hi_known']:,} 个的招聘系统会告诉我们最后改动时间。在这些能看到的里面，
 <b>{d['ghost_hi_touched']}% 在最近 30 天被雇主动过</b>。
-也就是说，光看「挂得久」这一个指标，会把其中<b>三分之二</b>判错。</p>
+也就是说，光看「挂得久」这一个指标，会把其中 <b>{d['ghost_hi_touched']}%</b> 判错。</p>
 
 <div class="note">
 <b>标了「批量发布 N%」的公司，请这样读。</b><br>
@@ -167,6 +179,8 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 不是所有招聘系统都提供「最后改动时间」。Greenhouse 和 Moka 提供，
 <b>Ashby、Lever、北森不提供</b>，它们把发布日原样返回。
 对这些公司我们标「—」，意思是<b>不知道</b>，绝不是「没人管」。
+还有一种也标「—」：招聘系统只对极少数岗位报了这个时间（比如 97 个岗位里只有 2 个）。
+那 2 个算出来的百分比代表不了另外 95 个，<b>所以我们宁可说不知道，也不印一个会被误读成 0 的数</b>。
 把「系统不告诉我们」当成「雇主不管了」，那是在用别人家 API 的缺陷去指控一家公司。<br><br>这一点对国内公司特别不公平：<b>本列是全表唯一能显示「这家在维护」的一列</b>，而用北森的公司无论维护得多勤，都只能拿到「—」。表里标<b>「国内*」</b>的就是这种情况，请不要拿它们的「—」和海外公司的百分比作比较。
 </div>
 
@@ -189,10 +203,14 @@ footer{{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:
 索引每周自动刷新，本页每月重算，数字会有小幅变动。</p>
 <p><b>口径</b>：百分比四舍五入到整数，「0%」表示不足 0.5%。公司表只列在架岗位 ≥10 个的公司。</p>
 <p>数据与代码：<a href="https://github.com/gzchenhao/openhire">github.com/gzchenhao/openhire</a> ·
-是雇主本人且想更正自己的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">免费认领</a>，按企业身份验证，不收费，也不影响排序。</p>
+<b>本页点了公司的名字，所以被点到的人必须有地方说话。</b><br>
+是雇主本人、想更正贵司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml">免费认领（中文表单）</a>，
+或者直接发邮件到 <a href="mailto:gdchenhao@qq.com">gdchenhao@qq.com</a>，用贵司企业域名邮箱发出来即完成身份核验，不需要任何账号。
+<b>3 个工作日内答复，认领不带来任何付费后续，也不影响排序</b>（排序是 f(匹配度, 新鲜度) 的纯函数，被测试锁死，谁也买不到）。
+贵司也可以直接要求我们把贵司从索引里移除，我们会照做，不争辩。</p>
 </footer>
 
 </div></body></html>
 """
-io.open(r"C:\openhire\report-draft\index.html", "w", encoding="utf-8").write(HTML)
+io.open(r"C:\openhire\docs\report\index.html", "w", encoding="utf-8").write(HTML)
 print("wrote docs/report/index.html", len(HTML), "bytes")
