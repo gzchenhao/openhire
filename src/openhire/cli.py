@@ -702,6 +702,36 @@ def status() -> None:
     console.note(f"索引：{n_companies} 家公司 · {n_live} 条在架（ohp index-status 看协议字段覆盖）")
 
 
+# --- doctor -------------------------------------------------------------------
+@app.command(rich_help_panel=FIND_PANEL)
+def doctor() -> None:
+    """Why is nothing happening? Check uv, the index, and every client config we can read."""
+    from .doctor import run_checks
+
+    _banner()
+    console.cmd("ohp doctor")
+    findings = run_checks()
+    for f in findings:
+        if f.level == "fail":
+            console.error("ERR_SETUP", f.text)
+        elif f.level == "warn":
+            console.note(f.text)
+        else:
+            console.ok(f.text)
+        if f.action:
+            c.print(f"     [out]→ {f.action}[/]")
+    c.print()
+    bad = sum(1 for f in findings if f.level == "fail")
+    if bad:
+        console.note(f"{bad} 项需要处理。修好之后再跑一次 `ohp doctor`。")
+        raise typer.Exit(code=1)
+    # The switch we cannot see is the one that bites, so end on a test the user can run
+    # in the client itself rather than on a green tick from us.
+    console.ok("本机这边没问题了。")
+    console.note("最后一步在客户端里验：对你的助手说「用 openhire 查一下 Anthropic 在招哪些岗位」。"
+                 "它说不知道这个工具 = 没启用，不是没数据。")
+
+
 # --- index-status -------------------------------------------------------------
 @app.command(name="index-status", rich_help_panel=INDEX_PANEL)
 def index_status() -> None:

@@ -145,6 +145,11 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 
 First start downloads a ~25 MB index in the background; searches fill in within a few minutes.
 
+> **Stuck? Run `ohp doctor`.** It checks the three things that all look identical from the
+> chat window — `uv` missing, no index yet, server configured but not enabled — and reads
+> every client config it can find. It runs in your terminal, which matters: if the client
+> never started our server, nothing we wrote inside it can reach you.
+>
 > **Editing the config may not be the last step.** Several clients require you to enable or
 > trust a newly added server before its tools load — the config is saved, the server never
 > starts, and the only symptom is that your assistant does not seem to know about the tools.
