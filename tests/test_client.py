@@ -76,3 +76,4 @@ def test_scan_skips_vendor_dirs(tmp_path):
     # node_modules content must be ignored → no python from the junk file.
     assert "python" not in lang_pct
     assert "rust" in skills
+

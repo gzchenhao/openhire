@@ -258,6 +258,11 @@ def check_watches(fingerprint: str) -> dict:
 
     stdio has no server push, so clients pull: call this at the start of a session.
     Returns the new matches per watch and advances each watch's last-notified marker.
+
+    The FIRST pull on a watch returns everything matching it, not an increment: nothing
+    has been reported for that watch before, so the whole standing set is new to the user.
+    Each result says which it is via `is_first_pull`; do not present a first pull to the
+    user as "postings that appeared since last time".
     """
     _await_index()
     with session_scope() as s:

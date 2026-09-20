@@ -107,6 +107,58 @@ def annualise(value: int | None, period: str | None) -> int | None:
     return value * MONTHS_PER_YEAR if period == "monthly" else value
 
 
+
+# --- salary plausibility ------------------------------------------------------
+# What the employer published is what we show, EXCEPT where the ATS published a number
+# that cannot mean what its own period field says it means. Three shapes, all measured in
+# the live index on 2026-09-20:
+#
+#   * `salary_min = 0` (90 live rows, e.g. Cloudflare 0–292,000 USD "annual"). Zero is the
+#     ATS spelling of "not specified", and publishing it as a floor says the job pays from
+#     nothing.
+#   * An "annual" range that is plainly an hourly rate (Dexterity Materials Handler
+#     22–27 USD "annual"). We were telling an agent the job pays $27 a year.
+#   * A pair whose two halves are in different units (Fivetran BDR 15–103,259).
+#
+# In every case the honest output is the one we already use for `updated_at`: say we do not
+# know, rather than publish a number we cannot stand behind. Storage is untouched; this is
+# a read-time judgement, so a re-crawl or a better parser can change it without a migration.
+ANNUAL_FLOOR = 5000     # below this an "annual" figure is an hourly/daily rate
+MONTHLY_FLOOR = 500     # same idea for monthly-quoted pay (Chinese portals)
+MAX_RANGE_RATIO = 200   # min and max this far apart are not the same unit
+
+
+def usable_salary(
+    lo: int | None, hi: int | None, period: str | None
+) -> tuple[int | None, int | None, str | None]:
+    """Return (min, max, note) with anything we cannot stand behind removed."""
+    floor = MONTHLY_FLOOR if period == "monthly" else ANNUAL_FLOOR
+    top = hi if hi is not None else lo
+    if top is not None and top < floor:
+        # The whole pair is in the wrong unit; neither number means what it claims.
+        return None, None, "ats_range_below_plausible_floor"
+    note = None
+    if lo == 0:
+        lo, note = None, "ats_reported_zero_minimum"
+    elif lo and hi and hi / lo > MAX_RANGE_RATIO:
+        lo, note = None, "ats_min_and_max_in_different_units"
+    return lo, hi, note
+
+
+
+def _salary_is_usable():
+    """SQL twin of `usable_salary`'s floor test, so a filter and the payload agree.
+
+    Without this, `require_stated_salary` returns rows whose published salary we then blank
+    out, which is the worst of both: the caller asked to see only stated pay and got a row
+    with none.
+    """
+    top = func.coalesce(Job.salary_max, Job.salary_min)
+    return case(
+        (Job.salary_period == "monthly", top >= MONTHLY_FLOOR),
+        else_=top >= ANNUAL_FLOOR,
+    )
+
 # --- serialization ------------------------------------------------------------
 def role_group(company_id: str, title: str) -> str:
     """Stable id shared by the same role posted in several cities.
@@ -139,6 +191,9 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
     # to first_seen_at only when the ATS exposed no date. days_open = age of the posting.
     posted = _aware(job.posted_at) or _aware(job.first_seen_at)
     _rs, _regions = classify_remote(job.remote_policy, job.location)
+    _sal_lo, _sal_hi, _sal_note = usable_salary(
+        job.salary_min, job.salary_max, getattr(job, "salary_period", None)
+    )
     return {
         "@type": "JobPosting",
         "job_id": job.id,
@@ -155,9 +210,13 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "eligible_regions": _regions,  # matched regions/countries ([] = worldwide/unknown)
         "role_family": getattr(job, "role_family", None),  # populated for ~99% of live rows
         "skills": list(job.skills or []),
-        "salary_min": job.salary_min,
-        "salary_max": job.salary_max,
-        "salary_currency": job.salary_currency,
+        "salary_min": _sal_lo,
+        "salary_max": _sal_hi,
+        "salary_currency": job.salary_currency if (_sal_lo or _sal_hi) else None,
+        # Present only when we dropped something, and it names WHICH shape we hit, so a
+        # caller can tell "the employer did not say" from "their ATS said something
+        # impossible".
+        **({"salary_note": _sal_note} if _sal_note else {}),
         # The period the employer published the figure in — without it a monthly CNY
         # number is indistinguishable from an annual one.
         "salary_period": getattr(job, "salary_period", None) or "annual",
@@ -294,10 +353,14 @@ def _filter_and_rank(
             | (Job.salary_min.is_(None) & Job.salary_max.is_(None))
         )
     if require_stated_salary:
-        stmt = stmt.where(Job.salary_min.isnot(None) | Job.salary_max.isnot(None))
+        # "Stated" has to mean stated in a figure we will actually publish. A row we blank
+        # out at read time is not stated pay, however many numbers its ATS returned.
+        stmt = stmt.where(
+            (Job.salary_min.isnot(None) | Job.salary_max.isnot(None)) & _salary_is_usable()
+        )
     if currency:
         # A currency filter is meaningful only for stated pay → excludes unstated.
-        stmt = stmt.where(Job.salary_currency == currency.upper())
+        stmt = stmt.where(Job.salary_currency == currency.upper(), _salary_is_usable())
     if since is not None:
         stmt = stmt.where(Job.first_seen_at > since)
 
@@ -692,8 +755,11 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
                 select(Company).where(Company.id.in_(company_ids))
             ).scalars()
         } if company_ids else {}
+        # Same list the ranker scored with (see search_jobs): a watch registered with only
+        # required_skills would otherwise report match_quality 1.0 and no matched_skills.
+        scored_against = list(f.get("skills") or []) or list(f.get("required_skills") or [])
         matches = [
-            job_posting(j, companies.get(j.company_id), f.get("skills") or [], now)
+            job_posting(j, companies.get(j.company_id), scored_against, now)
             for j, _ in ranked
         ]
         total_new += len(matches)
@@ -701,6 +767,16 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             {
                 "watch_id": w.watch_id,
                 "since": since.isoformat() if since else None,
+                # The first pull has no "since", so it returns the standing backlog rather
+                # than an increment. That is intended (nobody has seen any of it yet), but
+                # the field is called new_matches, and a caller should not have to infer
+                # which of the two it is holding from `since` being null.
+                "is_first_pull": since is None,
+                "baseline": (
+                    "Everything matching this watch right now; nothing has been reported "
+                    "for it before. Later pulls return only postings first seen after this "
+                    "moment."
+                ) if since is None else None,
                 "new_matches": matches,
             }
         )

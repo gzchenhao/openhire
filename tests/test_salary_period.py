@@ -148,3 +148,36 @@ def test_beisen_records_are_monthly():
 def test_western_records_default_to_annual():
     assert JobRecord(ats_job_id="1", title="t", description_raw="d",
                      apply_channel="https://x").salary_period == "annual"
+
+
+# --- salary plausibility (Round 6: the ATS said $27 a year) -------------------
+@pytest.mark.parametrize(
+    "lo,hi,period,expect",
+    [
+        # Cloudflare: 0 is the ATS spelling of "not specified", not a floor of nothing.
+        (0, 292000, "annual", (None, 292000, "ats_reported_zero_minimum")),
+        # Dexterity Materials Handler: an hourly rate wearing an "annual" label. We were
+        # publishing "this job pays 22 to 27 dollars a year".
+        (22, 27, "annual", (None, None, "ats_range_below_plausible_floor")),
+        # Fivetran BDR: the two halves are not in the same unit.
+        (15, 103259, "annual", (None, 103259, "ats_min_and_max_in_different_units")),
+        # Mech-Mind: 5 to 7 yuan a month.
+        (5, 7, "monthly", (None, None, "ats_range_below_plausible_floor")),
+        # Ordinary pay is untouched, in both periods.
+        (180000, 240000, "annual", (180000, 240000, None)),
+        (25000, 50000, "monthly", (25000, 50000, None)),
+        # Unstated stays unstated without inventing a note.
+        (None, None, "annual", (None, None, None)),
+    ],
+)
+def test_a_salary_we_cannot_stand_behind_is_not_published(lo, hi, period, expect):
+    assert service.usable_salary(lo, hi, period) == expect
+
+
+def test_require_stated_salary_never_returns_a_row_whose_pay_we_blank_out(session):
+    """The filter and the payload have to agree. Returning a row for "only stated pay" and
+    then publishing no pay on it is worse than either behaviour alone."""
+    rows = service.search_jobs(session, None, None, None, 50,
+                               require_stated_salary=True, now=NOW)
+    for r in rows:
+        assert r["salary_min"] is not None or r["salary_max"] is not None

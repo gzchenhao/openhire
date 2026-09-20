@@ -284,3 +284,23 @@ def test_match_quality_is_scored_against_what_the_ranker_used(session):
     for r in partial:
         assert r["match_quality"] < 1.0
         assert r["matched_skills"] == ["rust"]
+
+
+def test_the_first_watch_pull_says_it_is_a_baseline_not_an_increment(session):
+    """Round 6: a reviewer noticed the first check_watches returns the whole standing
+    backlog under a field called `new_matches`, with nothing but `since: null` to say so.
+    The behaviour is right (nobody has seen any of it yet); the labelling was not."""
+    w = service.watch_intent(session, "#a3f9", {"skills": ["rust"]}, now=NOW)
+
+    first = service.check_watches(session, "#a3f9", now=NOW)
+    r = first["results"][0]
+    assert r["watch_id"] == w["watch_id"]
+    assert r["since"] is None
+    assert r["is_first_pull"] is True
+    assert r["baseline"], "a first pull must explain that it is a backlog"
+
+    later = service.check_watches(session, "#a3f9", now=NOW + dt.timedelta(days=1))
+    r2 = later["results"][0]
+    assert r2["is_first_pull"] is False
+    assert r2["baseline"] is None
+    assert r2["since"] is not None
