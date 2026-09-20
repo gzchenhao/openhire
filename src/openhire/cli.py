@@ -616,10 +616,17 @@ def apply(
         "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
     })
 
+    # This is the only place where a string from a third party's API becomes an action on
+    # the user's machine. The URL came out of an employer's ATS response; if it is not on
+    # a host we recognise, print it and let the user decide rather than launching it.
+    from .ats import apply_url_is_trusted
+
+    url = res["apply_channel"]
+    trusted = apply_url_is_trusted(url)
     opened = False
-    if not no_open:
+    if not no_open and trusted:
         try:
-            opened = bool(webbrowser.open(res["apply_channel"]))
+            opened = bool(webbrowser.open(url))
         except Exception:
             opened = False
 
@@ -627,9 +634,16 @@ def apply(
     console.ok("已直达雇主 ATS · 来源 = 你自己")
     console.out(f"receipt {res['receipt_id']} · 简历未经服务器（resume_transmitted=false）")
     if opened:
-        console.out(f"申请页（已在浏览器打开）：{res['apply_channel']}")
+        console.out(f"申请页（已在浏览器打开）：{url}")
+    elif not trusted:
+        console.error(
+            "ERR_UNTRUSTED_APPLY_URL",
+            "这个岗位的申请链接不在我们认识的招聘系统域名里，所以没有自动打开。",
+        )
+        console.out(f"链接原文（请自己核对后再打开）：{url}")
+        console.note("更稳妥的做法：直接去这家公司官网的招聘页找同一个岗位。")
     else:
-        console.out(f"申请页（请手动打开）：{res['apply_channel']}")
+        console.out(f"申请页（请手动打开）：{url}")
 
 
 def _print_apply_summary(s: dict) -> None:

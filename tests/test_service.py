@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from openhire import service
-from openhire.db import Application, Watch
+from openhire.db import Application, Job, Watch
 from openhire.db.models import Base, Company, Job
 from openhire.errors import OpenHireError
 
@@ -304,3 +304,29 @@ def test_the_first_watch_pull_says_it_is_a_baseline_not_an_increment(session):
     assert r2["is_first_pull"] is False
     assert r2["baseline"] is None
     assert r2["since"] is not None
+
+
+def test_an_apply_url_on_an_unknown_host_is_reported_not_offered(session):
+    """apply_channel is the one field that becomes an ACTION: `ohp apply` opens it in the
+    user's browser, and the string arrived in an employer's ATS response. A host we do not
+    recognise is surfaced, labelled, rather than handed over. It is not hidden either:
+    dropping it silently would leave a caller unable to apply with no idea why."""
+    job = session.execute(select(Job)).scalars().first()
+    job.apply_channel = "https://totally-not-an-ats.example/apply"
+    session.flush()
+
+    rows = service.search_jobs(session, None, None, None, 50, now=NOW)
+    hit = [r for r in rows if r["job_id"] == job.id]
+    assert hit, "the row itself must still be returned"
+    r = hit[0]
+    assert r["apply_channel"] is None
+    assert r["apply_channel_blocked"] == "https://totally-not-an-ats.example/apply"
+    assert r["apply_channel_note"]
+
+
+def test_a_normal_ats_url_is_untouched(session):
+    rows = service.search_jobs(session, None, None, None, 50, now=NOW)
+    assert rows
+    for r in rows:
+        assert r["apply_channel"], "fixture URLs are canonical ATS hosts"
+        assert "apply_channel_blocked" not in r

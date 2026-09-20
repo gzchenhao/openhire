@@ -55,6 +55,42 @@ def _apply_hosts(vendor: str, tenant: str) -> set[str]:
     return hosts
 
 
+def apply_url_is_trusted(url: str | None, vendor: str | None = None) -> bool:
+    """Is this URL one we will hand to an agent, or open in the user's browser?
+
+    `resolve_apply_channel` already only BUILDS canonical URLs, but nothing re-checked a
+    URL that was already stored, and `ohp apply` calls webbrowser.open on it. That is the
+    one place where third-party text becomes an action on the user's machine: the string
+    comes from an employer's ATS response, and we were opening it unexamined.
+
+    Nothing has ever failed this check (18 distinct hosts across 16,261 live rows on
+    2026-09-20, all of them ATS vendors). It exists so that the day one does, it fails
+    closed instead of silently launching a browser.
+
+    Matching is deliberately strict: scheme must be https, and the host must equal a
+    known host or be a subdomain of a per-tenant domain. A suffix test alone would accept
+    `evil-zhiye.com`, and a substring test would accept `zhiye.com.attacker.net`.
+    """
+    if not url:
+        return False
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        return False
+    host = (parsed.hostname or "").lower()
+    if not host:
+        return False
+    known = {h for hosts in ATS_APPLY_HOSTS.values() for h in hosts}
+    if vendor:
+        known = set(ATS_APPLY_HOSTS.get(vendor, set()))
+    if host in known:
+        return True
+    for pattern in _PER_TENANT_HOST.values():
+        domain = pattern.split(".", 1)[1].lower()  # "{tenant}.zhiye.com" -> "zhiye.com"
+        if host == domain or host.endswith("." + domain):
+            return True
+    return False
+
+
 @dataclass
 class ApplyResolution:
     url: str

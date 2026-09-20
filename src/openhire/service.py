@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 
 from .db import Application, Company, Job, Watch
 from .errors import OpenHireError
+from .ats import apply_url_is_trusted
 from .pipeline.ghost_score import ghost_reason
 from .seed.claims import employer_correction
 from .pipeline.ranking import freshness, match_quality, rank_score
@@ -194,6 +195,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
     _sal_lo, _sal_hi, _sal_note = usable_salary(
         job.salary_min, job.salary_max, getattr(job, "salary_period", None)
     )
+    _apply_ok = apply_url_is_trusted(job.apply_channel)
     return {
         "@type": "JobPosting",
         "job_id": job.id,
@@ -277,7 +279,18 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             if job.response_sla_days is not None
             else (company.response_sla_days if company is not None else None)
         ),
-        "apply_channel": job.apply_channel,                                               # ⑤
+        # ⑤ — but only if it still points at an ATS host we recognise. This string came
+        # from a third party's API and an agent may open it, so an unrecognised host is
+        # reported rather than handed over. See ats.base.apply_url_is_trusted.
+        "apply_channel": job.apply_channel if _apply_ok else None,
+        **({} if _apply_ok else {
+            "apply_channel_blocked": job.apply_channel,
+            "apply_channel_note": (
+                "This employer's ATS returned an apply URL on a host we do not recognise, "
+                "so it is reported instead of offered. Open it only after checking it "
+                "yourself, and prefer the company's own careers page."
+            ),
+        }),
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
         # WHICH requested skills this row actually carries. A reviewer searched `rust`,
         # got ten rows all titled "Security Engineer", and filed a filter bug; the filter

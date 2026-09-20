@@ -11,6 +11,7 @@ from .base import (
     JobRecord,
     canonical_apply_url,
     html_to_text,
+    apply_url_is_trusted,
     resolve_apply_channel,
 )
 from .greenhouse import GreenhouseClient
@@ -51,5 +52,6 @@ __all__ = [
     "get_client",
     "all_vendors",
     "html_to_text",
+    "apply_url_is_trusted",
     "resolve_apply_channel",
 ]
