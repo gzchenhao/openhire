@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-09-19T06:09:37.123160+00:00",
+  "generated_at": "2026-09-20T12:21:23.514865+00:00",
   "companies_in_index": 140,
   "employers_with_live_postings": 139,
   "live_postings": 16261,
   "postings_with_employer_posting_date": 16261,
-  "median_days_open": 60,
+  "median_days_open": 62,
   "pct_open_over_90d": 39.4,
   "pct_open_over_180d": 20.7,
   "pct_open_over_365d": 8.3,
   "ghost_hi_postings": 2644,
   "ghost_hi_with_last_touched_reported": 1459,
-  "pct_ghost_hi_touched_within_30d": 67
+  "pct_ghost_hi_touched_within_30d": 66
 }
