@@ -29,6 +29,18 @@ def rank_score(match_quality: float, freshness: float) -> float:
     return MATCH_WEIGHT * m + FRESHNESS_WEIGHT * f
 
 
+import re
+
+# Same fold the service filter uses: the extractor emits "computer vision" and
+# "computer-vision" for one skill, so a score computed on raw strings disagrees with the
+# filter that selected the row. Both sides must use this.
+_SKILL_SEP_RE = re.compile(r"[-_\s]+")
+
+
+def normalize_skill(tag: str) -> str:
+    return _SKILL_SEP_RE.sub(" ", (tag or "").strip().lower())
+
+
 def match_quality(requested_skills: list[str], job_skills: list[str]) -> float:
     """Fraction of requested skills the job matches (intersection / requested).
 
@@ -36,8 +48,8 @@ def match_quality(requested_skills: list[str], job_skills: list[str]) -> float:
     """
     if not requested_skills:
         return 1.0
-    req = {s.lower() for s in requested_skills}
-    have = {s.lower() for s in job_skills}
+    req = {normalize_skill(s) for s in requested_skills}
+    have = {normalize_skill(s) for s in job_skills}
     return len(req & have) / len(req)
 
 

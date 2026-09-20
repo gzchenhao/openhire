@@ -306,6 +306,13 @@ def search(
                 console.note(f"{tag} → 是不是想找：{', '.join(close)}")
         raise typer.Exit(code=0 if not why.get("index_empty") else 1)
     console.ok(f"{len(results)} 条结果 · 服务端只做硬过滤 + 固定排序，精排交给客户端 Agent")
+    if limit > service.MAX_PAGE_SIZE:
+        # Silently handing back one page when 200 were asked for is how a reviewer
+        # concluded the index only held 100 XPeng jobs.
+        console.note(
+            f"你要了 {limit} 条，但一次最多返回 {service.MAX_PAGE_SIZE} 条。这是第 1 页，"
+            f"继续翻：ohp search ... --offset {offset + service.MAX_PAGE_SIZE}"
+        )
     for r in results:
         _print_job(r)
     _maybe_star_hint()

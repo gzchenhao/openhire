@@ -33,6 +33,14 @@ from .pipeline.ranking import freshness, match_quality, rank_score
 
 DELIVERED_VIA = "employer_site"  # v0.1 always the employer's own channel
 
+# Most rows one call will return. Asking for more has always returned this many and said
+# nothing about it, so a reviewer pulled `company=XPeng limit=200`, got 100 of 198, and
+# concluded the index held 100 XPeng jobs. A later skill search then surfaced two XPeng
+# roles that were "not in the full list" — which reads as a consistency bug and is really
+# the same silent cut. `offset` reaches the rest; nothing told them to page. Public so the
+# CLI and the MCP boundary can say when it bit, without changing search_jobs' return type.
+MAX_PAGE_SIZE = 100
+
 # --- remote scope classification (protocol truthfulness) ----------------------
 # "remote" alone hides whether a role is open worldwide or geo-fenced. We classify the
 # ATS location text into a coarse, honest bucket + surface the matched regions. Heuristic
@@ -107,6 +115,25 @@ def annualise(value: int | None, period: str | None) -> int | None:
         return None
     return value * MONTHS_PER_YEAR if period == "monthly" else value
 
+
+
+
+# --- skill vocabulary ---------------------------------------------------------
+# The LLM extractor emits free-form tags and nothing ever normalised them, so the same
+# skill lives under several spellings: "autonomous driving" (54 rows) alongside
+# "autonomous-driving" (81) and "autonomous_driving" (1). Measured 2026-09-20 over the
+# live index: 1,263 groups differ ONLY by hyphen / space / underscore, covering 2,805
+# distinct tags and 13,116 row-occurrences. Searching the commonest spelling of
+# "autonomous driving" missed 40% of the rows that have it; "data analysis" missed 58%.
+#
+# A reviewer read that as "OpenHire has no autonomous-driving coverage at XPeng". The
+# coverage was there; the query could not reach it.
+#
+# Matching therefore compares separator-insensitively. Storage keeps the employer's and
+# the extractor's own spelling: this is a read-time equivalence, not a rewrite, so a real
+# vocabulary pass later (report 028) can change the canonical form without a migration.
+# Defined next to match_quality so the filter and the score can never drift apart.
+from .pipeline.ranking import normalize_skill  # noqa: E402  (placed with its explanation)
 
 
 # --- salary plausibility ------------------------------------------------------
@@ -297,8 +324,12 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # was right and the titles simply did not show the reason. A match_quality of 1.0
         # with no way to see what matched asks the reader to trust a number over their own
         # eyes, and when the two disagree they are right to trust their eyes.
+        # Folded on both sides, then reported in the ROW's own spelling: the caller asked
+        # for "computer vision", the posting says "computer-vision", and the useful answer
+        # is the tag the posting actually carries.
         "matched_skills": sorted(
-            {s.lower() for s in (requested_skills or [])} & {s.lower() for s in (job.skills or [])}
+            tag for tag in (job.skills or [])
+            if normalize_skill(tag) in {normalize_skill(x) for x in (requested_skills or [])}
         ),
         "match_quality": round(mq, 4),
         "freshness": round(fr, 4),
@@ -377,14 +408,15 @@ def _filter_and_rank(
     if since is not None:
         stmt = stmt.where(Job.first_seen_at > since)
 
-    requested = [s.lower() for s in (skills or [])]
+    # Separator-insensitive on BOTH sides — see normalize_skill.
+    requested = [normalize_skill(x) for x in (skills or [])]
     req_set = set(requested)
-    all_required = {s.lower() for s in (required_skills or [])}
+    all_required = {normalize_skill(x) for x in (required_skills or [])}
     rf = (role_family or "").lower() or None
 
     scored: list[tuple[Job, float]] = []
     for job in session.execute(stmt).scalars():
-        job_skills = {s.lower() for s in (job.skills or [])}
+        job_skills = {normalize_skill(x) for x in (job.skills or [])}
         if req_set and not (req_set & job_skills):
             continue  # ANY-overlap (skills 交集)
         if all_required and not all_required.issubset(job_skills):
@@ -420,7 +452,12 @@ def search_jobs(
     collapse_role_group: bool = False,
 ) -> list[dict]:
     now = _now(now)
-    limit = max(1, min(int(limit), 100))
+    # The page cap. Asking for 200 has always returned 100, and said nothing about it:
+    # a reviewer pulled `company=XPeng limit=200`, got 100 of 198, and concluded the index
+    # only held 100 XPeng jobs. Then a skill search surfaced two XPeng roles that were not
+    # in "the full list", which reads as a consistency bug and is really the same silent
+    # cut. `offset` reaches the rest, but nothing told them to page.
+    limit = max(1, min(int(limit), MAX_PAGE_SIZE))
     offset = max(0, int(offset))
     company_ids = None
     if company:
@@ -547,12 +584,14 @@ def diagnose_empty_search(
         for sk in (row or []):
             if sk:
                 vocab.add(sk)
-    lowered = {v.lower(): v for v in vocab}
+    # Folded, or we would tell someone their tag "exists nowhere in the index" when the
+    # index simply spells it with the other separator.
+    lowered = {normalize_skill(v): v for v in vocab}
 
     wanted = [t for t in {*(skills or []), *(required_skills or [])} if t]
     unknown, suggestions = [], {}
     for tag in wanted:
-        low = tag.lower()
+        low = normalize_skill(tag)
         if low in lowered:
             continue
         unknown.append(tag)

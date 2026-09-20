@@ -121,3 +121,25 @@ def test_collapsed_row_still_carries_its_group_key(seeded):
     with session_scope() as s:
         folded = service.search_jobs(s, skills=["k8s"], limit=50, collapse_role_group=True)
         assert all(r.get("role_group") for r in folded)
+
+
+def test_asking_for_more_than_a_page_says_so_instead_of_looking_complete(seeded):
+    """Round 7: a reviewer ran `company=XPeng limit=200`, got 100 of 198 with no notice,
+    and concluded the index held 100 XPeng jobs. A skill search then surfaced two XPeng
+    roles that were "not in the full list" — the same silent cut, read as a consistency
+    bug. `offset` reached the rest; nothing said to page."""
+    from openhire import mcp_server, service
+
+    assert service.MAX_PAGE_SIZE == 100
+
+    out = mcp_server.search_jobs(limit=200)
+    assert isinstance(out, dict), "an over-cap request must not look like a complete list"
+    assert out["truncated"] is True
+    assert out["page_size"] == service.MAX_PAGE_SIZE
+    assert out["requested_limit"] == 200
+    assert "offset=100" in out["hint"]
+    assert len(out["results"]) <= service.MAX_PAGE_SIZE
+
+    # A request inside the cap keeps the plain list shape every client already expects.
+    inside = mcp_server.search_jobs(limit=5)
+    assert isinstance(inside, list)

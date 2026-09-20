@@ -114,6 +114,13 @@ def search_jobs(
     * `offset` pages through the ranked list. After collapsing by role_group, call again
       with offset += limit to get more distinct roles. Fewer rows than `limit` means you
       reached the end. There is no server-side cursor to keep alive.
+    * One call returns at most 100 rows. Ask for more and you get an object with
+      `results`, `truncated: true` and the offset to call next, not a silent first page:
+      100 of 198 looked exactly like "this employer has 100 jobs". For one employer,
+      get_company_info's `active_jobs` is the true total.
+    * Skill tags match separator-insensitively: "computer vision", "computer-vision" and
+      "computer_vision" are one skill. The extractor emits all three spellings, so an
+      exact-string search reached as little as 42% of the rows that had the skill.
     * An empty search does NOT return a bare list. It returns an object with `results: []`
       plus `hint`, `unknown_skills` and `suggestions`, because `[]` alone cannot tell you
       whether you mistyped a tag or the market is genuinely dry. Read `unknown_skills`: if
@@ -160,6 +167,22 @@ def search_jobs(
                     s, skills=skills, required_skills=required_skills,
                     role_family=role_family, currency=currency, company=company,
                 )
+            if limit > service.MAX_PAGE_SIZE:
+                # You asked for more than one page holds. Returning the first page and
+                # nothing else looked like the whole answer, so say it was not.
+                return {
+                    "results": rows,
+                    "truncated": True,
+                    "page_size": service.MAX_PAGE_SIZE,
+                    "requested_limit": limit,
+                    "hint": (
+                        f"You asked for {limit} but one call returns at most "
+                        f"{service.MAX_PAGE_SIZE}. This is page 1. Call again with "
+                        f"offset={offset + service.MAX_PAGE_SIZE} for the next page, and "
+                        "keep going until a call returns fewer rows than the page size. "
+                        "get_company_info's active_jobs is the true total for one employer."
+                    ),
+                }
             return rows
         except OpenHireError as e:
             return e.as_dict()
