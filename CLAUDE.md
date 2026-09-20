@@ -75,10 +75,14 @@
 |---|---|---|---|
 | **月报页点名后的雇主反应** | 2026-09-19 | **2026-10-03** | 领导定的 14 天观察期。期间**不做任何对外推广**，只看有没有雇主投诉、认领或要求移除。到期向领导汇报：收到几条、分别是什么性质、要不要继续点名。 |
 
-**每次开工要主动查的三个入口**（有动静立刻处理，不等到期）：
+**每次开工要主动查的四个入口**（有动静立刻处理，不等到期）：
 1. GitHub issues（`gh issue list --repo gzchenhao/openhire`）—— 雇主认领模板会落在这里
 2. 邮箱 `gdchenhao@qq.com`（认领的非 GitHub 通道，我读不到，**需要提醒领导自己看**）
-3. 知乎/X 的评论与私信（见 [[social-engagement-duty]]）
+3. 知乎通知与评论（https://www.zhihu.com/notifications）
+4. **X 每日一轮**（领导 2026-09-20 授权，不请示）：先看 Mentions，再去搜当天的 MCP 讨论
+   （`MCP server` / `modelcontextprotocol` / `uvx` / `ghost jobs`，用 `f=live` 看最新），
+   **只在真有事实可加的贴下回复，第一条回复不放链接**。记账在 `drafts/x-engagement-log.md`。
+   详见记忆 `social-engagement-duty`。
 
 观察期结束后删掉这一行，换成下一个观察项；没有观察项时保留表头写「无」。
 
