@@ -15,7 +15,12 @@ from __future__ import annotations
 import pytest
 
 from openhire import config
-from openhire.pipeline.extract import GLMExtractor, RateLimited, make_glm_extractor
+from openhire.pipeline.extract import (
+    GLMExtractor,
+    KeysExhausted,
+    RateLimited,
+    make_glm_extractor,
+)
 
 
 class FakeResp:
@@ -153,11 +158,28 @@ def test_other_400s_are_not_swallowed(monkeypatch):
         ext._call(ext._payload("sys", "user", 1024))
 
 
-def test_all_keys_dead_raises_rate_limited(monkeypatch):
+def test_all_keys_dead_raises_keys_exhausted(monkeypatch):
     ext = _ext(["key-1", "key-2"])
     _wire(ext, {"key-1": [QUOTA_GONE], "key-2": [QUOTA_GONE]}, monkeypatch)
-    with pytest.raises(RateLimited, match="exhausted or invalid"):
+    with pytest.raises(KeysExhausted, match="every configured GLM key is dead"):
         ext._call({})
+    # Still a RateLimited, so every existing `except RateLimited` path keeps working.
+    assert issubclass(KeysExhausted, RateLimited)
+
+
+def test_an_expired_plan_is_a_dead_key_not_a_rate_limit(monkeypatch):
+    """2026-09-20: keys #1 and #2 returned HTTP 429 code 1309, "GLM Coding Plan 已到期".
+    1309 was not in the dead-key list, so it was counted as rate limiting and the run
+    told the operator to re-run from the checkpoint. No number of re-runs can renew a
+    subscription. The provider's own message is carried through so the operator reads
+    "expired", not "429"."""
+    expired = FakeResp(429, {"error": {"code": "1309", "message": "您的GLM Coding Plan套餐已到期"}})
+    ext = _ext(["key-1"])
+    _wire(ext, {"key-1": [expired]}, monkeypatch)
+    with pytest.raises(KeysExhausted) as e:
+        ext._call({})
+    assert "1309" in str(e.value)
+    assert "到期" in str(e.value), "the provider's own words must reach the operator"
 
 
 def test_single_string_key_still_constructs():

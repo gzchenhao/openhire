@@ -398,6 +398,15 @@ class RateLimited(RuntimeError):
     """HTTP 429 from the provider. Raised so callers can back off instead of retrying hot."""
 
 
+class KeysExhausted(RateLimited):
+    """No key can be made to work by waiting — the plan expired, ran out, or is invalid.
+
+    A subclass so existing `except RateLimited` paths still stop the run, but callers that
+    care can tell "back off" from "go renew the subscription". Telling an operator to
+    re-run a batch that will fail identically forever is worse than failing loudly.
+    """
+
+
 _JSON_FENCE_RE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.I)
 
 
@@ -470,6 +479,13 @@ class DeepSeekExtractor:
         if self._json_mode:
             payload["response_format"] = {"type": "json_object"}
         return payload
+
+    @staticmethod
+    def _provider_message(resp) -> str | None:
+        try:
+            return (resp.json().get("error") or {}).get("message")
+        except Exception:
+            return None
 
     def _call(self, payload: dict) -> dict:
         """POST once. Raises RateLimited on 429 so the caller can back off."""
@@ -692,14 +708,19 @@ class GLMExtractor(DeepSeekExtractor):
                 # Dead-key signals seen live: 401 invalid; 1310 quota exhausted; 1113
                 # "no resource pack" — a key whose pack is fully consumed FLIPS from
                 # 1310 to 1113 mid-run (observed 2026-08-31 on key #3), so both mean
-                # "rotate", not "back off".
-                key_dead = resp.status_code == 401 or code in ("1310", "1113")
+                # "rotate", not "back off". 1309 is the subscription EXPIRING rather
+                # than running out (observed 2026-09-20 on keys #1 and #2); it arrives
+                # as HTTP 429, so without this it was reported as rate limiting and the
+                # run told the operator to "just re-run" something that can never
+                # succeed until the plan is renewed.
+                key_dead = resp.status_code == 401 or code in ("1310", "1113", "1309")
                 if key_dead:
                     if self._rotate_from(idx):
                         continue
-                    raise RateLimited(
-                        f"every configured GLM key is exhausted or invalid "
-                        f"(last: HTTP {resp.status_code}, code {code or 'n/a'})"
+                    raise KeysExhausted(
+                        "every configured GLM key is dead: "
+                        f"HTTP {resp.status_code}, code {code or 'n/a'} — "
+                        f"{self._provider_message(resp) or 'no message from provider'}"
                     )
                 raise RateLimited(f"HTTP 429 from provider (code {code or 'n/a'})")
             resp.raise_for_status()

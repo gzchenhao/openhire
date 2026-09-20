@@ -980,9 +980,13 @@ def extract_rebuild(
         console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
         raise typer.Exit(1)
 
-    if stats.rate_limited:
+    if getattr(stats, "keys_dead", False):
+        # "Re-run from the checkpoint" is the wrong advice when no key can ever work.
+        console.error("ERR_LLM_KEYS_DEAD", stats.halt_reason)
+        console.note("这不是限流，重跑不会有任何改变。请先续订/更换 key，再重新运行。")
+    elif stats.rate_limited:
         console.note(f"其中 {stats.rate_limited} 条因限流（HTTP 429）未完成，重跑会从断点续上。")
-    if stats.halted:
+    if stats.halted and not getattr(stats, "keys_dead", False):
         console.error("ERR_BUDGET_OVER_CEILING",
                       f"{stats.halt_reason}——已在断点停下。再次运行会从未完成处续跑。")
     console.ok(

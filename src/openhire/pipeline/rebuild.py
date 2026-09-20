@@ -25,6 +25,7 @@ from ..db.migrate import ensure_schema
 from .extract import (
     LLM_SOURCES,
     DeepSeekExtractor,
+    KeysExhausted,
     RateLimited,
     canonicalize_skills,
     classify_role_family_heuristic,
@@ -131,6 +132,11 @@ def _retry_call(fn, attempts: int = 3):
     while tries < attempts:
         try:
             return fn(), None, False
+        except KeysExhausted:
+            # Waiting cannot fix an expired or empty plan. Backing off here once per job
+            # would burn the whole escalating sleep sequence 3,000 times over for an
+            # outcome that is already decided.
+            raise
         except RateLimited as exc:
             last_err = f"RateLimited: {exc}"
             if hit_429 >= len(_429_BACKOFF_SECONDS):
@@ -437,6 +443,8 @@ class RebuildStats:
     halt_reason: str | None = None
     backend: str = TARGET_SOURCE
     rate_limited: int = 0
+    # True when the run stopped because no key can work — renew or replace, do not re-run.
+    keys_dead: bool = False
 
     @property
     def cost(self) -> float:
@@ -496,7 +504,15 @@ def rebuild_extraction(
             )
             if not jobs:
                 break
-            outcomes = {oc.job_id: oc for oc in _extract_many(extractor, jobs, workers)}
+            try:
+                outcomes = {oc.job_id: oc for oc in _extract_many(extractor, jobs, workers)}
+            except KeysExhausted as exc:
+                # Stop the run and say what is actually wrong. Reporting this as rate
+                # limiting told the operator to re-run a batch that can never succeed.
+                stats.halted = True
+                stats.halt_reason = str(exc)
+                stats.keys_dead = True
+                break
             for job in jobs:
                 oc = outcomes[job.id]
                 stats.processed += 1
