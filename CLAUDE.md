@@ -64,8 +64,8 @@
 6. **每周快照刷新：已自动化（017）。** `.github/workflows/refresh-snapshot.yml` 每周一 06:10 UTC 自动跑（也可在 Actions 手动 Run workflow）：下载已发布快照 → 重新 seed → 免费启发式全量刷新 → `ohp snapshot-build` → 覆盖上传同名资产。**工作流零密钥**（只用 GitHub 自动下发的 per-run token，权限仅 `contents: write`），失败靠 GitHub 默认邮件通知仓库主。
    人工只剩**月度一条命令**的 LLM 精抽（CI 无 key，只能跑启发式）：
    ```
-   ohp extract-rebuild --backend glm       # 补 skills（套餐内，现金 ¥0）
-   ohp extract-role-family --backend glm   # 补 role_family
+   ohp extract-rebuild --backend deepseek --ceiling 15       # 补 skills（约 ¥0.0022/条）
+   ohp extract-role-family --backend deepseek --ceiling 15   # 补 role_family
    ```
    跑完按 `docs/maintainer-snapshot-refresh.md` 手动 build + upload 一次，让精抽结果进到公开快照。
 
@@ -121,8 +121,14 @@
 - 数据库（默认，绝对路径）：`C:\Users\gdche\.openhire\openhire.db`（2026-09-03 快照：22,976 行 / 活跃 15,841 / 139 公司；精抽存量已全部清偿，role_family 空值 = 0）
 - CLI 可执行文件：`C:\openhire\.venv\Scripts\ohp.exe`（**未在系统 PATH 上** —— 接入 Claude Desktop 时须写全路径）
 - 抽取后端（可插拔，`--backend` 选）：
-  - **GLM（默认首选，017 起）** —— `glm-5.3-flash`，走领导的 coding 套餐，**现金 ¥0**。key 从 `.env` 的 `ZHIPU_API_KEY` 读。base_url 必须是 `https://open.bigmodel.cn/api/coding/paas/v4`（标准 `/api/paas/v4` 对套餐 key 报 1113）。两个坑已在代码里处理并有测试锁死：① 必须发 `thinking:{"type":"disabled"}` 且 `max_tokens ≥ 1024`（reasoning token 先于 content 从额度里扣，额度小会返回空串）；② flash 输出带 ```json 围栏，解析须剥。
-  - DeepSeek（`deepseek-chat`，`DEEPSEEK_API_KEY`）—— 按次计费，017 起不再默认使用。
+  - **DeepSeek（默认首选，2026-09-20 起）** —— `--backend deepseek`，key 从 `.env` 的 `DEEPSEEK_API_KEY` 读。
+    `deepseek-chat` 现在指向 `deepseek-flash`（另有 `deepseek-v4-pro`，**不用**：抽技能是结构化提取不是强推理，
+    flash 是实测过的那个）。**实测单价 ¥0.0022/条**，2026-09-20 全量 3,035 条花 **¥6.57**、零失败。
+    `--ceiling` 是 CNY 硬停（默认 50，跑全量时给 15 就够）。
+  - **GLM —— 已停用（2026-09-20 领导决定不再续订）。** 四个 key 当天实测全死：
+    #1/#2 是 `1309`「GLM Coding Plan 套餐已到期」、#3 是 401、#4 是 `1113` 余额不足。
+    代码仍保留 GLM 后端可用，但**不要再默认走它**。已把 `1309` 归入死 key 判定并抛 `KeysExhausted`，
+    因为它原本被当成限流、还提示「重跑会续上」——**重跑不会续费**。
   - 启发式（免费离线，CI 与 `bootstrap` 用）。
   - **血统不造假：** 每行 `jobs.extraction_source` 如实记录是谁抽的（`glm` / `deepseek` / `heuristic`）；重抽只挑「不属任何 LLM 源」的行，两个 LLM 后端不会互刷。
   - serve / search 阶段不需要任何 key。
