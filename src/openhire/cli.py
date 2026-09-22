@@ -386,11 +386,22 @@ def _salary_period_suffix(period: str | None) -> str:
 
 
 def _print_job(r: dict) -> None:
+    # One side of the range can now be absent on purpose: an ATS that reports 0 as "not
+    # specified" has its floor blanked (see service.usable_salary). Interpolating that
+    # straight into the string printed "USD None–50003", which reads like a bug in the
+    # employer's data rather than a number we chose not to stand behind.
+    lo, hi = r.get("salary_min"), r.get("salary_max")
     sal = ""
-    if r.get("salary_min") or r.get("salary_max"):
+    if lo or hi:
         cur = r.get("salary_currency") or ""
         per = _salary_period_suffix(r.get("salary_period"))
-        sal = f" · {cur} {r.get('salary_min')}–{r.get('salary_max')}{per}"
+        if lo and hi:
+            span = f"{lo:,}–{hi:,}"
+        elif hi:
+            span = f"最高 {hi:,}"      # floor not stated by the ATS
+        else:
+            span = f"{lo:,} 起"        # ceiling not stated
+        sal = f" · {cur} {span}{per}".replace("  ", " ")
     scope = r.get("remote_scope")
     regions = r.get("eligible_regions") or []
     scope_str = ""

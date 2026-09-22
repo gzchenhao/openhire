@@ -193,10 +193,17 @@ def run_checks(home: Path | None = None, now: dt.datetime | None = None) -> list
             ))
 
     if not found_any:
-        where = "、".join(c.label for c in missing) or "任何已知客户端"
+        # Round 5: this fired on a machine where openhire WAS configured, in a client we
+        # do not know about. "Not found in any known client" is true and reads as "you did
+        # not install it". Name what was actually checked, and say the list is not the
+        # world, so a reader with a different client knows the check simply cannot see it.
+        checked = "、".join(c.label for c in known_client_configs(home)) or "（无）"
+        present = "、".join(c.label for c in configs) or "一个都没有"
         out.append(Finding(
-            "fail", f"没有在 {where} 的配置里找到 openhire。",
-            "Claude 桌面版最省事：去 Releases 下载 .mcpb 双击安装，不用碰配置文件。"
-            ' 或手动加：{"mcpServers":{"openhire":{"command":"uvx","args":["openhire@latest","serve"]}}}',
+            "warn", f"在我认识的客户端配置里没找到 openhire。我查的是：{checked}；"
+                    f"其中本机存在配置文件的：{present}。",
+            "如果你用的是别的客户端（WorkBuddy、Cline、自研宿主等），这个检查看不到它，"
+            "请直接在那个客户端里确认 openhire 是否已启用。"
+            ' 要手动配置：{"mcpServers":{"openhire":{"command":"uvx","args":["openhire@latest","serve"]}}}',
         ))
     return out

@@ -10,6 +10,13 @@
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
 
+> **Every number here is checkable.** [Open-duration report](https://gzchenhao.github.io/openhire/report/)
+> (per-employer medians, named, monthly) · [numbers.json](https://gzchenhao.github.io/openhire/numbers.json)
+> (the provenance of every figure we quote, regenerated each refresh) ·
+> [raw report data](https://gzchenhao.github.io/openhire/report-data.json).
+> 我们引用的每个数字都能核：[岗位在架时长月报](https://gzchenhao.github.io/openhire/report/) ·
+> [numbers.json](https://gzchenhao.github.io/openhire/numbers.json)
+
 > **Is your company in here, and you did not put it here?**
 > Your postings are in this index because your own careers page serves them publicly. We
 > can measure how long a role has been open; we cannot see why, and a long-open role is a
@@ -91,7 +98,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.6.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.6.1.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 Per-client config paths and the trade-offs of `uvx` vs a one-time install are in
@@ -125,7 +132,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop** — download [`openhire-0.6.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop** — download [`openhire-0.6.1.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor / Claude Code** — paste this to your agent: *"Install the MCP server at
 > github.com/gzchenhao/openhire. Install `uv` first if it is missing, then add
@@ -168,7 +175,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.6.0", "serve"]`.
+matters: `"args": ["openhire==0.6.1", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.

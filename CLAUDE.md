@@ -79,6 +79,11 @@
 1. GitHub issues（`gh issue list --repo gzchenhao/openhire`）—— 雇主认领模板会落在这里
 2. 邮箱 `gdchenhao@qq.com`（认领的非 GitHub 通道，我读不到，**需要提醒领导自己看**）
 3. 知乎通知与评论（https://www.zhihu.com/notifications）
+3.5 **体验报告附件：看 `C:\Users\gdche\Downloads` 里有没有新的 `吐槽-*.md` / `体验报告-*.md`。**
+   Gmail 连接器**只给附件 id、不给内容**；`RAW` 能取到整封 MIME，但要把 12KB base64 手抄进文件，有损坏风险。
+   **约定（2026-09-22 定）：领导把附件下载到 Downloads 就行，我自己去读，不必再拖进对话。**
+   **绝不为此索取邮箱授权码 / 应用专用密码** —— 那是整个邮箱的读取权（银行、验证码、私人往来都在里面），
+   为一个 5KB 的附件付这个代价不成比例，而且那串密钥还得长期保管、泄露后果远重于一个 API key。
 4. **X 每日一轮**（领导 2026-09-20 授权，不请示）：先看 Mentions，再去搜当天的 MCP 讨论
    （`MCP server` / `modelcontextprotocol` / `uvx` / `ghost jobs`，用 `f=live` 看最新），
    **只在真有事实可加的贴下回复，第一条回复不放链接**。记账在 `drafts/x-engagement-log.md`。
