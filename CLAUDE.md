@@ -6,9 +6,16 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.0 · 2026-09-14；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.1 · 2026-09-22；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.0）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.1）
+- **v0.6.1（2026-09-22）：** 把 9/14 之后攒在 main 上的 44 个 commit 一次性发出去。
+  **发版铁律新增第三条：修好不等于发好。** 体验官 Round 5 抓到我们「修复速度是小时级、发布速度是周级，
+  用户拿到的是乘积，而这周乘积为零」：0.6.0 的首搜必崩修复在 main 上躺了 8 天，
+  GitHub Releases 还停在 v0.5.1（v0.6.0 连 Release 都没有），README 指的 `.mcpb` 是 404，
+  PyPI 页面挂的 mcpb 还是 0.5.1。
+  **往后每次改动用户可见行为，当天就要走完：PyPI → 打 tag → 建 Release → 挂 mcpb → 文案版本号同步。**
+  版本号一共四处：`pyproject.toml`、`server.json`（两处）、`mcpb/manifest.json`、`README.md`。
 - **v0.6.0（2026-09-14）：** 雇主认领落地（`seed/claims.py` + SLA + 四类更正 + `--unverify`）、
   `refresh_index` 工具（单雇主、6h 节流）、`ohp numbers` 管道、`ghost_reason`、`--company` 过滤、`collapse`。
 - **GitHub Pages（2026-09-15 开启）：** https://gzchenhao.github.io/openhire/ ，源 = `main` 分支 `/docs`。
