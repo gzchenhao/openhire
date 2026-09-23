@@ -104,11 +104,11 @@ _SKILL_VOCAB: dict[str, list[str]] = {
 # on 2,432 postings whose text never contains the word (83% of all rust tags) and scala
 # on 1,923 (87%). Lookarounds rather than \b so "c++" and "node.js" still terminate.
 def _bounded(p: str) -> str:
-    if "\\b" in p:
-        return p
-    # The trailing guard stops at letters only: "Python3", "Java8", "CUDA12" and "C++17"
-    # are how JDs write these, while "trust" and "scalable" are still rejected. A pattern
-    # that ends in a symbol keeps its leading guard only.
+    # One rule for every pattern, including the ones that already carried \b: strip those
+    # and wrap. The trailing guard stops at letters only, so "Python3", "Java8", "CUDA12"
+    # and "C++17" (how JDs write these) still match, while "trust" and "scalable" do not.
+    # A pattern that ends in a symbol keeps its leading guard only.
+    p = p.replace("\\b", "")
     tail = "" if p.endswith("\\+") else r"(?![a-z])"
     return rf"(?<![a-z0-9]){p}{tail}"
 
