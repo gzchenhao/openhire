@@ -124,6 +124,8 @@ def test_company_info_aggregate_only(session):
         "company_id", "company", "ghost_score_avg", "active_jobs", "index_built_at",
         # What drove the average — so the number cannot be read as a verdict on its own.
         "median_days_open", "relisted_postings", "last_touched_reported_by_ats",
+        # Whether days_open counts from the employer's own date or from first sight.
+        "posting_dates_reported", "postings_without_reported_date",
         # Employer-DECLARED, and only ever about the employer — never about a candidate.
         # The aggregate-only rule below still holds over the whole payload.
         "claimed", "claimed_at", "response_sla_days",

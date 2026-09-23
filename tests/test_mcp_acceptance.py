@@ -100,6 +100,8 @@ async def test_all_five_acceptance_scripts(seeded):
             "company_id", "company", "ghost_score_avg", "active_jobs", "index_built_at",
         # What drove the average — so the number cannot be read as a verdict on its own.
         "median_days_open", "relisted_postings", "last_touched_reported_by_ats",
+            # Whether days_open counts from the employer's own date or from first sight.
+            "posting_dates_reported", "postings_without_reported_date",
             # Employer-declared claim signals; still nothing about any candidate.
             "claimed", "claimed_at", "response_sla_days",
         }
