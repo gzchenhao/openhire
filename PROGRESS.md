@@ -31,6 +31,8 @@
 
 - **定位回顾（`reports/050`，领导批准）**：主句改为「让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑」，原始发布日降为证据；「幽灵」对外停用；内容配比一比一（规矩 5）。023 长文已按此改稿上线（新标题、数字换 09-21、两处可点链接）。
 - **体验测试（`reports/051`）**：三个小马智行感知工程师人设 + 复现者，137 次工具调用。结论「部分成立」：隐私半句完全成立，「替你找」被十条可复现缺陷挡住。**当天修完发 v0.6.3**（PyPI ✅ tag ✅ Release 含 mcpb ✅ Registry 0.6.3 ✅，391 tests）。
+- **v0.6.5（同日第四版）**：051 里留下的六个小项全部做完（location 过滤、limit<1 报错、指纹复用提醒 + 12 位示例、薪资语义写进文档、watch 的 company 与未知键说明、文远中文名），PyPI ✅ tag ✅ Release+mcpb ✅，401 tests。
+- **DeepSeek 月度精抽（领导批 ¥12，低价时段）**：已于北京时间 22:58 在清洗后的公开快照副本上开跑（5,544 条，`--ceiling 15`），跑完 build + upload。
 - **v0.6.4（同日第三版，`reports/052`）**：技能词表没加词边界（rust←trust、scala←scalable，83%/87% 的标签无文本依据）+ 来源戳记「问了谁」不记「谁答的」（3,098 条启发式列表顶 LLM 章）。修代码、加 `scripts/clean_skill_noise.py` 修存量、发 0.6.4（PyPI ✅ tag ✅ Release+mcpb ✅），398 tests。公开快照已清洗重传（4,937 条重盖 heuristic、1,351 行删 2,218 个无证据标签，rust 标签 → 519）。**待定：** 5,544 条如实标 heuristic 的行走一次月度精抽约 ¥12，等领导批。
 - 即刻首帖已发（AI探索站圈子）：https://m.okjike.com/originalPosts/6ab20257855ea19b4ed42823 。小红书 / Reddit 备稿在 `drafts/`，领导本人发。
 - `openhire-radar` 模板仓库：**做**（领导授权我定），门槛与形态见 `drafts/openhire-radar-spec.md`，09-28~30。

@@ -6,9 +6,12 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.4 · 2026-09-23；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.5 · 2026-09-23；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.4）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.5）
+- **v0.6.5（2026-09-23，同日第四版）：** 体验测试剩下的六个小项当天清零（领导：今日事今日毕）：`location` 过滤（中英文子串）；
+  `limit<1` 报 `ERR_BAD_PAGE`（负 offset 仍夹到 0，那是 v0.5 的有意设计且有测试）；`watch_intent` 回 `existing_watches` 并在指纹已被占用时提醒换长的；
+  示例指纹改成 12 位；`min_salary` / `currency` / `require_stated_salary` 的语义和「薪资基本只有美国岗才标」写进工具说明；401 tests。
 - **v0.6.4（2026-09-23，同日第三版）：** 回答领导「还有无其他缺陷」时查出两条数据层缺陷（`reports/052`）：
   ① 共享技能词表的正则没加词边界，`rust` 命中 trust、`scala` 命中 scalable，**2,930 条 rust 标签里 2,432 条（83%）JD 里没这个词**；
   ② `extraction_source` 记的是「问了谁」不是「谁答的」：LLM 抽取失败静默退回启发式、每周重抓在内容变化时用启发式覆盖 skills
