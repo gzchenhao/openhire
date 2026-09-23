@@ -274,11 +274,14 @@ async def test_fetch_reports_the_api_error_code_and_does_not_retry_around_it():
 
 
 @pytest.mark.asyncio
-async def test_fetch_rejects_non_200():
-    transport = httpx.MockTransport(lambda r: httpx.Response(503, text="nope"))
+@pytest.mark.parametrize("status", [503, 403])
+async def test_fetch_rejects_non_200_and_reports_the_real_status(status):
+    transport = httpx.MockTransport(lambda r: httpx.Response(status, text="nope"))
     async with httpx.AsyncClient(transport=transport) as client:
         result = await LixiangClient().fetch(client, TENANT)
     assert result.ok is False
+    assert result.status == status, "the fail-over log needs the real status, as beisen.py gives it"
+    assert result.error == "non-200"
 
 
 @pytest.mark.asyncio

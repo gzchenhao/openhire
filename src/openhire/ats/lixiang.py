@@ -60,6 +60,14 @@ _DETAIL_DELAY_SECONDS = 0.2
 _BOARDS = frozenset({"social"})  # `school` exists but is campus hiring: excluded
 
 
+class _HttpStatus(ValueError):
+    """A non-200 answer from the mirror, carrying the status so the fetch can report it."""
+
+    def __init__(self, path: str, status: int):
+        super().__init__(f"{path} returned HTTP {status}")
+        self.status = status
+
+
 class LixiangClient(ATSClient):
     vendor = "lixiang"
 
@@ -91,7 +99,7 @@ class LixiangClient(ATSClient):
         resp = await client.get(f"{_API}{path}", params=params,
                                 headers={"Referer": self.careers_url("social")})
         if resp.status_code != 200:
-            raise ValueError(f"{path} returned HTTP {resp.status_code}")
+            raise _HttpStatus(path, resp.status_code)
         return self._unwrap(resp.json())
 
     # --- fetch -----------------------------------------------------------------
@@ -112,6 +120,12 @@ class LixiangClient(ATSClient):
                     if rows:  # keep what we already have; a partial roster still beats none
                         break
                     return FetchResult(ok=False, status=0, error=f"{type(exc).__name__}: {exc}")
+                except _HttpStatus as exc:
+                    if rows:
+                        break
+                    # The real status, as beisen.py reports it: a 503 and a 403 are
+                    # different stories, and the fail-over log is where they are told.
+                    return FetchResult(ok=False, status=exc.status, error="non-200")
                 except ValueError as exc:
                     if rows:
                         break
