@@ -29,8 +29,12 @@
 **下一步**
 - 09-25~28 Cursor 插件文件（先确认 cursor.com/marketplace/publish 入口存在）· 10-03 观察期汇报 · 10-06/07 提阮一峰 issue · 10-03 后调研自动驾驶之心/具身智能之心投稿入口 · 每周 `growth_metrics.py` 进 growth-log。
 
+- 即刻首帖已发（AI探索站圈子）：https://m.okjike.com/originalPosts/6ab20257855ea19b4ed42823 。小红书 / Reddit 备稿在 `drafts/`，领导本人发。
+- `openhire-radar` 模板仓库：**做**（领导授权我定），门槛与形态见 `drafts/openhire-radar-spec.md`，09-28~30。
+- Claude Code 插件：提交走 claude.ai 表单（不是 Console），领导有账号，09-29~10-02 与 Cursor 插件同批。
+
 **待领导确认**
-- Claude Console 登录有无（决定 Claude Code 插件做不做）· `openhire-radar` 模板仓库建不建 · 小红书 / 即刻 / Reddit / HN 账号有无。
+- 无。
 
 ## 2026-09-13（傍晚）— 收回一个已发布结论；术语统一为「智驾」；mcpservers.org 已提交
 
