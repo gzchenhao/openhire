@@ -9,6 +9,29 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-09-23 — 星增长清单开跑；v0.6.2；mcpb 里的第五处版本号
+
+**已完成（证据）**
+- 21-agent 工作流调研「没试过的涨 star 方法」，28 条被反驳环节杀掉、7 条幸存；诚实预期 **10-31 前 15 到 25 颗**。全文 `drafts/star-growth-plan-2026-09-23.md`，汇报 `reports/049`。
+- 查漏：**搜索引擎已是第二大来源**（14 天 Google 8 + Bing 2 + Baidu 1 = 11 人 vs 知乎 4），四处对外描述全是 protocol 先行 → 全部改成搜索优先。GitHub 描述已生效；`server.json` / `pyproject` / MCP `instructions` 随 0.6.2 发出。
+- **v0.6.2 发布**：PyPI ✅ · tag ✅ · Release 含 `openhire-0.6.2.mcpb` ✅（`releases/latest/download/...` 200）· Registry 0.6.2 ✅（描述 213 字被 422 拒，缩到 96 字后 `workflow_dispatch` 重跑成功）。374 tests green。
+- **mcpb 第五处版本号**：`mcpb/pyproject.toml` 钉 `openhire==0.5.1`，`uv run` 装的是它，manifest 只是标签 → **0.6.0 / 0.6.1 的 mcpb 双击装到的都是 0.5.1**。已钉到 0.6.2，`tests/test_release.py` 把五处钉死。
+- PR：punkpeye/awesome-mcp-servers #14921（数字修正）· yzfly/Awesome-MCP-ZH #602（新增）。
+- 知乎本月最后一张自荐券 → 1.9M 浏览那题（09-21），状态「分发中」。三篇已发回答昨天已加可点链接。
+- 备稿：阮一峰【开源自荐】（`drafts/ruanyf-weekly-issue.md`，**10-06/07 提**）；LinkedIn 英文数据帖（`drafts/linkedin-post-3-en.md`）。
+- CLAUDE.md：观察期改窄为「不推月报页本身，工具照常推」（领导 09-23 确认）；版本号铁律改五处。
+
+**关键决策**
+- 知乎回答里的链接两处都指仓库、10-03 不切月报页（月报页对读者是终点站；仓库 README 首屏已挂三个数据入口）。
+- Docker PR #5055 / Cline #2501 判为死队列（Cline 3 月起 8 个求职类提交全部零回应；Docker 只有 bot 合并），停止催促。
+- HN / Reddit / PH / Kaggle / B 站 / V2EX / 牛客 / HelloGitHub 均按可比对象实测数据判为不值当，理由在 049 第一节。
+
+**下一步**
+- 09-25~28 Cursor 插件文件（先确认 cursor.com/marketplace/publish 入口存在）· 10-03 观察期汇报 · 10-06/07 提阮一峰 issue · 10-03 后调研自动驾驶之心/具身智能之心投稿入口 · 每周 `growth_metrics.py` 进 growth-log。
+
+**待领导确认**
+- Claude Console 登录有无（决定 Claude Code 插件做不做）· `openhire-radar` 模板仓库建不建 · 小红书 / 即刻 / Reddit / HN 账号有无。
+
 ## 2026-09-13（傍晚）— 收回一个已发布结论；术语统一为「智驾」；mcpservers.org 已提交
 
 - **CVPR 文章的核心结论已公开收回。** 读者 @海洋 指出单标签分类不合理，我按多标签重算：
