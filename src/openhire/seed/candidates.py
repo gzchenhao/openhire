@@ -204,6 +204,11 @@ _MOKA = [
     ("robosense/77883", "速腾聚创 RoboSense", "robosense"),
     ("deeproute/143885", "元戎启行 DeepRoute", "deeproute"),
     ("minieye/118570", "佑驾创新 MINIEYE", "minieye"),
+    # 2026-09-23: three Moka portals found while mapping Feishu-hosted employers (reports/053).
+    # All three verified with this adapter: plain init-data, posted_at present, JD present.
+    ("yinhetongyong/165929", "银河通用 Galbot", "galbot"),          # 118 live, 具身 (social hiring; campus is on Feishu)
+    ("moonshot/148506", "月之暗面 Moonshot AI", "moonshot"),        # 105 live, AI lab
+    ("step/94904", "阶跃星辰 StepFun", "stepfun"),                   # 217 live, AI lab
     ("freetech/42354", "福瑞泰克 Freetech", "freetech"),
     ("yushi/3774", "驭势科技 UISEE", "yushi"),
     ("rino/165980", "白犀牛 Rino.ai", "rino"),
