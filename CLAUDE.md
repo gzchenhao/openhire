@@ -6,9 +6,18 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.5 · 2026-09-23；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.6 · 2026-09-23；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.5）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.6）
+- **v0.6.6（2026-09-23，同日第五版，`reports/053`）：** 飞书雇主的合法路径。**理想汽车**第一方镜像适配器（vendor `lixiang`，
+  `api-web.lixiang.com` 普通 GET，772 条社招含完整 JD，**无发布日期** → 行上带 `date_signal: not_reported_by_ats`，`get_company_info`
+  报 `posting_dates_reported`）；**蔚来**适配器写好并测过但**停用**（`www.nio.cn` 的 EdgeOne 对我们的 httpx 回 567 安全策略拦截，
+  按 020 视为访问控制，seed 行注释掉，等蔚来加白或授权）；**已知未收录雇主登记表** `seed/not_indexed.py`（Momenta、小马、智元等 10 家），
+  搜索和 `get_company_info` 回门户 URL + 原因 + 雇主可授权的飞书只读 scope；三个新 Moka 租户（银河通用 / 月之暗面 / 阶跃星辰）。
+  诚实修复：任何抽取器（启发式 / DeepSeek / GLM / Anthropic）**不许从光秃秃的标题里抽技能**；后续抓取拿不到 JD 时不覆盖已存的；
+  没 JD 时 `remote_policy` 不读标题；投递 URL 只信 https 且只信租户自己的 host。525 tests。
+  **飞书本身：官网只服务端渲染 `<title>`，列表接口要签名，无 feed / RSS / sitemap，判 CLOSED**；唯一完整路径是雇主在飞书开放平台
+  授权 `hire:site_job_post:readonly`（模板在 `drafts/feishu-employer-optin-template.md`）。
 - **v0.6.5（2026-09-23，同日第四版）：** 体验测试剩下的六个小项当天清零（领导：今日事今日毕）：`location` 过滤（中英文子串）；
   `limit<1` 报 `ERR_BAD_PAGE`（负 offset 仍夹到 0，那是 v0.5 的有意设计且有测试）；`watch_intent` 回 `existing_watches` 并在指纹已被占用时提醒换长的；
   示例指纹改成 12 位；`min_salary` / `currency` / `require_stated_salary` 的语义和「薪资基本只有美国岗才标」写进工具说明；401 tests。

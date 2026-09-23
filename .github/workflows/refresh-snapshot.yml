@@ -76,6 +76,15 @@ jobs:
         # unreachable board just keeps its existing jobs, which then age out naturally.
         run: ohp ingest --all --fail-over 10
 
+      - name: Repair skill-tag noise and empty-JD tags (idempotent)
+        # Two one-off repairs from 2026-09-23 (reports/052, 053) kept as standing steps so the
+        # public snapshot can never regress: vocabulary tags with no textual evidence are
+        # dropped, heuristic lists wearing an LLM stamp are re-stamped, and a posting with no
+        # description carries no skills. Both scripts are dry-run unless --apply.
+        run: |
+          python scripts/clean_skill_noise.py "${{ github.workspace }}/index/openhire.db" --apply
+          python scripts/clean_empty_jd.py "${{ github.workspace }}/index/openhire.db" --apply
+
       - name: Check CN (Beisen) reachability from this runner
         # GitHub runners are outside China. Whether zhiye.com answers from here decides
         # if CN jobs can be refreshed in CI at all — so measure it instead of assuming.
