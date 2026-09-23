@@ -23,6 +23,7 @@ from openhire.ats import apply_url_is_trusted
     "https://jobs.ashbyhq.com/acme/xyz",
     "https://app.mokahr.com/apply/acme/1234#/job/9",
     "https://unitree.zhiye.com/social/detail?jobAdId=abc",   # per-tenant Beisen host
+    "https://www.lixiang.com/employ/detail/275.html",         # first-party employer page
 ])
 def test_real_ats_urls_are_trusted(url):
     assert apply_url_is_trusted(url) is True

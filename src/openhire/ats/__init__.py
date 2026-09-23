@@ -16,6 +16,7 @@ from .base import (
 )
 from .greenhouse import GreenhouseClient
 from .lever import LeverClient
+from .lixiang import LixiangClient
 from .moka import MokaClient
 
 _CLIENTS: dict[str, ATSClient] = {
@@ -24,6 +25,7 @@ _CLIENTS: dict[str, ATSClient] = {
     "ashby": AshbyClient(),
     "beisen": BeisenClient(),
     "moka": MokaClient(),
+    "lixiang": LixiangClient(),  # first-party employer mirror (理想汽车), one tenant
 }
 
 
@@ -47,6 +49,7 @@ __all__ = [
     "GreenhouseClient",
     "JobRecord",
     "LeverClient",
+    "LixiangClient",
     "MokaClient",
     "canonical_apply_url",
     "get_client",
