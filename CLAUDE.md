@@ -6,16 +6,23 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.1 · 2026-09-22；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.2 · 2026-09-23；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.1）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.2）
+- **v0.6.2（2026-09-23）：** 对外文案改成搜索优先（GitHub 描述 / `server.json` / `pyproject` / MCP `instructions`，
+  搜索引擎已是第二大来源，Google+Bing+Baidu 14 天 11 人，比知乎的 4 多）；MCP `instructions` 里加数据出处署名；
+  工具 docstring 里那个硬编码的 67% 删掉改指 `numbers.json`；README 加 Cursor 一键安装按钮；**mcpb 依赖钉到当前版本**。
 - **v0.6.1（2026-09-22）：** 把 9/14 之后攒在 main 上的 44 个 commit 一次性发出去。
   **发版铁律新增第三条：修好不等于发好。** 体验官 Round 5 抓到我们「修复速度是小时级、发布速度是周级，
   用户拿到的是乘积，而这周乘积为零」：0.6.0 的首搜必崩修复在 main 上躺了 8 天，
   GitHub Releases 还停在 v0.5.1（v0.6.0 连 Release 都没有），README 指的 `.mcpb` 是 404，
   PyPI 页面挂的 mcpb 还是 0.5.1。
   **往后每次改动用户可见行为，当天就要走完：PyPI → 打 tag → 建 Release → 挂 mcpb → 文案版本号同步。**
-  版本号一共四处：`pyproject.toml`、`server.json`（两处）、`mcpb/manifest.json`、`README.md`。
+  版本号一共**五处**：`pyproject.toml`、`server.json`（两处）、`mcpb/manifest.json`、**`mcpb/pyproject.toml`**、`README.md`。
+  **第五处是 2026-09-23 才发现的，而且是最要命的一处：** `.mcpb` 里跑的是 `uv run --directory <bundle> src/server.py`，
+  真正装什么由 `mcpb/pyproject.toml` 的 `dependencies = ["openhire==X"]` 决定，manifest 里的版本号只是标签。
+  v0.6.1 的 mcpb 标签写 0.6.1、依赖钉 0.5.1，**所有双击安装的用户一直在跑 0.5.1**。
+  `tests/test_release.py` 现在把五处钉死到 `pyproject.toml`，版本不一致测试就红。
 - **v0.6.0（2026-09-14）：** 雇主认领落地（`seed/claims.py` + SLA + 四类更正 + `--unverify`）、
   `refresh_index` 工具（单雇主、6h 节流）、`ohp numbers` 管道、`ghost_reason`、`--company` 过滤、`collapse`。
 - **GitHub Pages（2026-09-15 开启）：** https://gzchenhao.github.io/openhire/ ，源 = `main` 分支 `/docs`。

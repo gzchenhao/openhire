@@ -2,18 +2,18 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.gzchenhao/openhire",
   "title": "OpenHire · 哨兵",
-  "description": "Radar for remote AI/Infra jobs from employer ATS; your résumé never transits the server.",
+  "description": "Job postings with the employer's real posting date, pulled from Greenhouse / Lever / Ashby / Beisen / Moka ATS APIs. 139 employers in AI infra, autonomous driving and embodied AI. Résumé never leaves your machine.",
   "repository": {
     "url": "https://github.com/gzchenhao/openhire",
     "source": "github"
   },
-  "version": "0.6.1",
+  "version": "0.6.2",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "openhire",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

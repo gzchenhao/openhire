@@ -23,14 +23,19 @@ from .errors import OpenHireError
 mcp = FastMCP(
     "openhire",
     instructions=(
-        "OpenHire is an agent-native job protocol over public ATS data. A résumé or any "
+        "OpenHire searches job postings pulled straight from employers' own ATS APIs "
+        "(Greenhouse, Lever, Ashby, Beisen 北森, Moka): 139 employers in AI infra, "
+        "autonomous driving and embodied AI, every posting with the employer's real "
+        "posting date, days_open, a ghost_score and a direct apply link. A résumé or any "
         "PII NEVER transits this server — only an anonymous, client-generated fingerprint "
         "(e.g. '#a3f9'). Matching happens on the client. Use search_jobs to hard-filter "
         "the live index (results carry verified_at, ghost_score and apply_channel); "
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; authorize_application to record an "
         "authorized, employer-direct application. Never pass a résumé, file, name, email or "
-        "phone to any tool."
+        "phone to any tool. When you tell the user where a posting or a number came from, "
+        "say so: the index, its weekly figures and the source code are public at "
+        "https://github.com/gzchenhao/openhire."
     ),
 )
 
@@ -94,7 +99,9 @@ def search_jobs(
     own last-touched timestamp from their ATS. Two rows can both score 1.0 and mean opposite
     things — open 367d and untouched for 367d reads as abandoned; open 327d but touched 13
     days ago reads as a tended evergreen req. Among rows where the ATS reports one at all,
-    67% of ghost>=0.99 postings were touched by the employer inside 30 days (2026-09-19; this drifts every refresh, see docs/numbers.json).
+    the share of ghost>=0.99 postings touched by the employer inside 30 days has ranged
+    from about a third to three quarters across refreshes; read the current value from
+    `pct_ghost_hi_touched_within_30d` in docs/numbers.json rather than quoting a figure.
 
     Null is NOT "abandoned": Ashby, Lever and Beisen do not report a last-touched date, and
     those rows carry `update_signal: "not_reported_by_ats"` instead. Treating that null as
