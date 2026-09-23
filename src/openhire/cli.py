@@ -249,7 +249,7 @@ def search(
     skills: str = typer.Option(None, "--skills", help="Comma-separated skills (ANY overlap), or 'auto'."),
     required_skills: str = typer.Option(None, "--required-skills", help="Comma-separated skills that must ALL be present (AND)."),
     remote: bool = typer.Option(False, "--remote", help="Only fully-remote roles."),
-    remote_scope: str = typer.Option(None, "--remote-scope", help="worldwide | region_locked | country_locked."),
+    remote_scope: str = typer.Option(None, "--remote-scope", help="worldwide | region_locked | country_locked | unknown."),
     min_salary: str = typer.Option(None, "--min-salary", help="Salary floor, e.g. 600000 / 60w / 600k."),
     currency: str = typer.Option(None, "--currency", help="Restrict to a stated-pay currency, e.g. USD."),
     require_stated_salary: bool = typer.Option(False, "--require-stated-salary", help="Drop roles with no published pay."),

@@ -51,9 +51,16 @@ _REGION_TOKENS = {
     "europe": "Europe", "north america": "North America", "asia": "Asia",
     "eu": "EU", "ap": "APAC",
 }
+# Short codes are matched on word boundaries: a plain substring "us" fired on "Austin",
+# "campus" and "business", and "Remote, U.S" (no trailing period) matched nothing at all
+# and fell through to "worldwide", which told a reader in Guangzhou that a US-only role
+# was open to them.
+_COUNTRY_PATTERNS = (
+    (re.compile(r"(?<![a-z])(united states|u\.s\.?a?\.?|usa|us)(?![a-z])"), "US"),
+    (re.compile(r"(?<![a-z])(united kingdom|u\.k\.?|uk)(?![a-z])"), "UK"),
+)
 _COUNTRY_TOKENS = {
-    "united states": "US", "usa": "US", "u.s.": "US", "us-": "US", "us ": "US",
-    "united kingdom": "UK", "uk": "UK", "canada": "Canada", "germany": "Germany",
+    "canada": "Canada", "germany": "Germany",
     "india": "India", "france": "France", "ireland": "Ireland", "australia": "Australia",
     "spain": "Spain", "poland": "Poland", "netherlands": "Netherlands", "brazil": "Brazil",
     "singapore": "Singapore", "japan": "Japan", "israel": "Israel", "mexico": "Mexico",
@@ -71,11 +78,13 @@ def classify_remote(remote_policy: str | None, location: str | None) -> tuple[st
     regions = sorted({label for tok, label in _REGION_TOKENS.items() if tok in loc})
     if regions:
         return "region_locked", regions
-    countries = sorted({label for tok, label in _COUNTRY_TOKENS.items() if tok in loc})
+    countries = {label for tok, label in _COUNTRY_TOKENS.items() if tok in loc}
+    countries |= {label for pat, label in _COUNTRY_PATTERNS if pat.search(loc)}
     if countries:
-        return "country_locked", countries
-    # Remote but with an unrecognized qualifier — treat as worldwide, no asserted regions.
-    return "worldwide", []
+        return "country_locked", sorted(countries)
+    # Remote with a qualifier we could not read ("Remote - Ann Arbor, MI"). Saying
+    # "worldwide" here asserted something the text never said; say we do not know.
+    return "unknown", []
 
 # Keys / markers that would indicate someone is trying to push a résumé/PII through.
 _RESUME_KEYS = {
@@ -133,7 +142,7 @@ def annualise(value: int | None, period: str | None) -> int | None:
 # the extractor's own spelling: this is a read-time equivalence, not a rewrite, so a real
 # vocabulary pass later (report 028) can change the canonical form without a migration.
 # Defined next to match_quality so the filter and the score can never drift apart.
-from .pipeline.ranking import normalize_skill  # noqa: E402  (placed with its explanation)
+from .pipeline.ranking import expand_skill, normalize_skill  # noqa: E402  (placed with its explanation)
 
 
 # --- salary plausibility ------------------------------------------------------
@@ -214,7 +223,7 @@ def role_group(company_id: str, title: str) -> str:
 def job_posting(job: Job, company: Company | None, requested_skills: list[str], now: dt.datetime) -> dict:
     """schema.org/JobPosting + the five OpenHire fields (protocol contract)."""
     mq = match_quality(requested_skills, job.skills)
-    fr = freshness(job.verified_at, now)
+    fr = freshness(_freshness_anchor(job), now)
     # datePosted is the employer's REAL posting date (ATS), not our crawl date; fall back
     # to first_seen_at only when the ATS exposed no date. days_open = age of the posting.
     posted = _aware(job.posted_at) or _aware(job.first_seen_at)
@@ -329,7 +338,9 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # is the tag the posting actually carries.
         "matched_skills": sorted(
             tag for tag in (job.skills or [])
-            if normalize_skill(tag) in {normalize_skill(x) for x in (requested_skills or [])}
+            if normalize_skill(tag) in set().union(
+                set(), *(expand_skill(x) for x in (requested_skills or []))
+            )
         ),
         "match_quality": round(mq, 4),
         "freshness": round(fr, 4),
@@ -338,6 +349,13 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
 
 
 # --- hard filter + fixed ranking ---------------------------------------------
+def _freshness_anchor(job: Job) -> dt.datetime:
+    """The employer's clock for ranking: last touched if the ATS reports it, else the
+    posting date, else when we first saw it. verified_at is the index build time and is
+    identical on every row, so it cannot order anything."""
+    return job.updated_at or job.posted_at or job.first_seen_at or job.verified_at
+
+
 def resolve_company(session: Session, query: str) -> list[Company]:
     """Turn what a caller actually types into company rows.
 
@@ -408,27 +426,32 @@ def _filter_and_rank(
     if since is not None:
         stmt = stmt.where(Job.first_seen_at > since)
 
-    # Separator-insensitive on BOTH sides — see normalize_skill.
-    requested = [normalize_skill(x) for x in (skills or [])]
-    req_set = set(requested)
-    all_required = {normalize_skill(x) for x in (required_skills or [])}
+    # Separator-insensitive and alias-aware on the request side (see expand_skill): a
+    # requested skill matches a row when ANY of its spellings is on the row.
+    req_sets = [expand_skill(x) for x in (skills or []) if x]
+    required_sets = [expand_skill(x) for x in (required_skills or []) if x]
     rf = (role_family or "").lower() or None
 
     scored: list[tuple[Job, float]] = []
     for job in session.execute(stmt).scalars():
         job_skills = {normalize_skill(x) for x in (job.skills or [])}
-        if req_set and not (req_set & job_skills):
+        if req_sets and not any(aliases & job_skills for aliases in req_sets):
             continue  # ANY-overlap (skills 交集)
-        if all_required and not all_required.issubset(job_skills):
+        if required_sets and not all(aliases & job_skills for aliases in required_sets):
             continue  # AND — every required skill must be present
         if remote_scope:
             scope, _ = classify_remote(job.remote_policy, job.location)
             if scope != remote_scope:
                 continue
-        if rf and (getattr(job, "role_family", None) or "").lower() != rf:
+        # A row whose role_family is still null has not been classified yet; the newest
+        # postings are exactly the ones the weekly classifier has not reached. Excluding
+        # them hid a 19-day Torc BEV role from a watch on role_family="engineering". A
+        # filter excludes rows known to be OTHER families, never rows we have not read.
+        jrf = (getattr(job, "role_family", None) or "").lower()
+        if rf and jrf and jrf != rf:
             continue
-        mq = match_quality(requested or list(all_required), job.skills)
-        fr = freshness(job.verified_at, now)
+        mq = match_quality(list(skills or []) or list(required_skills or []), job.skills)
+        fr = freshness(_freshness_anchor(job), now)
         scored.append((job, rank_score(mq, fr)))
 
     scored.sort(key=lambda t: t[1], reverse=True)
@@ -497,6 +520,50 @@ def search_jobs(
     return rows
 
 
+def skill_diagnostics(
+    session: Session, skills: list[str] | None, required_skills: list[str] | None
+) -> tuple[list[str], dict[str, list[str]]]:
+    """Which requested tags exist nowhere in the live index, and what they might have
+    meant. Alias-aware: 感知 is not unknown when the index tags perception. Used on empty
+    results AND on non-empty ones: a search that half-matched used to return rows and stay
+    silent about the words it dropped. One pass over the live tag vocabulary."""
+    vocab: set[str] = set()
+    for row in session.execute(
+        select(Job.skills).where(Job.delisted_at.is_(None))
+    ).scalars():
+        for sk in (row or []):
+            if sk:
+                vocab.add(sk)
+    # Folded, or we would tell someone their tag "exists nowhere in the index" when the
+    # index simply spells it with the other separator.
+    lowered = {normalize_skill(v): v for v in vocab}
+
+    wanted = [t for t in {*(skills or []), *(required_skills or [])} if t]
+    unknown, suggestions = [], {}
+    for tag in wanted:
+        low = normalize_skill(tag)
+        if expand_skill(tag) & set(lowered):
+            continue  # some spelling of it exists in the index
+        unknown.append(tag)
+        # Substring hits first — the index tags "kubernetes operators" but not plain
+        # "kubernetes", so a substring match points at the real tag where fuzzy distance
+        # would not. Then difflib for genuine misspellings. Two-character tags are dropped:
+        # they match almost anything and are noise to a caller.
+        subs = sorted(
+            (orig for lo, orig in lowered.items() if len(lo) > 2 and low in lo),
+            key=lambda x: (len(x), x),
+        )
+        fuzzy = difflib.get_close_matches(low, [lo for lo in lowered if len(lo) > 2],
+                                          n=5, cutoff=0.72)
+        close: list[str] = []
+        for cand in [*subs, *(lowered[f] for f in fuzzy)]:
+            if cand not in close:
+                close.append(cand)
+        if close:
+            suggestions[tag] = close[:5]
+    return unknown, suggestions
+
+
 def diagnose_empty_search(
     session: Session,
     skills: list[str] | None = None,
@@ -562,7 +629,10 @@ def diagnose_empty_search(
                 "hint": (
                     f"This index has no company matching {company!r}. It covers 139 employers, "
                     "not the whole market, so the company is most likely simply not indexed — "
-                    "retry with one of unknown_companies' suggestions, or drop the company filter."
+                    + ("retry with one of unknown_companies' suggestions, or drop the company filter."
+                       if close else
+                       "drop the company filter to search the whole index, or check the employer "
+                       "list at github.com/gzchenhao/openhire.")
                 ),
                 "unknown_companies": [company],
                 "suggestions": {company: close} if close else {},
@@ -575,42 +645,8 @@ def diagnose_empty_search(
                 },
             }
 
-    # One pass over the live tag vocabulary. This path only runs when a search came back
-    # empty, so the scan is rare and bounded by the index size.
-    vocab: set[str] = set()
-    for row in session.execute(
-        select(Job.skills).where(Job.delisted_at.is_(None))
-    ).scalars():
-        for sk in (row or []):
-            if sk:
-                vocab.add(sk)
-    # Folded, or we would tell someone their tag "exists nowhere in the index" when the
-    # index simply spells it with the other separator.
-    lowered = {normalize_skill(v): v for v in vocab}
+    unknown, suggestions = skill_diagnostics(session, skills, required_skills)
 
-    wanted = [t for t in {*(skills or []), *(required_skills or [])} if t]
-    unknown, suggestions = [], {}
-    for tag in wanted:
-        low = normalize_skill(tag)
-        if low in lowered:
-            continue
-        unknown.append(tag)
-        # Substring hits first — the index tags "kubernetes operators" but not plain
-        # "kubernetes", so a substring match points at the real tag where fuzzy distance
-        # would not. Then difflib for genuine misspellings. Two-character tags are dropped:
-        # they match almost anything and are noise to a caller.
-        subs = sorted(
-            (orig for lo, orig in lowered.items() if len(lo) > 2 and low in lo),
-            key=lambda x: (len(x), x),
-        )
-        fuzzy = difflib.get_close_matches(low, [lo for lo in lowered if len(lo) > 2],
-                                          n=5, cutoff=0.72)
-        close: list[str] = []
-        for cand in [*subs, *(lowered[f] for f in fuzzy)]:
-            if cand not in close:
-                close.append(cand)
-        if close:
-            suggestions[tag] = close[:5]
 
     if unknown:
         hint = (
@@ -649,7 +685,23 @@ def diagnose_empty_search(
 def get_company_info(session: Session, company_id: str, now: dt.datetime | None = None) -> dict:
     company = session.get(Company, company_id)
     if company is None:
-        raise OpenHireError("ERR_COMPANY_NOT_FOUND", f"No company with id '{company_id}'.")
+        # search_jobs takes names; this took only ids, and nothing bridged the two. Resolve
+        # the same way search does, refusing to guess between several matches.
+        matched = resolve_company(session, company_id)
+        if len(matched) == 1:
+            company = matched[0]
+        elif len(matched) > 1:
+            names = ", ".join(f"{c.id} ({c.name})" for c in matched[:10])
+            raise OpenHireError(
+                "ERR_AMBIGUOUS_COMPANY",
+                f"{company_id!r} matches {len(matched)} employers: {names}. Re-ask with one id.",
+            )
+        else:
+            raise OpenHireError(
+                "ERR_COMPANY_NOT_FOUND",
+                f"No company with id or name matching {company_id!r}. Use the company_id "
+                "from a search_jobs row, or any part of the employer's name.",
+            )
 
     live = select(Job).where(Job.company_id == company_id, Job.delisted_at.is_(None))
     active_jobs = session.scalar(
@@ -724,9 +776,32 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
     return f"{prefix}{secrets.token_hex(4)}"
 
 
+_WATCH_FILTER_KEYS = ("skills", "required_skills", "remote", "role_family", "min_salary", "company")
+
+
 def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
-    """Keep only the whitelisted, non-PII filter keys."""
+    """Keep only the whitelisted, non-PII filter keys, and REFUSE keys we do not know.
+    A watch registered with {company: "minieye", location: "北京"} used to be accepted and
+    silently became a watch on the whole index."""
+    # Reject any stray PII keys defensively (red line #1) before anything else.
+    leaked = set(filters) & _RESUME_KEYS
+    if leaked:
+        raise OpenHireError(
+            "ERR_PII_NOT_ACCEPTED",
+            f"Filters may not contain personal data ({', '.join(sorted(leaked))}). "
+            "Only anonymous skills/remote/min_salary are stored.",
+        )
+    unknown = sorted(set(filters) - set(_WATCH_FILTER_KEYS))
+    if unknown:
+        raise OpenHireError(
+            "ERR_UNKNOWN_FILTER",
+            f"Unknown watch filter(s) {unknown}. A watch accepts only "
+            f"{', '.join(_WATCH_FILTER_KEYS)}; anything else would be dropped and the watch "
+            "would silently cover more than you asked for.",
+        )
     allowed = {}
+    if filters.get("company"):
+        allowed["company"] = str(filters["company"]).strip()
     if filters.get("skills"):
         allowed["skills"] = [str(s).lower() for s in filters["skills"]]
     if filters.get("required_skills"):
@@ -737,14 +812,6 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
         allowed["role_family"] = str(filters["role_family"]).lower()
     if filters.get("min_salary") is not None:
         allowed["min_salary"] = int(filters["min_salary"])
-    # Reject any stray PII keys defensively (red line #1).
-    leaked = set(filters) & _RESUME_KEYS
-    if leaked:
-        raise OpenHireError(
-            "ERR_PII_NOT_ACCEPTED",
-            f"Filters may not contain personal data ({', '.join(sorted(leaked))}). "
-            "Only anonymous skills/remote/min_salary are stored.",
-        )
     return allowed
 
 
@@ -757,6 +824,24 @@ def watch_intent(
     now = _now(now)
     _assert_anonymous(fingerprint)
     clean = _clean_filters(filters or {})
+    if clean.get("company"):
+        # Resolve once, at registration, so an unindexed or ambiguous employer is refused
+        # here instead of quietly matching nothing (or everything) every week.
+        matched = resolve_company(session, clean["company"])
+        if not matched:
+            raise OpenHireError(
+                "ERR_COMPANY_NOT_FOUND",
+                f"No employer in this index matches {clean['company']!r}; search_jobs with that "
+                "company first to see whether it is indexed.",
+            )
+        if len(matched) > 1:
+            names = ", ".join(f"{c.id} ({c.name})" for c in matched[:10])
+            raise OpenHireError(
+                "ERR_AMBIGUOUS_COMPANY",
+                f"{clean['company']!r} matches {len(matched)} employers: {names}. Name one.",
+            )
+        clean["company"] = matched[0].name
+        clean["company_ids"] = [matched[0].id]
     watch_id = _new_id(session, Watch, "watch_id", "w_")
     session.add(
         Watch(
@@ -796,10 +881,16 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         # only jobs first seen strictly after the last notification (the increment).
         since = _aware(w.last_notified_at)
         f = w.filters or {}
-        ranked = _filter_and_rank(
-            session, f.get("skills"), f.get("remote"), f.get("min_salary"), since, 20, now,
+        # Rank the WHOLE standing set, then page it. The old call asked for 20 and then
+        # marked the watch notified: everything past row 20 was reported never, and on a
+        # broad first pull those 20 were an alphabetical slice, not the best matches.
+        ranked_all = _filter_and_rank(
+            session, f.get("skills"), f.get("remote"), f.get("min_salary"), since, 100_000, now,
             required_skills=f.get("required_skills"), role_family=f.get("role_family"),
+            company_ids=f.get("company_ids"),
         )
+        total_matching = len(ranked_all)
+        ranked = ranked_all[:MAX_PAGE_SIZE]
         company_ids = {j.company_id for j, _ in ranked}
         companies = {
             c.id: c
@@ -824,6 +915,13 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
                 # the field is called new_matches, and a caller should not have to infer
                 # which of the two it is holding from `since` being null.
                 "is_first_pull": since is None,
+                "total_matching": total_matching,
+                "truncated": total_matching > MAX_PAGE_SIZE,
+                "truncation_note": (
+                    f"{total_matching} postings match; showing the {MAX_PAGE_SIZE} best-ranked. "
+                    "Narrow the watch (required_skills, company) to see the rest; the "
+                    "remainder is not re-reported on later pulls."
+                ) if total_matching > MAX_PAGE_SIZE else None,
                 "baseline": (
                     "Everything matching this watch right now; nothing has been reported "
                     "for it before. Later pulls return only postings first seen after this "

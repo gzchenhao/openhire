@@ -105,7 +105,7 @@ def test_required_skills_is_and_semantics(session):
 def test_remote_scope_and_regions_exposed(session):
     res = service.search_jobs(session, skills=["rust"], remote=True, now=NOW)
     for r in res:
-        assert r["remote_scope"] in {"worldwide", "region_locked", "country_locked"}
+        assert r["remote_scope"] in {"worldwide", "region_locked", "country_locked", "unknown"}
         assert isinstance(r["eligible_regions"], list)
         assert "days_open" in r and "datePosted" in r and "role_family" in r
 

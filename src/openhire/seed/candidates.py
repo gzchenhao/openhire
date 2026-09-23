@@ -109,7 +109,7 @@ _LEVER = [
     ("palantir", "Palantir"),
     ("mistral", "Mistral AI"),
     ("matchgroup", "Match Group"),
-    ("weride", "WeRide"),
+    ("weride", "文远知行 WeRide"),
     # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
     ("zoox", "Zoox"),
     ("waabi", "Waabi"),
@@ -216,7 +216,7 @@ _MOKA = [
     # 2026-09-03 leader ruling (reports/020 §拍板): admission criterion is now "first-tier
     # in-house AD/embodied-AI investment", not the primary-business label — XPeng qualifies
     # (XNGP + humanoid Iron); Dreame (appliances) and Inovance (components) still do not.
-    ("xiaopeng/67918", "小鹏汽车 XPeng", "xiaopeng"),
+    ("xiaopeng/67918", "小鹏汇天 XPeng AeroHT", "xiaopeng"),
 ]
 
 

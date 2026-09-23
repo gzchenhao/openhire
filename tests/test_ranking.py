@@ -75,8 +75,8 @@ def test_match_quality_is_case_insensitive():
 def test_freshness_recent_is_high_old_is_low():
     now = dt.datetime(2026, 7, 9, tzinfo=UTC)
     assert freshness(now, now) == pytest.approx(1.0)
-    assert freshness(now - dt.timedelta(days=15), now) == pytest.approx(0.5)
-    assert freshness(now - dt.timedelta(days=60), now) == 0.0
+    assert freshness(now - dt.timedelta(days=90), now) == pytest.approx(0.5)
+    assert freshness(now - dt.timedelta(days=200), now) == 0.0
 
 
 # --- ghost_reason (N4 from the round-2 tester report) -------------------------

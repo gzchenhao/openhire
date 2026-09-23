@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import sys
+import concurrent.futures
 import threading
 from typing import Any
 
@@ -111,6 +112,16 @@ def search_jobs(
 
     To answer "what is <employer> hiring?", pass `company` — do not filter client-side.
 
+    Skills are alias-aware on the request side: 感知 finds rows tagged perception, 占用网络
+    finds occ / occupancy / occupancy networks. If a requested tag matches NOTHING in the
+    index, the response switches to `{results, unknown_skills, suggestions}` so you can
+    tell the user which word was dropped instead of presenting a half-match as a match.
+
+    `role_family` filters exclude rows KNOWN to be another family; rows not yet classified
+    (role_family null, typically the newest postings) are included, not hidden.
+    `remote_scope` can also be "unknown": remote with a location we could not read; it is
+    never reported as "worldwide" any more.
+
     Two things worth knowing before you spend your budget:
 
     * `role_group` is shared by the same role posted in several cities — one employer may
@@ -138,7 +149,7 @@ def search_jobs(
         skills: skill tags, ANY-overlap match (union), e.g. ["rust", "k8s"].
         required_skills: skills that must ALL be present (AND), e.g. ["rust"].
         remote: if true, only fully-remote roles.
-        remote_scope: filter remote roles by reach: "worldwide" | "region_locked" |
+        remote_scope: filter remote roles by reach: "worldwide" | "unknown" | "region_locked" |
             "country_locked".
         min_salary: salary floor. By default roles with NO stated pay are KEPT (they can't
             be ruled out); set require_stated_salary=true to drop them.
@@ -188,6 +199,22 @@ def search_jobs(
                         f"offset={offset + service.MAX_PAGE_SIZE} for the next page, and "
                         "keep going until a call returns fewer rows than the page size. "
                         "get_company_info's active_jobs is the true total for one employer."
+                    ),
+                }
+            # A half-matched search used to return rows and say nothing about the words
+            # it dropped: 感知 + bev returned 20 bev rows and the reader assumed 感知 had
+            # matched too. Same shape as the empty-result diagnosis, only with results.
+            unknown, suggestions = service.skill_diagnostics(s, skills, required_skills)
+            if unknown:
+                return {
+                    "results": rows,
+                    "matched": len(rows),
+                    "unknown_skills": unknown,
+                    "suggestions": suggestions,
+                    "note": (
+                        f"These rows matched the OTHER tags you asked for; {unknown!r} exists "
+                        "on no live posting in this index. See suggestions for the tags the "
+                        "index actually uses."
                     ),
                 }
             return rows
@@ -272,11 +299,20 @@ def refresh_index(company: str) -> dict:
     jobs_new / jobs_updated / jobs_delisted / jobs_unchanged.
     """
     _await_index()
-    with session_scope() as s:
-        try:
-            return service.refresh_company_index(s, company)
-        except OpenHireError as e:
-            return e.as_dict()
+
+    def _run() -> dict:
+        with session_scope() as s:
+            try:
+                return service.refresh_company_index(s, company)
+            except OpenHireError as e:
+                return e.as_dict()
+
+    # The crawler drives its own event loop with asyncio.run(). FastMCP invokes this
+    # handler from inside the server's already-running loop, where that raises
+    # "asyncio.run() cannot be called from a running event loop": every tester who
+    # reached for "today's truth" got that traceback. A worker thread has no loop.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(_run).result()
 
 
 @mcp.tool(
@@ -293,6 +329,10 @@ def check_watches(fingerprint: str) -> dict:
     has been reported for that watch before, so the whole standing set is new to the user.
     Each result says which it is via `is_first_pull`; do not present a first pull to the
     user as "postings that appeared since last time".
+
+    Each result also carries `total_matching` and `truncated`: a broad watch can match
+    hundreds of postings and only the 100 best-ranked are returned. Tell the user when
+    `truncated` is true; the rest is not re-reported later.
     """
     _await_index()
     with session_scope() as s:
