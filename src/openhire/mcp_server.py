@@ -168,6 +168,16 @@ def search_jobs(
             "XPeng"). Exact id/name hits win; otherwise it is a caseless substring, so a
             broad word can match several employers. A name this index does not carry comes
             back as the empty-result object with `unknown_companies` and suggestions.
+            Some employers are known but deliberately NOT indexed: their careers sites run
+            on Feishu Recruitment, whose job-list API requires a request signature; we
+            treat that as access control and do not work around it. For those (Momenta,
+            小马智行 Pony.ai, 智元 AgiBot, MiniMax, 智谱 Zhipu, 商汤 SenseTime, 逐际动力
+            LimX, 自变量 X Square, 千寻智能 Spirit AI, 加速进化 Booster) the empty-result
+            object carries `known_not_indexed` with the employer's own careers portal URL,
+            the reason, and `employer_opt_in` (the employer can authorize the read-only
+            Feishu open-platform scopes hire:site:readonly and hire:site_job_post:readonly).
+            Send the user to that portal; do not retry with a looser filter, and do not
+            present the absence as "not hiring".
         location: caseless substring over the employer's location text, either language
             ("北京", "Beijing", "Mountain View", "Remote"). Combine with remote_scope to keep
             or drop a country. No location filter means all locations.
@@ -242,12 +252,24 @@ def get_company_info(company_id: str) -> dict:
     """Aggregate, anonymous trust signals for one employer.
 
     Returns ghost_score_avg, active_jobs, and index_built_at (when the index was last
-    built). NEVER returns any individual candidate data — the server holds none.
+    built). NEVER returns any individual candidate data: the server holds none.
 
     `claimed` is true only when the employer has claimed this tenant and we verified them by
-    corporate identity — never by payment, and it never affects ranking. It is the only
+    corporate identity, never by payment, and it never affects ranking. It is the only
     signal here that comes from the employer rather than from their public ATS data, and it
     is what makes `response_sla_days` non-null on their postings.
+
+    Takes an id or any part of the name in either language, like search_jobs' `company`.
+
+    Known-but-not-indexed employers (Momenta, 小马智行 Pony.ai, 智元 AgiBot, MiniMax, 智谱
+    Zhipu, 商汤 SenseTime, 逐际动力 LimX, 自变量 X Square, 千寻智能 Spirit AI, 加速进化
+    Booster) return a structured answer instead of ERR_COMPANY_NOT_FOUND: `indexed: false`,
+    `careers_url` (their own portal), `reason` (their careers site runs on Feishu
+    Recruitment, whose job-list API requires a request signature; we treat that as access
+    control and do not work around it) and `employer_opt_in` (the employer can authorize
+    the read-only Feishu open-platform scopes hire:site:readonly and
+    hire:site_job_post:readonly). There are no trust signals in that answer because we hold
+    none of their postings; do not read the absence as a verdict on the employer.
     """
     _await_index()
     with session_scope() as s:

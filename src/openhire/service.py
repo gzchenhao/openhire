@@ -29,6 +29,7 @@ from .errors import OpenHireError
 from .ats import apply_url_is_trusted
 from .pipeline.ghost_score import ghost_reason
 from .seed.claims import employer_correction
+from .seed import not_indexed
 from .pipeline.ranking import freshness, match_quality, rank_score
 
 DELIVERED_VIA = "employer_site"  # v0.1 always the employer's own channel
@@ -628,6 +629,26 @@ def diagnose_empty_search(
     if company:
         matched = resolve_company(session, company)
         if not matched:
+            known = not_indexed.lookup(company)
+            if known:
+                # Not a typo and not a gap we are unaware of: an employer we know, whose
+                # portal we deliberately do not read. Say exactly that, with where to go
+                # instead and what would change it, rather than the generic hint.
+                return {
+                    "results": [],
+                    "matched": 0,
+                    "hint": known_not_indexed_hint(known),
+                    "known_not_indexed": [e.as_dict() for e in known],
+                    "unknown_companies": [company],
+                    "suggestions": {},
+                    "filters_applied": {
+                        k: v for k, v in {
+                            "company": company, "skills": skills,
+                            "required_skills": required_skills,
+                            "role_family": role_family, "currency": currency,
+                        }.items() if v
+                    },
+                }
             names = sorted(
                 (c.name for c in session.execute(select(Company)).scalars() if c.name),
                 key=str.casefold,
@@ -641,7 +662,7 @@ def diagnose_empty_search(
                 "matched": 0,
                 "hint": (
                     f"This index has no company matching {company!r}. It covers 139 employers, "
-                    "not the whole market, so the company is most likely simply not indexed — "
+                    "not the whole market, so the company is most likely simply not indexed: "
                     + ("retry with one of unknown_companies' suggestions, or drop the company filter."
                        if close else
                        "drop the company filter to search the whole index, or check the employer "
@@ -694,6 +715,41 @@ def diagnose_empty_search(
     }
 
 
+def known_not_indexed_hint(known: list["not_indexed.NotIndexedEmployer"]) -> str:
+    """One sentence a seeker can act on: where the postings actually are, why they are
+    not here, and that the employer (not the seeker) holds the key to changing that."""
+    first = known[0]
+    where = (
+        f"Its postings are on its own careers portal at {first.careers_url}, so send the "
+        "user there directly."
+        if first.careers_url else
+        "We have not confirmed its careers portal URL, so do not guess one."
+    )
+    return (
+        f"{first.name} is known to us but deliberately NOT in this index: {first.reason} "
+        f"{where} This is not a typo and dropping the company filter will not find it. "
+        "The employer can change this by authorising the read-only Feishu open-platform "
+        f"scopes {', '.join(first.employer_opt_in.get('scopes', []))}; see "
+        "known_not_indexed[].employer_opt_in."
+    )
+
+
+def known_not_indexed_info(entry: "not_indexed.NotIndexedEmployer") -> dict:
+    """The get_company_info shape for an employer we know but do not index.
+
+    Deliberately NOT the indexed shape with zeros in it: there is no ghost_score_avg,
+    active_jobs or median_days_open because we hold none of this employer's postings,
+    and a zero there would read as a verdict on their hiring.
+    """
+    out = entry.as_dict()
+    out.update({
+        "company_id": None,
+        "claimed": False,
+        "hint": known_not_indexed_hint([entry]),
+    })
+    return out
+
+
 # --- company trust signals (aggregate only) ----------------------------------
 def get_company_info(session: Session, company_id: str, now: dt.datetime | None = None) -> dict:
     company = session.get(Company, company_id)
@@ -710,6 +766,21 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
                 f"{company_id!r} matches {len(matched)} employers: {names}. Re-ask with one id.",
             )
         else:
+            known = not_indexed.lookup(company_id)
+            if len(known) == 1:
+                # A structured answer, not an error: the employer exists, we know their
+                # portal, and we know why nothing of theirs is here. There are no trust
+                # signals to report because we hold none of their postings, and every
+                # aggregate field is absent rather than zero so nobody reads "0 active
+                # jobs" as "not hiring".
+                return known_not_indexed_info(known[0])
+            if len(known) > 1:
+                names = ", ".join(f"{e.id} ({e.name})" for e in known)
+                raise OpenHireError(
+                    "ERR_AMBIGUOUS_COMPANY",
+                    f"{company_id!r} matches {len(known)} employers we know but do not "
+                    f"index: {names}. Re-ask with one id.",
+                )
             raise OpenHireError(
                 "ERR_COMPANY_NOT_FOUND",
                 f"No company with id or name matching {company_id!r}. Use the company_id "
@@ -842,6 +913,17 @@ def watch_intent(
         # here instead of quietly matching nothing (or everything) every week.
         matched = resolve_company(session, clean["company"])
         if not matched:
+            known = not_indexed.lookup(clean["company"])
+            if known:
+                # Still refused (a watch on an employer we hold nothing of would never
+                # fire), but with the real reason and the portal, not "not found".
+                raise OpenHireError(
+                    "ERR_COMPANY_NOT_FOUND",
+                    f"{known[0].name} is known but deliberately not indexed, so a watch on it "
+                    f"could never match anything. {known[0].reason} "
+                    + (f"Its own careers portal is {known[0].careers_url}." if known[0].careers_url
+                       else "We have not confirmed its careers portal URL."),
+                )
             raise OpenHireError(
                 "ERR_COMPANY_NOT_FOUND",
                 f"No employer in this index matches {clean['company']!r}; search_jobs with that "

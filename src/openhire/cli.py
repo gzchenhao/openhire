@@ -302,6 +302,12 @@ def search(
         console.out("无匹配结果。")
         if why.get("hint"):
             console.note(why["hint"])
+        for known in why.get("known_not_indexed") or []:
+            # Known and deliberately absent: give the portal, so the seeker is not left
+            # with "not indexed" and nowhere to go.
+            portal = known.get("careers_url") or "（招聘站地址未确认）"
+            console.note(f"{known['name']} 未收录（{known['ats']} 招聘站要求请求签名，"
+                         f"我们视为访问控制、不绕过）。请直接去雇主自己的招聘站：{portal}")
         for tag, close in (why.get("suggestions") or {}).items():
             if close:
                 console.note(f"{tag} → 是不是想找：{', '.join(close)}")

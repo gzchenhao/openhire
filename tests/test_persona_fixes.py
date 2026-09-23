@@ -154,8 +154,12 @@ def test_company_info_resolves_a_name(session):
     info = service.get_company_info(session, "佑驾")
     assert info["company_id"] == "minieye"
     with pytest.raises(OpenHireError) as e:
-        service.get_company_info(session, "Momenta")
+        service.get_company_info(session, "Nonexistent Robotics Co")
     assert e.value.code == "ERR_COMPANY_NOT_FOUND"
+    # Momenta is no longer "not found": it is known and deliberately not indexed, and the
+    # answer says so (tests/test_not_indexed.py pins the shape).
+    known = service.get_company_info(session, "Momenta")
+    assert known["indexed"] is False and known["company_id"] is None
 
 
 # --- 7. refresh_index must survive being called from inside a running event loop --------
