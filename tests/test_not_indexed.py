@@ -17,7 +17,7 @@ import inspect
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from openhire import mcp_server, service
@@ -226,6 +226,41 @@ def test_watch_on_a_known_not_indexed_employer_is_refused_with_the_reason(sessio
     assert "request signature" in e.value.message
     assert "https://momenta.jobs.feishu.cn/" in e.value.message
     assert EM_DASH not in e.value.message
+
+
+# --- the CLI ----------------------------------------------------------------------------------
+def test_cli_prints_only_the_chinese_note_for_a_known_employer(monkeypatch):
+    """The English hint is written for an agent; a person at the terminal gets the
+    Chinese note with the portal, and nothing else about it."""
+    from typer.testing import CliRunner
+
+    from openhire.cli import app
+    from openhire.db import init_db, session_scope
+
+    init_db()
+    with session_scope() as s:
+        for t in (Job, Company):
+            for row in s.execute(select(t)).scalars():
+                s.delete(row)
+        s.flush()
+        s.add(Company(id="minieye", name="佑驾创新 MINIEYE", ats_vendor="moka",
+                      ats_tenant="minieye", careers_url="x", last_crawled_at=NOW))
+        # One live row, so this is a company miss and not the "no index yet" branch.
+        s.add(Job(
+            id="minieye:1", company_id="minieye", title="感知算法工程师", description_raw="x",
+            skills=["perception", "bev"], remote_policy="onsite", location="Beijing",
+            posted_at=NOW, first_seen_at=NOW, verified_at=NOW, source="ats_public_api",
+            apply_channel="https://app.mokahr.com/apply/minieye/1#/job/1", content_hash="h1",
+            ghost_score=0.0, role_family="engineering",
+        ))
+    res = CliRunner().invoke(app, ["search", "--skills", "bev", "--company", "Momenta"])
+    assert res.exit_code == 0
+    # The console wraps long lines, so compare with every whitespace character removed.
+    out = "".join(res.stdout.split())
+    assert "Momenta魔门塔未收录" in out
+    assert "https://momenta.jobs.feishu.cn/" in out
+    assert "deliberatelyNOTinthisindex" not in out
+    assert "hire:site:readonly" not in out
 
 
 # --- the MCP boundary -----------------------------------------------------------------------

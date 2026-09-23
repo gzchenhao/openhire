@@ -300,11 +300,13 @@ def search(
                 role_family=role_family, currency=currency, company=company,
             )
         console.out("无匹配结果。")
-        if why.get("hint"):
+        known_rows = why.get("known_not_indexed") or []
+        if why.get("hint") and not known_rows:
             console.note(why["hint"])
-        for known in why.get("known_not_indexed") or []:
+        for known in known_rows:
             # Known and deliberately absent: give the portal, so the seeker is not left
-            # with "not indexed" and nowhere to go.
+            # with "not indexed" and nowhere to go. The English `hint` is written for an
+            # agent relaying the answer; a person at this terminal gets only this note.
             portal = known.get("careers_url") or "（招聘站地址未确认）"
             console.note(f"{known['name']} 未收录（{known['ats']} 招聘站要求请求签名，"
                          f"我们视为访问控制、不绕过）。请直接去雇主自己的招聘站：{portal}")
