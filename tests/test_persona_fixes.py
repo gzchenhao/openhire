@@ -156,3 +156,25 @@ def test_company_info_resolves_a_name(session):
     with pytest.raises(OpenHireError) as e:
         service.get_company_info(session, "Momenta")
     assert e.value.code == "ERR_COMPANY_NOT_FOUND"
+
+
+# --- 7. refresh_index must survive being called from inside a running event loop --------
+def test_refresh_index_tool_runs_inside_a_running_loop(monkeypatch):
+    """FastMCP calls the sync tool from its loop thread; the crawler calls asyncio.run().
+    Before 0.6.3 that combination raised on every call. Simulate exactly that."""
+    import asyncio
+
+    from openhire import mcp_server, service
+
+    def fake_refresh(session, company):
+        # What the real crawl does: spin its own loop. Illegal on a thread with a running one.
+        return {"refreshed": True, "ran": asyncio.run(asyncio.sleep(0, result="in-thread")), "company": company}
+
+    monkeypatch.setattr(service, "refresh_company_index", fake_refresh)
+    monkeypatch.setattr(mcp_server, "_await_index", lambda: None)
+
+    async def call_from_loop():
+        return mcp_server.refresh_index("minieye")
+
+    out = asyncio.run(call_from_loop())
+    assert out == {"refreshed": True, "ran": "in-thread", "company": "minieye"}

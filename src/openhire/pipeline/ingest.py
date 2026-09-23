@@ -193,6 +193,7 @@ def _insert_new_job(
         salary_currency=extraction.salary_currency,
         salary_period=rec.salary_period,  # the ATS's own period (annual | monthly)
         salary_inferred=False,  # v0.1 never infers
+        extraction_source=extraction.extractor,  # who actually answered, not who was asked
         location=rec.location,
         posted_at=_aware(rec.posted_at) if rec.posted_at else None,  # real ATS date
         updated_at=_aware(rec.updated_at) if rec.updated_at else None,
@@ -242,6 +243,11 @@ def _update_job(
     job.title = rec.title
     job.description_raw = rec.description_raw
     job.skills = extraction.skills
+    # The skills were just replaced by THIS extractor, so the provenance moves with them.
+    # Leaving the old stamp is how a weekly heuristic re-crawl left "deepseek" on rows
+    # whose skills it had overwritten, and also hid them from the monthly LLM pass, which
+    # only re-extracts rows not already stamped as LLM.
+    job.extraction_source = extraction.extractor
     job.remote_policy = extraction.remote_policy
     job.salary_min = extraction.salary_min
     job.salary_max = extraction.salary_max

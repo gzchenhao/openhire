@@ -30,6 +30,11 @@ REMOTE_POLICIES = ("remote", "hybrid", "onsite", "unknown")
 @dataclass
 class ExtractionResult:
     skills: list[str] = field(default_factory=list)
+    # Which extractor actually produced this. Every LLM path degrades to the heuristic
+    # on failure, and the row used to be stamped with the backend that was *asked*, not
+    # the one that *answered*: 3,098 live rows (19%) carried an LLM stamp over a
+    # heuristic skill list. The stamp must come from here, never from the caller.
+    extractor: str = "heuristic"
     remote_policy: str = "unknown"
     salary_min: int | None = None
     salary_max: int | None = None
@@ -71,9 +76,9 @@ _SKILL_VOCAB: dict[str, list[str]] = {
     "redis": [r"redis"],
     "grpc": [r"grpc"],
     "graphql": [r"graphql"],
-    "react": [r"react"],
+    "react": [r"react(?:\.?js)?"],
     "node": [r"node\.?js"],
-    "llm": [r"\bllm\b", r"large language model"],
+    "llm": [r"\bllm\b", r"large language models?"],
     "rag": [r"\brag\b", r"retrieval[- ]augmented"],
     "nlp": [r"\bnlp\b", r"natural language processing"],
     "pytorch": [r"pytorch"],
@@ -81,7 +86,7 @@ _SKILL_VOCAB: dict[str, list[str]] = {
     "jax": [r"\bjax\b"],
     "cuda": [r"cuda"],
     "triton": [r"triton"],
-    "transformers": [r"transformer"],
+    "transformers": [r"transformers?"],
     "ml": [r"machine learning", r"\bml\b"],
     "mlops": [r"mlops"],
     "distributed-systems": [r"distributed systems?"],
@@ -89,13 +94,26 @@ _SKILL_VOCAB: dict[str, list[str]] = {
     "inference": [r"inference"],
     "vector-db": [r"vector (database|db|store)", r"embeddings?"],
     "data-eng": [r"data engineer", r"data pipeline"],
-    "security": [r"security engineer", r"appsec", r"infosec"],
+    "security": [r"security engineer(?:ing)?", r"appsec", r"infosec"],
     "networking": [r"networking", r"\btcp/ip\b"],
     "compilers": [r"compilers?"],
     "cuda-kernels": [r"kernel (development|programming)"],
 }
+# Every pattern is matched on word boundaries. The raw list said so in its comment and
+# did not do it: a bare `rust` fired on "trust" and `scala` on "scalable", which put rust
+# on 2,432 postings whose text never contains the word (83% of all rust tags) and scala
+# on 1,923 (87%). Lookarounds rather than \b so "c++" and "node.js" still terminate.
+def _bounded(p: str) -> str:
+    if "\\b" in p:
+        return p
+    # "C++17" and "C++11" are how the language is written in JDs; a pattern that ends in a
+    # symbol keeps its leading guard only.
+    tail = "" if p.endswith("\\+") else r"(?![a-z0-9])"
+    return rf"(?<![a-z0-9]){p}{tail}"
+
+
 _COMPILED_VOCAB = {
-    tag: [re.compile(p, re.I) for p in pats] for tag, pats in _SKILL_VOCAB.items()
+    tag: [re.compile(_bounded(p), re.I) for p in pats] for tag, pats in _SKILL_VOCAB.items()
 }
 
 # e.g. "$180,000 - $240,000", "$180k–$240k", "USD 180000 to 240000"
@@ -212,6 +230,7 @@ class HeuristicExtractor:
             salary_min=smin,
             salary_max=smax,
             salary_currency=scur,
+            extractor="heuristic",
         )
 
 
@@ -299,6 +318,7 @@ class AnthropicExtractor:
             salary_min=smin,
             salary_max=smax,
             salary_currency=scur,
+            extractor=self.name,
         )
 
 
@@ -539,6 +559,7 @@ class DeepSeekExtractor:
         return ExtractionResult(
             skills=skills[:12], remote_policy=remote,
             salary_min=smin, salary_max=smax, salary_currency=scur,
+            extractor=self.name,
         )
 
     def extract(self, job: JobRecord) -> ExtractionResult:
