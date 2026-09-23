@@ -42,3 +42,6 @@ Thumbs.db
 .vscode/
 drafts/
 .tools/
+
+# workflow agent worktrees (never tracked)
+.claude/worktrees/
