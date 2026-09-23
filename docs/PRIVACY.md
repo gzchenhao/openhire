@@ -34,8 +34,9 @@ refuses to install any snapshot whose user-state tables are non-empty.
 ## 3. Third parties
 
 - Outbound network requests are made only to (a) employers' **public** ATS endpoints
-  (Greenhouse, Lever, Ashby, Beisen, Moka) to read job postings, and (b) GitHub Releases to
-  download the public snapshot.
+  (Greenhouse, Lever, Ashby, Beisen, Moka) and first-party employer career-site mirrors
+  (currently Li Auto: `www.lixiang.com` and `api-web.lixiang.com`) to read job postings,
+  and (b) GitHub Releases to download the public snapshot.
 - We do not use analytics, tracking pixels, advertising SDKs or telemetry of any kind.
 - We never sell, share or transfer data to third parties. There is no data to sell.
 

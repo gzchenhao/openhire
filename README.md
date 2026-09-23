@@ -58,14 +58,16 @@ to hire. A long-open role can equally mean "hard to fill". Treat it as a reason 
 An MCP server that turns **any** MCP-speaking assistant — Claude, Cursor, Windsurf, Cline,
 ChatGPT via connectors — into a private radar for
 **AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **139 employers'**
-own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka), across
+own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka, plus
+first-party employer career sites such as Li Auto's), across
 the US, Europe **and China** (Waymo, Figure, Zoox — and Unitree, XPeng, UBTECH, Mech-Mind…).
 **No account. No signup. No résumé upload. Ever.**
 
 Three things a job board won't do for you:
 
 - **Surfaces how long each role has really been open.** Every listing carries a `ghost_score` aged off the employer's
-  **real** posting date — the "2 days ago" a board shows you can be 300 days old in the ATS.
+  **real** posting date where the employer's system reports one (otherwise the day this index first
+  saw it, flagged `date_signal`): the "2 days ago" a board shows you can be 300 days old in the ATS.
 - **Structural privacy, not a pinky-promise.** There is no résumé field in the protocol; a CI
   test fails the build if anyone adds one. Matching runs on your machine — only an anonymous
   fingerprint reaches the server.
@@ -292,7 +294,7 @@ separate an abandoned requisition from one somebody is still tending:
 | field | question it answers |
 |---|---|
 | `verified_at` | did the employer's ATS still return this the last time we looked? |
-| `datePosted` / `days_open` | how long has it been open? `ghost_score` ages off this |
+| `datePosted` / `days_open` | how long has it been open? `ghost_score` ages off this. The employer's own date where its system reports one; otherwise the day this index first saw the posting, and the row carries `date_signal: "not_reported_by_ats"` (Li Auto's first-party mirror reports no date), so read it as a lower bound |
 | `updated_at` / `days_since_update` | when did the employer last touch it? **Null when their ATS does not report one** (Ashby, Lever and Beisen do not; Greenhouse and Moka do) — read null as "unknown", never as "abandoned" |
 
 `ghost_score = 1.0` alone is not a verdict. Open 367 days and untouched for 367 days reads as
@@ -409,8 +411,9 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## FAQ
 
 **Where does the job data come from?**
-Directly from 139 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka) — the
-same endpoints that power their careers pages. No scraping, no third-party job boards. `source` is
+Directly from 139 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, plus
+first-party employer career sites such as Li Auto's), the same endpoints that power their careers
+pages. No third-party job boards. `source` is
 always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.
 The public index is auto-refreshed weekly, so a fresh `ohp bootstrap` starts from recent data.
 

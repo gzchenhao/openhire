@@ -25,9 +25,11 @@ mcp = FastMCP(
     "openhire",
     instructions=(
         "OpenHire searches job postings pulled straight from employers' own ATS APIs "
-        "(Greenhouse, Lever, Ashby, Beisen 北森, Moka): 139 employers in AI infra, "
-        "autonomous driving and embodied AI, every posting with the employer's real "
-        "posting date, days_open, a ghost_score and a direct apply link. A résumé or any "
+        "(Greenhouse, Lever, Ashby, Beisen 北森, Moka, plus first-party employer career "
+        "sites): 139 employers in AI infra, autonomous driving and embodied AI, every "
+        "posting with the employer's own posting date where its ATS reports one, otherwise "
+        "the day this index first saw it (flagged date_signal), plus days_open, a "
+        "ghost_score and a direct apply link. A résumé or any "
         "PII NEVER transits this server — only an anonymous, client-generated fingerprint "
         "(e.g. '#a3f9-k2p7-x8q1'; 12+ random characters, short tags collide). Matching happens on the client. Use search_jobs to hard-filter "
         "the live index (results carry verified_at, ghost_score and apply_channel); "
