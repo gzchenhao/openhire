@@ -203,6 +203,13 @@ def extract_salary_from_text(text: str) -> tuple[int | None, int | None, str | N
 def _resolve_remote(job: JobRecord, text: str) -> str:
     if job.remote_hint in ("remote", "hybrid", "onsite"):
         return job.remote_hint
+    if not has_description(job):
+        # No JD: the only text left is the title, and a title is not where an employer
+        # states a workplace policy. Stop at the ATS-native fields (remote_hint above,
+        # location below) rather than reading "remote" off a title.
+        if job.location and "remote" in job.location.lower():
+            return "remote"
+        return "unknown"
     if re.search(r"\bfully remote\b|\b100% remote\b|\bremote[- ]first\b", text):
         return "remote"
     if re.search(r"\bhybrid\b", text):
@@ -222,8 +229,9 @@ def has_description(job: JobRecord) -> bool:
     title cannot support it: "Go-To-Market 经理" would tag `go`, "信任与安全" says nothing
     about Rust, and an LLM handed only a title would answer from what the title implies,
     which is inference, not extraction. So every extractor checks this first and emits no
-    skills when it is False. Title-only classification (`role_family`) is unaffected:
-    that field is defined as a reading of the title.
+    skills when it is False, and `_resolve_remote` stops at the ATS-native fields for the
+    same reason. Title-only classification (`role_family`) is unaffected: that field is
+    defined as a reading of the title.
     """
     return bool((job.description_raw or "").strip())
 
@@ -294,6 +302,10 @@ class AnthropicExtractor:
         self._fallback = HeuristicExtractor()
 
     def extract(self, job: JobRecord) -> ExtractionResult:
+        # Same rule as the OpenAI-compatible backends: no JD, no model call. Handed only a
+        # title the model would answer from what the title implies, which is inference.
+        if not has_description(job):
+            return self._fallback.extract(job)
         prompt = (
             f"Title: {job.title}\nLocation: {job.location or 'n/a'}\n\n"
             f"Description:\n{(job.description_raw or '')[:6000]}"
