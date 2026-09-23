@@ -219,7 +219,12 @@ class HeuristicExtractor:
 
     def extract(self, job: JobRecord) -> ExtractionResult:
         text = f"{job.title}\n{job.description_raw}"
-        skills = extract_skills(text)
+        # A posting whose employer gave us no description gets NO skills. The title alone
+        # ("Python 工程师") would still trip the vocabulary, and the resulting tags would
+        # look like something we read in the JD when there was no JD. An empty list is the
+        # honest answer, and it stays empty until a description arrives (first-party
+        # mirrors such as Li Auto can hand back a roster row whose detail call failed).
+        skills = extract_skills(text) if (job.description_raw or "").strip() else []
         remote = _resolve_remote(job, text)
         # Prefer structured ATS compensation; fall back to JD text (still not inference).
         smin, smax, scur = job.salary_min, job.salary_max, job.salary_currency

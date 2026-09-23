@@ -38,6 +38,8 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
     "lever": {"jobs.lever.co"},
     "ashby": {"jobs.ashbyhq.com"},
     "moka": {"app.mokahr.com"},
+    # First-party employer mirror, not an ATS: the apply page is the employer's own site.
+    "lixiang": {"www.lixiang.com"},
 }
 
 # Beisen (北森) gives every employer its own host (`<tenant>.zhiye.com`), so its canonical
@@ -118,6 +120,10 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
         # `tenant` is already "<org>/<siteId>". The portal is a hash-routed SPA, so the
         # job id lives in the fragment — the path form 404s.
         return f"https://app.mokahr.com/apply/{tenant}#/job/{ats_job_id}"
+    if vendor == "lixiang":
+        # Li Auto's own job page, which carries the 立即申请 button. `tenant` is the board
+        # (social); the page URL does not vary by board.
+        return f"https://www.lixiang.com/employ/detail/{ats_job_id}.html"
     raise ValueError(f"unknown vendor: {vendor!r}")
 
 

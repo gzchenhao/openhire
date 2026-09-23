@@ -225,6 +225,22 @@ _MOKA = [
 ]
 
 
+# --- First-party employer mirrors (no ATS vendor) --------------------------------------
+# Some employers publish their roster through their own public API rather than an ATS.
+# Each such employer is its own vendor with exactly one tenant, and the tenant names the
+# board in the API path. Admission criterion is the same as everywhere else in this file:
+# first-tier in-house AD / embodied-AI investment, verified live with plain GETs and no
+# signature, cookie or login (reports/020 boundary).
+#
+# Li Auto 理想汽车, verified 2026-09-23: 772 社招 postings on `api-web.lixiang.com`. The
+# mirror carries NO posting date on any row, so every Li Auto posting ages from the day
+# we first saw it (`date_signal: "not_reported_by_ats"`), never from an invented date.
+# The `school` (校招) board is deliberately excluded, as Beisen's 校招 category is.
+_LIXIANG = [
+    ("social", "理想汽车 Li Auto", "lixiang"),
+]
+
+
 def all_candidates() -> list[Candidate]:
     out: list[Candidate] = []
     for vendor, rows in (
@@ -233,6 +249,7 @@ def all_candidates() -> list[Candidate]:
         ("ashby", _ASHBY),
         ("beisen", _BEISEN),
         ("moka", _MOKA),
+        ("lixiang", _LIXIANG),
     ):
         for row in rows:
             tenant, name = row[0], row[1]
@@ -244,4 +261,7 @@ def all_candidates() -> list[Candidate]:
 
 
 def candidate_count() -> int:
-    return len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN) + len(_MOKA)
+    return (
+        len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN) + len(_MOKA)
+        + len(_LIXIANG)
+    )

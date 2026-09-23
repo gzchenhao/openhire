@@ -33,6 +33,15 @@ def test_skills_are_lowercase_normalized():
     assert all(s == s.lower() for s in skills)
 
 
+def test_no_skills_from_a_title_when_the_description_is_empty():
+    """An employer that gave us no JD gets no tags: 'Rust Engineer' + '' must not become
+    ['rust'], because that tag would read as something we saw in a description."""
+    assert HeuristicExtractor().extract(_job("Senior Rust / CUDA Engineer", "")).skills == []
+    assert HeuristicExtractor().extract(_job("Senior Rust Engineer", "   \n ")).skills == []
+    # With any real description, the title still counts as context, as before.
+    assert "rust" in HeuristicExtractor().extract(_job("Senior Rust Engineer", "Build things.")).skills
+
+
 def test_remote_hint_wins():
     ex = HeuristicExtractor().extract(_job("Eng", "desc", remote_hint="hybrid"))
     assert ex.remote_policy == "hybrid"

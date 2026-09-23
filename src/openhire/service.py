@@ -242,6 +242,12 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "role_group": role_group(job.company_id, job.title),
         "datePosted": posted.date().isoformat() if posted else None,
         "days_open": (now.date() - posted.date()).days if posted else None,
+        # Present only when the employer's ATS or mirror reports NO posting date at all
+        # (Li Auto's first-party API carries none). datePosted and days_open above are
+        # then anchored on the day WE first saw the row, and a reader must not take them
+        # for the employer's own date. Same shape as update_signal below, and same rule:
+        # this names a limit of the source, not a fact about the employer.
+        **({"date_signal": "not_reported_by_ats"} if job.posted_at is None else {}),
         "location": job.location,
         "remote_policy": job.remote_policy,
         "remote_scope": _rs,          # worldwide | region_locked | country_locked | null

@@ -1,0 +1,131 @@
+{
+ "captured_on": "2026-09-23",
+ "list_url": "https://api-web.lixiang.com/osd-hr-recruitment-website/v1/recruit/social/job-page?page=1&page_size=200",
+ "note": "Real responses, list trimmed from 200 items to 3. total_count/total_pages are as served.",
+ "list": {
+  "data": {
+   "page": 1,
+   "total_pages": 4,
+   "items": [
+    {
+     "is_collect": 0,
+     "is_prior": 1,
+     "code": "F7584",
+     "department_title": "项目管理",
+     "job_mode_name": "全职",
+     "hire_mode": 1,
+     "second_job_function_title": "汽车研发",
+     "location_title": "北京",
+     "id": 4353,
+     "job_mode": "101",
+     "title": "整车项目开发经理"
+    },
+    {
+     "is_collect": 0,
+     "is_prior": 1,
+     "code": "A130659",
+     "department_title": "安庆零售中心8998",
+     "job_mode_name": "全职",
+     "hire_mode": 1,
+     "second_job_function_title": "市场与销售服务",
+     "location_title": "安庆",
+     "id": 5890,
+     "job_mode": "101",
+     "title": "零售门店总经理-安庆"
+    },
+    {
+     "is_collect": 0,
+     "is_prior": 1,
+     "code": "A193260",
+     "department_title": "智能汽车群组",
+     "job_mode_name": "全职",
+     "hire_mode": 1,
+     "second_job_function_title": "市场与销售服务",
+     "location_title": "北京顺义区",
+     "id": 17410,
+     "job_mode": "101",
+     "title": "海外公关经理"
+    }
+   ],
+   "total_count": 772,
+   "page_size": 200
+  },
+  "code": 0,
+  "message": "成功",
+  "trace_id": "6774005ab5e0a3d2364347f26d8c6e90"
+ },
+ "details": {
+  "4353": {
+   "data": {
+    "requirements": "<p>1. 8年以上汽车企业项目管理工作经验；有上市车型的完整开发项目经验；</p><p>2. 具有很强的项目管理和部门沟通、组织、逻辑思维能力；</p><p>3. 有性能集成/架构集成/功能集成经历的优先；</p><p>4. 具备汽车专业或相关专业知识，了解一定的财务知识。</p>",
+    "code": "F7584",
+    "description": "<p>1. 协助项目总监完成项目计划，项目任务书的编制、推动方案执行落地；</p><p>2. 对交付物管控表，零部件开发进展等实施跟踪，落实和闭环；</p><p>3. 安排并组织相关会议,记录会议纪要，推进和闭环问题表；</p><p>4. 跟踪试制试验运行状态，及时发现和通报项目风险，协调管控；</p><p>5. 跟踪落实项目预算申报、执行、复盘工作。</p>",
+    "second_job_function_title": "汽车研发",
+    "title": "整车项目开发经理",
+    "is_collect": 0,
+    "is_prior": 1,
+    "department_title": "项目管理",
+    "job_mode_name": "全职",
+    "is_apply": 0,
+    "hire_mode": 1,
+    "subject_name": "",
+    "first_job_function_title": "",
+    "location_title": "北京",
+    "id": 4353,
+    "limit_count": "-1",
+    "job_mode": "101"
+   },
+   "code": 0,
+   "message": "成功",
+   "trace_id": "0d84f1de08bff2b700cb80c0a7377d88"
+  },
+  "5890": {
+   "data": {
+    "requirements": "<p>1. 本科及以上学历，具备驾驶汽车的资格，熟练掌握驾驶技能;</p><p>2. 3年以上行业经历或零售背景，具备管理团队的经验，有一定的领导能力;</p><p>3. 渴望了解我们的技术和产品，愿意了解并贯彻品牌服务理念;</p><p>4. 具备强大的沟通技能，能够将公司愿景清晰准确的分享给所管理的团队;</p><p>5. 切实有能力促成积极的用户体验，以建立忠诚度并提供可以衡量的结果;</p><p>6. 能够培养和发展人才，针对团队工作表现进行有效的反馈和及时的帮助;</p><p>7. 具备商务拓展能力，并保持与第三方的良好合作关系;</p><p>8. 能够在复杂多变的环境中，根据门店及公司发展的需求，制定有效的计划并通过协作达成目标。</p>",
+    "code": "A130659",
+    "description": "<p>1. 指导团队跟进、发展、维护用户关系，配合管理团队达成零售店的销售目标并不断提升团队业绩达成;</p><p>2. 带领团队创造出色的用户体验，并不断提升零售中心用户服务满意度;</p><p>3. 维持与合作伙伴的良好关系，与交付和售后团队合作解决用户疑虑，提供管理团队改进工作的建议和反馈;</p><p>4. 负责零售中心日常运营，安排人员的班次、管理休假和考勤，管理试驾车辆和试驾预约，执行视觉陈列标准和后区标准，保证库存充足和库房安全，管理店面资产的报修、申请、退换、核销等，对于紧急事件进行处理和上报;</p><p>5. 组建高效团队，给予团队成员及时有效的反馈，针对工作表现提供辅导，促进个人成长和发展;</p><p>6. 友善并且热情的接待到店用户, 给予用户准确的指引和服务;</p><p>7. 掌握公司及产品的最新知识，提供个性化的演示和讲解服务，珍视用户提出的每一个问题并找到答案;</p><p>8. 建立用户的信心并鼓励用户体验试乘试驾，分享产品的使用真实感受;</p><p>9. 积极发现和收集用户需求，提供适合用户的完整购买方案;</p><p>10. 维持零售中心视觉陈列标准和后区标准，维护展车，展具和零售店整体环境。</p>",
+    "second_job_function_title": "市场与销售服务",
+    "title": "零售门店总经理-安庆",
+    "is_collect": 0,
+    "is_prior": 1,
+    "department_title": "安庆零售中心8998",
+    "job_mode_name": "全职",
+    "is_apply": 0,
+    "hire_mode": 1,
+    "subject_name": "",
+    "first_job_function_title": "",
+    "location_title": "安庆",
+    "id": 5890,
+    "limit_count": "-1",
+    "job_mode": "101"
+   },
+   "code": 0,
+   "message": "成功",
+   "trace_id": "170e65d50fb321851ed500841041b134"
+  },
+  "17410": {
+   "data": {
+    "requirements": "<p>1.8年以上国际公关工作经验（跨区域跨文化沟通）；</p><p>2.熟悉欧美、中东等海外市场的媒体生态，精通国际媒体传播规则；</p><p>3.具备高敏感度的政治、文化及商业风险意识，有快速应对危机公关和国际敏感事件的实际案例；</p><p>4.熟练使用媒体监测工具及数据分析工具；</p><p>5.出色的英文口语及写作能力。</p><p>加分项：</p><p>1.同时拥有跨国企业甲方经验和国际公关公司经验；</p><p>2.汽车行业经验。</p>",
+    "code": "A193260",
+    "description": "<p>1.建立并维护与海外主流媒体（财经、汽车、大众新闻等）及意见领袖的长期合作关系；</p><p>2.配合全球品牌活动或者整合营销campaign，策划公关侧行动计划，并协同海外个国家市场内容执行一致性与文化适配性；</p><p>3.与产品营销、社媒、品牌团队协作，将公关和品牌策略融入全球业务计划并推进执行；</p><p>4.支持高管国际亮相（采访、演讲、社交媒体发声等），提升品牌国际影响力；</p><p>5.监测理想汽车的海外媒体舆情，快速响应国际负面舆情，协调法务、产品、国家市场等降低品牌风险，并针对不同市场的文化及监管差异，制定本地化危机应对策略。</p>",
+    "second_job_function_title": "市场与销售服务",
+    "title": "海外公关经理",
+    "is_collect": 0,
+    "is_prior": 1,
+    "department_title": "智能汽车群组",
+    "job_mode_name": "全职",
+    "is_apply": 0,
+    "hire_mode": 1,
+    "subject_name": "",
+    "first_job_function_title": "",
+    "location_title": "北京顺义区",
+    "id": 17410,
+    "limit_count": "-1",
+    "job_mode": "101"
+   },
+   "code": 0,
+   "message": "成功",
+   "trace_id": "9c4e9977261b6d34617f919462f41782"
+  }
+ }
+}

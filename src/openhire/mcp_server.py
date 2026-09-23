@@ -106,7 +106,11 @@ def search_jobs(
     `pct_ghost_hi_touched_within_30d` in docs/numbers.json rather than quoting a figure.
 
     Null is NOT "abandoned": Ashby, Lever and Beisen do not report a last-touched date, and
-    those rows carry `update_signal: "not_reported_by_ats"` instead. Treating that null as
+    those rows carry `update_signal: "not_reported_by_ats"` instead. A row carrying
+    `date_signal: "not_reported_by_ats"` goes one step further: its source reports no
+    posting date at all (Li Auto's first-party mirror is one), so its datePosted and
+    days_open are counted from the day this index first saw it, not from the employer's
+    own date. Read those as a lower bound on age, never as the employer's timeline. Treating that null as
     "nobody has touched this in a year" would describe the vendor's API, not the employer.
     Honest limit even when present: an ATS bumps it on any edit or re-publish, so it means
     "touched", not necessarily "content changed".
