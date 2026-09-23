@@ -89,6 +89,13 @@ jobs:
               -d '{"PageIndex":0,"PageSize":1}' || echo "000")
             echo "beisen $tenant -> HTTP $code"
           done
+          # Li Auto's first-party mirror (vendor "lixiang") is the first CN source that is
+          # not an ATS. Whether api-web.lixiang.com answers a GitHub runner decides if the
+          # weekly refresh can carry it; record the answer rather than assume it.
+          code=$(curl -s -o /dev/null -w "%{http_code}" -m 25 \
+            "https://api-web.lixiang.com/osd-hr-recruitment-website/v1/recruit/social/job-page?page=1&page_size=1" \
+            || echo "000")
+          echo "lixiang social -> HTTP $code"
 
       - name: Build the snapshot
         # Re-runs the zero-user-state red-line check; it fails the build on any violation.
