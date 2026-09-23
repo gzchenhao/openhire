@@ -12,6 +12,7 @@ reads it after the live index came up empty.
 
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import inspect
 from pathlib import Path
@@ -273,8 +274,15 @@ def test_tool_docstrings_mention_the_known_not_indexed_answer():
     assert "Momenta" in search_doc and "Momenta" in info_doc
     assert "request signature" in search_doc and "request signature" in info_doc
     assert "access control" in info_doc and "employer_opt_in" in info_doc
-    # The registered tool descriptions are what the agent actually reads.
-    described = {t.name: t.description or "" for t in mcp_server.mcp._tool_manager.list_tools()}
+    # The registered tool descriptions are what the agent actually reads: list them the
+    # way a client does (tests/test_privacy.py and test_mcp_acceptance.py do the same).
+    from mcp.shared.memory import create_connected_server_and_client_session as connect
+
+    async def _described():
+        async with connect(mcp_server.mcp) as client:
+            return {t.name: t.description or "" for t in (await client.list_tools()).tools}
+
+    described = asyncio.run(_described())
     assert "known_not_indexed" in described["search_jobs"]
     assert "hire:site_job_post:readonly" in described["get_company_info"]
 
