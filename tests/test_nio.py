@@ -144,18 +144,18 @@ def test_plain_http_vendor_url_falls_back_to_canonical_https():
     assert again.url == res.url and again.used_fallback is False
 
 
-@pytest.mark.parametrize("url", [
-    "https://nio.jobs.feishu.cn/index/position/detail/7688282539764582666",
-    "https://www.nio.cn/careers/jobs",
-])
-def test_nio_hosts_are_trusted(url):
-    assert apply_url_is_trusted(url) is True
+def test_the_apply_host_is_trusted():
+    assert apply_url_is_trusted(
+        "https://nio.jobs.feishu.cn/index/position/detail/7688282539764582666"
+    ) is True
 
 
 @pytest.mark.parametrize("url", [
     "http://nio.jobs.feishu.cn/index/position/detail/7688282539764582666",
     "https://evil.jobs.feishu.cn/index/position/detail/1",
     "https://nio.jobs.feishu.cn.attacker.net/x",
+    # The roster page: where the crawler reads, never where anyone applies.
+    "https://www.nio.cn/careers/jobs",
 ])
 def test_lookalike_or_plain_http_is_not_trusted(url):
     assert apply_url_is_trusted(url) is False

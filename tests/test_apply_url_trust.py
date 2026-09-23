@@ -41,6 +41,7 @@ def test_real_ats_urls_are_trusted(url):
     ("https://boards.greenhouse.io.evil.net/x", "same trick on an exact host"),
     ("https://byd.jobs.feishu.cn/index/position/detail/1", "another Feishu tenant, not NIO"),
     ("http://nio.jobs.feishu.cn/index/position/detail/1", "the mirror's own http link"),
+    ("https://www.nio.cn/careers/jobs", "NIO's roster page: where we read, not where anyone applies"),
     ("https://attacker.net/?u=jobs.lever.co", "known host only in the query"),
     ("javascript:alert(1)", "not even a web URL"),
 ])

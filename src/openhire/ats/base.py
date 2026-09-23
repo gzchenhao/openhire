@@ -41,9 +41,10 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
     # First-party employer mirror, not an ATS: the apply page is the employer's own site.
     "lixiang": {"www.lixiang.com"},
     # NIO 蔚来 is a first-party employer mirror (www.nio.cn/careers/jobs), not an ATS: the
-    # roster is read off the employer's own site and each row links to its page on the
-    # employer's Feishu Hire tenant. Both hosts are the employer's own.
-    "nio": {"nio.jobs.feishu.cn", "www.nio.cn"},
+    # roster is read off the employer's own site, but the apply page for every row is on
+    # the employer's Feishu Hire tenant, so that is the only host an apply link may carry.
+    # www.nio.cn is where the roster is read, not where anyone applies.
+    "nio": {"nio.jobs.feishu.cn"},
 }
 
 # Beisen (北森) gives every employer its own host (`<tenant>.zhiye.com`), so its canonical
