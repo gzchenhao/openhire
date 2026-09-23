@@ -35,6 +35,7 @@ def test_real_mentions_still_match():
 
 def test_boundaries_do_not_break_symbol_tags():
     assert "c++" in extract_skills("C++17 on Linux.")
+    assert {"python", "java", "cuda"} <= set(extract_skills("Python3, Java8 and CUDA12 experience."))
     assert "node" in extract_skills("Node.js services")
     assert "postgres" in extract_skills("PostgreSQL and Redis")
 

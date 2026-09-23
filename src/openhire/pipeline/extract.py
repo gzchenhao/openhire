@@ -106,9 +106,10 @@ _SKILL_VOCAB: dict[str, list[str]] = {
 def _bounded(p: str) -> str:
     if "\\b" in p:
         return p
-    # "C++17" and "C++11" are how the language is written in JDs; a pattern that ends in a
-    # symbol keeps its leading guard only.
-    tail = "" if p.endswith("\\+") else r"(?![a-z0-9])"
+    # The trailing guard stops at letters only: "Python3", "Java8", "CUDA12" and "C++17"
+    # are how JDs write these, while "trust" and "scalable" are still rejected. A pattern
+    # that ends in a symbol keeps its leading guard only.
+    tail = "" if p.endswith("\\+") else r"(?![a-z])"
     return rf"(?<![a-z0-9]){p}{tail}"
 
 
