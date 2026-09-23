@@ -178,3 +178,27 @@ def test_refresh_index_tool_runs_inside_a_running_loop(monkeypatch):
 
     out = asyncio.run(call_from_loop())
     assert out == {"refreshed": True, "ran": "in-thread", "company": "minieye"}
+
+
+# --- 8. the leftovers: location filter, limit=0, fingerprint reuse notice ------------------
+def test_location_filter_is_a_caseless_substring_in_either_language(session):
+    session.add(mkjob("sh", "minieye", "L4-感知算法工程师-SH", ["bev"], posted_days_ago=14, location="上海"))
+    session.commit()
+    ids = {r["job_id"] for r in service.search_jobs(session, skills=["bev"], location="上海", now=NOW)}
+    assert ids == {"minieye:sh"}
+    ids = {r["job_id"] for r in service.search_jobs(session, skills=["bev"], location="beijing", now=NOW)}
+    assert ids == {"minieye:new", "ubtrobot:old"}
+
+
+def test_limit_zero_is_an_error_not_one_row(session):
+    with pytest.raises(OpenHireError) as e:
+        service.search_jobs(session, skills=["bev"], limit=0, now=NOW)
+    assert e.value.code == "ERR_BAD_PAGE"
+
+
+def test_reusing_a_fingerprint_is_reported(session):
+    first = service.watch_intent(session, "#p0ny", {"skills": ["bev"]}, now=NOW)
+    assert first["existing_watches"] == 0
+    second = service.watch_intent(session, "#p0ny", {"skills": ["slam"]}, now=NOW)
+    assert second["existing_watches"] == 1
+    assert "already had 1 active watch" in second["fingerprint_notice"]

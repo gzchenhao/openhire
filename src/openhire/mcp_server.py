@@ -29,7 +29,7 @@ mcp = FastMCP(
         "autonomous driving and embodied AI, every posting with the employer's real "
         "posting date, days_open, a ghost_score and a direct apply link. A résumé or any "
         "PII NEVER transits this server — only an anonymous, client-generated fingerprint "
-        "(e.g. '#a3f9'). Matching happens on the client. Use search_jobs to hard-filter "
+        "(e.g. '#a3f9-k2p7-x8q1'; 12+ random characters, short tags collide). Matching happens on the client. Use search_jobs to hard-filter "
         "the live index (results carry verified_at, ghost_score and apply_channel); "
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; authorize_application to record an "
@@ -64,6 +64,7 @@ def search_jobs(
     offset: int = 0,
     company: str | None = None,
     collapse_role_group: bool = False,
+    location: str | None = None,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -167,7 +168,17 @@ def search_jobs(
             "XPeng"). Exact id/name hits win; otherwise it is a caseless substring, so a
             broad word can match several employers. A name this index does not carry comes
             back as the empty-result object with `unknown_companies` and suggestions.
-        limit: max results (default 20).
+        location: caseless substring over the employer's location text, either language
+            ("北京", "Beijing", "Mountain View", "Remote"). Combine with remote_scope to keep
+            or drop a country. No location filter means all locations.
+        limit: max results (default 20); must be >= 1 (else ERR_BAD_PAGE). A negative
+            offset clamps to 0.
+
+    Salary fields are null wherever the employer's ATS publishes no range, which is most
+    postings outside US states with pay-transparency law; `require_stated_salary` and
+    `currency` therefore narrow mostly to US rows, and `min_salary` alone KEEPS unstated
+    rows (it cannot rule them out). Pass currency to compare in one currency; without it,
+    stated pay is compared as an annualised number in whatever currency it was stated.
     """
     _await_index()
     with session_scope() as s:
@@ -178,6 +189,7 @@ def search_jobs(
                 require_stated_salary=require_stated_salary,
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
                 company=company, collapse_role_group=collapse_role_group,
+                location=location,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
@@ -252,14 +264,23 @@ def get_company_info(company_id: str) -> dict:
 def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     """Register a standing intent so new matches can be pulled later.
 
-    The caller supplies its OWN anonymous fingerprint (e.g. "#a3f9") — the client generates
+    The caller supplies its OWN anonymous fingerprint (e.g. "#a3f9-k2p7-x8q1"; make it 12+
+    random characters, a four-character tag collides with strangers) — the client generates
     and owns it; the server stores but can never recover it, so persist it client-side and
     pass the identical one to check_watches. Only the fingerprint and non-PII filter keys
     are stored — never a name, email, phone or résumé. Accepted filter keys mirror
     search_jobs: `skills` (ANY-overlap), `required_skills` (ALL/AND — use this to keep
     sales / solutions-architect roles out), `remote` (bool), `role_family` (e.g.
-    "engineering"), `min_salary` (int). Returns { watch_id, status, fingerprint,
-    fingerprint_notice }.
+    "engineering"), `min_salary` (int), `company` (one employer, resolved at registration).
+    Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped.
+
+    `min_salary` keeps rows with NO stated pay (they cannot be ruled out); it only drops rows
+    whose stated pay is below the floor. Pay is stated mostly where law requires it (US
+    postings on Greenhouse/Lever/Ashby), so a watch that needs a number will lean US.
+
+    Returns { watch_id, status, fingerprint, existing_watches, fingerprint_notice }.
+    `existing_watches` > 0 means this fingerprint was already in use; if those watches are
+    not yours, pick a longer random fingerprint.
     """
     _await_index()
     with session_scope() as s:

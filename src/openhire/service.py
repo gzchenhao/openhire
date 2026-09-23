@@ -392,6 +392,7 @@ def _filter_and_rank(
     role_family: str | None = None,
     offset: int = 0,
     company_ids: list[str] | None = None,
+    location: str | None = None,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
@@ -403,6 +404,11 @@ def _filter_and_rank(
         stmt = stmt.where(Job.company_id.in_(company_ids))
     if remote is True:
         stmt = stmt.where(Job.remote_policy == "remote")
+    if location:
+        # A caseless substring over the ATS location text, in either language: "北京",
+        # "Beijing", "Remote", "Mountain View". A seeker leaving China could not exclude
+        # China-onsite rows and a seeker in Beijing could not keep only Beijing ones.
+        stmt = stmt.where(Job.location.ilike(f"%{location.strip()}%"))
     if min_salary is not None:
         # Keep jobs whose stated pay could meet the floor. Unstated pay is KEPT here (it
         # cannot be ruled out) unless require_stated_salary asks to exclude it.
@@ -473,6 +479,7 @@ def search_jobs(
     offset: int = 0,
     company: str | None = None,
     collapse_role_group: bool = False,
+    location: str | None = None,
 ) -> list[dict]:
     now = _now(now)
     # The page cap. Asking for 200 has always returned 100, and said nothing about it:
@@ -480,7 +487,12 @@ def search_jobs(
     # only held 100 XPeng jobs. Then a skill search surfaced two XPeng roles that were not
     # in "the full list", which reads as a consistency bug and is really the same silent
     # cut. `offset` reaches the rest, but nothing told them to page.
-    limit = max(1, min(int(limit), MAX_PAGE_SIZE))
+    if int(limit) < 1:
+        # limit=0 used to return one row, which hid a client bug behind a plausible answer.
+        # A negative offset still clamps to 0 (tested, deliberate): asking before the start
+        # means the start.
+        raise OpenHireError("ERR_BAD_PAGE", f"limit must be >= 1 (got limit={limit}).")
+    limit = min(int(limit), MAX_PAGE_SIZE)
     offset = max(0, int(offset))
     company_ids = None
     if company:
@@ -490,6 +502,7 @@ def search_jobs(
         required_skills=required_skills, currency=currency,
         require_stated_salary=require_stated_salary, remote_scope=remote_scope,
         role_family=role_family, offset=offset, company_ids=company_ids,
+        location=location,
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
@@ -842,6 +855,11 @@ def watch_intent(
             )
         clean["company"] = matched[0].name
         clean["company_ids"] = [matched[0].id]
+    existing = session.scalar(
+        select(func.count()).select_from(Watch).where(
+            Watch.fingerprint == fingerprint, Watch.active.is_(True)
+        )
+    ) or 0
     watch_id = _new_id(session, Watch, "watch_id", "w_")
     session.add(
         Watch(
@@ -859,9 +877,19 @@ def watch_intent(
         "watch_id": watch_id,
         "status": "active",
         "fingerprint": fingerprint,
+        # Two testers who both picked "#p0ny" saw each other's watches. A collision is
+        # not PII (there is none to leak) but it is someone else's intent. Say when the
+        # tag was already in use so the client can pick a longer one.
+        "existing_watches": int(existing),
         "fingerprint_notice": (
             "Persist this fingerprint yourself — the server cannot recover it. "
             "check_watches needs the identical fingerprint to return your matches."
+            + (
+                f" This fingerprint already had {existing} active watch(es) before this one. If "
+                "they are not yours, another client chose the same short tag: use a longer, "
+                "random one (12+ characters) and re-register."
+                if existing else ""
+            )
         ),
     }
 

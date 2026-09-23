@@ -257,6 +257,7 @@ def search(
     offset: int = typer.Option(0, "--offset", help="Skip this many ranked results (paging)."),
     company: str = typer.Option(None, "--company", help="One employer: id or any part of the name, e.g. unitree / 宇树 / XPeng."),
     distinct: bool = typer.Option(False, "--distinct", help="One row per role instead of one per city."),
+    location: str = typer.Option(None, "--location", help="Substring of the location text, e.g. 北京 / Beijing / Remote."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -286,7 +287,7 @@ def search(
             required_skills=req_list, currency=currency,
             require_stated_salary=require_stated_salary, remote_scope=remote_scope,
             role_family=role_family, offset=offset, company=company,
-            collapse_role_group=distinct,
+            collapse_role_group=distinct, location=location,
         )
     if not results:
         # Only the MCP boundary used to explain an empty list; the CLI just said "no
