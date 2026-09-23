@@ -14,11 +14,13 @@ tell "not in this index yet" from "we know exactly why". This is that answer, ma
 first-class: the careers portal to go to directly, the honest reason, and the one path
 that would change it (the employer authorising read-only access).
 
-This file is DECLARATIVE. Nothing here is crawled, fetched or inferred at runtime. Every
-`careers_url` was confirmed by ONE plain GET of the portal root whose `<title>` names the
-employer (reports/014 showed that a 200 alone is not enough: `horizon.jobs.feishu.cn` is a
-different company). Where we could not confirm a host, the URL stays None rather than a
-guess.
+This file is DECLARATIVE. Nothing here is crawled, fetched or inferred at runtime. Each
+`careers_url` was confirmed by ONE plain GET of the portal root, and `confirmed_by` says
+what that GET actually showed: for nine entries the `<title>` names the employer; for
+SenseTime the title was not retrieved and the evidence is the feishucdn asset fingerprint
+on the employer's own host (reports/014 showed that a 200 alone is not enough:
+`horizon.jobs.feishu.cn` is a different company). Where we could not confirm a host, the
+URL stays None rather than a guess.
 
 Entries are removed the day an employer becomes indexable (they authorise the scopes, or
 move to an ATS that is publicly readable), because `service` consults the live index first
@@ -67,6 +69,9 @@ class NotIndexedEmployer:
     name: str                     # bilingual display name, as the index would show it
     aliases: tuple[str, ...]      # what a seeker actually types, in either language
     careers_url: str | None       # the employer's own portal; None when unconfirmed
+    # What the one confirming GET showed. "title" means the page <title> named the
+    # employer; anything else names the weaker evidence so nobody claims a title for it.
+    confirmed_by: str = "title"
     ats: str = FEISHU_ATS
     reason: str = FEISHU_REASON
     employer_opt_in: dict = field(default_factory=lambda: dict(FEISHU_OPT_IN))
@@ -84,7 +89,8 @@ class NotIndexedEmployer:
         }
 
 
-# Portal roots. Confirmed by <title> on 2026-09-23 unless noted otherwise.
+# Portal roots. Confirmed by <title> on 2026-09-23 unless the entry's confirmed_by says
+# otherwise.
 NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
     NotIndexedEmployer(
         id="momenta", name="Momenta 魔门塔",
@@ -114,7 +120,11 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
     NotIndexedEmployer(
         id="sensetime", name="商汤科技 SenseTime",
         aliases=("sensetime", "商汤科技", "商汤"),
-        careers_url="https://hr-jobs.sensetime.com/",           # custom domain, Feishu white label
+        # Custom domain. The page <title> was NOT retrieved; what the GET showed is the
+        # Feishu Recruitment white label's feishucdn asset fingerprint served from the
+        # employer's own host, which is what puts it on this list.
+        careers_url="https://hr-jobs.sensetime.com/",
+        confirmed_by="feishucdn asset fingerprint on hr-jobs.sensetime.com; title not retrieved",
     ),
     NotIndexedEmployer(
         id="limx", name="逐际动力 LimX Dynamics",
@@ -152,7 +162,10 @@ def lookup(query: str) -> list[NotIndexedEmployer]:
     Exact hits on id / name / alias win outright. Otherwise a caseless substring of the
     query inside a name or alias, or of an alias inside the query ("Momenta 招聘"), so a
     seeker who types either half of a bilingual name still lands. Single characters are
-    never matched: "a" is not a company.
+    never matched: "a" is not a company. The alias-inside-query direction needs an alias
+    of at least three characters: the two-character short forms ("小马", "千寻") still
+    hit exactly, but "千寻位置" and "小马拉车" are other companies, not questions about
+    these ones.
     """
     q = _fold(query)
     if len(q) < 2:
@@ -166,7 +179,7 @@ def lookup(query: str) -> list[NotIndexedEmployer]:
     out: list[NotIndexedEmployer] = []
     for e in NOT_INDEXED:
         names = [e.id, _fold(e.name), *(_fold(a) for a in e.aliases)]
-        if any(q in n for n in names) or any(len(n) >= 2 and n in q for n in names):
+        if any(q in n for n in names) or any(len(n) >= 3 and n in q for n in names):
             out.append(e)
     return out
 

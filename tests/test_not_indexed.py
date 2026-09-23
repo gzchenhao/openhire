@@ -66,9 +66,10 @@ def test_registry_holds_the_ten_named_employers_with_honest_fields():
         assert "never by payment" in e.employer_opt_in["how"]
 
 
-def test_registry_urls_are_the_ones_confirmed_by_title():
-    """Each host was confirmed by one plain GET whose <title> named the employer
-    (2026-09-23); reports/014 showed a 200 alone is not enough."""
+def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
+    """Each host was confirmed by one plain GET (2026-09-23); reports/014 showed a 200
+    alone is not enough. Nine were confirmed by a <title> naming the employer. SenseTime
+    was not: its title was never retrieved, and the entry says what the evidence is."""
     urls = {e.id: e.careers_url for e in not_indexed.NOT_INDEXED}
     assert urls["momenta"] == "https://momenta.jobs.feishu.cn/"
     assert urls["ponyai"] == "https://ponyai.jobs.feishu.cn/ponyai/"
@@ -80,6 +81,10 @@ def test_registry_urls_are_the_ones_confirmed_by_title():
     assert urls["xsquare"] == "https://x2-robot.jobs.feishu.cn/"
     assert urls["spiritai"] == "https://nwd4iy9rd2s.jobs.feishu.cn/"
     assert urls["booster"] == "https://booster.jobs.feishu.cn/"
+    by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
+    assert by_title == set(urls) - {"sensetime"}
+    sensetime = not_indexed.by_id("sensetime")
+    assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by
 
 
 def test_registry_does_no_network_and_carries_no_em_dash():
@@ -115,6 +120,20 @@ def test_lookup_rejects_nothing_and_noise():
     assert not_indexed.lookup("a") == []
     assert not_indexed.lookup("Nonexistent Robotics Co") == []
     assert not_indexed.lookup("佑驾") == []
+
+
+@pytest.mark.parametrize("query", ["千寻位置", "小马拉车", "商汤湾"])
+def test_a_two_character_short_form_inside_another_name_is_not_a_hit(query):
+    """"千寻" and "小马" are exact aliases and still resolve on their own; inside a longer
+    name they are somebody else ("千寻位置" is a positioning company), and answering
+    "known, deliberately not indexed" for that would be a false claim about two employers."""
+    assert not_indexed.lookup(query) == []
+
+
+def test_company_info_for_a_look_alike_name_is_still_not_found(session):
+    with pytest.raises(OpenHireError) as e:
+        service.get_company_info(session, "千寻位置", now=NOW)
+    assert e.value.code == "ERR_COMPANY_NOT_FOUND"
 
 
 # --- search_jobs' empty-result diagnosis --------------------------------------------------
