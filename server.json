@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.gzchenhao/openhire",
   "title": "OpenHire · 哨兵",
-  "description": "Job postings with the employer's real posting date, pulled from Greenhouse / Lever / Ashby / Beisen / Moka ATS APIs. 139 employers in AI infra, autonomous driving and embodied AI. Résumé never leaves your machine.",
+  "description": "Job postings with real posting dates from Greenhouse/Lever/Ashby/Beisen/Moka ATS. 139 employers.",
   "repository": {
     "url": "https://github.com/gzchenhao/openhire",
     "source": "github"

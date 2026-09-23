@@ -55,3 +55,10 @@ def test_readme_names_the_current_mcpb():
     assert named == {v}, f"README names .mcpb versions {sorted(named)}, pyproject says {v}"
     pinned = set(re.findall(r'"openhire==(\d+\.\d+\.\d+)"', readme))
     assert pinned <= {v}, f"README pins openhire=={sorted(pinned)}, pyproject says {v}"
+
+
+def test_server_json_description_fits_the_registry():
+    """registry.modelcontextprotocol.io rejects the publish with 422 above 100 characters,
+    which is how the v0.6.2 tag published nothing until the description was cut."""
+    data = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
+    assert len(data["description"]) <= 100, len(data["description"])
