@@ -49,6 +49,13 @@ CASES = [
     # Ashby — application URL on ATS host is trusted.
     ("ashby", "openai", "8fb1615c",
      "https://jobs.ashbyhq.com/openai/8fb1615c/application", False, False),
+    # NIO's careers mirror publishes the Feishu job page as http:// (the host 301s to
+    # https). Same host, right id, wrong scheme: fall back to the canonical https form,
+    # and do not call it an embed.
+    ("nio", "nio", "7688282539764582666",
+     "http://nio.jobs.feishu.cn/index/position/detail/7688282539764582666", True, False),
+    ("nio", "nio", "7688282539764582666",
+     "https://nio.jobs.feishu.cn/index/position/detail/7688282539764582666", False, False),
 ]
 
 
@@ -77,7 +84,7 @@ def test_coreweave_bug_exact_fix():
 
 
 def test_canonical_urls_contain_job_id_and_are_https():
-    for vendor in ("greenhouse", "lever", "ashby"):
+    for vendor in ("greenhouse", "lever", "ashby", "nio"):
         url = canonical_apply_url(vendor, "acme", "JOB42")
         assert "JOB42" in url
         assert url.startswith("https://")

@@ -40,6 +40,10 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
     "moka": {"app.mokahr.com"},
     # First-party employer mirror, not an ATS: the apply page is the employer's own site.
     "lixiang": {"www.lixiang.com"},
+    # NIO 蔚来 is a first-party employer mirror (www.nio.cn/careers/jobs), not an ATS: the
+    # roster is read off the employer's own site and each row links to its page on the
+    # employer's Feishu Hire tenant. Both hosts are the employer's own.
+    "nio": {"nio.jobs.feishu.cn", "www.nio.cn"},
 }
 
 # Beisen (北森) gives every employer its own host (`<tenant>.zhiye.com`), so its canonical
@@ -124,6 +128,10 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
         # Li Auto's own job page, which carries the 立即申请 button. `tenant` is the board
         # (social); the page URL does not vary by board.
         return f"https://www.lixiang.com/employ/detail/{ats_job_id}.html"
+    if vendor == "nio":
+        # The job's page on NIO's Feishu Hire tenant, which carries the 投递 button. The
+        # mirror publishes this URL as http://; the host 301s to https, so build it there.
+        return f"https://nio.jobs.feishu.cn/index/position/detail/{ats_job_id}"
     raise ValueError(f"unknown vendor: {vendor!r}")
 
 
@@ -137,8 +145,15 @@ def resolve_apply_channel(
     if vendor_url:
         parsed = urlparse(vendor_url)
         host = (parsed.netloc or "").lower()
-        # Trust only a canonical ATS host that carries the job id in the path.
-        if host in hosts and ats_job_id in (parsed.path or "") + (parsed.query or ""):
+        # Trust only an https URL on a canonical ATS host that carries the job id in the
+        # path. The scheme check keeps this in step with `apply_url_is_trusted`: NIO's
+        # mirror publishes http:// links, and storing one would fail that check at apply
+        # time, so a plain-http vendor URL falls through to the canonical https form.
+        if (
+            parsed.scheme == "https"
+            and host in hosts
+            and ats_job_id in (parsed.path or "") + (parsed.query or "")
+        ):
             return ApplyResolution(url=vendor_url, used_fallback=False, is_embed=False)
         # A non-ATS host = an employer self-hosted embed; treat as unreliable.
         is_embed = bool(host) and host not in hosts

@@ -24,6 +24,7 @@ from openhire.ats import apply_url_is_trusted
     "https://app.mokahr.com/apply/acme/1234#/job/9",
     "https://unitree.zhiye.com/social/detail?jobAdId=abc",   # per-tenant Beisen host
     "https://www.lixiang.com/employ/detail/275.html",         # first-party employer page
+    "https://nio.jobs.feishu.cn/index/position/detail/7688282539764582666",  # NIO mirror
 ])
 def test_real_ats_urls_are_trusted(url):
     assert apply_url_is_trusted(url) is True
@@ -38,6 +39,8 @@ def test_real_ats_urls_are_trusted(url):
     ("https://evil-zhiye.com/social/detail", "suffix match without the dot"),
     ("https://zhiye.com.attacker.net/social", "the known domain as a prefix of another"),
     ("https://boards.greenhouse.io.evil.net/x", "same trick on an exact host"),
+    ("https://byd.jobs.feishu.cn/index/position/detail/1", "another Feishu tenant, not NIO"),
+    ("http://nio.jobs.feishu.cn/index/position/detail/1", "the mirror's own http link"),
     ("https://attacker.net/?u=jobs.lever.co", "known host only in the query"),
     ("javascript:alert(1)", "not even a web URL"),
 ])

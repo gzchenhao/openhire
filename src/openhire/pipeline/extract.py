@@ -214,17 +214,33 @@ def _resolve_remote(job: JobRecord, text: str) -> str:
     return "unknown"
 
 
+def has_description(job: JobRecord) -> bool:
+    """Does this posting carry a JD at all?
+
+    Some first-party sources publish a roster with no description (NIO's careers mirror,
+    2026-09-23). A skill tag is a claim that the employer asked for that skill, and a bare
+    title cannot support it: "Go-To-Market 经理" would tag `go`, "信任与安全" says nothing
+    about Rust, and an LLM handed only a title would answer from what the title implies,
+    which is inference, not extraction. So every extractor checks this first and emits no
+    skills when it is False. Title-only classification (`role_family`) is unaffected:
+    that field is defined as a reading of the title.
+    """
+    return bool((job.description_raw or "").strip())
+
+
 class HeuristicExtractor:
     name = "heuristic"
 
     def extract(self, job: JobRecord) -> ExtractionResult:
-        text = f"{job.title}\n{job.description_raw}"
+        text = f"{job.title}\n{job.description_raw or ''}"
         # A posting whose employer gave us no description gets NO skills. The title alone
         # ("Python 工程师") would still trip the vocabulary, and the resulting tags would
         # look like something we read in the JD when there was no JD. An empty list is the
         # honest answer, and it stays empty until a description arrives (first-party
         # mirrors such as Li Auto can hand back a roster row whose detail call failed).
-        skills = extract_skills(text) if (job.description_raw or "").strip() else []
+        # Remote policy and salary below are already sourced from the ATS fields first and
+        # the JD second, never the title.
+        skills = extract_skills(text) if has_description(job) else []
         remote = _resolve_remote(job, text)
         # Prefer structured ATS compensation; fall back to JD text (still not inference).
         smin, smax, scur = job.salary_min, job.salary_max, job.salary_currency
@@ -542,7 +558,14 @@ class DeepSeekExtractor:
         )
 
     def extract_with_usage(self, job: JobRecord) -> tuple[ExtractionResult, int, int]:
-        """Raises on API/parse failure so callers can retry/track. Returns (result, in, out)."""
+        """Raises on API/parse failure so callers can retry/track. Returns (result, in, out).
+
+        A posting with no JD never reaches the model: the answer would be guessed from the
+        title, and it would cost money to guess. The heuristic result (no skills, ATS-sourced
+        remote/salary) is returned instead, stamped as heuristic because that is who answered.
+        """
+        if not has_description(job):
+            return self._fallback.extract(job), 0, 0
         body = self._call(
             self._payload(_DEEPSEEK_SYSTEM, self._prompt(job), self._max_tokens)
         )

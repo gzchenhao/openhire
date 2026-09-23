@@ -18,6 +18,7 @@ from .greenhouse import GreenhouseClient
 from .lever import LeverClient
 from .lixiang import LixiangClient
 from .moka import MokaClient
+from .nio import NioClient
 
 _CLIENTS: dict[str, ATSClient] = {
     "greenhouse": GreenhouseClient(),
@@ -26,6 +27,7 @@ _CLIENTS: dict[str, ATSClient] = {
     "beisen": BeisenClient(),
     "moka": MokaClient(),
     "lixiang": LixiangClient(),  # first-party employer mirror (理想汽车), one tenant
+    "nio": NioClient(),
 }
 
 
@@ -51,6 +53,7 @@ __all__ = [
     "LeverClient",
     "LixiangClient",
     "MokaClient",
+    "NioClient",
     "canonical_apply_url",
     "get_client",
     "all_vendors",

@@ -461,6 +461,14 @@ def _copy_fallback(job: Job) -> None:
         job.salary_currency_fallback = job.salary_currency
 
 
+# Rows the LLM skill pass can actually read. A posting with no JD (NIO's mirror publishes
+# none) would be answered from the title, so it is never a target: it keeps its heuristic
+# stamp and its empty skill list, and does not get re-selected every month either.
+# The whitespace set is explicit because SQLite's one-argument trim() strips spaces only;
+# the two-argument form is accepted by SQLite and PostgreSQL alike.
+_HAS_JD = func.length(func.trim(func.coalesce(Job.description_raw, ""), " \t\r\n")) > 0
+
+
 def rebuild_extraction(
     batch_size: int = 50,
     workers: int = 8,
@@ -474,7 +482,8 @@ def rebuild_extraction(
 
     The target set is `extraction_source NOT IN LLM_SOURCES` rather than `!= <this
     backend>`: with two LLM backends in play, the old test would have made glm and
-    deepseek endlessly re-extract each other's rows for no quality gain.
+    deepseek endlessly re-extract each other's rows for no quality gain. Rows with an
+    empty JD are excluded outright (`_HAS_JD`): there is nothing for the model to read.
     """
     ensure_schema()
     extractor = _make_extractor(backend, model)
@@ -486,7 +495,7 @@ def rebuild_extraction(
     with session_scope() as s:
         stats.total_target = s.scalar(
             select(func.count()).select_from(Job)
-            .where(Job.extraction_source.notin_(LLM_SOURCES))
+            .where(Job.extraction_source.notin_(LLM_SOURCES), _HAS_JD)
         ) or 0
 
     remaining = stats.total_target if limit is None else min(limit, stats.total_target)
@@ -497,7 +506,7 @@ def rebuild_extraction(
             jobs = list(
                 s.execute(
                     select(Job)
-                    .where(Job.extraction_source.notin_(LLM_SOURCES))
+                    .where(Job.extraction_source.notin_(LLM_SOURCES), _HAS_JD)
                     .order_by(Job.id)
                     .limit(take)
                 ).scalars()

@@ -224,6 +224,24 @@ _MOKA = [
     ("xiaopeng/67918", "小鹏汇天 XPeng AeroHT", "xiaopeng"),
 ]
 
+# --- NIO 蔚来 (`www.nio.cn/careers/jobs`): a first-party employer mirror, not an ATS ---
+# Added 2026-09-23. NIO hires through Feishu Hire, whose API signs requests and is
+# therefore off limits (reports/014); the employer's own careers page carries the same
+# 1,784-row 社招 roster in the clear inside `__NEXT_DATA__`, so that is what is read.
+# robots.txt leaves /careers open and the page answers a plain curl GET with no cookie
+# and no token. The mirror carries no JD and no salary, so those stay empty; see ats/nio.py.
+#
+# PARKED 2026-09-23: the site's edge (Tencent EdgeOne) blocks this crawler's HTTP client
+# with a 567 "请求已被站点的安全策略拦截" page while letting curl through, i.e. it sorts
+# clients by TLS handshake. That is the owner's bot-management policy, which reports/020
+# files under access control, so it is not worked around and the row is not in the active
+# roster: a weekly `ohp seed` knocking on a door that said no is not politeness. Uncomment
+# once NIO has been asked (the block page carries a request ID for exactly that) or the
+# policy changes; the adapter, tests and trust list are all in place.
+_NIO: list[tuple[str, str]] = [
+    # ("nio", "蔚来 NIO"),
+]
+
 
 # --- First-party employer mirrors (no ATS vendor) --------------------------------------
 # Some employers publish their roster through their own public API rather than an ATS.
@@ -250,6 +268,7 @@ def all_candidates() -> list[Candidate]:
         ("beisen", _BEISEN),
         ("moka", _MOKA),
         ("lixiang", _LIXIANG),
+        ("nio", _NIO),
     ):
         for row in rows:
             tenant, name = row[0], row[1]
@@ -264,4 +283,5 @@ def candidate_count() -> int:
     return (
         len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN) + len(_MOKA)
         + len(_LIXIANG)
+        + len(_NIO)
     )
