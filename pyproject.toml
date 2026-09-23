@@ -1,6 +1,6 @@
 [project]
 name = "openhire"
-version = "0.6.5"
+version = "0.6.6"
 description = "MCP server + CLI: job postings with the employer's real posting date, pulled from Greenhouse / Lever / Ashby / Beisen / Moka ATS APIs. 139 employers in AI infra, autonomous driving and embodied AI. Résumés never leave your device."
 readme = "README.md"
 requires-python = ">=3.11"
