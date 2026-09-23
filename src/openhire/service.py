@@ -792,6 +792,9 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
                 f"No company with id or name matching {company_id!r}. Use the company_id "
                 "from a search_jobs row, or any part of the employer's name.",
             )
+    # From here on every query keys on the resolved id: a caller who typed a name got the
+    # right Company row above but, until this line, zeros for its aggregates.
+    company_id = company.id
 
     live = select(Job).where(Job.company_id == company_id, Job.delisted_at.is_(None))
     active_jobs = session.scalar(
@@ -831,6 +834,17 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
             Job.updated_at.is_not(None), Job.updated_at != Job.posted_at,
         )
     ) or 0
+    # Same rule as the per-row `date_signal`: a row whose source reported no posting date
+    # is aged from the day this index first saw it. When that is every live row of an
+    # employer (Li Auto's first-party mirror carries no date at all), median_days_open is
+    # a lower bound on age and not the employer's own timeline, and the caller should
+    # know that before reading ghost_score_avg as anything about this employer.
+    dates_missing = session.scalar(
+        select(func.count()).where(
+            Job.company_id == company_id, Job.delisted_at.is_(None),
+            Job.posted_at.is_(None),
+        )
+    ) or 0
 
     # Aggregate, anonymous signals ONLY — never any individual candidate data.
     # `claimed` is back, and now it means something: it is true only once an employer has
@@ -848,6 +862,10 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         "median_days_open": int(days_open[len(days_open) // 2]) if days_open else None,
         "relisted_postings": int(relisted),
         "last_touched_reported_by_ats": bool(touch_reported),
+        # False means no live row carries the employer's own posting date, so every
+        # days_open here counts from first sight (per-row `date_signal`), a lower bound.
+        "posting_dates_reported": int(active_jobs) > int(dates_missing),
+        "postings_without_reported_date": int(dates_missing),
         "active_jobs": int(active_jobs),
         "claimed": bool(company.verified),
         "claimed_at": _aware(company.claimed_at).isoformat() if company.claimed_at else None,

@@ -258,6 +258,12 @@ def get_company_info(company_id: str) -> dict:
     Returns ghost_score_avg, active_jobs, and index_built_at (when the index was last
     built). NEVER returns any individual candidate data: the server holds none.
 
+    `posting_dates_reported` is false when no live posting of this employer carries the
+    employer's own posting date (first-party mirrors such as Li Auto report none), and
+    `postings_without_reported_date` counts those rows; their days_open, and so this
+    employer's median_days_open and ghost_score_avg, are counted from the day this index
+    first saw each posting, a lower bound on age rather than the employer's timeline.
+
     `claimed` is true only when the employer has claimed this tenant and we verified them by
     corporate identity, never by payment, and it never affects ranking. It is the only
     signal here that comes from the employer rather than from their public ATS data, and it
