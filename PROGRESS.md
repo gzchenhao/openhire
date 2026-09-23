@@ -29,6 +29,8 @@
 **下一步**
 - 09-25~28 Cursor 插件文件（先确认 cursor.com/marketplace/publish 入口存在）· 10-03 观察期汇报 · 10-06/07 提阮一峰 issue · 10-03 后调研自动驾驶之心/具身智能之心投稿入口 · 每周 `growth_metrics.py` 进 growth-log。
 
+- **定位回顾（`reports/050`，领导批准）**：主句改为「让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑」，原始发布日降为证据；「幽灵」对外停用；内容配比一比一（规矩 5）。023 长文已按此改稿上线（新标题、数字换 09-21、两处可点链接）。
+- **体验测试（`reports/051`）**：三个小马智行感知工程师人设 + 复现者，137 次工具调用。结论「部分成立」：隐私半句完全成立，「替你找」被十条可复现缺陷挡住。**当天修完发 v0.6.3**（PyPI ✅ tag ✅ Release 含 mcpb ✅ Registry 0.6.3 ✅，391 tests）。
 - 即刻首帖已发（AI探索站圈子）：https://m.okjike.com/originalPosts/6ab20257855ea19b4ed42823 。小红书 / Reddit 备稿在 `drafts/`，领导本人发。
 - `openhire-radar` 模板仓库：**做**（领导授权我定），门槛与形态见 `drafts/openhire-radar-spec.md`，09-28~30。
 - Claude Code 插件：提交走 claude.ai 表单（不是 Console），领导有账号，09-29~10-02 与 Cursor 插件同批。

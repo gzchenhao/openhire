@@ -6,9 +6,17 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.2 · 2026-09-23；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.3 · 2026-09-23；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.2）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.3）
+- **v0.6.3（2026-09-23，同日第二版）：** 体验测试（三个小马智行感知工程师人设 + 复现者，只用 MCP 工具，`reports/051`）
+  抓到的十条可复现缺陷全修：`refresh_index` 崩溃（asyncio.run 在事件循环里 → 工作线程）；**排序 freshness 原来取
+  `verified_at`（索引构建时间，每行相同），改成雇主自己的时钟（最后改动否则发布日，180 天线性）**；`role_family=null`
+  的新岗不再被过滤掉；`check_watches` 全量排序后取 100 条并报 `total_matching / truncated`；中文技能别名表
+  （感知/占用网络/点云/多传感器融合/视觉/目标检测/定位/规控）+ 半命中结果报 `unknown_skills`；`remote_scope`
+  国家码按词边界匹配、读不出的回 `unknown` 不再假报 `worldwide`；`watch_intent` 拒绝未知键、支持 `company`；
+  `get_company_info` 认名字；文远知行加中文名；`xiaopeng` 租户改名「小鹏汇天 XPeng AeroHT」（它是飞行汽车 + 工厂，
+  不是小鹏汽车智驾）。**改名要等快照刷新才进公开库**（已手动触发 refresh-snapshot.yml）。
 - **v0.6.2（2026-09-23）：** 对外文案改成搜索优先（GitHub 描述 / `server.json` / `pyproject` / MCP `instructions`，
   搜索引擎已是第二大来源，Google+Bing+Baidu 14 天 11 人，比知乎的 4 多）；MCP `instructions` 里加数据出处署名；
   工具 docstring 里那个硬编码的 67% 删掉改指 `numbers.json`；README 加 Cursor 一键安装按钮；**mcpb 依赖钉到当前版本**。
