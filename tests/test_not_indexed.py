@@ -163,6 +163,23 @@ def test_empty_search_for_a_truly_unknown_employer_keeps_the_generic_hint(sessio
     assert EM_DASH not in d["hint"]
 
 
+def test_several_registry_matches_take_the_generic_hint_listing_them(session):
+    """"robot" is inside AgiBot's, X Square's and Booster's aliases. The structured answer
+    is about one employer (one portal, one reason), so with several it would silently be
+    about the first; the generic hint lists the candidates instead and asks for one."""
+    hits = [e.id for e in not_indexed.lookup("robot")]
+    assert len(hits) > 1
+    d = service.diagnose_empty_search(session, company="robot")
+    assert d["results"] == [] and "known_not_indexed" not in d
+    assert d["unknown_companies"] == ["robot"]
+    listed = d["suggestions"]["robot"]
+    assert len(listed) == len(hits)
+    for name in listed:
+        assert name in d["hint"]
+    assert "Re-ask with one of them" in d["hint"]
+    assert EM_DASH not in d["hint"]
+
+
 def test_indexed_employer_wins_over_the_registry(session):
     # If Momenta ever authorises the scopes and gets indexed, the live index answers and
     # the registry is never consulted, even before the entry is removed.

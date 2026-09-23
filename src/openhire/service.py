@@ -636,10 +636,14 @@ def diagnose_empty_search(
         matched = resolve_company(session, company)
         if not matched:
             known = not_indexed.lookup(company)
-            if known:
+            if len(known) == 1:
                 # Not a typo and not a gap we are unaware of: an employer we know, whose
                 # portal we deliberately do not read. Say exactly that, with where to go
-                # instead and what would change it, rather than the generic hint.
+                # instead and what would change it, rather than the generic hint. Only
+                # when exactly one entry matched: the structured answer names ONE portal
+                # and ONE reason, and with several candidates it would be about the
+                # first, which the caller never asked for. Several matches take the
+                # generic path below with the candidates listed, so the caller re-asks.
                 return {
                     "results": [],
                     "matched": 0,
@@ -663,19 +667,33 @@ def diagnose_empty_search(
             if not close:
                 low = company.casefold()
                 close = [n for n in names if low[:3] and low[:3] in n.casefold()][:5]
-            return {
-                "results": [],
-                "matched": 0,
-                "hint": (
+            if len(known) > 1:
+                # Several employers we know but do not index match this text. List them
+                # and let the caller pick one; the structured answer above is per employer.
+                candidates = [e.name for e in known]
+                hint = (
+                    f"{company!r} matches {len(known)} employers we know but deliberately do "
+                    f"not index ({', '.join(candidates)}): their careers sites run on Feishu "
+                    "Recruitment, whose job-list API requires a request signature we treat as "
+                    "access control. Re-ask with one of them by name for its portal and the "
+                    "employer opt-in path; dropping the company filter will not find any of them."
+                )
+            else:
+                candidates = close
+                hint = (
                     f"This index has no company matching {company!r}. It covers 139 employers, "
                     "not the whole market, so the company is most likely simply not indexed: "
                     + ("retry with one of unknown_companies' suggestions, or drop the company filter."
                        if close else
                        "drop the company filter to search the whole index, or check the employer "
                        "list at github.com/gzchenhao/openhire.")
-                ),
+                )
+            return {
+                "results": [],
+                "matched": 0,
+                "hint": hint,
                 "unknown_companies": [company],
-                "suggestions": {company: close} if close else {},
+                "suggestions": {company: candidates} if candidates else {},
                 "filters_applied": {
                     k: v for k, v in {
                         "company": company, "skills": skills,
