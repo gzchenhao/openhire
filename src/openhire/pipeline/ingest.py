@@ -237,6 +237,16 @@ def _update_job(
         stats.jobs_unchanged += 1
         return
 
+    if not (rec.description_raw or "").strip() and (job.description_raw or "").strip():
+        # The source handed back the roster row but not the JD this time (a first-party
+        # mirror's detail call can fail on one crawl and succeed on the next). The posting
+        # is still live, so verified_at moved above; but replacing a real description and
+        # the skills read from it with nothing would report a change the employer never
+        # made. Keep what we have and leave content_hash alone, so the next crawl that
+        # does carry the JD is compared against the real text, not against the gap.
+        stats.jobs_unchanged += 1
+        return
+
     # Content changed → re-extract.
     extraction = extractor.extract(rec)
     stats.extractions += 1

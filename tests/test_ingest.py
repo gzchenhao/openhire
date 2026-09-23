@@ -113,6 +113,36 @@ def test_content_change_triggers_reextraction(session):
     assert "go" in job.skills and "cuda" in job.skills
 
 
+def test_an_empty_jd_on_a_later_crawl_does_not_erase_the_stored_one(session):
+    """Crawl 1 carries the JD, crawl 2 hands back the roster row with an empty
+    description (a first-party mirror's detail call failed). The posting is still live,
+    so verified_at moves, but the description, skills and their provenance survive and
+    the row counts as unchanged. Nothing the employer did not do is recorded."""
+    t0 = dt.datetime(2026, 7, 1, tzinfo=UTC)
+    ingest(session, [rec("1", "Rust Engineer", "We use Rust and CUDA.")], t0)
+    job = session.get(Job, "acme:1")
+    assert "rust" in job.skills and "cuda" in job.skills
+    hash0, source0 = job.content_hash, job.extraction_source
+
+    t1 = dt.datetime(2026, 7, 2, tzinfo=UTC)
+    stats = ingest(session, [rec("1", "Rust Engineer", "")], t1)
+
+    job = session.get(Job, "acme:1")
+    assert stats.jobs_unchanged == 1 and stats.jobs_updated == 0
+    assert stats.extractions == 0
+    assert job.verified_at == t1
+    assert job.description_raw == "We use Rust and CUDA."
+    assert "rust" in job.skills and "cuda" in job.skills
+    assert job.extraction_source == source0
+    assert job.content_hash == hash0
+
+    # A crawl that carries a genuinely new JD is still a change.
+    t2 = dt.datetime(2026, 7, 3, tzinfo=UTC)
+    stats = ingest(session, [rec("1", "Rust Engineer", "We use Go.")], t2)
+    job = session.get(Job, "acme:1")
+    assert stats.jobs_updated == 1 and "go" in job.skills and "cuda" not in job.skills
+
+
 def test_delist_marks_row_not_deletes(session):
     t0 = dt.datetime(2026, 7, 1, tzinfo=UTC)
     ingest(session, [rec("1", "Role A"), rec("2", "Role B")], t0)
