@@ -67,6 +67,36 @@ def test_nonsense_tag_gets_no_junk_suggestions(tiny_index):
         d = service.diagnose_empty_search(s, required_skills=["zzzzqqqq_nope"])
     assert not d["suggestions"].get("zzzzqqqq_nope"), \
         "a tag with no real neighbour must return nothing rather than noise"
+    # ...and the hint must not point at suggestions that are not there.
+    assert d["suggestions"] == {}
+    assert "one of the suggestions" not in d["hint"]
+    assert "drop the tag" in d["hint"]
+
+
+def test_hint_points_at_suggestions_only_when_there_are_some(tiny_index):
+    with session_scope() as s:
+        d = service.diagnose_empty_search(s, required_skills=["kubernetes"])
+    assert d["suggestions"]["kubernetes"]
+    assert "retry with one of the suggestions" in d["hint"]
+
+
+def test_unknown_company_hint_counts_employers_from_the_index_not_from_memory(tiny_index):
+    """"It covers 139 employers" was literal text (rule 1 of the writing rules: numbers
+    come from the index, never from memory). The number in the hint must be the number of
+    employers with live postings in the index being searched."""
+    import re
+
+    from sqlalchemy import func
+
+    with session_scope() as s:
+        d = service.diagnose_empty_search(s, company="Nonexistent Robotics Co")
+        expected = s.scalar(
+            select(func.count(func.distinct(Job.company_id))).where(Job.delisted_at.is_(None))
+        )
+        assert service.live_employer_count(s) == expected == 1
+    m = re.search(r"It covers (\d+) employer", d["hint"])
+    assert m and int(m.group(1)) == expected, d["hint"]
+    assert "139" not in d["hint"]
 
 
 def test_filters_applied_is_echoed_back(tiny_index):

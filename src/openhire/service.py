@@ -632,6 +632,16 @@ def skill_diagnostics(
     return unknown, suggestions
 
 
+def live_employer_count(session: Session) -> int:
+    """Employers with at least one live posting right now: the `employers_with_live_postings`
+    figure of docs/numbers.json, computed from the index being searched. A hint used to say
+    "139 employers" as literal text; it was right by accident on the day it was written and
+    against rule 1 of the writing rules every day after."""
+    return int(session.scalar(
+        select(func.count(func.distinct(Job.company_id))).where(Job.delisted_at.is_(None))
+    ) or 0)
+
+
 def diagnose_empty_search(
     session: Session,
     skills: list[str] | None = None,
@@ -728,9 +738,11 @@ def diagnose_empty_search(
                 )
             else:
                 candidates = close
+                n = live_employer_count(session)
                 hint = (
-                    f"This index has no company matching {company!r}. It covers 139 employers, "
-                    "not the whole market, so the company is most likely simply not indexed: "
+                    f"This index has no company matching {company!r}. It covers {n} "
+                    f"employer{'s' if n != 1 else ''} with live postings, not the whole "
+                    "market, so the company is most likely simply not indexed: "
                     + ("retry with one of unknown_companies' suggestions, or drop the company filter."
                        if close else
                        "drop the company filter to search the whole index, or check the employer "
@@ -755,10 +767,17 @@ def diagnose_empty_search(
 
 
     if unknown:
+        # Same rule as the company hint above: point at suggestions only when there are
+        # some. "Retry with one of the suggestions" next to `suggestions: {}` sent an agent
+        # looking for a list that was not there.
         hint = (
             f"No live posting is tagged {unknown!r}. That tag does not exist in this index, "
             "so this is almost certainly a spelling or naming mismatch rather than a dry "
-            "market — retry with one of the suggestions, or drop the tag."
+            "market: "
+            + ("retry with one of the suggestions, or drop the tag."
+               if any(suggestions.get(t) for t in unknown) else
+               "no similar tag exists either, so drop the tag or try the English or "
+               "Chinese name of the skill.")
         )
     else:
         hint = (
