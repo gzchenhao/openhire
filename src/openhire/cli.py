@@ -1320,6 +1320,12 @@ def claim(
     nothing is refused with suggestions, because a correction that silently does nothing is
     worse than none: the employer believes they have been heard and no one finds out.
 
+    Titles match EXACTLY (case-folded, whitespace-normalised), never by containment:
+    declaring 系统工程师 does not cover 系统工程师（主动安全）, and each variant the
+    employer means must be declared on its own. When a declared title matches nothing,
+    the refusal lists the near titles (containment and fuzzy) so the exact text can be
+    copied from there.
+
     What a claim can never buy: rank, or a lower ghost_score. Both are locked pure
     functions and no branch of this command touches either.
     """

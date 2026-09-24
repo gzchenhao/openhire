@@ -331,6 +331,36 @@ def test_a_declaration_that_went_quiet_is_reported_not_ignored(seeded):
     assert stale == {"claimed": ["Role We No Longer Have"]}
 
 
+def test_titles_match_exactly_never_by_containment_and_help_says_so(seeded):
+    """Round 8 asked whether 系统工程师 would catch 系统工程师（主动安全）. It does not:
+    both the runtime (employer_correction) and the preview compare normalised titles for
+    equality; containment only feeds did_you_mean. The help text must state that."""
+    from typer.testing import CliRunner
+
+    from openhire.cli import app
+    from openhire.seed.claims import employer_correction
+
+    with session_scope() as s:
+        s.add(Job(
+            id="claimed:2", company_id="claimed", title="系统工程师（主动安全）", location="上海",
+            remote_policy="onsite", skills=["python"], role_family="engineering",
+            source="ats_public_api", first_seen_at=NOW, posted_at=NOW,
+            verified_at=NOW, apply_channel="https://x.test/claimed/2", content_hash="c2",
+        ))
+        s.flush()
+        pv = service.preview_claim_titles(s, "claimed", ["系统工程师"])
+    assert pv["ok"] is False and pv["unmatched"] == ["系统工程师"]
+    assert pv["did_you_mean"]["系统工程师"] == ["系统工程师（主动安全）"]
+    assert _with_claim(_claim(closed_titles=("系统工程师",)),
+                       lambda: employer_correction("claimed", "系统工程师（主动安全）")) is None
+
+    res = CliRunner().invoke(app, ["claim", "--help"], env={"COLUMNS": "200"})
+    assert res.exit_code == 0
+    text = " ".join(res.stdout.split())
+    assert "match EXACTLY" in text and "never by containment" in text
+    assert "系统工程师（主动安全）" in text
+
+
 def test_claim_command_verifies_titles_before_recording_anything(seeded):
     import inspect
 
