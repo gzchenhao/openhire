@@ -15,6 +15,7 @@ import threading
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.utilities.func_metadata import FuncMetadata
 from mcp.types import ToolAnnotations
 
 from . import __version__, service
@@ -443,6 +444,10 @@ def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> di
     employer's own application URL) for the user to submit as themselves, plus
     resume_transmitted=false. Do NOT paste résumé content into any argument.
 
+    REFUSES means refuses: any argument this tool does not declare (a `resume` key, a
+    `cv`, a `file`, anything) is answered with ERR_PII_NOT_ACCEPTED and nothing is
+    recorded. It is not silently dropped, so a client that sends one finds out.
+
     Args:
         job_id: the job to apply to (from search_jobs / check_watches).
         fingerprint: the user's anonymous fingerprint.
@@ -454,6 +459,54 @@ def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> di
             return service.apply(s, job_id, fingerprint, authorized)
         except OpenHireError as e:
             return e.as_dict()
+
+
+# --- undeclared arguments are refused, not dropped -----------------------------
+# FastMCP validates tool arguments with a pydantic model whose config ignores extra
+# keys, and it registers its low-level handler with validate_input=False, so a call to
+# authorize_application carrying {"resume": "..."} used to reach the tool with the
+# résumé quietly discarded and the docstring's REFUSES unkept: the service-level guard
+# (service.assert_no_resume) never saw the key because the transport had already
+# removed it. This wrapper sits where the RAW arguments still exist and answers with the
+# same structured error the tools use for every other refusal. Applied to the two tools
+# that take a fingerprint, where a smuggled key is a red-line matter; search filters are
+# left lenient on purpose so an older client's stray key does not break its search.
+class _RefusingUndeclaredArguments(FuncMetadata):
+    async def call_fn_with_arg_validation(
+        self, fn, fn_is_async, arguments_to_validate, arguments_to_pass_directly
+    ):
+        declared = set(self.arg_model.model_fields)
+        extra = sorted(k for k in (arguments_to_validate or {}) if k not in declared)
+        if extra:
+            pii = sorted(k for k in extra if k.lower() in service._RESUME_KEYS)
+            what = (
+                f"{', '.join(pii)} looks like a résumé or personal data, which never "
+                "transits this server."
+                if pii else
+                f"{', '.join(extra)} is not an argument this tool declares, and an "
+                "undeclared argument could carry anything."
+            )
+            return OpenHireError(
+                "ERR_PII_NOT_ACCEPTED",
+                f"Refused: {what} Nothing was recorded. Remove it and pass only "
+                f"{', '.join(declared)}; open apply_channel to apply as yourself.",
+            ).as_dict()
+        return await super().call_fn_with_arg_validation(
+            fn, fn_is_async, arguments_to_validate, arguments_to_pass_directly
+        )
+
+
+def _refuse_undeclared_arguments(tool_name: str) -> None:
+    tool = mcp._tool_manager.get_tool(tool_name)
+    meta = tool.fn_metadata
+    tool.fn_metadata = _RefusingUndeclaredArguments(
+        arg_model=meta.arg_model, output_schema=meta.output_schema,
+        output_model=meta.output_model, wrap_output=meta.wrap_output,
+    )
+
+
+for _name in ("authorize_application", "watch_intent"):
+    _refuse_undeclared_arguments(_name)
 
 
 _INDEX_READY = threading.Event()

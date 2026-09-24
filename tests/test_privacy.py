@@ -202,6 +202,61 @@ def test_apply_tool_exposes_no_resume_parameter():
     assert not (props & {"resume", "cv", "file", "attachment", "email", "name", "phone"})
 
 
+def test_apply_tool_refuses_an_undeclared_resume_argument_over_the_wire():
+    """Round 8: the docstring said REFUSES, but FastMCP's argument model ignores extra
+    keys and its handler skips input validation, so {"resume": "..."} reached the tool
+    with the résumé silently dropped and a receipt recorded as if nothing had happened.
+    The refusal now happens where the raw arguments still exist, with our own code."""
+    import asyncio
+    import json
+
+    from mcp.shared.memory import create_connected_server_and_client_session as connect
+    from sqlalchemy import select
+
+    from openhire.db import Application, init_db, session_scope
+    from openhire.mcp_server import mcp
+
+    def _payload(res):
+        sc = res.structuredContent
+        if isinstance(sc, dict) and set(sc) == {"result"}:
+            return sc["result"]
+        return sc if sc is not None else json.loads(res.content[0].text)
+
+    async def _call(args):
+        async with connect(mcp) as client:
+            return _payload(await client.call_tool("authorize_application", args))
+
+    init_db()
+    with session_scope() as s:
+        before = s.scalar(select(__import__("sqlalchemy").func.count()).select_from(Application)) or 0
+
+    for smuggled in ({"resume": "Jane Doe, 10 years of perception"}, {"cv": "..."},
+                     {"file": "cv.pdf"}, {"email": "jane@example.com"}, {"notes": "see attached"}):
+        out = asyncio.run(_call({"job_id": "acme:1", "fingerprint": "#a3f9-k2p7-x8q1",
+                                 "authorized": True, **smuggled}))
+        assert out["error"] == "ERR_PII_NOT_ACCEPTED", smuggled
+        assert "Nothing was recorded" in out["message"]
+        assert next(iter(smuggled)) in out["message"]
+
+    with session_scope() as s:
+        after = s.scalar(select(__import__("sqlalchemy").func.count()).select_from(Application)) or 0
+    assert after == before, "a refused call must not leave a receipt"
+
+    # The declared arguments alone still reach the service (which answers for the job).
+    out = asyncio.run(_call({"job_id": "no-such:1", "fingerprint": "#a3f9-k2p7-x8q1",
+                             "authorized": True}))
+    assert out["error"] == "ERR_JOB_NOT_FOUND"
+
+    # watch_intent has the same exposure and the same answer.
+    async def _watch(args):
+        async with connect(mcp) as client:
+            return _payload(await client.call_tool("watch_intent", args))
+
+    out = asyncio.run(_watch({"fingerprint": "#a3f9-k2p7-x8q1", "filters": {"skills": ["rust"]},
+                              "resume": "..."}))
+    assert out["error"] == "ERR_PII_NOT_ACCEPTED"
+
+
 # --- version must never drift (a tester found the banner reporting 0.3.2 on 0.4.1) ---
 def test_version_matches_pyproject():
     """`openhire.__version__` comes from installed metadata, so it can only drift if the
