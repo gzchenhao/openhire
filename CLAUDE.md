@@ -6,9 +6,16 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.6 · 2026-09-23；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.7 · 2026-09-24；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.6）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.7）
+- **v0.6.7（2026-09-24，`reports/054`）：** 用 `scripts/mcp_call.py`（进程内起当前版本）把三个求职人设 + 一个 HR 人设在 0.6.6 上重跑，
+  十条修了九条半，又抓到 17 条当天修完：**排序新鲜度锚回发布日期**（0.6.3 锚在 updated_at 是错的，470 天被动过的岗压 3 天新岗）；
+  感知别名扩到 detection / point cloud；城市别名（广州 ↔ 天河区等）；watch 可带 location；`truncated` 只在满页时为 true；
+  蔚来进已知未收录表；**未声明参数（resume / cv / email …）直接拒绝**（FastMCP 默认静默丢）；claim 标题精确匹配写进 help。
+  **测试防线：** conftest 里的 session 级守卫，`config.DATABASE_URL` 不是临时库就整个 session 失败。因为 9/23 夜里某次 agent 测试
+  把本机索引 `~/.openhire/openhire.db` 写成了 1 行（已从快照副本恢复，坏文件留作 `openhire.db.wrecked-20260924`）。
+  **规矩：agent 和 ad-hoc 脚本只准对临时库或备份副本跑；跑 agent 前先 `cp openhire.db openhire.db.bak-<日期>`。**
 - **v0.6.6（2026-09-23，同日第五版，`reports/053`）：** 飞书雇主的合法路径。**理想汽车**第一方镜像适配器（vendor `lixiang`，
   `api-web.lixiang.com` 普通 GET，772 条社招含完整 JD，**无发布日期** → 行上带 `date_signal: not_reported_by_ats`，`get_company_info`
   报 `posting_dates_reported`）；**蔚来**适配器写好并测过但**停用**（`www.nio.cn` 的 EdgeOne 对我们的 httpx 回 567 安全策略拦截，
