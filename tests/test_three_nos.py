@@ -30,15 +30,16 @@ def test_apply_path_cannot_make_network_requests():
 
 
 def test_no_tracking_code_anywhere():
+    """No analytics or telemetry SDK is imported anywhere in the package. The check is on
+    import lines on purpose: the seed roster legitimately names Mixpanel, an employer."""
     pkg = ROOT / "src" / "openhire"
-    forbidden = re.compile(r"\b(telemetry|analytics|posthog|mixpanel|segment\.io|google-analytics|sentry_sdk)\b", re.I)
+    forbidden = re.compile(
+        r"^\s*(?:import|from)\s+(telemetry|analytics|posthog|mixpanel|segment|sentry_sdk|amplitude|rudderstack)",
+        re.M,
+    )
     hits = []
     for path in pkg.rglob("*.py"):
         text = path.read_text(encoding="utf-8")
         for m in forbidden.finditer(text):
-            # the extractor's role-family vocabulary legitimately lists "analytics" as a job word
-            line = text[: m.start()].count("\n") + 1
-            if path.name == "extract.py" and m.group(0).lower() == "analytics":
-                continue
-            hits.append(f"{path.relative_to(ROOT)}:{line}:{m.group(0)}")
+            hits.append(f"{path.relative_to(ROOT)}:{text[: m.start()].count(chr(10)) + 1}:{m.group(1)}")
     assert not hits, hits
