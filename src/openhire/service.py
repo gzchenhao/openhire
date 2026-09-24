@@ -94,6 +94,8 @@ _RESUME_KEYS = {
     "first_name", "last_name", "linkedin", "portfolio",
 }
 _MAX_ID_LEN = 200  # a real job_id/fingerprint is short; long text ⇒ crammed content
+# Below this a fingerprint is flagged as short (never refused: older clients send "#a3f9").
+MIN_FINGERPRINT_LEN = 8
 
 
 def _now(now: dt.datetime | None) -> dt.datetime:
@@ -1074,6 +1076,10 @@ def watch_intent(
     # The fingerprint is client-owned and client-generated: the server stores it but can
     # NEVER regenerate or recover it. check_watches requires the SAME fingerprint, so the
     # client must persist it. (Red line #1: only this anonymous token is ever stored.)
+    # A short tag is accepted (older clients send "#a3f9") but flagged: four characters
+    # collide with strangers, and the collision notice below only fires after it has
+    # already happened.
+    short = len(fingerprint.strip()) < MIN_FINGERPRINT_LEN
     return {
         "watch_id": watch_id,
         "status": "active",
@@ -1082,9 +1088,16 @@ def watch_intent(
         # not PII (there is none to leak) but it is someone else's intent. Say when the
         # tag was already in use so the client can pick a longer one.
         "existing_watches": int(existing),
+        **({"short_fingerprint": True} if short else {}),
         "fingerprint_notice": (
             "Persist this fingerprint yourself — the server cannot recover it. "
             "check_watches needs the identical fingerprint to return your matches."
+            + (
+                f" This fingerprint is only {len(fingerprint.strip())} characters, which is "
+                "short enough to collide with a stranger's: use 12 or more random "
+                "characters (e.g. '#a3f9-k2p7-x8q1') and re-register."
+                if short else ""
+            )
             + (
                 f" This fingerprint already had {existing} active watch(es) before this one. If "
                 "they are not yours, another client chose the same short tag: use a longer, "

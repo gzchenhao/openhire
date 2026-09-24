@@ -302,3 +302,16 @@ def test_reusing_a_fingerprint_is_reported(session):
     second = service.watch_intent(session, "#p0ny", {"skills": ["slam"]}, now=NOW)
     assert second["existing_watches"] == 1
     assert "already had 1 active watch" in second["fingerprint_notice"]
+
+
+def test_a_short_fingerprint_is_flagged_before_it_collides_not_refused(session):
+    """Round 8: the collision notice only fires after a stranger already shares the tag.
+    Say so at registration; still accept it, because older clients send "#a3f9"."""
+    short = service.watch_intent(session, "#a3f9", {"skills": ["bev"]}, now=NOW)
+    assert short["status"] == "active" and short["short_fingerprint"] is True
+    assert "12 or more random characters" in short["fingerprint_notice"]
+    assert "only 5 characters" in short["fingerprint_notice"]
+    assert service.MIN_FINGERPRINT_LEN == 8
+    fine = service.watch_intent(session, "#a3f9-k2p7-x8q1", {"skills": ["bev"]}, now=NOW)
+    assert "short_fingerprint" not in fine
+    assert "12 or more" not in fine["fingerprint_notice"]
