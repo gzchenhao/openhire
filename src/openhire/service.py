@@ -238,6 +238,23 @@ def _location_clause(query: str):
     return or_(*(Job.location.ilike(f"%{alias}%") for alias in location_aliases(query)))
 
 
+# --- last-touched provenance --------------------------------------------------
+# Vendors whose API carries a last-touched field of its own, distinct from the posting
+# date (Greenhouse `updated_at` vs `first_published`, Moka `updatedAt` vs `publishedAt`).
+# For these an updated_at equal to posted_at is a fact ("published, not edited since").
+# Ashby and Lever expose no such field; Beisen's ChangeDate echoes PostDate on 97% of
+# rows, so for it and everything else equality is read as "not reported".
+TOUCH_REPORTING_VENDORS = frozenset({"greenhouse", "moka"})
+
+
+def _touch_is_reported(job: Job, company: Company | None) -> bool:
+    if not (job.updated_at and job.posted_at):
+        return False
+    if company is not None and company.ats_vendor in TOUCH_REPORTING_VENDORS:
+        return True
+    return _aware(job.updated_at) != _aware(job.posted_at)
+
+
 # --- serialization ------------------------------------------------------------
 def role_group(company_id: str, title: str) -> str:
     """Stable id shared by the same role posted in several cities.
@@ -267,8 +284,12 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
     mq = match_quality(requested_skills, job.skills)
     fr = freshness(_freshness_anchor(job), now)
     # datePosted is the employer's REAL posting date (ATS), not our crawl date; fall back
-    # to first_seen_at only when the ATS exposed no date. days_open = age of the posting.
-    posted = _aware(job.posted_at) or _aware(job.first_seen_at)
+    # to first_seen_at only when the ATS exposed no date. days_open = age of the posting,
+    # in calendar days, and the SAME number feeds ghost_reason below: the two used to be
+    # computed separately (calendar days here, floored elapsed seconds there) and differed
+    # by one on every row, "days_open 848" beside "open 847d".
+    posted = _aware(job.posted_at or job.first_seen_at)
+    age_days = (now.date() - posted.date()).days if posted else None
     _rs, _regions = classify_remote(job.remote_policy, job.location)
     _sal_lo, _sal_hi, _sal_note = usable_salary(
         job.salary_min, job.salary_max, getattr(job, "salary_period", None)
@@ -283,7 +304,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # Same role, several cities → same role_group. See role_group() above.
         "role_group": role_group(job.company_id, job.title),
         "datePosted": posted.date().isoformat() if posted else None,
-        "days_open": (now.date() - posted.date()).days if posted else None,
+        "days_open": age_days,
         # Present only when the employer's ATS or mirror reports NO posting date at all
         # (Li Auto's first-party API carries none). datePosted and days_open above are
         # then anchored on the day WE first saw the row, and a reader must not take them
@@ -315,13 +336,18 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # true at once ("confirmed live today" + "open for a year") and the pair reads as a
         # contradiction without it.
         # The employer's own last-touched timestamp. Only some ATSes report one: Greenhouse
-        # and Moka do (91% / 96% of their rows differ from posted_at), while Ashby, Lever and
-        # Beisen return the posting date again (0% / 0% / 3%). When it merely echoes
-        # posted_at we must NOT present it as "last touched", because "untouched for 368
-        # days" would then describe the vendor's API rather than the employer, and it reads
-        # as an accusation. Null here means "this ATS does not report it", never "abandoned".
-        # Honest limit even when real: an ATS bumps it on any edit or re-publish, so it means
-        # "touched", not necessarily "content changed".
+        # and Moka do (a field of their own, distinct from the posting date), while Ashby
+        # and Lever have no such field (the adapters store nothing, and older snapshots
+        # carry the posting date copied into this column) and Beisen's ChangeDate equals
+        # the posting date on 97% of rows. Where the vendor reports it, an equal timestamp
+        # means "published and not edited since" and is shown as such: a row Greenhouse
+        # published yesterday used to come back `update_signal: not_reported_by_ats` because
+        # nothing had touched it yet, which said the opposite of the truth. Where the
+        # vendor does not, or only echoes, we must NOT present it as "last touched", because
+        # "untouched for 368 days" would then describe the vendor's API rather than the
+        # employer, and it reads as an accusation. Null here means "this ATS does not
+        # report it", never "abandoned". Honest limit even when real: an ATS bumps it on
+        # any edit or re-publish, so it means "touched", not necessarily "content changed".
         **(
             {
                 "updated_at": _aware(job.updated_at).isoformat(),
@@ -329,8 +355,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
                     (now - _aware(job.updated_at)).total_seconds() // 86400
                 ),
             }
-            if (job.updated_at and job.posted_at
-                and _aware(job.updated_at) != _aware(job.posted_at))
+            if _touch_is_reported(job, company)
             else {"updated_at": None, "days_since_update": None,
                   "update_signal": "not_reported_by_ats"}
         ),
@@ -347,12 +372,10 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             # Mirror the anchor the pipeline actually scored against: the employer's own
             # posting date when the ATS gives one, else the day we first saw it. Using
             # first_seen_at unconditionally would narrate "open 48d" next to a stored 1.0,
-            # which is a worse answer than staying silent.
-            ghost_reason(
-                job.relist_count or 0,
-                (now - _aware(job.posted_at or job.first_seen_at)).total_seconds() / 86400.0,
-            )
-            if (job.posted_at or job.first_seen_at) else None
+            # which is a worse answer than staying silent. Same calendar-day count as
+            # days_open, so the two numbers on one row never disagree.
+            ghost_reason(job.relist_count or 0, float(age_days))
+            if age_days is not None else None
         ),
         # ④ The employer's own commitment. Falls back to what they declared for the whole
         # company when they claimed it, so a claim covers roles posted afterwards too.
@@ -919,10 +942,14 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
             Job.company_id == company_id, Job.delisted_at.is_(None), Job.relist_count > 0
         )
     ) or 0
+    # Same rule as the per-row update_signal (see _touch_is_reported): a vendor with a
+    # last-touched field of its own reports it even when no edit has happened yet.
     touch_reported = session.scalar(
         select(func.count()).where(
             Job.company_id == company_id, Job.delisted_at.is_(None),
-            Job.updated_at.is_not(None), Job.updated_at != Job.posted_at,
+            Job.updated_at.is_not(None), Job.posted_at.is_not(None),
+            *(() if company.ats_vendor in TOUCH_REPORTING_VENDORS
+              else (Job.updated_at != Job.posted_at,)),
         )
     ) or 0
     # Same rule as the per-row `date_signal`: a row whose source reported no posting date

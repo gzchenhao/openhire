@@ -41,7 +41,9 @@ class LeverClient(ATSClient):
                     salary_max=smax,
                     salary_currency=scur,
                     posted_at=_epoch_ms_to_dt(j.get("createdAt")),
-                    updated_at=_epoch_ms_to_dt(j.get("createdAt")),
+                    # Lever's public postings API carries no last-touched field; storing
+                    # createdAt twice reported a date the ATS never gave us.
+                    updated_at=None,
                 )
             )
         return records

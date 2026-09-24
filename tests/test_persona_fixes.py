@@ -290,6 +290,86 @@ def test_cli_search_echo_names_the_location_filter():
     assert "--location广州" in "".join(res.stdout.split())
 
 
+def test_days_open_and_ghost_reason_carry_the_same_number(session):
+    """Round 8 (an HR persona): days_open 848 beside "open 847d" on all 40 rows. Calendar
+    days here, floored elapsed seconds there. One count now feeds both."""
+    posted = NOW - dt.timedelta(days=847, hours=22)
+    session.add(Job(
+        id="minieye:old", company_id="minieye", title="系统工程师", description_raw="x",
+        skills=["c"], remote_policy="onsite", location="深圳", posted_at=posted,
+        first_seen_at=posted, verified_at=NOW, source="ats_public_api",
+        apply_channel="https://app.mokahr.com/apply/minieye/1#/job/old", content_hash="hold",
+        ghost_score=1.0, relist_count=0,
+    ))
+    session.commit()
+    [row] = service.search_jobs(session, company="minieye", skills=["c"], now=NOW)
+    assert row["days_open"] == 848
+    assert row["ghost_reason"] == "age only: open 848d, never relisted"
+    # A row aged from first sight (no ATS date) follows the same rule.
+    session.add(mkjob("nodate", "minieye", "无日期岗", ["d"], posted_days_ago=0))
+    session.commit()
+    [row] = service.search_jobs(session, company="minieye", skills=["d"], now=NOW)
+    row_days = row["days_open"]
+    assert f"{row_days}d" in row["ghost_reason"]
+
+
+def test_a_greenhouse_row_published_and_not_yet_edited_still_reports_its_touch(session):
+    """Round 8: rows a Greenhouse refresh added the day before came back
+    `update_signal: not_reported_by_ats`. Greenhouse HAD reported updated_at; it equalled
+    first_published because nobody had edited the row yet, and the serializer read
+    equality as "echo". Equality is an echo only for vendors with no field of their own."""
+    session.add(Company(id="waymo", name="Waymo", ats_vendor="greenhouse", ats_tenant="waymo",
+                        careers_url="w", last_crawled_at=NOW))
+    session.add(Company(id="ashbyco", name="Ashby Co", ats_vendor="ashby", ats_tenant="a",
+                        careers_url="a", last_crawled_at=NOW))
+    posted = NOW - dt.timedelta(days=1)
+    for cid in ("waymo", "ashbyco"):
+        session.add(Job(
+            id=f"{cid}:1", company_id=cid, title="Perception Engineer", description_raw="x",
+            skills=["perception"], remote_policy="onsite", location="Mountain View",
+            posted_at=posted, updated_at=posted, first_seen_at=NOW, verified_at=NOW,
+            source="ats_public_api", apply_channel=f"https://boards.greenhouse.io/{cid}/1",
+            content_hash=f"h{cid}", ghost_score=0.0,
+        ))
+    session.commit()
+    rows = {r["company_id"]: r for r in service.search_jobs(session, skills=["perception"], now=NOW)}
+    gh = rows["waymo"]
+    assert gh["updated_at"] is not None and gh["days_since_update"] == 1
+    assert "update_signal" not in gh
+    ash = rows["ashbyco"]
+    assert ash["updated_at"] is None and ash["update_signal"] == "not_reported_by_ats"
+    assert service.get_company_info(session, "waymo", now=NOW)["last_touched_reported_by_ats"] is True
+    assert service.get_company_info(session, "ashbyco", now=NOW)["last_touched_reported_by_ats"] is False
+
+
+def test_ashby_and_lever_adapters_store_no_last_touched_date():
+    """Their public APIs carry none; copying the posting date into updated_at stored a
+    date the ATS never reported. Both ingest paths (weekly crawl and refresh_index) go
+    through these adapters and _insert_new_job / _update_job, so what they return is
+    what both paths store."""
+    from openhire.ats.ashby import AshbyClient
+    from openhire.ats.lever import LeverClient
+    from openhire.ats.greenhouse import GreenhouseClient
+
+    [a] = AshbyClient().parse({"jobs": [{
+        "id": "8fb1615c", "title": "Eng", "descriptionPlain": "x", "location": "Remote",
+        "publishedAt": "2026-09-23T10:00:00Z", "jobUrl": "https://jobs.ashbyhq.com/openai/8fb1615c",
+    }]}, "openai")
+    assert a.posted_at is not None and a.updated_at is None
+    [lv] = LeverClient().parse([{
+        "id": "abc-123", "text": "Eng", "descriptionPlain": "x", "categories": {"location": "NYC"},
+        "createdAt": 1758621600000, "hostedUrl": "https://jobs.lever.co/mistral/abc-123",
+    }], "mistral")
+    assert lv.posted_at is not None and lv.updated_at is None
+    # Greenhouse reports both, and a just-published row carries them equal.
+    [g] = GreenhouseClient().parse({"jobs": [{
+        "id": 1, "title": "Eng", "content": "x", "location": {"name": "MV"},
+        "first_published": "2026-09-23T10:00:00-04:00", "updated_at": "2026-09-23T10:00:00-04:00",
+        "absolute_url": "https://boards.greenhouse.io/waymo/jobs/1",
+    }]}, "waymo")
+    assert g.posted_at == g.updated_at and g.updated_at is not None
+
+
 def test_limit_zero_is_an_error_not_one_row(session):
     with pytest.raises(OpenHireError) as e:
         service.search_jobs(session, skills=["bev"], limit=0, now=NOW)

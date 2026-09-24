@@ -45,7 +45,10 @@ class AshbyClient(ATSClient):
                     salary_max=smax,
                     salary_currency=scur,
                     posted_at=_iso_to_dt(j.get("publishedAt")),
-                    updated_at=_iso_to_dt(j.get("publishedAt")),
+                    # Ashby's public board carries no last-touched field. This used to
+                    # copy publishedAt here, which stored a date the ATS never reported
+                    # and made "touched" indistinguishable from "posted" downstream.
+                    updated_at=None,
                 )
             )
         return records
