@@ -8,11 +8,11 @@ from __future__ import annotations
 import datetime as dt
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from openhire import service
-from openhire.db.models import Base, Company, Job
+from openhire.db.models import Base, Company, Job, Watch
 from openhire.errors import OpenHireError
 from openhire.pipeline.ranking import expand_skill, match_quality
 
@@ -158,9 +158,9 @@ def test_remote_scope_does_not_see_us_inside_other_words():
 # --- 5. watches: unknown keys refused, company scoping real, truncation reported --------
 def test_watch_refuses_unknown_filter_keys(session):
     with pytest.raises(OpenHireError) as e:
-        service.watch_intent(session, "#t3st", {"skills": ["bev"], "location": "北京"}, now=NOW)
+        service.watch_intent(session, "#t3st", {"skills": ["bev"], "remote_scope": "worldwide"}, now=NOW)
     assert e.value.code == "ERR_UNKNOWN_FILTER"
-    assert "location" in e.value.message
+    assert "remote_scope" in e.value.message
 
 
 def test_watch_can_be_scoped_to_one_employer(session):
@@ -234,6 +234,60 @@ def test_location_filter_is_a_caseless_substring_in_either_language(session):
     assert ids == {"minieye:sh"}
     ids = {r["job_id"] for r in service.search_jobs(session, skills=["bev"], location="beijing", now=NOW)}
     assert ids == {"minieye:new", "ubtrobot:old"}
+
+
+def test_location_aliases_reach_district_only_and_chinese_spellings(session):
+    """Round 8: a Guangzhou engineer's one filter found nothing for 广州 while 天河区 found
+    136 rows, and "Beijing" reached three English rows and none of the 185 spelled 北京市."""
+    session.add(mkjob("th", "minieye", "感知算法工程师-GZ", ["bev"], posted_days_ago=10,
+                      location="广东·天河区"))
+    session.add(mkjob("py", "minieye", "感知算法工程师-PY", ["bev"], posted_days_ago=10,
+                      location="广东省·广州市·番禺区"))
+    session.add(mkjob("sz", "minieye", "感知算法工程师-SZ", ["bev"], posted_days_ago=10,
+                      location="广东·南山区"))
+    session.add(mkjob("bj", "minieye", "感知算法工程师-BJ2", ["bev"], posted_days_ago=10,
+                      location="北京市·海淀区"))
+    session.add(mkjob("rm", "minieye", "感知算法工程师-远程", ["bev"], posted_days_ago=10,
+                      location="远程"))
+    session.commit()
+
+    def ids(loc):
+        return {r["job_id"] for r in service.search_jobs(session, skills=["bev"], location=loc, now=NOW)}
+
+    assert ids("广州") == {"minieye:th", "minieye:py"}
+    assert ids("Guangzhou") == {"minieye:th", "minieye:py"}
+    assert ids("深圳") == {"minieye:sz"} and ids("shenzhen") == {"minieye:sz"}
+    assert ids("Beijing") == {"minieye:new", "ubtrobot:old", "minieye:bj"}
+    assert ids("北京") == {"minieye:new", "ubtrobot:old", "minieye:bj"}
+    assert ids("remote") == {"minieye:rm"} and ids("远程") == {"minieye:rm"}
+    # A query that is not one of the tabled places stays the plain substring it always was.
+    assert ids("海淀") == {"minieye:bj"}
+    assert service.location_aliases("Mountain View") == ["Mountain View"]
+    assert "天河区" in service.location_aliases("guangzhou")
+
+
+def test_a_watch_can_be_scoped_to_a_location(session):
+    session.add(mkjob("th", "minieye", "感知算法工程师-GZ", ["bev"], posted_days_ago=10,
+                      location="广东·天河区"))
+    session.commit()
+    w = service.watch_intent(session, "#gz-k2p7-x8q1", {"skills": ["bev"], "location": "广州"}, now=NOW)
+    assert w["status"] == "active"
+    res = service.check_watches(session, "#gz-k2p7-x8q1", now=NOW)["results"][0]
+    assert {m["job_id"] for m in res["new_matches"]} == {"minieye:th"}
+    assert res["total_matching"] == 1
+    # The stored filter is the text as typed; the aliases apply at match time.
+    with_loc = session.execute(select(Watch).where(Watch.watch_id == w["watch_id"])).scalar_one()
+    assert with_loc.filters["location"] == "广州"
+
+
+def test_cli_search_echo_names_the_location_filter():
+    """The echoed command is what a user copies to re-run; it dropped --location."""
+    from typer.testing import CliRunner
+
+    from openhire.cli import app
+
+    res = CliRunner().invoke(app, ["search", "--skills", "bev", "--location", "广州"])
+    assert "--location广州" in "".join(res.stdout.split())
 
 
 def test_limit_zero_is_an_error_not_one_row(session):

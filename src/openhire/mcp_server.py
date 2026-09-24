@@ -185,8 +185,13 @@ def search_jobs(
             Send the user to that portal; do not retry with a looser filter, and do not
             present the absence as "not hiring".
         location: caseless substring over the employer's location text, either language
-            ("北京", "Beijing", "Mountain View", "Remote"). Combine with remote_scope to keep
-            or drop a country. No location filter means all locations.
+            ("北京", "Beijing", "Mountain View", "Remote"). Alias-aware for the cities
+            Chinese employers spell several ways: 广州 / Guangzhou also reaches rows that
+            name only a district ("广东·天河区", 番禺区, 黄埔区, 南沙区, 海珠区, 越秀区,
+            白云区), 深圳 / Shenzhen reaches 南山区, 福田区, 龙岗区, 宝安区, Beijing reaches
+            北京市, and "remote" reaches 远程; 上海, 杭州, 苏州, 南京, 武汉, 成都 and 合肥
+            match their pinyin too. Combine with remote_scope to keep or drop a country.
+            No location filter means all locations.
         limit: max results (default 20); must be >= 1 (else ERR_BAD_PAGE). A negative
             offset clamps to 0.
 
@@ -305,7 +310,9 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     are stored — never a name, email, phone or résumé. Accepted filter keys mirror
     search_jobs: `skills` (ANY-overlap), `required_skills` (ALL/AND — use this to keep
     sales / solutions-architect roles out), `remote` (bool), `role_family` (e.g.
-    "engineering"), `min_salary` (int), `company` (one employer, resolved at registration).
+    "engineering"), `min_salary` (int), `company` (one employer, resolved at registration),
+    `location` (substring of the location text, alias-aware like search_jobs: 广州 also
+    reaches 广东·天河区 rows, Beijing reaches 北京市, "remote" reaches 远程).
     Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped.
 
     `min_salary` keeps rows with NO stated pay (they cannot be ruled out); it only drops rows

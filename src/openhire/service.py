@@ -21,7 +21,7 @@ import re
 import secrets
 from typing import Any
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
 
 from .db import Application, Company, Job, Watch
@@ -196,6 +196,45 @@ def _salary_is_usable():
         (Job.salary_period == "monthly", top >= MONTHLY_FLOOR),
         else_=top >= ANNUAL_FLOOR,
     )
+
+# --- location aliases ---------------------------------------------------------
+# The ATS location text is whatever the employer typed, and Chinese employers type it
+# three ways: "北京市", "广东·天河区" (province plus district, city omitted), and "Beijing".
+# A plain substring on 广州 found nothing while 天河区 found 136 rows, and "Beijing" reached
+# three MongoDB rows in English and none of the 185 rows spelled 北京市. Each row below is
+# one place under every spelling a seeker or an employer uses for it. Matching is an OR of
+# caseless substrings over the whole group when the query IS one of its members; any other
+# query stays the plain substring it always was, so "Mountain View" still works.
+_LOCATION_GROUPS: tuple[tuple[str, ...], ...] = (
+    ("广州", "guangzhou", "广州市", "天河区", "番禺区", "黄埔区", "南沙区", "海珠区", "越秀区", "白云区"),
+    ("北京", "beijing", "北京市"),
+    ("上海", "shanghai", "上海市"),
+    ("深圳", "shenzhen", "深圳市", "南山区", "福田区", "龙岗区", "宝安区"),
+    ("杭州", "hangzhou", "杭州市"),
+    ("苏州", "suzhou", "苏州市"),
+    ("南京", "nanjing", "南京市"),
+    ("武汉", "wuhan", "武汉市"),
+    ("成都", "chengdu", "成都市"),
+    ("合肥", "hefei", "合肥市"),
+    ("remote", "远程"),
+)
+
+
+def location_aliases(query: str) -> list[str]:
+    """Every spelling to match for a location query. Always contains the query itself."""
+    q = " ".join((query or "").casefold().split())
+    if not q:
+        return []
+    for group in _LOCATION_GROUPS:
+        if q in {m.casefold() for m in group}:
+            return list(dict.fromkeys(group))
+    return [query.strip()]
+
+
+def _location_clause(query: str):
+    """SQL: the row's location text contains any alias of `query`, caselessly."""
+    return or_(*(Job.location.ilike(f"%{alias}%") for alias in location_aliases(query)))
+
 
 # --- serialization ------------------------------------------------------------
 def role_group(company_id: str, title: str) -> str:
@@ -422,7 +461,9 @@ def _filter_and_rank(
         # A caseless substring over the ATS location text, in either language: "北京",
         # "Beijing", "Remote", "Mountain View". A seeker leaving China could not exclude
         # China-onsite rows and a seeker in Beijing could not keep only Beijing ones.
-        stmt = stmt.where(Job.location.ilike(f"%{location.strip()}%"))
+        # Alias-aware for the cities employers spell several ways (see _LOCATION_GROUPS):
+        # 广州 also reaches "广东·天河区", Beijing also reaches "北京市".
+        stmt = stmt.where(_location_clause(location))
     if min_salary is not None:
         # Keep jobs whose stated pay could meet the floor. Unstated pay is KEPT here (it
         # cannot be ruled out) unless require_stated_salary asks to exclude it.
@@ -909,7 +950,9 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
     return f"{prefix}{secrets.token_hex(4)}"
 
 
-_WATCH_FILTER_KEYS = ("skills", "required_skills", "remote", "role_family", "min_salary", "company")
+_WATCH_FILTER_KEYS = (
+    "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
+)
 
 
 def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
@@ -945,6 +988,10 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
         allowed["role_family"] = str(filters["role_family"]).lower()
     if filters.get("min_salary") is not None:
         allowed["min_salary"] = int(filters["min_salary"])
+    if filters.get("location"):
+        # Stored as typed; the alias expansion happens at match time, so a watch on 广州
+        # registered today also reaches a 天河区 row posted next week.
+        allowed["location"] = str(filters["location"]).strip()
     return allowed
 
 
@@ -1046,7 +1093,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         ranked_all = _filter_and_rank(
             session, f.get("skills"), f.get("remote"), f.get("min_salary"), since, 100_000, now,
             required_skills=f.get("required_skills"), role_family=f.get("role_family"),
-            company_ids=f.get("company_ids"),
+            company_ids=f.get("company_ids"), location=f.get("location"),
         )
         total_matching = len(ranked_all)
         ranked = ranked_all[:MAX_PAGE_SIZE]

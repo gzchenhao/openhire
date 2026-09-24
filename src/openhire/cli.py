@@ -280,6 +280,7 @@ def search(
         + (f" --offset {offset}" if offset else "")
         + (f" --company {company}" if company else "")
         + (" --distinct" if distinct else "")
+        + (f" --location {location}" if location else "")
     )
     with session_scope() as s:
         results = service.search_jobs(
