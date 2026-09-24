@@ -731,10 +731,12 @@ def diagnose_empty_search(
                 candidates = [e.name for e in known]
                 hint = (
                     f"{company!r} matches {len(known)} employers we know but deliberately do "
-                    f"not index ({', '.join(candidates)}): their careers sites run on Feishu "
-                    "Recruitment, whose job-list API requires a request signature we treat as "
-                    "access control. Re-ask with one of them by name for its portal and the "
-                    "employer opt-in path; dropping the company filter will not find any of them."
+                    f"not index ({', '.join(candidates)}), each for a reason its own entry "
+                    "states (a careers site whose job-list API requires a request signature, "
+                    "or one whose security policy blocks this crawler; we treat both as "
+                    "access control). Re-ask with one of them by name for its portal, reason "
+                    "and employer opt-in path; dropping the company filter will not find any "
+                    "of them."
                 )
             else:
                 candidates = close
@@ -816,12 +818,14 @@ def known_not_indexed_hint(known: list["not_indexed.NotIndexedEmployer"]) -> str
         if first.careers_url else
         "We have not confirmed its careers portal URL, so do not guess one."
     )
+    change = first.employer_opt_in.get("summary") or (
+        "authorising the read-only Feishu open-platform scopes "
+        + ", ".join(first.employer_opt_in.get("scopes", []))
+    )
     return (
         f"{first.name} is known to us but deliberately NOT in this index: {first.reason} "
         f"{where} This is not a typo and dropping the company filter will not find it. "
-        "The employer can change this by authorising the read-only Feishu open-platform "
-        f"scopes {', '.join(first.employer_opt_in.get('scopes', []))}; see "
-        "known_not_indexed[].employer_opt_in."
+        f"The employer can change this by {change}; see known_not_indexed[].employer_opt_in."
     )
 
 
@@ -1228,6 +1232,9 @@ def apply(
 
 # --- refresh one employer (throttled) ----------------------------------------
 REFRESH_THROTTLE_HOURS = 6
+# How many candidates an ambiguous refresh lists. Enough for any real word ("robot" hits
+# 11); the hint says when the list is shorter than the match count.
+MAX_AMBIGUOUS_CANDIDATES = 25
 
 
 def refresh_company_index(
@@ -1253,6 +1260,37 @@ def refresh_company_index(
     now = _now(now)
     matched = resolve_company(session, company)
     if not matched:
+        # The same answer search_jobs and get_company_info give: an employer we know and
+        # deliberately do not index is not "unknown". Round 8 got two stories for 小马智行
+        # from one server, which is worse than either story alone.
+        known = not_indexed.lookup(company)
+        if len(known) == 1:
+            record = known[0].as_dict()
+            # `reason` is this tool's outcome code on every branch; the registry's prose
+            # reason keeps its own key so the two never fight over one name.
+            record["not_indexed_reason"] = record.pop("reason")
+            return {
+                "refreshed": False,
+                "reason": "known_not_indexed",
+                **record,
+                "hint": (
+                    known_not_indexed_hint(known)
+                    + " There is nothing to re-crawl: no ATS of theirs is read by this index."
+                ),
+            }
+        if len(known) > 1:
+            return {
+                "refreshed": False,
+                "reason": "ambiguous_company",
+                "candidates": [
+                    {"company_id": None, "name": e.name, "indexed": False} for e in known
+                ],
+                "hint": (
+                    f"{company!r} matches {len(known)} employers we know but deliberately do "
+                    "not index; none of them can be refreshed. Re-ask with one by name to "
+                    "get its portal and reason."
+                ),
+            }
         return {
             "refreshed": False,
             "reason": "unknown_company",
@@ -1263,13 +1301,17 @@ def refresh_company_index(
         }
     if len(matched) > 1:
         # Refusing is the point: a vague word must not fan out into several live crawls.
+        # The count and the list must agree: "matches 11 employers" over a list of 10 was
+        # one more thing a reader had to explain away.
+        shown = matched[:MAX_AMBIGUOUS_CANDIDATES]
         return {
             "refreshed": False,
             "reason": "ambiguous_company",
-            "candidates": [{"company_id": c.id, "name": c.name} for c in matched[:10]],
+            "candidates": [{"company_id": c.id, "name": c.name} for c in shown],
             "hint": (
-                f"{company!r} matches {len(matched)} employers. Re-ask with one company_id — "
-                "this never refreshes several at once."
+                f"{company!r} matches {len(matched)} employers"
+                + (f"; candidates lists the first {len(shown)}" if len(shown) < len(matched) else "")
+                + ". Re-ask with one company_id; this never refreshes several at once."
             ),
         }
 

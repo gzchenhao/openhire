@@ -50,21 +50,55 @@ def session():
 
 
 # --- the registry itself ------------------------------------------------------------------
-def test_registry_holds_the_ten_named_employers_with_honest_fields():
+FEISHU_IDS = ["momenta", "ponyai", "agibot", "minimax", "zhipu", "sensetime", "limx",
+              "xsquare", "spiritai", "booster"]
+
+
+def test_registry_holds_the_ten_feishu_employers_and_nio_with_honest_fields():
     ids = [e.id for e in not_indexed.NOT_INDEXED]
-    assert ids == ["momenta", "ponyai", "agibot", "minimax", "zhipu", "sensetime", "limx",
-                   "xsquare", "spiritai", "booster"]
+    assert ids == [*FEISHU_IDS, "nio"]
     assert len(set(ids)) == len(ids)
     for e in not_indexed.NOT_INDEXED:
-        assert e.ats == "feishu"
         assert e.aliases, e.id
-        assert "request signature" in e.reason and "access control" in e.reason
-        assert "do not work around it" in e.reason
         # A portal URL is either confirmed (https, employer's own host) or absent; never a guess.
         assert e.careers_url is None or e.careers_url.startswith("https://"), e.id
         assert e.employer_opt_in["scopes"] == ["hire:site:readonly", "hire:site_job_post:readonly"]
         assert "read-only" in e.employer_opt_in["what"]
         assert "never by payment" in e.employer_opt_in["how"]
+        assert e.employer_opt_in["summary"] and e.reason_zh
+        if e.id in FEISHU_IDS:
+            assert e.ats == "feishu"
+            assert "request signature" in e.reason and "access control" in e.reason
+            assert "do not work around it" in e.reason
+
+
+def test_nio_is_registered_for_its_own_reason_not_feishus():
+    """Round 8: 蔚来 got the generic "most likely simply not indexed" while 小马智行 got the
+    real answer. NIO's own page publishes the roster and its edge security policy blocks
+    this crawler (HTTP 567); the adapter is parked, not missing, and the entry says so."""
+    nio = not_indexed.by_id("nio")
+    assert nio.name == "蔚来 NIO" and set(nio.aliases) >= {"蔚来", "nio"}
+    assert nio.ats == "first-party site (blocked by the site's security policy, HTTP 567)"
+    assert nio.careers_url == "https://www.nio.cn/careers/jobs"
+    assert nio.reason == (
+        "the employer's own careers page publishes the postings, but its edge security "
+        "policy blocks this crawler; we do not work around security controls; the adapter "
+        "is built and parked until NIO allowlists or authorizes us"
+    )
+    assert "allowlist" in nio.employer_opt_in["what"].lower()
+    assert "allowlisting" in nio.employer_opt_in["summary"]
+    assert "567" in nio.confirmed_by and "curl" in nio.confirmed_by
+    assert [e.id for e in not_indexed.lookup("蔚来")] == ["nio"]
+    assert [e.id for e in not_indexed.lookup("NIO")] == ["nio"]
+    assert [e.id for e in not_indexed.lookup("蔚来汽车 招聘")] == ["nio"]
+    assert [e.id for e in not_indexed.lookup("nio careers")] == ["nio"]
+    assert EM_DASH not in nio.reason and EM_DASH not in nio.reason_zh
+
+
+@pytest.mark.parametrize("query", ["senior engineer", "union robotics", "Unionpay"])
+def test_a_latin_alias_inside_another_word_is_not_a_hit(query):
+    """"nio" is inside "senior" and "union"; only a whole word is a question about NIO."""
+    assert not_indexed.lookup(query) == []
 
 
 def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
@@ -82,8 +116,9 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
     assert urls["xsquare"] == "https://x2-robot.jobs.feishu.cn/"
     assert urls["spiritai"] == "https://nwd4iy9rd2s.jobs.feishu.cn/"
     assert urls["booster"] == "https://booster.jobs.feishu.cn/"
+    assert urls["nio"] == "https://www.nio.cn/careers/jobs"
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
-    assert by_title == set(urls) - {"sensetime"}
+    assert by_title == set(urls) - {"sensetime", "nio"}
     sensetime = not_indexed.by_id("sensetime")
     assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by
 
@@ -194,11 +229,16 @@ def test_indexed_employer_wins_over_the_registry(session):
 
 # --- get_company_info -----------------------------------------------------------------------
 def test_company_info_is_a_structured_answer_not_an_error(session):
-    for q in ("Momenta", "小马智行", "Pony.ai", "智谱", "booster"):
+    for q in ("Momenta", "小马智行", "Pony.ai", "智谱", "booster", "蔚来"):
         info = service.get_company_info(session, q, now=NOW)
         assert info["indexed"] is False and info["company_id"] is None, q
-        assert info["ats"] == "feishu" and info["careers_url"], q
-        assert "request signature" in info["reason"] and "access control" in info["reason"]
+        assert info["careers_url"], q
+        if q == "蔚来":
+            assert "567" in info["ats"] and "security policy" in info["reason"]
+            assert "allowlisting" in info["hint"] and "nio.cn/careers" in info["hint"]
+        else:
+            assert info["ats"] == "feishu"
+            assert "request signature" in info["reason"] and "access control" in info["reason"]
         assert info["employer_opt_in"]["scopes"] == ["hire:site:readonly", "hire:site_job_post:readonly"]
         assert info["claimed"] is False
         assert "hint" in info and info["careers_url"] in info["hint"]

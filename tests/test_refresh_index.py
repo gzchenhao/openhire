@@ -109,6 +109,55 @@ def test_unknown_company_is_an_answer_not_a_crash(seeded):
     assert out["refreshed"] is False and out["reason"] == "unknown_company"
 
 
+def test_a_known_not_indexed_employer_gets_the_registry_answer_not_unknown(seeded, monkeypatch):
+    """Round 8: refresh_index said 'unknown_company' for 小马智行 while search_jobs and
+    get_company_info said 'known, deliberately not indexed, here is the portal'. One server,
+    two stories. The registry record is the answer here too, and nothing is crawled."""
+    import openhire.pipeline as pipeline
+
+    monkeypatch.setattr(pipeline, "run_ingest",
+                        lambda *a, **k: pytest.fail("crawled an employer we do not index"))
+    with session_scope() as s:
+        pony = service.refresh_company_index(s, "小马智行", now=NOW)
+        nio = service.refresh_company_index(s, "蔚来", now=NOW)
+    for out in (pony, nio):
+        assert out["refreshed"] is False and out["reason"] == "known_not_indexed"
+        assert out["indexed"] is False and out["careers_url"] and out["employer_opt_in"]
+        assert out["careers_url"] in out["hint"] and "nothing to re-crawl" in out["hint"]
+        assert chr(0x2014) not in out["hint"]
+    assert pony["id"] == "ponyai" and "request signature" in pony["not_indexed_reason"]
+    assert nio["id"] == "nio" and "security policy" in nio["not_indexed_reason"]
+
+
+def test_ambiguity_count_agrees_with_the_candidate_list(seeded, monkeypatch):
+    """Round 8: 'robot' said "matches 11 employers" above a list of 10. Whatever the cap,
+    the number in the hint is the number of employers and the list says when it is shorter."""
+    import openhire.pipeline as pipeline
+
+    monkeypatch.setattr(pipeline, "run_ingest",
+                        lambda *a, **k: pytest.fail("crawled on an ambiguous match"))
+    with session_scope() as s:
+        for i in range(12):
+            s.add(Company(id=f"rob{i}", name=f"Robotics Shop {i}", ats_vendor="greenhouse",
+                          ats_tenant=f"rob{i}", last_crawled_at=NOW))
+        s.flush()
+        out = service.refresh_company_index(s, "Robotics", now=NOW)
+    assert out["reason"] == "ambiguous_company"
+    assert len(out["candidates"]) == 14
+    assert "matches 14 employers" in out["hint"]
+    assert "lists the first" not in out["hint"], "the list is complete, so say nothing more"
+
+    with session_scope() as s:
+        for i in range(12, 12 + service.MAX_AMBIGUOUS_CANDIDATES):
+            s.add(Company(id=f"rob{i}", name=f"Robotics Shop {i}", ats_vendor="greenhouse",
+                          ats_tenant=f"rob{i}", last_crawled_at=NOW))
+        s.flush()
+        out = service.refresh_company_index(s, "Robotics", now=NOW)
+    total = 14 + service.MAX_AMBIGUOUS_CANDIDATES
+    assert len(out["candidates"]) == service.MAX_AMBIGUOUS_CANDIDATES
+    assert f"matches {total} employers; candidates lists the first {service.MAX_AMBIGUOUS_CANDIDATES}" in out["hint"]
+
+
 def test_tool_is_annotated_as_writing_and_reaching_the_network(seeded):
     """Round 1 shipped a false idempotentHint. This one writes and hits a third party;
     the annotation has to say so."""

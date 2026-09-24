@@ -184,6 +184,10 @@ def search_jobs(
             object carries `known_not_indexed` with the employer's own careers portal URL,
             the reason, and `employer_opt_in` (the employer can authorize the read-only
             Feishu open-platform scopes hire:site:readonly and hire:site_job_post:readonly).
+            蔚来 NIO is on the same list for a different reason: its own careers page
+            publishes the postings, but its edge security policy blocks this crawler (HTTP
+            567) and we do not work around security controls; the employer can allowlist
+            the crawler or authorize the same read-only scopes.
             Send the user to that portal; do not retry with a looser filter, and do not
             present the absence as "not hiring".
         location: caseless substring over the employer's location text, either language
@@ -299,7 +303,9 @@ def get_company_info(company_id: str) -> dict:
     Recruitment, whose job-list API requires a request signature; we treat that as access
     control and do not work around it) and `employer_opt_in` (the employer can authorize
     the read-only Feishu open-platform scopes hire:site:readonly and
-    hire:site_job_post:readonly). There are no trust signals in that answer because we hold
+    hire:site_job_post:readonly). 蔚来 NIO gets the same shape with its own reason: its
+    careers page's security policy blocks this crawler (HTTP 567), which we do not work
+    around. There are no trust signals in that answer because we hold
     none of their postings; do not read the absence as a verdict on the employer.
     """
     _await_index()
@@ -364,6 +370,9 @@ def refresh_index(company: str) -> dict:
     * At most one crawl per employer per 6 hours. A throttled call returns immediately with
       `refreshed: false`, `reason: "throttled"` and `last_refreshed_at` — no network request
       is made. That is not an error: it means the data you already hold is that fresh.
+    * An employer we know but deliberately do not index (the Feishu-hosted ones and 蔚来
+      NIO, see search_jobs) returns `reason: "known_not_indexed"` with the same portal,
+      reason and `employer_opt_in` the other tools give, never `unknown_company`.
     * Do NOT call this speculatively or in a loop. Every call hits somebody else's public
       endpoint. Search first; refresh only when the user needs today's state of one employer.
 

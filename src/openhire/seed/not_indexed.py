@@ -25,10 +25,16 @@ URL stays None rather than a guess.
 Entries are removed the day an employer becomes indexable (they authorise the scopes, or
 move to an ATS that is publicly readable), because `service` consults the live index first
 and only falls back to this list.
+
+One entry is not Feishu: NIO 蔚来. Its own careers page publishes the roster in the clear,
+and its edge security policy blocks this crawler (HTTP 567). Same rule, different door:
+a bot-management policy the site owner configured is access control too (reports/020),
+so the adapter is built and parked and the entry says so.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 FEISHU_ATS = "feishu"
@@ -39,6 +45,8 @@ FEISHU_REASON = (
     "requires a client-computed request signature; we treat that as access control and do "
     "not work around it, so none of its postings are in this index."
 )
+# The same sentence for a person at the CLI, who gets the portal and nothing else.
+FEISHU_REASON_ZH = "招聘站要求请求签名，我们视为访问控制、不绕过"
 
 # The Feishu open-platform scopes that would let an employer grant read-only access to
 # their public job posts without exposing anything else on their tenant. This is the
@@ -60,6 +68,35 @@ FEISHU_OPT_IN = {
         "with the subject 'Employer claim'. Identity is verified by corporate domain, "
         "never by payment."
     ),
+    # One clause for the hint sentence: "The employer can change this by <summary>."
+    "summary": (
+        "authorising the read-only Feishu open-platform scopes "
+        + ", ".join(FEISHU_OPT_IN_SCOPES)
+    ),
+}
+
+NIO_ATS = "first-party site (blocked by the site's security policy, HTTP 567)"
+NIO_REASON = (
+    "the employer's own careers page publishes the postings, but its edge security policy "
+    "blocks this crawler; we do not work around security controls; the adapter is built "
+    "and parked until NIO allowlists or authorizes us"
+)
+NIO_REASON_ZH = "雇主自己的招聘页公开了岗位，但站点的安全策略拦截了我们的抓取器（HTTP 567），我们不绕过安全控制"
+NIO_OPT_IN = {
+    "who": "the employer",
+    "what": (
+        "Allowlist this crawler on the careers site's edge security policy (the block "
+        "page carries a request ID to quote to the site owner), or authorise the read-only "
+        "Feishu open-platform scopes for the recruitment site and job posts. Either is "
+        "read-only: it exposes the public roster, nothing about candidates, and it cannot "
+        "buy rank or a lower ghost_score (both are locked pure functions)."
+    ),
+    "scopes": list(FEISHU_OPT_IN_SCOPES),
+    "how": FEISHU_OPT_IN["how"],
+    "summary": (
+        "allowlisting this crawler on its careers site, or authorising the read-only "
+        "Feishu open-platform scopes " + ", ".join(FEISHU_OPT_IN_SCOPES)
+    ),
 }
 
 
@@ -74,6 +111,7 @@ class NotIndexedEmployer:
     confirmed_by: str = "title"
     ats: str = FEISHU_ATS
     reason: str = FEISHU_REASON
+    reason_zh: str = FEISHU_REASON_ZH
     employer_opt_in: dict = field(default_factory=lambda: dict(FEISHU_OPT_IN))
 
     def as_dict(self) -> dict:
@@ -85,6 +123,7 @@ class NotIndexedEmployer:
             "ats": self.ats,
             "indexed": False,
             "reason": self.reason,
+            "reason_zh": self.reason_zh,
             "employer_opt_in": dict(self.employer_opt_in),
         }
 
@@ -147,6 +186,23 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         aliases=("booster", "booster robotics", "加速进化"),
         careers_url="https://booster.jobs.feishu.cn/",          # <title>Join Booster Robotics</title>
     ),
+    # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
+    # 1,784-row roster inside __NEXT_DATA__, see ats/nio.py), and the same GET from this
+    # crawler's HTTP client answers 567 with a Tencent Cloud EdgeOne security-policy page.
+    # The adapter and its tests exist; seed/candidates.py keeps the row parked.
+    NotIndexedEmployer(
+        id="nio", name="蔚来 NIO",
+        aliases=("蔚来", "nio", "蔚来汽车", "nio inc"),
+        careers_url="https://www.nio.cn/careers/jobs",
+        confirmed_by=(
+            "plain GET on 2026-09-23 returned the roster to curl and HTTP 567 (EdgeOne "
+            "security policy page) to this crawler's client; see ats/nio.py"
+        ),
+        ats=NIO_ATS,
+        reason=NIO_REASON,
+        reason_zh=NIO_REASON_ZH,
+        employer_opt_in=dict(NIO_OPT_IN),
+    ),
 )
 
 _BY_ID = {e.id: e for e in NOT_INDEXED}
@@ -165,7 +221,8 @@ def lookup(query: str) -> list[NotIndexedEmployer]:
     never matched: "a" is not a company. The alias-inside-query direction needs an alias
     of at least three characters: the two-character short forms ("小马", "千寻") still
     hit exactly, but "千寻位置" and "小马拉车" are other companies, not questions about
-    these ones.
+    these ones. A Latin alias inside the query must also sit on word boundaries: "nio"
+    is inside "senior" and "union", and neither is a question about NIO.
     """
     q = _fold(query)
     if len(q) < 2:
@@ -179,9 +236,16 @@ def lookup(query: str) -> list[NotIndexedEmployer]:
     out: list[NotIndexedEmployer] = []
     for e in NOT_INDEXED:
         names = [e.id, _fold(e.name), *(_fold(a) for a in e.aliases)]
-        if any(q in n for n in names) or any(len(n) >= 3 and n in q for n in names):
+        if any(q in n for n in names) or any(len(n) >= 3 and _inside(n, q) for n in names):
             out.append(e)
     return out
+
+
+def _inside(alias: str, query: str) -> bool:
+    """`alias` occurs in `query`; on word boundaries when the alias is Latin text."""
+    if alias.isascii():
+        return re.search(rf"(?<![a-z0-9]){re.escape(alias)}(?![a-z0-9])", query) is not None
+    return alias in query
 
 
 def by_id(employer_id: str) -> NotIndexedEmployer | None:
