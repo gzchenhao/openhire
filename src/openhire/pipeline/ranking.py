@@ -55,8 +55,18 @@ def normalize_skill(tag: str) -> str:
 # Expansion is query-side only: a requested skill matches a row if ANY alias is on it.
 # Keys and values are in normalize_skill() form (lower, separators folded to one space).
 _SKILL_ALIASES: dict[str, tuple[str, ...]] = {
-    "感知": ("perception", "3d perception", "三维感知", "感知算法"),
-    "perception": ("感知", "3d perception", "三维感知", "感知算法"),
+    # 感知 has to reach the tags perception roles actually carry. Unitree's 机器人感知与导航
+    # 算法工程师 is tagged object-detection, point-cloud-processing, tracking, slam and
+    # multi-sensor-fusion, never "perception", so the one search that persona ran on the
+    # one employer that mattered came back empty. Detection and point-cloud work IS
+    # perception; fusion stays its own word (多传感器融合) because a fusion tag alone does
+    # not make a role a perception role.
+    "感知": ("perception", "3d perception", "三维感知", "感知算法",
+             "object detection", "3d object detection", "3d detection",
+             "point cloud", "point cloud processing", "semantic segmentation"),
+    "perception": ("感知", "3d perception", "三维感知", "感知算法",
+                   "object detection", "3d object detection", "3d detection",
+                   "point cloud", "point cloud processing", "semantic segmentation"),
     "占用网络": ("occ", "occupancy", "occupancy network", "occupancy networks"),
     "occupancy": ("occ", "占用网络", "occupancy network", "occupancy networks"),
     "occ": ("occupancy", "占用网络", "occupancy network", "occupancy networks"),

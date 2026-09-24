@@ -103,6 +103,28 @@ def test_chinese_skill_words_match_english_tags(session):
     assert rows[0]["matched_skills"] == ["occupancy-networks"]
 
 
+def test_ganzhi_reaches_the_tags_perception_roles_actually_carry(session):
+    """Round 8: `company=宇树 skills=[感知]` returned nothing while Unitree's first row was
+    机器人感知与导航算法工程师, tagged object-detection / point-cloud-processing / tracking
+    / multi-sensor-fusion / slam and never "perception". The alias set must reach those."""
+    session.add(Company(id="unitree", name="宇树科技 Unitree", ats_vendor="beisen",
+                        ats_tenant="unitree", careers_url="z", last_crawled_at=NOW))
+    session.add(mkjob("nav", "unitree", "机器人感知与导航算法工程师",
+                      ["c++", "python", "ros", "point-cloud-processing", "object-detection",
+                       "tracking", "multi-sensor-fusion", "slam", "semantic-mapping"],
+                      posted_days_ago=20, location="浙江省·杭州市·滨江区"))
+    session.commit()
+    rows = service.search_jobs(session, skills=["感知"], company="宇树", now=NOW)
+    assert [r["job_id"] for r in rows] == ["unitree:nav"]
+    assert rows[0]["matched_skills"] == ["object-detection", "point-cloud-processing"]
+    for tag in ("object detection", "3d object detection", "point cloud processing",
+                "point cloud", "semantic segmentation", "3d detection"):
+        assert tag in expand_skill("感知") and tag in expand_skill("perception"), tag
+    # 多传感器融合 is its own word: a fusion tag alone does not make a perception role.
+    assert "sensor fusion" not in expand_skill("感知")
+    assert expand_skill("多传感器融合") >= {"sensor fusion", "multi sensor fusion"}
+
+
 def test_match_quality_counts_an_alias_hit_as_a_hit():
     assert match_quality(["感知", "点云"], ["perception"]) == pytest.approx(0.5)
     assert "occupancy networks" in expand_skill("占用网络")
