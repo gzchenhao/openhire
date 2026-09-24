@@ -140,8 +140,10 @@ def search_jobs(
       with offset += limit to get more distinct roles. Fewer rows than `limit` means you
       reached the end. There is no server-side cursor to keep alive.
     * One call returns at most 100 rows. Ask for more and you get an object with
-      `results`, `truncated: true` and the offset to call next, not a silent first page:
-      100 of 198 looked exactly like "this employer has 100 jobs". For one employer,
+      `results` and `truncated`, not a silent first page: 100 of 198 looked exactly like
+      "this employer has 100 jobs". `truncated: true` means a full page came back and there
+      may be more, with the offset to call next in `hint`; `truncated: false` means fewer
+      rows than the page size matched and there is no next page. For one employer,
       get_company_info's `active_jobs` is the true total.
     * Skill tags match separator-insensitively: "computer vision", "computer-vision" and
       "computer_vision" are one skill. The extractor emits all three spellings, so an
@@ -220,18 +222,30 @@ def search_jobs(
                 )
             if limit > service.MAX_PAGE_SIZE:
                 # You asked for more than one page holds. Returning the first page and
-                # nothing else looked like the whole answer, so say it was not.
+                # nothing else looked like the whole answer, so say whether it was. A full
+                # page means there MAY be more; fewer rows than the page size means this is
+                # everything, and saying "truncated" then sent a client to an empty next
+                # page (92 rows came back flagged truncated). Collapsed siblings count
+                # toward the page: a folded page of 60 groups can stand for 100 rows.
+                fetched = sum(r.get("role_group_size", 1) for r in rows)
+                full_page = fetched >= service.MAX_PAGE_SIZE
                 return {
                     "results": rows,
-                    "truncated": True,
+                    "truncated": full_page,
                     "page_size": service.MAX_PAGE_SIZE,
                     "requested_limit": limit,
                     "hint": (
                         f"You asked for {limit} but one call returns at most "
-                        f"{service.MAX_PAGE_SIZE}. This is page 1. Call again with "
-                        f"offset={offset + service.MAX_PAGE_SIZE} for the next page, and "
-                        "keep going until a call returns fewer rows than the page size. "
-                        "get_company_info's active_jobs is the true total for one employer."
+                        f"{service.MAX_PAGE_SIZE}. This is page 1 and it is full, so there "
+                        f"may be more. Call again with offset={offset + service.MAX_PAGE_SIZE} "
+                        "for the next page, and keep going until a call returns fewer rows "
+                        "than the page size. get_company_info's active_jobs is the true "
+                        "total for one employer."
+                    ) if full_page else (
+                        f"You asked for {limit} but one call returns at most "
+                        f"{service.MAX_PAGE_SIZE}. This page holds {fetched} matching "
+                        "rows, fewer than the page size, so it is everything that matched: "
+                        "there is no next page to fetch."
                     ),
                 }
             # A half-matched search used to return rows and say nothing about the words

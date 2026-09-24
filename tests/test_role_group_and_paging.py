@@ -132,13 +132,37 @@ def test_asking_for_more_than_a_page_says_so_instead_of_looking_complete(seeded)
 
     assert service.MAX_PAGE_SIZE == 100
 
+    # Seven rows match. Round 8: this came back `truncated: true` with 92 rows and sent
+    # the client to an empty page 2. Fewer rows than the page size means there is no more.
     out = mcp_server.search_jobs(limit=200)
     assert isinstance(out, dict), "an over-cap request must not look like a complete list"
-    assert out["truncated"] is True
+    assert out["truncated"] is False
     assert out["page_size"] == service.MAX_PAGE_SIZE
     assert out["requested_limit"] == 200
+    assert "offset=" not in out["hint"] and "no next page" in out["hint"]
+    assert len(out["results"]) == 7
+
+    # A full page is the one case where there MAY be more, and only then does the hint
+    # point at the next offset.
+    with session_scope() as s:
+        now = dt.datetime.now(dt.timezone.utc)
+        for i in range(service.MAX_PAGE_SIZE):
+            s.add(Job(
+                id=f"acme:bulk{i}", company_id="acme", title=f"Bulk Role {i}",
+                location="Remote", remote_policy="remote", role_family="engineering",
+                skills=["k8s"], source="greenhouse", verified_at=now, first_seen_at=now,
+                posted_at=now, apply_channel=f"https://boards.greenhouse.io/acme/b{i}",
+                content_hash=f"h-bulk-{i}",
+            ))
+    out = mcp_server.search_jobs(limit=200)
+    assert out["truncated"] is True
+    assert len(out["results"]) == service.MAX_PAGE_SIZE
     assert "offset=100" in out["hint"]
-    assert len(out["results"]) <= service.MAX_PAGE_SIZE
+    # Folding siblings must not make a full page look short: the page still stands for
+    # 100 fetched rows even when fewer groups are shown.
+    folded = mcp_server.search_jobs(limit=200, collapse_role_group=True)
+    assert folded["truncated"] is True
+    assert sum(r["role_group_size"] for r in folded["results"]) == service.MAX_PAGE_SIZE
 
     # A request inside the cap keeps the plain list shape every client already expects.
     inside = mcp_server.search_jobs(limit=5)
