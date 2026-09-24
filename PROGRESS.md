@@ -9,6 +9,31 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-09-24 · Round 8 体验复测的 17 项修复；0.6.7 已在 main 上（未发布）
+
+**已完成（证据：全量 pytest 见本条末尾；每项都用 `scripts/mcp_call.py` 对着备份副本实测）**
+- 排序新鲜度锚点改回**发布日**（`posted_at` → `first_seen_at` → `verified_at`），不再用 `updated_at`：
+  470 天的岗被编辑一下就压过 3 天的岗、Waymo 17 行一个分数，都是「最后一次触碰」当锚点的后果。`updated_at` 仍在行上，只是不进排序。
+- `感知` / `perception` 别名扩到 object detection / 3d detection / point cloud (processing) / semantic segmentation；
+  `company=宇树 skills=[感知]` 现在返回「机器人感知与导航算法工程师」。
+- 地点别名表（广州↔天河区等七区、深圳↔南山/福田/龙岗/宝安、北京/上海/杭州/苏州/南京/武汉/成都/合肥 拼音、remote↔远程）；
+  `location` 可以进 watch；`ohp search` 回显补上 `--location`。
+- `truncated` 只在满页时为 true；未满页的 hint 不再把客户端指向空的下一页。
+- 空结果 hint：没有 suggestions 时不再说「retry with one of the suggestions」；「139 employers」改为从索引实时数。
+- 登记表加 **蔚来 NIO**（第一方站点，EdgeOne 567 拦截，适配器已停放）；`refresh_index` 对登记表雇主返回 `known_not_indexed`；
+  歧义计数与候选列表一致（`robot` 11 家全列）。
+- 指纹不足 8 位：`short_fingerprint: true` + 提示 12 位以上，不拒绝。
+- `authorize_application` / `watch_intent` 收到未声明参数（如 `resume`）直接回 `ERR_PII_NOT_ACCEPTED`、不落库：
+  FastMCP 的参数模型默认忽略多余键、且 `validate_input=False`，用 `FuncMetadata` 包装在原始参数层拦。
+- `days_open` 与 `ghost_reason` 里的天数同一个数（都按日历日）。
+- `updated_at` 展示按 vendor：Greenhouse / Moka 有独立字段，等于发布日 = 「发布后未编辑」照常展示；Ashby / Lever 适配器不再把发布日抄进 `updated_at`。
+- `ohp claim --help` 写明标题**精确匹配**、不按包含。
+- 版本号五处 bump 到 0.6.7；`pip install -e . --no-deps` 两次（`ohp.exe` 文件锁那行是噪音），`openhire.__version__` == 0.6.7。
+
+**未做 / 待领导定**
+- **未 push、未打 tag、未发 Release**（本次任务明令不发）。发版铁律第三条：改动今天走完 PyPI → tag → Release → mcpb。
+- MCP `instructions` 里的「139 employers」仍是字面量（不在本次 17 项内），下次一并改成从 `numbers.json` 引用。
+
 ## 2026-09-23 — 星增长清单开跑；v0.6.2；mcpb 里的第五处版本号
 
 **已完成（证据）**
