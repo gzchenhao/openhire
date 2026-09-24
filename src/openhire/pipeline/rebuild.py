@@ -569,7 +569,44 @@ def rebuild_extraction(
             )
             break
 
+    _record_spend(stats, ceiling, kind="extract")
     return stats
+
+
+def _record_spend(stats, ceiling_cny: float | None = None, kind: str = "extract") -> None:
+    """Append one line per paid run to ~/.openhire/spend.jsonl.
+
+    The lead reconciles DeepSeek's bill against what we ran; until now the only record was
+    whatever the console printed. The line carries the UTC time (so peak/off-peak can be
+    told apart), backend, rows, tokens and the list-price cost this tool estimated. Never
+    raises: a ledger failure must not fail a run that already spent money.
+    """
+    try:
+        import datetime as _dt
+        import json as _json
+        from .. import config as _config
+        rec = {
+            "at_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+            "kind": kind,
+            "backend": getattr(stats, "backend", None),
+            "target": getattr(stats, "total_target", None),
+            "processed": getattr(stats, "processed", None),
+            "updated": getattr(stats, "updated", None),
+            "failed": getattr(stats, "failed", None),
+            "prompt_tokens": getattr(stats, "prompt_tokens", None),
+            "completion_tokens": getattr(stats, "completion_tokens", None),
+            "cost_cny_list_price": round(float(getattr(stats, "cost", 0.0) or 0.0), 4),
+            "ceiling_cny": ceiling_cny,
+            "halted": getattr(stats, "halted", None),
+            "halt_reason": getattr(stats, "halt_reason", None),
+            "database": _config.DATABASE_URL,
+        }
+        home = _config.CLIENT_HOME
+        home.mkdir(parents=True, exist_ok=True)
+        with open(home / "spend.jsonl", "a", encoding="utf-8") as f:
+            f.write(_json.dumps(rec, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
 
 
 @dataclass
@@ -671,6 +708,7 @@ def rebuild_role_family(
             stats.halt_reason = f"cost ¥{stats.cost:.2f} reached ceiling ¥{ceiling:.2f}"
             break
 
+    _record_spend(stats, kind="role_family")
     return stats
 
 
