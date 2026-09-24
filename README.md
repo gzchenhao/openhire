@@ -26,6 +26,18 @@
 > 贵司被收录了、而且不是贵司提交的？[点这里认领](#for-employers-claim-your-tenant)，免费，
 > 可以用自己的话解释，也可以直接要求我们移除。
 
+## 三不原则 · Three things OpenHire never does
+
+1. **不存简历 · No résumé, ever.** 简历留在你的电脑上。过网的只有一个你自己生成的匿名指纹和岗位号；协议里没有简历字段，多传一个 `resume` 参数会被拒绝，CI 测试钉死。
+   Your résumé stays on your machine. Only an anonymous, client-generated fingerprint and a job id ever cross the wire; the protocol has no résumé field, an extra `resume` argument is refused, and CI pins it.
+2. **不刷假单 · Never applies for you.** 它只把你送到雇主自己的投递页，从不向任何 ATS 提交申请；连表单长什么样，我们的测试也只用一次普通 GET 看，到此为止。
+   It hands you the employer's own apply page and never submits anything to any ATS. Even our own tests only GET the form once and stop.
+3. **不追踪 · No tracking.** 不埋点、不统计谁看了什么。服务器只记一条匿名授权（指纹 + 岗位号），没有你是谁；索引本身跑在你自己的机器上。
+   No analytics, no view counting, no telemetry. The server keeps one anonymous authorization record (fingerprint + job id) and nothing about who you are; the index itself runs on your machine.
+
+还有一条不在这三条里，但同样锁死：**排序买不到**，它是（匹配度，新鲜度）的纯函数，见下文三条隐私红线。
+One more that is locked the same way: ranking cannot be bought; it is a pure function of (match, freshness). See the three red lines below.
+
 ### What your agent actually sees
 
 You ask your assistant a question in plain language. It calls `search_jobs`, and every row comes
