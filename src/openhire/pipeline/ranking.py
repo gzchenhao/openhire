@@ -18,11 +18,15 @@ MATCH_WEIGHT = 0.7
 FRESHNESS_WEIGHT = 0.3
 
 # Freshness decays over this horizon, measured on the EMPLOYER's clock: days since the
-# ATS last touched the posting, or since it was posted when the ATS reports no touch.
-# It used to be days since verified_at, which is the index build time and therefore the
-# same number on every row: three testers found a 484-day posting ranked above a 14-day
-# one at equal match because the freshness term never varied. 180 days: a 2-week posting
-# scores ~0.92, the median 62-day posting ~0.66, anything past six months 0.
+# posting date the ATS reports (else the day this index first saw the row). It used to be
+# days since verified_at, which is the index build time and therefore the same number on
+# every row: three testers found a 484-day posting ranked above a 14-day one at equal
+# match because the freshness term never varied. It was then briefly days since the ATS
+# last touched the row, which is no better: one weekly edit touches every row of an
+# employer at once, so a 470-day posting touched yesterday outranked a 3-day one and 17
+# Waymo rows tied. The posting date is the one clock that says how long candidates have
+# been queueing for the role. 180 days: a 2-week posting scores ~0.92, the median 62-day
+# posting ~0.66, anything past six months 0.
 FRESHNESS_HORIZON_DAYS = 180.0
 
 
@@ -102,8 +106,9 @@ def match_quality(requested_skills: list[str], job_skills: list[str]) -> float:
 
 
 def freshness(anchor: dt.datetime, now: dt.datetime | None = None) -> float:
-    """Linear freshness in [0,1] from days since `anchor`: the employer's last-touched
-    timestamp, or the posting date when the ATS reports none (see service._freshness_anchor)."""
+    """Linear freshness in [0,1] from days since `anchor`: the employer's posting date,
+    or the day this index first saw the row when the ATS reports none
+    (see service._freshness_anchor). Never the last-touched timestamp."""
     now = now or dt.datetime.now(dt.timezone.utc)
     anchor = _aware(anchor)
     now = _aware(now)

@@ -63,6 +63,26 @@ def test_fresh_posting_outranks_stale_one_at_equal_match(session):
     assert fresh > 0.9 and stale == 0.0, (fresh, stale)
 
 
+def test_a_touch_yesterday_does_not_lift_an_old_posting_over_a_new_one(session):
+    """Round 8: freshness briefly tracked updated_at, and a 470-day Motional posting an
+    editor had touched the day before outranked a 3-day Torc one; 17 Waymo rows touched by
+    one weekly edit tied. The ranking clock is the posting date. The touch is still
+    reported on the row (days_since_update), beside the ranking and never inside it."""
+    session.add(mkjob("touched", "ubtrobot", "老岗位刚编辑过", ["bev"],
+                      posted_days_ago=470, updated_days_ago=0, role_family="engineering"))
+    session.add(mkjob("young", "minieye", "三天前的新岗", ["bev"],
+                      posted_days_ago=3, updated_days_ago=3, role_family="engineering"))
+    session.commit()
+    rows = service.search_jobs(session, skills=["bev"], now=NOW)
+    order = [r["job_id"] for r in rows]
+    assert order.index("minieye:young") < order.index("ubtrobot:touched")
+    by_id = {r["job_id"]: r for r in rows}
+    assert by_id["ubtrobot:touched"]["freshness"] == 0.0
+    assert by_id["ubtrobot:touched"]["days_since_update"] == 0, "the touch is still reported"
+    # Two rows one weekly edit touched together still rank by their own posting dates.
+    assert by_id["minieye:new"]["freshness"] > by_id["ubtrobot:touched"]["freshness"]
+
+
 # --- 2. role_family=null is "not classified yet", never "not engineering" ------------------
 def test_unclassified_rows_pass_a_role_family_filter(session):
     rows = service.search_jobs(session, skills=["bev"], role_family="engineering", now=NOW)

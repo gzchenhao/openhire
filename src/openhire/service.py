@@ -357,10 +357,17 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
 
 # --- hard filter + fixed ranking ---------------------------------------------
 def _freshness_anchor(job: Job) -> dt.datetime:
-    """The employer's clock for ranking: last touched if the ATS reports it, else the
-    posting date, else when we first saw it. verified_at is the index build time and is
-    identical on every row, so it cannot order anything."""
-    return job.updated_at or job.posted_at or job.first_seen_at or job.verified_at
+    """The employer's clock for ranking: the POSTING date. posted_at when the ATS reports
+    one, else the day this index first saw the row, else verified_at (the index build
+    time, identical on every row, so it orders nothing and is only the last resort).
+
+    Not updated_at. Ranking on "last touched" put a 470-day-old Motional posting that an
+    editor had touched yesterday above a 3-day-old Torc one, and gave 17 Waymo rows aged
+    6 to 289 days one identical score because one weekly edit had touched them all. A
+    touch is not a posting: the row still reports it as updated_at / days_since_update,
+    beside the ranking, never inside it.
+    """
+    return job.posted_at or job.first_seen_at or job.verified_at
 
 
 def resolve_company(session: Session, query: str) -> list[Company]:
