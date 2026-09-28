@@ -88,7 +88,13 @@
   用**单行 JSON**（YAML 是 JSON 超集）。GitHub Actions 不读 `.cnb.yml`，`tests/` 也不管它。
 - **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`，URL 稳定不变）
 - **PyPI：** https://pypi.org/project/openhire/0.5.0/ （`pipx install openhire` / `uvx openhire@latest serve`）
-- **官方 MCP Registry：** `io.github.gzchenhao/openhire` v0.5.0（`registry.modelcontextprotocol.io`）。**推 `v*` tag 即由 `.github/workflows/publish-mcp-registry.yml` 用 OIDC 自动发布**（v0.3.1 起每次均如此），本地 `mcp-publisher` 只作备用；PulseMCP/mcp.so 自动同步。
+- **官方 MCP Registry：** `io.github.gzchenhao/openhire`（`registry.modelcontextprotocol.io`）。**推 `v*` tag 即由 `.github/workflows/publish-mcp-registry.yml` 用 OIDC 自动发布**（v0.3.1 起每次均如此），本地 `mcp-publisher` 只作备用。
+  从 Registry 自动收录的有 mcpservers.org、mcpmarket.com、Glama；**PulseMCP 和 mcp.so 没有我们**（2026-09-28 核实，此前写「自动同步」是错的）。
+- **上架渠道全景（057，2026-09-28）：** 仓库本身已是 **Claude Code 插件市场**（`.claude-plugin/`，用户 `/plugin marketplace add gzchenhao/openhire` + `/plugin install openhire@openhire`，端到端实测过）、
+  **Cursor 插件**（`.cursor-plugin/plugin.json`）和 **Agent Plugins 标准包**（根目录 `plugin.json` + `mcp.json`）。已提：火山引擎 `volcengine/mcp-server` PR #437、mcp.so 目录 `chatmcp/mcpso` issue #4473。
+  README 有 TRAE 一键导入链接。**要领导登录才能走的**：Anthropic 目录（claude.ai/directory/manage，插件包路径，旧 MCPB 表单已废弃）、Cursor Marketplace、cursor.directory、Smithery、LobeHub、AIBase；清单在 `drafts/listing-handoff-2026-09-28.md`。
+  **不可**：扣子 / 讯飞星辰 / ChatGPT Apps / 元器都要公网托管端点；百炼、千帆、华为云、豆包、TRAE 市场无第三方入口；Goose 停收，PulseMCP 停收，Continue 没了。
+  **本机坑：** `~/.claude/plugins/known_marketplaces.json` 曾损坏成全零字节，任何 `claude plugin marketplace` 命令都报 JSON 错；已重置为 `{}`（备份 `.corrupt-20260928`）。
 - **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。
 - 推送用 `gh`（keyring）；PyPI token 仅 `%USERPROFILE%\.pypirc`；`mcp-publisher` 二进制在 `.tools/mcp-publisher.exe`（gitignored，v1.8.1），其 GitHub 登录令牌会过期，过期时 `.tools/mcp-publisher login github` 重登。三者均**不进代码/git**。
 - **发版铁律：PyPI 发布必须先于快照刷新**（老客户端会带旧代码读新数据）。

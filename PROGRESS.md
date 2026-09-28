@@ -32,6 +32,12 @@
 - **CNB 镜像仓库已建成**：https://cnb.cool/gzchenhao/openhire ，首轮同步 main = c9c74a4、206 次提交、21 个 tag；`.cnb.yml` 每 6 小时自动拉，分支页有「从 GitHub 同步」按钮，issue #21 下已补镜像地址。
   过程要领导动手的两步：微信登录 CNB、实名认证（建组织的前置）。三处坑记在 `reports/056` 第六节。
 
+**同日追加：上架渠道全扫描（`reports/057`）**
+- 三个 agent 核实了字节（TRAE / 火山引擎 / 扣子 / 豆包）、OpenAI、Anthropic、阿里 / 百度 / 华为 / 讯飞和十几个海外目录，矩阵在 057 第二节。
+- 做成：仓库变成 Claude Code 插件市场（端到端实测）+ Cursor 插件 + Agent Plugins 标准包；TRAE 一键导入链接进 README；火山引擎 PR #437；mcp.so issue #4473。版本号五处变九处，测试钉死。
+- 待领导登录：Anthropic 目录、Cursor Marketplace、cursor.directory、Smithery、LobeHub、AIBase（`drafts/listing-handoff-2026-09-28.md`）。
+- 结构性发现：扣子、讯飞星辰、ChatGPT Apps、元器四家都卡在「要公网托管端点」，托管实例从待定项变成四道门的同一把钥匙。
+
 ## 2026-09-24 · Round 8 体验复测的 17 项修复；0.6.7 当天已发布（PyPI / tag / Release / Registry，见 `reports/054`）
 
 **已完成（证据：全量 pytest 见本条末尾；每项都用 `scripts/mcp_call.py` 对着备份副本实测）**

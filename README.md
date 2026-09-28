@@ -223,6 +223,11 @@ the whole setup (still needs `uv` on PATH):
 vendor-neutral `plugin.json` + `mcp.json` (agent-plugins.org), so any client that loads Agent
 Plugins can install it from the repo URL.
 
+**TRAE（字节）** — one-click import links (TRAE asks you to confirm the config before adding it):
+[TraeCode 国内版](trae-cn://trae.ai-ide/mcp-import?type=stdio&name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ%3D%3D) ·
+[TRAE international](trae://trae.ai-ide/mcp-import?type=stdio&name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ%3D%3D).
+Or paste the `uvx` config above into TRAE's MCP settings by hand.
+
 **腾讯 WorkBuddy** — `~/.workbuddy/mcp.json`, same `mcpServers` shape. WorkBuddy reads the
 file when it starts, so after editing it quit and reopen the app (or add the server through
 its MCP panel's 「添加 MCP」 instead); a hand-written entry does not appear in the list until
