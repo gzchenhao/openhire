@@ -2,18 +2,18 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.gzchenhao/openhire",
   "title": "OpenHire · 哨兵",
-  "description": "Job postings with real posting dates from Greenhouse/Lever/Ashby/Beisen/Moka ATS. 139 employers.",
+  "description": "Job postings with real posting dates, read from employers' Greenhouse/Lever/Ashby/Beisen/Moka ATS.",
   "repository": {
     "url": "https://github.com/gzchenhao/openhire",
     "source": "github"
   },
-  "version": "0.6.7",
+  "version": "0.6.8",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "openhire",
-      "version": "0.6.7",
+      "version": "0.6.8",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

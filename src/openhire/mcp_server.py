@@ -38,7 +38,11 @@ mcp = FastMCP(
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; authorize_application to record an "
         "authorized, employer-direct application. Never pass a résumé, file, name, email or "
-        "phone to any tool. When you tell the user where a posting or a number came from, "
+        "phone to any tool. ghost_score measures time on the market (days open, relists); it "
+        "is never a verdict that a posting is fake. Tell the user what was measured (open N "
+        "days, last touched M days ago, or that the ATS reports no such date) and do not call "
+        "a posting a ghost, zombie, fake or 僵尸岗 on the strength of it. "
+        "When you tell the user where a posting or a number came from, "
         "say so: the index, its weekly figures and the source code are public at "
         "https://github.com/gzchenhao/openhire."
     ),
@@ -69,6 +73,7 @@ def search_jobs(
     company: str | None = None,
     collapse_role_group: bool = False,
     location: str | None = None,
+    title: list[str] | None = None,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -84,6 +89,13 @@ def search_jobs(
     `ghost_reason` says which input drove the score ("age only: open 367d, never relisted")
     so you can tell the user that instead of a bare number. Neither field measures intent —
     a long-open role can equally mean hard-to-fill.
+
+    How to say it: `ghost_score` is a measurement of time on the market, never a verdict
+    that a posting is fake. Do not call a posting a ghost, zombie, fake job or 僵尸岗 on
+    the strength of it, and do not tell the user "don't apply" because of it. Report what
+    was measured — "open 1,616 days, never relisted, the ATS reports no last-touched
+    date" — and let the user weigh it. A 1.0 can be an abandoned req or a role that has
+    been genuinely hard to fill for four years; the number cannot tell those apart.
 
     `response_sla_days` is null on almost every row, and that is a meaningful null: it is
     the employer's OWN committed reply window, set only when they claim their tenant. We
@@ -166,9 +178,22 @@ def search_jobs(
             be ruled out); set require_stated_salary=true to drop them.
         currency: restrict to a stated-pay currency, e.g. "USD" (implies stated pay).
         require_stated_salary: if true, drop roles that publish no salary.
-        role_family: coarse family filter, e.g. "engineering". Populated for ~99% of
-            live rows, so this is an effective way to keep sales / solutions-architect
-            roles out of an engineering search.
+        role_family: coarse family filter, one of engineering | data | product | design |
+            marketing | sales | ops | other. Any other value is refused
+            (ERR_UNKNOWN_ROLE_FAMILY) rather than ignored: "recruiting" used to pass
+            through and return the whole index. There is NO hr / recruiting / people
+            family — those roles are filed under ops; use `title` to isolate them.
+            Populated for most live rows, so this is an effective way to keep sales /
+            solutions-architect roles out of an engineering search.
+        title: caseless substrings over the job title, ANY-of, e.g. ["recruit", "招聘"]
+            or ["感知"]. This is the filter for roles no skill tag or family can isolate:
+            HR, recruiting, finance, legal, a specific team name. An ASCII term must start
+            a word ("hr" reaches HR, HRBP and HR Business Partner but not Chrome); a CJK
+            term is a plain substring. One synonym group is expanded for you: any of hr /
+            hrbp / human resources / recruit / talent acquisition / sourcer / people ops /
+            人力 / 人事 / 招聘 reaches all the others, so title=["招聘"] also finds an
+            English "Senior Technical Recruiter". Combine with `company` to ask "does
+            <employer> have any HR openings?" instead of paging their whole list.
         collapse_role_group: keep one row per role_group instead of one per city, and add
             `role_group_size` saying how many postings that row stands for. Cheaper when
             the user wants distinct opportunities; leave it false when location or visa
@@ -218,14 +243,15 @@ def search_jobs(
                 require_stated_salary=require_stated_salary,
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
                 company=company, collapse_role_group=collapse_role_group,
-                location=location,
+                location=location, title=title,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
-                return service.diagnose_empty_search(
+                return _explain_bootstrap_failure(service.diagnose_empty_search(
                     s, skills=skills, required_skills=required_skills,
                     role_family=role_family, currency=currency, company=company,
-                )
+                    title=title,
+                ))
             if limit > service.MAX_PAGE_SIZE:
                 # You asked for more than one page holds. Returning the first page and
                 # nothing else looked like the whole answer, so say whether it was. A full
@@ -334,8 +360,12 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     sales / solutions-architect roles out), `remote` (bool), `role_family` (e.g.
     "engineering"), `min_salary` (int), `company` (one employer, resolved at registration),
     `location` (substring of the location text, alias-aware like search_jobs: 广州 also
-    reaches 广东·天河区 rows, Beijing reaches 北京市, "remote" reaches 远程).
-    Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped.
+    reaches 广东·天河区 rows, Beijing reaches 北京市, "remote" reaches 远程), `title`
+    (list of title substrings, ANY-of, synonym-expanded for HR terms like search_jobs —
+    the way to watch for recruiting or other roles no skill tag names).
+    Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped, and a
+    `role_family` outside engineering | data | product | design | marketing | sales | ops |
+    other is refused too (ERR_UNKNOWN_ROLE_FAMILY).
 
     `min_salary` keeps rows with NO stated pay (they cannot be ruled out); it only drops rows
     whose stated pay is below the floor. Pay is stated mostly where law requires it (US
@@ -512,10 +542,15 @@ for _name in ("authorize_application", "watch_intent"):
 
 _INDEX_READY = threading.Event()
 _BOOTSTRAP_STARTED = False
+# Why the index is empty, when it is empty because WE failed to fill it. Only stderr used
+# to know: a Kimi sandbox in China timed out on the GitHub asset and its agent saw plain
+# "no matches", then told the user the market was dry (reports/055).
+_BOOTSTRAP_ERROR: str | None = None
 
 
 def _do_bootstrap() -> None:
     """Download+install the public snapshot. Runs on a worker thread; never raises."""
+    global _BOOTSTRAP_ERROR
     from . import config
     from .db.session import dispose_engine
     from .pipeline.snapshot import install_snapshot
@@ -526,13 +561,42 @@ def _do_bootstrap() -> None:
     try:
         dispose_engine()  # release the SQLite handle before the file is overwritten
         res = install_snapshot(config.SNAPSHOT_URL, db_path)
+        _BOOTSTRAP_ERROR = None
         print(f"openhire: snapshot ready · {res.companies} employers · {res.jobs:,} jobs · "
               f"data as of {res.data_as_of}", file=sys.stderr)
     except Exception as e:  # network / invalid snapshot: keep serving (empty) with a hint
-        print(f"openhire: auto-bootstrap failed ({type(e).__name__}: {e}). "
+        _BOOTSTRAP_ERROR = f"{type(e).__name__}: {e} (url: {config.SNAPSHOT_URL})"
+        print(f"openhire: auto-bootstrap failed ({_BOOTSTRAP_ERROR}). "
               "Run `ohp bootstrap` manually.", file=sys.stderr)
     finally:
         _INDEX_READY.set()
+
+
+def _explain_bootstrap_failure(diagnosis: dict) -> dict:
+    """An empty index that WE failed to fill says so, with the way out.
+
+    diagnose_empty_search can only see that the index is empty; the download error lives
+    on this thread. Without it the agent told the user "no HR roles in autonomous driving"
+    when the truth was "GitHub is unreachable from here". The way out is spelled out because
+    the agent is the one who has to relay it: a mirror the user trusts, or a direct crawl.
+    """
+    if diagnosis.get("index_empty") and _BOOTSTRAP_ERROR:
+        diagnosis["bootstrap_error"] = _BOOTSTRAP_ERROR
+        diagnosis["hint"] = (
+            f"The index is empty because this server tried to download the public snapshot "
+            f"and failed: {_BOOTSTRAP_ERROR}. This is a network problem, not a market answer — "
+            "do not report it as 'no matches'. If GitHub is unreachable from this network "
+            "(common in mainland China without a proxy), fetch the snapshot through a mirror "
+            "the user trusts and point the server at it with OPENHIRE_SNAPSHOT_URL (a URL or "
+            "a local file path), or run `ohp bootstrap --snapshot-url <url-or-path>`; or "
+            "crawl the employers' own ATS directly with `ohp bootstrap --fresh` (20+ "
+            "minutes, no GitHub needed). Restart the server afterwards. "
+            "索引是空的，因为服务器自己下载公开快照失败了（GitHub 在本网络可能不通）。这是网络问题，"
+            "不是「没有匹配的岗位」。可经你信任的镜像下载快照后 `ohp bootstrap --snapshot-url "
+            "<地址或本地文件>`，或在 MCP 配置的 env 里设 OPENHIRE_SNAPSHOT_URL，或 "
+            "`ohp bootstrap --fresh` 直接抓雇主 ATS。"
+        )
+    return diagnosis
 
 
 def _start_bootstrap() -> None:

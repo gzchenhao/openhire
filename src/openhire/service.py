@@ -30,6 +30,7 @@ from .ats import apply_url_is_trusted
 from .pipeline.ghost_score import ghost_reason
 from .seed.claims import employer_correction
 from .seed import not_indexed
+from .pipeline.extract import ROLE_FAMILIES
 from .pipeline.ranking import freshness, match_quality, rank_score
 
 DELIVERED_VIA = "employer_site"  # v0.1 always the employer's own channel
@@ -217,9 +218,38 @@ _LOCATION_GROUPS: tuple[tuple[str, ...], ...] = (
     ("南京", "nanjing", "南京市"),
     ("武汉", "wuhan", "武汉市"),
     ("成都", "chengdu", "成都市"),
-    ("合肥", "hefei", "合肥市"),
+    ("合肥", "hefei", "合肥市", "包河区"),
     ("remote", "远程"),
+    # Round 9 (an HR persona, base Hong Kong, reports/055): "Hong Kong" reached three rows
+    # spelled in English and none of the five spelled 香港·九龙区; "香港" the reverse. One
+    # place, two answers. The rest are the cities the index actually carries under one
+    # spelling only, so the other language reaches them too.
+    ("香港", "hong kong", "hongkong", "hong kong sar", "hksar", "香港特别行政区"),
+    ("澳门", "macau", "macao"),
+    ("台北", "taipei"),
+    ("新加坡", "singapore"),
+    ("东京", "tokyo"),
+    ("伦敦", "london"),
+    ("慕尼黑", "munich", "münchen"),
+    ("长沙", "changsha", "长沙市"),
+    ("天津", "tianjin", "天津市"),
+    ("重庆", "chongqing", "重庆市"),
+    ("青岛", "qingdao", "青岛市"),
+    ("厦门", "xiamen", "厦门市"),
+    ("无锡", "wuxi", "无锡市"),
+    ("东莞", "dongguan", "东莞市"),
+    ("佛山", "foshan", "佛山市"),
+    ("宁波", "ningbo", "宁波市"),
+    ("郑州", "zhengzhou", "郑州市"),
+    ("沈阳", "shenyang", "沈阳市"),
+    ("常州", "changzhou", "常州市"),
+    ("福州", "fuzhou", "福州市"),
+    ("嘉兴", "jiaxing", "嘉兴市"),
 )
+
+# Abbreviations a seeker types that must never be used as a match pattern: "hk" as a
+# substring is also the middle of Tashkent. They resolve to a group and are not in it.
+_LOCATION_QUERY_SYNONYMS = {"hk": "香港", "sg": "新加坡"}
 
 
 def location_aliases(query: str) -> list[str]:
@@ -227,6 +257,7 @@ def location_aliases(query: str) -> list[str]:
     q = " ".join((query or "").casefold().split())
     if not q:
         return []
+    q = _LOCATION_QUERY_SYNONYMS.get(q, q)
     for group in _LOCATION_GROUPS:
         if q in {m.casefold() for m in group}:
             return list(dict.fromkeys(group))
@@ -236,6 +267,79 @@ def location_aliases(query: str) -> list[str]:
 def _location_clause(query: str):
     """SQL: the row's location text contains any alias of `query`, caselessly."""
     return or_(*(Job.location.ilike(f"%{alias}%") for alias in location_aliases(query)))
+
+
+# --- title filter ---------------------------------------------------------------
+# Skill tags and role_family describe engineering well and the rest of a company badly. An
+# HR persona (reports/055) could not isolate recruiting roles at all: there is no HR family
+# (they file under ops), no skill tag says "recruiter", and paging every employer at
+# limit 10 missed Dobot's HRBP and Pudu's 招聘经理, which the agent then reported as
+# "Chinese embodied companies post no HR roles". The title is the one field every posting
+# has that names the job. An ASCII term must start a word ("hr" reaches HR, HRBP and HR
+# Business Partner, not Chrome); a CJK term is a plain substring. The HR family is the one
+# group of synonyms we expand, because it is the family the taxonomy lacks.
+_TITLE_GROUPS: tuple[tuple[str, ...], ...] = (
+    ("hr", "hrbp", "human resources", "recruit", "talent acquisition", "talent partner",
+     "sourcer", "people operations", "people ops", "people partner", "people lead",
+     "people business partner", "head of people", "chief people", "人力", "人事", "招聘"),
+)
+
+
+def expand_title_term(term: str) -> list[str]:
+    """Every spelling to match for one title term. Always contains the term itself."""
+    t = " ".join((term or "").casefold().split())
+    if not t:
+        return []
+    for group in _TITLE_GROUPS:
+        if t in group:
+            return list(group)
+    return [t]
+
+
+def _title_pattern(alias: str) -> re.Pattern[str]:
+    if re.search(r"[^\x00-\x7f]", alias):
+        return re.compile(re.escape(alias), re.IGNORECASE)
+    return re.compile(r"(?<![a-z0-9])" + re.escape(alias), re.IGNORECASE)
+
+
+def title_terms(title: str | list[str] | None) -> list[str]:
+    """Normalise the `title` argument: one string or a list, blanks dropped."""
+    if title is None:
+        return []
+    items = [title] if isinstance(title, str) else list(title)
+    return [t for t in (" ".join(str(x).split()) for x in items) if t]
+
+
+def title_matches(title: str | None, terms: list[str]) -> bool:
+    """True when the title contains any alias of ANY term (OR across terms)."""
+    text = title or ""
+    return any(
+        _title_pattern(alias).search(text)
+        for term in terms
+        for alias in expand_title_term(term)
+    )
+
+
+def check_role_family(role_family: str | None) -> str | None:
+    """A role_family the taxonomy does not have is refused, not ignored.
+
+    `role_family="recruiting"` used to pass straight through and return the whole index
+    (Waymo engineers, on a search for HR jobs): the filter only excluded rows whose family
+    was a DIFFERENT known value, and "recruiting" differed from all of them. The silent
+    no-op then read as "OpenHire has no HR roles" — it holds a few hundred. There is no HR
+    family: people / recruiting / talent roles are filed under ops, and `title` is the
+    filter that isolates them.
+    """
+    rf = (role_family or "").strip().lower() or None
+    if rf and rf not in ROLE_FAMILIES:
+        raise OpenHireError(
+            "ERR_UNKNOWN_ROLE_FAMILY",
+            f"role_family {role_family!r} is not a family this index uses. Valid values: "
+            f"{', '.join(ROLE_FAMILIES)}. There is no HR / recruiting / people family — those "
+            "roles sit under 'ops'; to isolate them filter on the title instead "
+            "(title=['hr'] also reaches recruiter / talent acquisition / HRBP / 招聘 / 人力).",
+        )
+    return rf
 
 
 # --- last-touched provenance --------------------------------------------------
@@ -471,9 +575,11 @@ def _filter_and_rank(
     offset: int = 0,
     company_ids: list[str] | None = None,
     location: str | None = None,
+    title: str | list[str] | None = None,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
+    terms = title_terms(title)
     stmt = select(Job).where(Job.delisted_at.is_(None))
 
     if company_ids is not None:
@@ -536,6 +642,8 @@ def _filter_and_rank(
         jrf = (getattr(job, "role_family", None) or "").lower()
         if rf and jrf and jrf != rf:
             continue
+        if terms and not title_matches(job.title, terms):
+            continue
         mq = match_quality(list(skills or []) or list(required_skills or []), job.skills)
         fr = freshness(_freshness_anchor(job), now)
         scored.append((job, rank_score(mq, fr)))
@@ -560,8 +668,10 @@ def search_jobs(
     company: str | None = None,
     collapse_role_group: bool = False,
     location: str | None = None,
+    title: str | list[str] | None = None,
 ) -> list[dict]:
     now = _now(now)
+    role_family = check_role_family(role_family)
     # The page cap. Asking for 200 has always returned 100, and said nothing about it:
     # a reviewer pulled `company=XPeng limit=200`, got 100 of 198, and concluded the index
     # only held 100 XPeng jobs. Then a skill search surfaced two XPeng roles that were not
@@ -582,7 +692,7 @@ def search_jobs(
         required_skills=required_skills, currency=currency,
         require_stated_salary=require_stated_salary, remote_scope=remote_scope,
         role_family=role_family, offset=offset, company_ids=company_ids,
-        location=location,
+        location=location, title=title,
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
@@ -674,6 +784,7 @@ def diagnose_empty_search(
     role_family: str | None = None,
     currency: str | None = None,
     company: str | None = None,
+    title: str | list[str] | None = None,
 ) -> dict:
     """Explain an empty result set so the caller can tell a typo from a genuine miss.
 
@@ -699,16 +810,17 @@ def diagnose_empty_search(
             "hint": (
                 "There is no job index on this machine yet, so this is not a miss: there was "
                 "nothing to search. Run `ohp bootstrap` to download the public snapshot "
-                "(~25 MB, no account), or start the MCP server with `ohp serve`, which fetches "
+                "(~30 MB, no account), or start the MCP server with `ohp serve`, which fetches "
                 "it by itself on first run. "
                 "本机还没有职位索引，所以这不是「没找到」，是「没得找」。跑 `ohp bootstrap` "
-                "下载公开快照（约 25 MB，无需注册），或直接 `ohp serve`，服务器会自己拉。"
+                "下载公开快照（约 30 MB，无需注册），或直接 `ohp serve`，服务器会自己拉。"
             ),
             "filters_applied": {
                 k: v for k, v in {
                     "company": company, "skills": skills,
                     "required_skills": required_skills,
                     "role_family": role_family, "currency": currency,
+                    "title": title_terms(title) or None,
                 }.items() if v
             },
         }
@@ -1004,6 +1116,7 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
 
 _WATCH_FILTER_KEYS = (
     "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
+    "title",
 )
 
 
@@ -1037,7 +1150,10 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
     if filters.get("remote") is not None:
         allowed["remote"] = bool(filters["remote"])
     if filters.get("role_family"):
-        allowed["role_family"] = str(filters["role_family"]).lower()
+        allowed["role_family"] = check_role_family(str(filters["role_family"]))
+    if filters.get("title"):
+        # Stored as typed; the synonym expansion happens at match time like location.
+        allowed["title"] = title_terms(filters["title"])
     if filters.get("min_salary") is not None:
         allowed["min_salary"] = int(filters["min_salary"])
     if filters.get("location"):
@@ -1157,6 +1273,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             session, f.get("skills"), f.get("remote"), f.get("min_salary"), since, 100_000, now,
             required_skills=f.get("required_skills"), role_family=f.get("role_family"),
             company_ids=f.get("company_ids"), location=f.get("location"),
+            title=f.get("title"),
         )
         total_matching = len(ranked_all)
         ranked = ranked_all[:MAX_PAGE_SIZE]

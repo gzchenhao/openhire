@@ -5,7 +5,7 @@
 > **A job-search radar for your AI assistant — first-party listings, every posting's real age, and your résumé never touches our servers.**
 > 让 AI 助手替你盯岗的求职雷达 —— 一手职位、岗位在架时长打分，简历不经过我们的服务器。
 
-![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![139 employers hiring](https://img.shields.io/badge/employers%20hiring-139-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
+![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![143 employers hiring](https://img.shields.io/badge/employers%20hiring-143-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
 
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
@@ -69,7 +69,7 @@ to hire. A long-open role can equally mean "hard to fill". Treat it as a reason 
 
 An MCP server that turns **any** MCP-speaking assistant — Claude, Cursor, Windsurf, Cline,
 ChatGPT via connectors — into a private radar for
-**AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **139 employers'**
+**AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **143 employers'**
 own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka, plus
 first-party employer career sites such as Li Auto's), across
 the US, Europe **and China** (Waymo, Figure, Zoox — and Unitree, XPeng, UBTECH, Mech-Mind…).
@@ -99,7 +99,7 @@ This is the 「哨兵 / Sentinel」 reference implementation — see
 { "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire@latest", "serve"] } } }
 ```
 
-Then ask your assistant for a job. That is the whole setup. The server downloads the ~25 MB
+Then ask your assistant for a job. That is the whole setup. The server downloads the ~30 MB
 public index by itself in the background on first start, so searches fill in within a couple
 of minutes while you are already talking to it. No account, no signup, no résumé upload.
 
@@ -112,7 +112,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.6.7.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.6.8.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -125,13 +125,13 @@ Per-client config paths and the trade-offs of `uvx` vs a one-time install are in
 
 ```bash
 pipx install openhire      # keeps it isolated and puts `ohp` on your PATH
-ohp bootstrap              # 139 employers · ~16k live postings · no account
+ohp bootstrap              # 143 employers · ~17k live postings · no account
 
 ohp search --required-skills rust,k8s --remote --role-family engineering
 ohp search --currency CNY --role-family engineering   # e.g. CN 智驾 / robotics roles
 ```
 
-`ohp bootstrap` downloads the public snapshot (~25 MB, no account) and then runs one
+`ohp bootstrap` downloads the public snapshot (~30 MB, no account) and then runs one
 incremental crawl to refresh `verified_at` and catch delistings. **The crawl is the slow
 part** — a line per employer, 20+ minutes on a cold index — and you can stop it once the
 snapshot is in; the index is already usable, just verified as of the last weekly refresh
@@ -148,7 +148,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.6.7.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.6.8.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **Cursor / Claude Code** — or paste this to your agent: *"Install the MCP server at
@@ -167,7 +167,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 { "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire@latest", "serve"] } } }
 ```
 
-First start downloads a ~25 MB index in the background; searches fill in within a few minutes.
+First start downloads a ~30 MB index in the background; searches fill in within a few minutes.
 
 > **Stuck? Run `ohp doctor`.** It checks the three things that all look identical from the
 > chat window — `uv` missing, no index yet, server configured but not enabled — and reads
@@ -192,7 +192,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.6.7", "serve"]`.
+matters: `"args": ["openhire==0.6.8", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -212,12 +212,29 @@ The server **auto-downloads the public job snapshot on first run** if the index 
 { "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire", "serve"] } } }
 ```
 
-> First start downloads the ~25 MB public snapshot (jobs/companies only) — give it a moment.
+**腾讯 WorkBuddy** — `~/.workbuddy/mcp.json`, same `mcpServers` shape. WorkBuddy reads the
+file when it starts, so after editing it quit and reopen the app (or add the server through
+its MCP panel's 「添加 MCP」 instead); a hand-written entry does not appear in the list until
+then. No `uv` on the machine? `pip install openhire` into any Python ≥ 3.11 environment and
+point `command` at that environment's `ohp` executable with `"args": ["serve"]`.
+
+> First start downloads the ~30 MB public snapshot (jobs/companies only) — give it a moment.
 > To refresh later run `ohp bootstrap --force` or `ohp ingest`. On Windows Claude Desktop from
 > the Microsoft Store, the config is under `…\Packages\<Claude package>\LocalCache\Roaming\Claude\`.
 >
 > **Hosted / remote:** `ohp serve --transport streamable-http --host 0.0.0.0 --port 8000`
 > exposes `http://host:8000/mcp` (also `--transport sse`). A `Dockerfile` is included.
+>
+> **GitHub unreachable from your network** (mainland China without a proxy, some sandboxes)?
+> The snapshot is a GitHub Release asset and the download now resumes and retries, but a
+> blocked host stays blocked. Fetch `openhire-index.db.gz` through a mirror you trust or on
+> another machine, then `ohp bootstrap --snapshot-url <url-or-local-path>`, or set
+> `OPENHIRE_SNAPSHOT_URL` in the server's `env` so the auto-download uses it.
+> `ohp bootstrap --fresh` skips the snapshot entirely and crawls the employers' own ATS
+> (20+ minutes, no GitHub involved). An empty index caused by a failed download says so in
+> the tool result (`bootstrap_error`) instead of looking like "no matches".
+> 国内网络 GitHub 不通：经你信任的镜像拿到快照后 `ohp bootstrap --snapshot-url <地址或本地文件>`，
+> 或在 MCP 配置的 `env` 里设 `OPENHIRE_SNAPSHOT_URL`；`ohp bootstrap --fresh` 不经 GitHub 直接抓。
 
 ---
 
@@ -225,8 +242,8 @@ The server **auto-downloads the public job snapshot on first run** if the index 
 
 | Tool | What it gives you |
 |------|-------------------|
-| `search_jobs` | Hard-filter the live index; every result carries `verified_at`, `datePosted`, `days_open`, `ghost_score`, `remote_scope`, `eligible_regions`, `apply_channel`. Filter by `required_skills` (AND), `role_family`, `remote_scope`, `min_salary` + `currency`. |
-| `watch_intent` | Register a standing intent once — new matching jobs are waiting next time you check, even after you close the terminal. Accepts `required_skills` / `role_family` so sales / solutions roles stay out. |
+| `search_jobs` | Hard-filter the live index; every result carries `verified_at`, `datePosted`, `days_open`, `ghost_score`, `remote_scope`, `eligible_regions`, `apply_channel`. Filter by `required_skills` (AND), `role_family`, `remote_scope`, `min_salary` + `currency`, `company`, `location` (bilingual city aliases: 香港 = Hong Kong, 广州 reaches 天河区) and `title` (words in the job title, e.g. `招聘` / `recruit` — the filter for HR, finance and other roles no skill tag names). |
+| `watch_intent` | Register a standing intent once — new matching jobs are waiting next time you check, even after you close the terminal. Accepts `required_skills` / `role_family` / `location` / `title` so sales / solutions roles stay out. |
 | `check_watches` | Pull the matches that are new since your last check (client-pull; stdio has no push). |
 | `authorize_application` | One explicit confirmation per job. It records your authorization and returns the employer's **own** application URL — you apply as yourself. It **cannot** accept a résumé. |
 | `get_company_info` | Aggregate, anonymous trust signals for one employer (`ghost_score_avg`, `active_jobs`, `index_built_at`). Never any candidate data. |
@@ -411,7 +428,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## Roadmap
 
 - **v0.2 – v0.3 (shipped)** — CN ATS adapters (北森 Beisen + Moka) · weekly auto-refreshed
-  public snapshot · `ghost_score` public beta · 139 employers across US / EU / China
+  public snapshot · `ghost_score` public beta · 143 employers across US / EU / China
 - **next** — Employer claim + verified badges — employers can [reserve their claim
   today](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml) via a
   corporate-identity GitHub issue (zero-cost now; badges + listing-status control ship next) ·
@@ -423,7 +440,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## FAQ
 
 **Where does the job data come from?**
-Directly from 139 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, plus
+Directly from 143 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, plus
 first-party employer career sites such as Li Auto's), the same endpoints that power their careers
 pages. No third-party job boards. `source` is
 always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.

@@ -258,6 +258,7 @@ def search(
     company: str = typer.Option(None, "--company", help="One employer: id or any part of the name, e.g. unitree / 宇树 / XPeng."),
     distinct: bool = typer.Option(False, "--distinct", help="One row per role instead of one per city."),
     location: str = typer.Option(None, "--location", help="Substring of the location text, e.g. 北京 / Beijing / Remote."),
+    title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. 招聘 / recruit,hrbp / 感知. The filter for roles no skill tag names."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -265,6 +266,7 @@ def search(
     _banner()
     skill_list = _parse_skills(skills)
     req_list = [s.strip().lower() for s in required_skills.split(",")] if required_skills else None
+    title_list = [t.strip() for t in title.split(",") if t.strip()] if title else None
     floor = _parse_salary_arg(min_salary)
     console.cmd(
         "ohp search"
@@ -281,15 +283,22 @@ def search(
         + (f" --company {company}" if company else "")
         + (" --distinct" if distinct else "")
         + (f" --location {location}" if location else "")
+        + (f" --title {title}" if title else "")
     )
-    with session_scope() as s:
-        results = service.search_jobs(
-            s, skill_list, remote or None, floor, limit,
-            required_skills=req_list, currency=currency,
-            require_stated_salary=require_stated_salary, remote_scope=remote_scope,
-            role_family=role_family, offset=offset, company=company,
-            collapse_role_group=distinct, location=location,
-        )
+    try:
+        with session_scope() as s:
+            results = service.search_jobs(
+                s, skill_list, remote or None, floor, limit,
+                required_skills=req_list, currency=currency,
+                require_stated_salary=require_stated_salary, remote_scope=remote_scope,
+                role_family=role_family, offset=offset, company=company,
+                collapse_role_group=distinct, location=location, title=title_list,
+            )
+    except OpenHireError as e:
+        # `--role-family recruiting` used to return Waymo engineers: the unknown value was
+        # ignored and the whole index came back, which read as "no HR jobs here".
+        console.error(e.code, e.message)
+        raise typer.Exit(2)
     if not results:
         # Only the MCP boundary used to explain an empty list; the CLI just said "no
         # matches", which is the same sentence for "you spelled it wrong", "nobody is
@@ -299,6 +308,7 @@ def search(
             why = service.diagnose_empty_search(
                 s, skills=skill_list, required_skills=req_list,
                 role_family=role_family, currency=currency, company=company,
+                title=title_list,
             )
         console.out("无匹配结果。")
         known_rows = why.get("known_not_indexed") or []
@@ -316,6 +326,13 @@ def search(
                 console.note(f"{tag} → 是不是想找：{', '.join(close)}")
         raise typer.Exit(code=0 if not why.get("index_empty") else 1)
     console.ok(f"{len(results)} 条结果 · 服务端只做硬过滤 + 固定排序，精排交给客户端 Agent")
+    if company and len(results) >= limit <= service.MAX_PAGE_SIZE:
+        # An agent paged one employer at the default 10, saw no HR row in the ten, and
+        # reported the employer had none; the HRBP was row 30-something.
+        console.note(
+            f"只显示了前 {limit} 条，该雇主可能还有更多：加 --limit / --offset 翻页，"
+            "或用 --title 直接指名（如 --title 招聘）。"
+        )
     if limit > service.MAX_PAGE_SIZE:
         # Silently handing back one page when 200 were asked for is how a reviewer
         # concluded the index only held 100 XPeng jobs.
@@ -1085,7 +1102,7 @@ def bootstrap(
         console.out("  · 无账号 · 无登录 · 简历/任何 PII 不参与")
     else:
         console.out("将执行（快照模式）：")
-        console.out("  · 下载一份公开职位数据快照（约 20MB · 仅 jobs/companies · 无任何用户数据）")
+        console.out("  · 下载一份公开职位数据快照（约 30MB · 仅 jobs/companies · 无任何用户数据）")
         console.out("  · 随后就地增量抓取一次，把 verified_at / 下线状态刷新到最新")
         console.out("  · 无账号 · 无登录 · 简历/任何 PII 不参与")
     if not console.confirm("开始", assume_yes=yes):
@@ -1128,8 +1145,13 @@ def bootstrap(
         console.error("ERR_SNAPSHOT_INVALID", str(e))
         raise typer.Exit(1)
     except Exception as e:  # network etc.
-        console.error("ERR_SNAPSHOT_UNREACHABLE",
-                      f"下载失败（{type(e).__name__}）。可改用 `ohp bootstrap --fresh` 现抓。")
+        console.error(
+            "ERR_SNAPSHOT_UNREACHABLE",
+            f"下载失败（{type(e).__name__}: {e}），已自动续传重试 4 次。GitHub 在本网络不通时："
+            "经你信任的镜像（或另一台机器）拿到 openhire-index.db.gz，再 "
+            "`ohp bootstrap --snapshot-url <镜像地址或本地文件路径>`；"
+            "或 `ohp bootstrap --fresh` 直接抓雇主自己的 ATS（20 分钟以上，不经 GitHub）。",
+        )
         raise typer.Exit(1)
     age = f"{res.age_days} 天前" if res.age_days is not None else "未知"
     console.ok(f"快照就绪 · 公司 {res.companies} · 职位 {res.jobs} · 数据截至 {res.data_as_of}（龄 {age}）")

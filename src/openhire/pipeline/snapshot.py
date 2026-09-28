@@ -139,17 +139,55 @@ def build_snapshot(source_db_path: str, dest_gz_path: str) -> SnapshotBuildResul
         tmp_db.unlink(missing_ok=True)
 
 
-def _fetch_to(url: str, dest: Path) -> None:
-    """Download a URL (http/https) or copy a local path / file:// to dest."""
+FETCH_ATTEMPTS = 4
+
+
+def _fetch_to(url: str, dest: Path, attempts: int = FETCH_ATTEMPTS) -> None:
+    """Download a URL (http/https) or copy a local path / file:// to dest.
+
+    Resumable. The asset is ~30 MB on GitHub's CDN, and from a slow or lossy route (a Kimi
+    sandbox in mainland China gave up at about 20 MB of it, reports/055) one read timeout
+    used to throw the whole download away with no retry at all. Now a failure keeps the
+    bytes that arrived and asks for the rest with a Range header; a server that ignores the
+    Range answers 200 and we start over. A short body with no error (the connection simply
+    closed early) counts as a failure too, because gzip would only find out later.
+    """
     parsed = urlparse(url)
     if parsed.scheme in ("http", "https"):
+        import time
+
         import httpx
 
-        with httpx.stream("GET", url, follow_redirects=True, timeout=60.0) as r:
-            r.raise_for_status()
-            with open(dest, "wb") as f:
-                for chunk in r.iter_bytes():
-                    f.write(chunk)
+        dest.unlink(missing_ok=True)
+        got = 0
+        for attempt in range(1, attempts + 1):
+            headers = {"Range": f"bytes={got}-"} if got else {}
+            total: int | None = None
+            try:
+                with httpx.stream("GET", url, follow_redirects=True, headers=headers,
+                                  timeout=httpx.Timeout(60.0, connect=20.0)) as r:
+                    if r.status_code == 206 and got:
+                        mode = "ab"
+                        rng = r.headers.get("content-range", "")
+                        total = int(rng.rsplit("/", 1)[-1]) if rng.rsplit("/", 1)[-1].isdigit() else None
+                    else:
+                        r.raise_for_status()
+                        mode, got = "wb", 0
+                        cl = r.headers.get("content-length")
+                        total = int(cl) if cl and cl.isdigit() else None
+                    with open(dest, mode) as f:
+                        for chunk in r.iter_bytes():
+                            f.write(chunk)
+                            got += len(chunk)
+                if total is not None and got < total:
+                    raise httpx.ReadError(f"connection closed after {got} of {total} bytes")
+                return
+            except httpx.HTTPStatusError:
+                raise  # a 404 or 403 will not improve on retry; say what it was
+            except (httpx.HTTPError, OSError):
+                if attempt == attempts:
+                    raise
+                time.sleep(min(2.0 * attempt, 6.0))
     else:
         src = Path(parsed.path if parsed.scheme == "file" else url)
         if not src.exists():
