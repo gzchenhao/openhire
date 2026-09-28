@@ -77,7 +77,8 @@
 - **v0.4.0（2026-09-11）：** `serve` 空索引自动拉快照（`uvx openhire serve` 零配置）、`--transport sse|streamable-http`、五个工具带 annotations、`Dockerfile`、`mcpb/`（Claude Desktop 扩展，uv 运行时；Release v0.4.0 附 `openhire-0.4.0.mcpb`）、`docs/PRIVACY.md`、`docs/brand/` 图标。
 - **上架进度（025/026）：** 魔搭 ✅ 已上线可部署 · Claude 扩展目录 ✅ 已提交 · Cline issue #2501 与 Docker PR #5055 审核中 · GitHub 精选 Registry 已申请排队。
   **腾讯云开发者 MCP 广场（056，2026-09-28）：** 页面无入口、文档写「第三方暂不上架」，但真正的提交仓库是 **cnb.cool/codebuddy/mcp-market**（issue 模板，微信登录），
-  有第三方提了被收的先例（DemoWay 70 天、有活 2026-06）。六个字段和邮件稿在 `drafts/tencent-mcp-listing.md`，**等领导微信登录 CNB 后我来提**；邮件 `cloudcommunity@tencent.com` 领导自己发。
+  有第三方提了被收的先例（DemoWay 70 天、有活 2026-06）。**已提：issue #21（2026-09-28）**，邮件同日从领导 Gmail 发到 `cloudcommunity@tencent.com`。
+  材料在 `drafts/tencent-mcp-listing.md`。**10-12 前后**用广场搜索接口查一次 `openhire` 有没有出现；issue 下不追问（无人回复）。
 - **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`，URL 稳定不变）
 - **PyPI：** https://pypi.org/project/openhire/0.5.0/ （`pipx install openhire` / `uvx openhire@latest serve`）
 - **官方 MCP Registry：** `io.github.gzchenhao/openhire` v0.5.0（`registry.modelcontextprotocol.io`）。**推 `v*` tag 即由 `.github/workflows/publish-mcp-registry.yml` 用 OIDC 自动发布**（v0.3.1 起每次均如此），本地 `mcp-publisher` 只作备用；PulseMCP/mcp.so 自动同步。
