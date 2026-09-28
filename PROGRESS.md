@@ -26,6 +26,10 @@
 **待领导定**
 - 国内镜像走魔搭（要 token 进 Actions secret，打破零密钥）还是 jsDelivr 切块（无密钥、可达性不稳）还是不做。
 
+**同日追加：腾讯云 MCP 广场（`reports/056`）**
+- 025 的「不可做」改判：提交入口是 cnb.cool/codebuddy/mcp-market 的 issue 模板（微信登录），有第三方被收录的先例，但没有任何维护者回复。
+- 材料已备好 `drafts/tencent-mcp-listing.md`（六个字段 + 邮件稿）。**待领导：微信扫码登录 CNB 后我提 issue；邮件自己发。**
+
 ## 2026-09-24 · Round 8 体验复测的 17 项修复；0.6.7 当天已发布（PyPI / tag / Release / Registry，见 `reports/054`）
 
 **已完成（证据：全量 pytest 见本条末尾；每项都用 `scripts/mcp_call.py` 对着备份副本实测）**
