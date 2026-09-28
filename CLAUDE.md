@@ -6,9 +6,18 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.7 · 2026-09-24；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.8 · 2026-09-28；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.7）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.8）
+- **v0.6.8（2026-09-28，`reports/055`）：** 领导用 HR 人设（base 香港，智驾 / 具身的招聘岗）亲自跑了 Kimi 网页版和腾讯 WorkBuddy。
+  修：**`title` 过滤**（岗位名里的词，任一命中；英文锚词首；HR 同义词组展开，因为分类表没有 HR 族、HR 岗归 ops）；
+  **未知 `role_family` 拒绝**（`recruiting` 原来静默返回全库）；**香港 / Hong Kong / HK 同一地**，补一批只有一种写法的城市拼音；
+  **快照下载续传 + 4 次重试**（Kimi 国内沙箱 20 MB 处超时，原来一次读超时整份作废、零重试）；
+  服务器自己没拉到快照时工具结果带 `bootstrap_error` 和出路；**`ghost_score` 措辞指引进工具说明**（两个 agent 都把 1,616 天的岗叫「僵尸岗别投」）；
+  README 加 WorkBuddy（`~/.workbuddy/mcp.json`，重启才加载）和「GitHub 不通」一段；PyPI / Registry / mcpb 描述不再带雇主数。
+  **供给侧事实（不是缺陷）：** 索引里地点含香港的在架岗 8 条、无 HR 岗；但 WorkBuddy 说的「国内具身公司零 HR 岗」是翻页翻漏了（国内 HR 岗 16 条）。
+  **待领导定：国内镜像**（魔搭要 token 进 Actions secret，打破零密钥；jsDelivr 切块不用密钥但国内可达性不稳；第三方 gh-proxy 不内置，镜像能篡改投递链接）。
+  **twine 在 GBK 控制台打印「•」会崩**，上传前加 `PYTHONUTF8=1`。
 - **v0.6.7（2026-09-24，`reports/054`）：** 用 `scripts/mcp_call.py`（进程内起当前版本）把三个求职人设 + 一个 HR 人设在 0.6.6 上重跑，
   十条修了九条半，又抓到 17 条当天修完：**排序新鲜度锚回发布日期**（0.6.3 锚在 updated_at 是错的，470 天被动过的岗压 3 天新岗）；
   感知别名扩到 detection / point cloud；城市别名（广州 ↔ 天河区等）；watch 可带 location；`truncated` 只在满页时为 true；

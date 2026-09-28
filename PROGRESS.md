@@ -9,7 +9,24 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
-## 2026-09-24 · Round 8 体验复测的 17 项修复；0.6.7 已在 main 上（未发布）
+## 2026-09-28 · 领导亲跑两轮（Kimi 网页版 + 腾讯 WorkBuddy）→ 0.6.8 当天发出
+
+**已完成（证据：`tests/test_hr_persona_fixes.py` 15 项，全量 560 绿；PyPI 0.6.8、Release v0.6.8 附 mcpb、tag 推送触发 Registry）**
+- 领导用 HR 人设（智驾 / 具身的招聘岗，base 香港）亲自跑了两个客户端，记录见 `reports/055` 第一节的十条核实表。
+- 代码缺陷四条全修：`title` 过滤（HR 同义词组展开；分类表没有 HR 族）；未知 `role_family` 拒绝而不是静默返回全库；
+  香港 / Hong Kong / HK 同一地 + 一批城市拼音；快照下载续传 4 次重试，且空索引时工具结果带 `bootstrap_error` 和出路。
+- 文案缺陷三条：`ghost_score` 措辞指引进工具说明与 instructions（不许叫僵尸岗 / 假岗 / 别投）；数字按重新生成的 `numbers.json`
+  （143 家有在架岗、17,604 在架），PyPI / Registry / mcpb 描述去掉雇主数；快照 ~30 MB。README 加 WorkBuddy 与「GitHub 不通」两段。
+- 供给侧事实：索引里地点含香港的在架岗 8 条、无 HR 岗。WorkBuddy 的「国内具身公司零 HR 岗」是翻页翻漏（本机索引里国内 HR 岗 16 条）。
+
+**关键决策**
+- 第三方 gh-proxy 镜像不内置：镜像可以改索引里的投递链接，信任谁由用户自己用 `--snapshot-url` 决定。
+- HR 不加进分类表，先用 `title` 绕；加一族要全量重抽（约 ¥6，低价时段）+ 刷快照。
+
+**待领导定**
+- 国内镜像走魔搭（要 token 进 Actions secret，打破零密钥）还是 jsDelivr 切块（无密钥、可达性不稳）还是不做。
+
+## 2026-09-24 · Round 8 体验复测的 17 项修复；0.6.7 当天已发布（PyPI / tag / Release / Registry，见 `reports/054`）
 
 **已完成（证据：全量 pytest 见本条末尾；每项都用 `scripts/mcp_call.py` 对着备份副本实测）**
 - 排序新鲜度锚点改回**发布日**（`posted_at` → `first_seen_at` → `verified_at`），不再用 `updated_at`：
@@ -30,9 +47,9 @@
 - `ohp claim --help` 写明标题**精确匹配**、不按包含。
 - 版本号五处 bump 到 0.6.7；`pip install -e . --no-deps` 两次（`ohp.exe` 文件锁那行是噪音），`openhire.__version__` == 0.6.7。
 
-**未做 / 待领导定**
-- **未 push、未打 tag、未发 Release**（本次任务明令不发）。发版铁律第三条：改动今天走完 PyPI → tag → Release → mcpb。
-- MCP `instructions` 里的「139 employers」仍是字面量（不在本次 17 项内），下次一并改成从 `numbers.json` 引用。
+**当日后续（同日晚些时候）**
+- 已 push、打 tag v0.6.7、发 Release 附 mcpb，Registry 自动发布成功（`reports/054`）。
+- MCP `instructions` 里的「139 employers」已改为不写数（0.6.7）；PyPI / Registry / mcpb 描述里的 139 到 0.6.8 才去掉。
 
 ## 2026-09-23 — 星增长清单开跑；v0.6.2；mcpb 里的第五处版本号
 
