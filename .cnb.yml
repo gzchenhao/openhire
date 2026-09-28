@@ -1,0 +1,25 @@
+# CNB (cnb.cool) 镜像仓库的同步配置。主仓库在 GitHub：https://github.com/gzchenhao/openhire
+# 镜像只从 GitHub 拉取，从不反向推送：每 6 小时一次，也可在 CNB 分支页用「从 GitHub 同步」按钮手动触发（.cnb/web_trigger.yml）。
+# GitHub 侧不需要任何密钥（公开仓库匿名拉取）；写入镜像用的是 CNB 流水线自带的临时令牌。
+# 这个文件放在 GitHub 主仓库里，是为了镜像同步后它自己不会消失。GitHub Actions 不读它。
+main:
+  "crontab: 0 */6 * * *":
+    - name: mirror-from-github
+      stages:
+        - name: mirror
+          script: |
+            set -e
+            git fetch --prune https://github.com/gzchenhao/openhire.git \
+              "+refs/heads/*:refs/remotes/github/*" "+refs/tags/*:refs/tags/*"
+            git push --force "https://${CNB_TOKEN_USER_NAME}:${CNB_TOKEN}@cnb.cool/gzchenhao/openhire.git" \
+              "refs/remotes/github/main:refs/heads/main" "refs/tags/*:refs/tags/*"
+  web_trigger_sync:
+    - name: mirror-from-github
+      stages:
+        - name: mirror
+          script: |
+            set -e
+            git fetch --prune https://github.com/gzchenhao/openhire.git \
+              "+refs/heads/*:refs/remotes/github/*" "+refs/tags/*:refs/tags/*"
+            git push --force "https://${CNB_TOKEN_USER_NAME}:${CNB_TOKEN}@cnb.cool/gzchenhao/openhire.git" \
+              "refs/remotes/github/main:refs/heads/main" "refs/tags/*:refs/tags/*"
