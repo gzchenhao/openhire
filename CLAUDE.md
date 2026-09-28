@@ -79,6 +79,11 @@
   **腾讯云开发者 MCP 广场（056，2026-09-28）：** 页面无入口、文档写「第三方暂不上架」，但真正的提交仓库是 **cnb.cool/codebuddy/mcp-market**（issue 模板，微信登录），
   有第三方提了被收的先例（DemoWay 70 天、有活 2026-06）。**已提：issue #21（2026-09-28）**，邮件同日从领导 Gmail 发到 `cloudcommunity@tencent.com`。
   材料在 `drafts/tencent-mcp-listing.md`。**10-12 前后**用广场搜索接口查一次 `openhire` 有没有出现；issue 下不追问（无人回复）。
+  **CNB 镜像：https://cnb.cool/gzchenhao/openhire** （组织 `gzchenhao`，领导实名认证后建的；`openhire` 这个组织名被 CNB 按域名保护）。
+  同步靠仓库里的 `.cnb.yml`（CNB 流水线每 6 小时从 GitHub 拉 main + 全部 tag，用流水线自带 `CNB_TOKEN` 强推，GitHub 侧零密钥）
+  和 `.cnb/web_trigger.yml`（CNB 分支页 `…` → 执行 → 「从 GitHub 同步」按钮）。**发版后想让镜像立刻跟上就点那个按钮。**
+  CNB 的 Monaco 编辑器会把逐字输入和粘贴的 YAML 自动缩进成阶梯，内置浏览器的剪贴板也进不去；要在 CNB 网页上写 `.cnb.yml`，
+  用**单行 JSON**（YAML 是 JSON 超集）。GitHub Actions 不读 `.cnb.yml`，`tests/` 也不管它。
 - **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`，URL 稳定不变）
 - **PyPI：** https://pypi.org/project/openhire/0.5.0/ （`pipx install openhire` / `uvx openhire@latest serve`）
 - **官方 MCP Registry：** `io.github.gzchenhao/openhire` v0.5.0（`registry.modelcontextprotocol.io`）。**推 `v*` tag 即由 `.github/workflows/publish-mcp-registry.yml` 用 OIDC 自动发布**（v0.3.1 起每次均如此），本地 `mcp-publisher` 只作备用；PulseMCP/mcp.so 自动同步。

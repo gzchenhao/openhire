@@ -29,6 +29,8 @@
 **同日追加：腾讯云 MCP 广场（`reports/056`）**
 - 025 的「不可做」改判：提交入口是 cnb.cool/codebuddy/mcp-market 的 issue 模板（微信登录），有第三方被收录的先例，但没有任何维护者回复。
 - 材料 `drafts/tencent-mcp-listing.md`。领导微信登录后**已提 issue #21**（https://cnb.cool/codebuddy/mcp-market/-/issues/21 ），邮件已用领导 Gmail 直发 cloudcommunity@tencent.com。10-12 前后查广场有没有出现。
+- **CNB 镜像仓库已建成**：https://cnb.cool/gzchenhao/openhire ，首轮同步 main = c9c74a4、206 次提交、21 个 tag；`.cnb.yml` 每 6 小时自动拉，分支页有「从 GitHub 同步」按钮，issue #21 下已补镜像地址。
+  过程要领导动手的两步：微信登录 CNB、实名认证（建组织的前置）。三处坑记在 `reports/056` 第六节。
 
 ## 2026-09-24 · Round 8 体验复测的 17 项修复；0.6.7 当天已发布（PyPI / tag / Release / Registry，见 `reports/054`）
 
