@@ -1,0 +1,17 @@
+{
+  "name": "openhire",
+  "description": "OpenHire: let your AI assistant find jobs straight from employers' own systems, résumé never leaving your machine.",
+  "owner": { "name": "gzchenhao", "url": "https://github.com/gzchenhao" },
+  "plugins": [
+    {
+      "name": "openhire",
+      "source": "./",
+      "description": "Job postings read straight from employers' own ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka) with the employer's real posting date, days open and a direct apply link. Your résumé never leaves your machine. Needs uv (uvx).",
+      "version": "0.6.8",
+      "author": { "name": "gzchenhao", "url": "https://github.com/gzchenhao" },
+      "homepage": "https://github.com/gzchenhao/openhire",
+      "category": "productivity",
+      "keywords": ["jobs", "careers", "recruiting", "ats", "autonomous-driving", "embodied-ai"]
+    }
+  ]
+}

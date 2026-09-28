@@ -212,6 +212,17 @@ The server **auto-downloads the public job snapshot on first run** if the index 
 { "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire", "serve"] } } }
 ```
 
+**Claude Code** — this repo is also a plugin marketplace, so two commands inside Claude Code do
+the whole setup (still needs `uv` on PATH):
+```
+/plugin marketplace add gzchenhao/openhire
+/plugin install openhire@openhire
+```
+
+**Cursor plugin / Agent Plugins** — the repo carries `.cursor-plugin/plugin.json` and the
+vendor-neutral `plugin.json` + `mcp.json` (agent-plugins.org), so any client that loads Agent
+Plugins can install it from the repo URL.
+
 **腾讯 WorkBuddy** — `~/.workbuddy/mcp.json`, same `mcpServers` shape. WorkBuddy reads the
 file when it starts, so after editing it quit and reopen the app (or add the server through
 its MCP panel's 「添加 MCP」 instead); a hand-written entry does not appear in the list until

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "openhire": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["openhire@latest", "serve"]
+    }
+  }
+}

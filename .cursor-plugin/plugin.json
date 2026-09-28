@@ -1,0 +1,11 @@
+{
+  "name": "openhire",
+  "version": "0.6.8",
+  "description": "Job postings read straight from employers' own ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka) with the employer's real posting date, days open and a direct apply link. AI infra, autonomous driving and embodied AI across US/EU/China. Your résumé never leaves your machine. Starts `uvx openhire@latest serve`; needs uv on PATH.",
+  "author": { "name": "gzchenhao" },
+  "homepage": "https://github.com/gzchenhao/openhire",
+  "repository": "https://github.com/gzchenhao/openhire",
+  "license": "MIT",
+  "keywords": ["jobs", "careers", "recruiting", "ats", "greenhouse", "lever", "ashby", "beisen", "moka", "autonomous-driving", "embodied-ai", "mcp"],
+  "logo": "docs/brand/icon-512.png"
+}

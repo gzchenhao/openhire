@@ -62,3 +62,27 @@ def test_server_json_description_fits_the_registry():
     which is how the v0.6.2 tag published nothing until the description was cut."""
     data = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
     assert len(data["description"]) <= 100, len(data["description"])
+
+# --- plugin manifests (Claude Code + Cursor) carry the version too --------------------
+def _json(path):
+    return json.loads((ROOT / path).read_text(encoding="utf-8"))
+
+
+def test_plugin_manifests_match_pyproject():
+    """Three more places since 2026-09-28: the Claude Code plugin manifest, the marketplace
+    entry and the Cursor plugin manifest. A stale one would tell a plugin user they run an
+    older server than `uvx openhire@latest` actually starts."""
+    v = _declared()
+    assert _json(".claude-plugin/plugin.json")["version"] == v
+    entries = _json(".claude-plugin/marketplace.json")["plugins"]
+    assert entries and all(e["version"] == v for e in entries)
+    assert _json(".cursor-plugin/plugin.json")["version"] == v
+    assert _json("plugin.json")["version"] == v, "the Agent Plugins (agent-plugins.org) manifest"
+
+
+def test_plugin_mcp_configs_start_the_published_package():
+    """Both plugin formats read a root mcp config; they must start the PyPI package, not a
+    checkout, so a plugin install works on a machine that never cloned this repo."""
+    for name in (".mcp.json", "mcp.json"):
+        cfg = _json(name)["mcpServers"]["openhire"]
+        assert cfg["command"] == "uvx" and cfg["args"] == ["openhire@latest", "serve"], name
