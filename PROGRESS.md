@@ -4,6 +4,10 @@
 
 ## 📌 待办（不急，等有空再做）
 
+- **无 ATS 中小雇主的接入路径（领导 2026-10-08 转来一段外部 AI 的设想，我的评估见当天对话 / 下条）。** 设想里的 `.well-known/jobs.json`、GPG 签名、Issue-Ops 自动发岗、`ohp publish`、信任分、域名黑名单**全部不存在**，不可用于任何对外文案。
+  值得进路线图的只有两点：① 为**已认领**雇主增加 schema.org `JobPosting` JSON-LD 适配器（现成标准，Google for Jobs 已让大量官网带了它，不发明新协议；日期标 `date_signal: self_reported`，在架天数锚 `first_seen_at`）；
+  ② 认领 issue 表单加一项「登记招聘页 URL」，GitHub Action 校验 JSON-LD 后自动开 PR 加 seed 行。两者都保住「只读雇主自己的系统」这句底座。不做自建发岗 / 信任评分 / 「100% 真实」标签。
+
 - **Discord server-author 标识**：punkpeye(Frank) 的 bot 在 PR #13379 合并时留言，要一个 Discord 用户名就发标识。
   号已注册（`gzchenhao`），但**两次踩到 Discord 新号风控**，第一个号被警告。领导决定暂缓，由本人操作、不自动化。
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
