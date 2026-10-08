@@ -94,7 +94,7 @@
 - **上架渠道全景（057，2026-09-28）：** 仓库本身已是 **Claude Code 插件市场**（`.claude-plugin/`，用户 `/plugin marketplace add gzchenhao/openhire` + `/plugin install openhire@openhire`，端到端实测过）、
   **Cursor 插件**（`.cursor-plugin/plugin.json`）和 **Agent Plugins 标准包**（根目录 `plugin.json` + `mcp.json`）。已提：火山引擎 `volcengine/mcp-server` PR #437、mcp.so 目录 `chatmcp/mcpso` issue #4473。
   README 有 TRAE 一键导入链接。**Anthropic 目录已提交（2026-10-08，`reports/058`）**：插件页 https://claude.ai/directory/manage/plugins/1a281d9a-66a9-437d-a666-5635047cc35a （领导 Max 账号登录才能看），等待安全扫描 + 人工审核（三类保留项，答复在 058 第四节）；审核邮件到领导 icloud 邮箱。
-  内置浏览器面板打不开 claude.ai，这类操作走 Chrome 扩展。接受目录条款那一勾每次都要领导在对话里明确说「可以」。push webhook 密钥要领导自己生成（分类器不让我碰密钥），不做也行，目录每 6 小时自查 main。
+  内置浏览器面板打不开 claude.ai，这类操作走 Chrome 扩展。接受目录条款那一勾每次都要领导在对话里明确说「可以」。push webhook 领导已装好（密钥不经我手），推 main 几分钟内目录就读到新版本。
   **仍要领导登录的**：Cursor Marketplace、cursor.directory、Smithery、LobeHub、AIBase；清单在 `drafts/listing-handoff-2026-09-28.md`。
   **SECURITY.md + GitHub 私密漏洞报告（2026-10-08 开启）**：目录条款要求漏洞报告机制；报告落在仓库 Security → Advisories，领导邮箱收通知，承诺 3 天确认、14 天评估。
   **不可**：扣子 / 讯飞星辰 / ChatGPT Apps / 元器都要公网托管端点；百炼、千帆、华为云、豆包、TRAE 市场无第三方入口；Goose 停收，PulseMCP 停收，Continue 没了。

@@ -56,7 +56,11 @@ CLAUDE.md 在插件根目录不会被加载（它本来就是给我们自己看�
 - 「Auto-publish」页面注明：目前不生效，首版必须审核员放行。
 - 审核问题和扫描结果会发到 haolu98@icloud.com。
 
-## 七、没做成的一步（留给领导，可选）
+## 七、webhook 这一步：领导自己点完了（2026-10-08 11:43 本机时间）
+
+**结果：** GitHub 侧 `gh api repos/gzchenhao/openhire/hooks` 显示一条 active 的 hook，指向 `api.anthropic.com/directory-webhooks/github/.../gzchenhao/openhire`，只订 push，JSON，带 secret；GitHub 创建时发的 `ping` 投递返回 200 OK。密钥全程没经过我。下面是当时留给领导的说明，保留作记录。
+
+### 原文：没做成的一步（留给领导，可选）
 
 **GitHub push webhook。** 选了这个选项后要在插件页点「Set up push updates」→「生成密钥」，页面一次性显示 webhook URL 和 secret，再填进仓库 Settings → Webhooks。
 我点到「生成密钥」时被权限分类器拦下（判定为写入密钥存储），按规矩不绕。

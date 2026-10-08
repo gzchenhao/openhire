@@ -21,7 +21,7 @@
   最终源 main @ 62bbee9，7 警告 15 政策保留项（pinned uvx、4 个 PNG、「用户机器凭据」10 处 = 维护者侧 `.env` 抽取 key，serve 不用），进人工审核。
   插件页 https://claude.ai/directory/manage/plugins/1a281d9a-66a9-437d-a666-5635047cc35a ，状态「等待审核 → 正在扫描」，审核邮件到 haolu98@icloud.com。
 - **顺手补齐条款要求：** 仓库开启 GitHub 私密漏洞报告 + `SECURITY.md`（条款要漏洞报告机制，原来没有）；`uv.lock`（目录 Verified 徽章要 pyproject + uv.lock，58 包约 240 KB；**bump 后跑 `uv lock`**，新测试钉死版本一致）。
-- **留给领导（可选）：** push webhook 的「生成密钥」被我的权限分类器拦下（密钥存储写入），要领导自己点并填进仓库 Settings → Webhooks；不做则目录每 6 小时自查一次 main。
+- **push webhook 已由领导自己装好**（我的权限分类器不让我碰密钥）：hook 指向 api.anthropic.com，只订 push，GitHub 的 ping 投递 200。以后推 main 几分钟内目录就能看到新版本。安全扫描已通过，当前「审阅中」（Content policy review）。
 
 **建议（点名）**
 - 14 天零反应，说明点名既没惹来投诉，也没带来认领。按 050 的定位（主句是底座、「幽灵」停用、中立即生命），我倾向于**保留月报页但停止在文案里点名具体雇主**，页面只按雇主自己的数据列数字；认领入口照旧。领导定。
