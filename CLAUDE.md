@@ -6,9 +6,15 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.8 · 2026-09-28；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.6.9 · 2026-10-08；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.8）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.9）
+- **v0.6.9（2026-10-08，`reports/060`、`reports/061`）：** 「已知未收录」登记表从 11 家到 19 家：穹彻智能、众擎（飞书）；云深处（只在 BOSS 直聘）、智平方、轻舟智航、鉴智、松延动力（官网无可读岗位列表：邮箱投递 / 飞书表单 / 纯 JS 壳 / robots 禁抓自家接口，我们遵守 robots）；
+  **毫末智行「已停止运营」**（2025-11-29 停工通知，媒体报道；Moka 门户 2026-09-02 关停；haomo.ai 2026-10 跳无关站），**不给 opt-in**，提示句「告诉用户发生了什么，不要把人送去任何地方」。
+  认领表单（中英）加「贵司的岗位目前发布在哪里」下拉和三条只读进入路径（飞书两个只读 scope / 官网机器可读页 / 换可公开读取的 ATS），README 同段。
+  种子表加 5 家美国具身公司（Skild AI、Apptronik、Field AI、Dyna、Generalist，267 条），周一快照自动进库。`SECURITY.md` + GitHub 私密漏洞报告；根目录 `uv.lock`（第十二处版本，bump 后 `uv lock`）；`docs/numbers.json` 改由公开快照生成。
+  **抽样结论（060）：** 28 家目标行业小团队零家带 JobPosting JSON-LD，**不做 JSON-LD 适配器**；国内小团队的缺口是结构性的（飞书 / BOSS / 自建页），只能雇主 opt-in。
+  **发版流水账：** `pip install -e . --no-deps` 两次后 `test_version_matches_pyproject` 才绿（元数据）；mcpb 用 `npx -y @anthropic-ai/mcpb pack mcpb dist/openhire-X.mcpb`，解包核对 `dependencies = ["openhire==X"]`。
 - **v0.6.8（2026-09-28，`reports/055`）：** 领导用 HR 人设（base 香港，智驾 / 具身的招聘岗）亲自跑了 Kimi 网页版和腾讯 WorkBuddy。
   修：**`title` 过滤**（岗位名里的词，任一命中；英文锚词首；HR 同义词组展开，因为分类表没有 HR 族、HR 岗归 ops）；
   **未知 `role_family` 拒绝**（`recruiting` 原来静默返回全库）；**香港 / Hong Kong / HK 同一地**，补一批只有一种写法的城市拼音；
