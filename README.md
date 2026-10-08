@@ -290,7 +290,8 @@ nothing to claim: the index reads employers' own systems only. Three read-only, 
 none of which touch ranking: grant the two read-only Feishu scopes (`hire:site:readonly`,
 `hire:site_job_post:readonly`); put machine-readable postings on your own careers page
 (schema.org `JobPosting` JSON-LD or a static JSON file) and send us the URL; or move to a
-publicly readable ATS. The claim form has a field for which of these fits you.
+publicly readable ATS. The claim form has a field for which of these fits you, and
+[the employer page](https://gzchenhao.github.io/openhire/employers.html) walks through all three.
 没有招聘系统或用飞书招聘？贵司岗位还不在索引里，三条只读免费的进来方式写在认领表单里：飞书只读授权、官网机器可读岗位页、或换一个可公开读取的招聘系统。
 
 A claim gets you:

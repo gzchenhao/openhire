@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenHire · 给雇主</title>
+<meta name="description" content="让候选人的 AI 助手直接读到贵司自己系统里的岗位。免费、只读、十分钟；排序谁也买不到。给没有可公开读取招聘系统的雇主的三条进入路径。">
+<style>
+:root{--bg:#fff;--fg:#1a1d1a;--dim:#5e6b62;--line:#e3e7e3;--accent:#1f7a4d}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1211;--fg:#e9eee9;--dim:#9aa69d;--line:#252b27;--accent:#4ade87}}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,"Segoe UI",system-ui,sans-serif;
+     margin:0 auto;max-width:44rem;padding:16px;padding-block:3rem}
+a{color:var(--accent)}
+h1{font-size:1.5rem;margin:0 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem}
+.dim{color:var(--dim)}
+ul,ol{padding-left:1.1rem}
+li{margin:.6rem 0}
+hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
+code{font-size:.92em}
+pre{background:rgba(127,127,127,.08);padding:12px;overflow:auto;border-radius:6px;font-size:.88em;line-height:1.5}
+table{border-collapse:collapse;width:100%;font-size:.95em}
+td,th{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left;vertical-align:top}
+</style>
+</head>
+<body>
+<h1>让候选人的 AI 助手直接读到贵司自己系统里的岗位</h1>
+<p class="dim">给雇主的一页说明。免费、只读、十分钟。排序谁也买不到。</p>
+
+<h2>一、这是什么</h2>
+<p>OpenHire 是一个开源的求职工具（MCP server）。候选人把它装进 Claude、Cursor 这类 AI 助手，
+助手就直接从<b>雇主自己的招聘系统</b>（Greenhouse、Lever、Ashby、北森、Moka）的公开接口里读岗位，
+不经过招聘平台。候选人的简历只在他自己的电脑和贵司的投递页之间，永远不经过我们。</p>
+<p>索引里的每条岗位都带贵司系统里记的<b>原始发布日</b>、在架天数和直达贵司投递页的链接。
+数字可以自己核：<a href="numbers.json">numbers.json</a>（含口径和实测日期）。</p>
+
+<h2>二、贵司得到什么，永远得不到什么</h2>
+<table>
+<tr><th>得到</th><th>永远得不到（谁也买不到）</th></tr>
+<tr><td>
+<ul>
+<li>贵司的岗位出现在候选人的 AI 助手里，带贵司自己系统的发布日，直达贵司投递页；</li>
+<li>认领后：署贵司名的说明，显示在贵司指定的岗位旁边；「常年开放 / 难招但在招 / 已停止招聘」的标注；日期语义更正（贵司系统记的是需求创建日而不是上线日时）；可选的回复时限承诺。</li>
+</ul></td><td>
+<ul>
+<li>排序位置。排序是（匹配度，新鲜度）的纯函数，被仓库里的测试锁死；</li>
+<li>更低的在架评分。它是（重挂次数，在架天数）的纯函数，贵司的说明显示在它旁边，不改它；</li>
+<li>任何付费档位。到今天没有一行计费代码。</li>
+</ul></td></tr>
+</table>
+
+<h2>三、贵司的岗位已经在索引里吗</h2>
+<p>用 Greenhouse、Lever、Ashby、北森、Moka 的雇主，多半已经在了；去
+<a href="https://github.com/gzchenhao/openhire#employers">仓库的雇主一节</a>认领即可。</p>
+<p>用<b>飞书招聘</b>、只在 <b>BOSS 直聘</b>发布、或者<b>官网自建页面</b>的雇主，现在不在索引里。
+不是我们挑的，是读不到：飞书的岗位接口要请求签名，我们视为访问控制、不绕；平台不是贵司自己的系统，我们不读；
+自建页面多数没有机器可读的岗位数据。下面三条路，任选一条，都是只读、免费，十分钟。</p>
+
+<h2>四、三条路</h2>
+<ol>
+<li><b>飞书招聘：授权两个只读 scope。</b>在飞书开放平台给我们的应用授权
+<code>hire:site:readonly</code> 和 <code>hire:site_job_post:readonly</code>。它们只暴露贵司已经公开的招聘站和岗位，
+不涉及任何候选人数据，撤销只要一下。</li>
+<li><b>官网自建页面：放一份机器可读的岗位数据。</b>在招聘页里加一段 schema.org <code>JobPosting</code> 的 JSON-LD
+（Google 招聘用的同一个标准），或者挂一个静态 JSON 文件，把网址告诉我们。模板：
+<pre>&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "JobPosting",
+  "title": "感知算法工程师",
+  "datePosted": "2026-10-08",
+  "hiringOrganization": {"@type": "Organization", "name": "贵司名称", "sameAs": "https://贵司官网"},
+  "jobLocation": {"@type": "Place", "address": {"@type": "PostalAddress", "addressLocality": "北京", "addressCountry": "CN"}},
+  "description": "岗位描述……",
+  "url": "https://贵司官网/careers/这个岗位的页面"
+}
+&lt;/script&gt;</pre>
+每个岗位一段，<code>datePosted</code> 写真实上线日。我们按这个日期算在架天数，并在数据里标明它是贵司自报的。</li>
+<li><b>换到一个可公开读取的招聘系统。</b>上面五家任一，把招聘页网址告诉我们即可，其余不用做。</li>
+</ol>
+
+<h2>五、怎么联系，多久回复</h2>
+<ul>
+<li>GitHub 表单：<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml">雇主认领（中文）</a>，
+里面有一项「贵司的岗位目前发布在哪里」，选了我们就按那条路回；</li>
+<li>没有 GitHub 账号：发邮件到 <b>gdchenhao@qq.com</b>，主题写「雇主认领 + 公司名」，用贵司企业域名邮箱发出来本身就完成了身份核验；</li>
+<li>3 个工作日内给结论。身份材料只用于核验，不公开、不留存、不转作他用。</li>
+</ul>
+
+<h2>六、边界，先说在前面</h2>
+<ul>
+<li>我们量得到一个岗位挂了多久，量不到贵司想不想招。认领就是让贵司用自己的话解释前者；</li>
+<li>我们不在任何文案里点名「某家公司查不到」来催雇主开门。走不走这三条路，是贵司的决定；</li>
+<li>贵司随时可以要求把贵司从索引里移除，我们照做，不争辩。</li>
+</ul>
+
+<hr>
+<p class="dim"><a href="./">返回公开数据首页</a> · <a href="PRIVACY.md">隐私说明</a> · <a href="https://github.com/gzchenhao/openhire">源码</a></p>
+</body>
+</html>
