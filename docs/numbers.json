@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-09-28T06:13:14.763473+00:00",
+  "generated_at": "2026-10-08T04:49:36.865456+00:00",
   "companies_in_index": 144,
   "employers_with_live_postings": 143,
-  "live_postings": 17604,
-  "postings_with_employer_posting_date": 16832,
-  "median_days_open": 67,
-  "pct_open_over_90d": 40.5,
-  "pct_open_over_180d": 21.2,
-  "pct_open_over_365d": 8.3,
-  "ghost_hi_postings": 2722,
-  "ghost_hi_with_last_touched_reported": 1519,
-  "pct_ghost_hi_touched_within_30d": 68
+  "live_postings": 17626,
+  "postings_with_employer_posting_date": 16867,
+  "median_days_open": 68,
+  "pct_open_over_90d": 40.7,
+  "pct_open_over_180d": 22.1,
+  "pct_open_over_365d": 8.5,
+  "ghost_hi_postings": 2799,
+  "ghost_hi_with_last_touched_reported": 1574,
+  "pct_ghost_hi_touched_within_30d": 70
 }
