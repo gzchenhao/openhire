@@ -6,9 +6,15 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.7.0 · 2026-10-08；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.0 · 2026-10-08；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.7.0）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.0）
+- **v0.8.0（2026-10-08，同日第三版，`reports/065`）：** 求职者一键企业背景查证 **`check_employer`**（CLI `ohp check-company`）。返回**查证清单**不是分数：
+  每项五种状态（verified / not_verified / unavailable / not_applicable / pending_user）带来源与时间，结尾写明「不是判断」。免费项：索引里的在架数 / 中位在架天数 / 发布日来源 / 认领、
+  或「已知未收录 + 原因」、或「已停止运营」；RDAP 域名注册日期；档案馆首次抓取；首页备案号；JD 红线词。付费项工商登记走天眼查 OpenAPI，**用求职者自己的 `TIANYANCHA_API_KEY`**（放在他机器上，我们看不到 key 也看不到他查谁），
+  没 key 标 pending_user 并给三条路（设 key / 助手已有的天眼查 MCP / 爱企查与公示系统手动）。代码在 `src/openhire/verify/`（维护者脚本与求职者工具共用同一套检查）。
+  **天眼查客户端没有真 key 实测**，领导有开放平台账号就给一个放 `.env`。**「token 批发中心」没做**：天眼查数据许可不许转售、代查会让我们服务端看到求职者查谁和付钱、收钱要营业主体；等领导定。
+  隐私说明 §3 加了这个工具向谁发什么（公司名 / 域名，从不发用户信息）。
 - **v0.7.0（2026-10-08，同日第二版，`reports/062`）：** **雇主自报岗位表**（`ats/self_reported.py`，来源 `employer_self_reported`）。
   领导要「傻瓜式」：HR 填一张六列 Excel（`docs/openhire-岗位表.xlsx`）用企业邮箱发来，我核实身份后 `scripts/import_employer_roster.py` 转成 `employers/<slug>.json` 并在
   `SELF_REPORTED_EMPLOYERS` 登记，适配器像读别家接口一样读它（raw.githubusercontent.com）。**四个条件写死在代码和测试里**：只收企业身份核实过的雇主；
