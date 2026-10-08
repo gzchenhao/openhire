@@ -57,6 +57,33 @@ body:
 
         **It is also fine to just ask us to remove you.** Say so below. We will, and we will
         not argue — we would rather have a smaller honest index than an unwilling one.
+  - type: markdown
+    attributes:
+      value: |
+        **Not on Greenhouse / Lever / Ashby / Beisen / Moka?** Then your postings are not in the
+        index yet, and there is nothing to claim: the index reads employers' own systems only.
+        Three ways in, all read-only, all free, none of them touch ranking:
+
+        1. **Feishu Recruitment**: grant two read-only scopes on the Feishu open platform
+           (`hire:site:readonly`, `hire:site_job_post:readonly`); they expose your published
+           postings and nothing about candidates.
+        2. **Your own careers page**: add machine-readable postings to it (schema.org
+           `JobPosting` JSON-LD, or a static JSON file) and tell us the URL; we have a template.
+        3. **Move to a publicly readable ATS** (any of the five above) and send us the URL.
+
+        Pick where your postings live today in the next field and we answer along that path.
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where are your postings published today?
+      options:
+        - Our own ATS (Greenhouse / Lever / Ashby / Beisen / Moka)
+        - Feishu Recruitment
+        - Only on a job platform (BOSS直聘, LinkedIn Jobs, ...)
+        - A page on our own site (no ATS)
+        - Not published anywhere yet
+    validations:
+      required: false
   - type: input
     id: company
     attributes:

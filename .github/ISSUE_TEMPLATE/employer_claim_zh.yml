@@ -45,6 +45,31 @@ body:
           我们核验的是**企业身份**，不是提交人的账号。
 
         两条路径的处理时限、承诺、结果完全一样。
+  - type: markdown
+    attributes:
+      value: |
+        **贵司没有用 Greenhouse / Lever / Ashby / 北森 / Moka 这类可公开读取的招聘系统？** 那贵司的岗位现在不在索引里，
+        认领也就无从谈起。这不是流程缺陷，是定义：索引只读雇主自己系统里的数据。能让贵司进来的路有三条，任选一条，
+        都是只读、免费、不改排序：
+
+        1. **飞书招聘**：在飞书开放平台给我们授权两个只读 scope（`hire:site:readonly`、`hire:site_job_post:readonly`），
+           只暴露贵司已公开的岗位，不涉及任何候选人数据；
+        2. **官网自建招聘页**：在页面里放一份机器可读的岗位数据（schema.org `JobPosting` JSON-LD，或一个静态 JSON），把网址告诉我们，我们给模板；
+        3. **换到可公开读取的招聘系统**（上面五家任一），把招聘页网址告诉我们即可。
+
+        在下面「贵司的岗位目前发布在哪里」里选一项，我们按那条路回复。
+  - type: dropdown
+    id: source
+    attributes:
+      label: 贵司的岗位目前发布在哪里？
+      options:
+        - 自己的招聘系统（Greenhouse / Lever / Ashby / 北森 / Moka）
+        - 飞书招聘
+        - 只在 BOSS 直聘 / 其他招聘平台
+        - 官网自建页面（没有用招聘系统）
+        - 还没有对外发布
+    validations:
+      required: false
   - type: input
     id: company
     attributes:

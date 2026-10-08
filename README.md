@@ -112,7 +112,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.6.8.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.6.9.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -148,7 +148,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.6.8.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.6.9.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **Cursor / Claude Code** — or paste this to your agent: *"Install the MCP server at
@@ -192,7 +192,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.6.8", "serve"]`.
+matters: `"args": ["openhire==0.6.9", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -284,6 +284,14 @@ No GitHub account? **Email gdchenhao@qq.com** with "Employer claim" and your com
 subject — sending from your corporate domain is itself the verification — or have anyone
 file the form on your behalf, since what we verify is the company and not the filer.
 没有 GitHub 账号？**直接发邮件到 gdchenhao@qq.com**，用贵司企业邮箱发出来即完成身份核验。
+
+No ATS, or on Feishu Recruitment? Then your postings are not in the index yet and there is
+nothing to claim: the index reads employers' own systems only. Three read-only, free ways in,
+none of which touch ranking: grant the two read-only Feishu scopes (`hire:site:readonly`,
+`hire:site_job_post:readonly`); put machine-readable postings on your own careers page
+(schema.org `JobPosting` JSON-LD or a static JSON file) and send us the URL; or move to a
+publicly readable ATS. The claim form has a field for which of these fits you.
+没有招聘系统或用飞书招聘？贵司岗位还不在索引里，三条只读免费的进来方式写在认领表单里：飞书只读授权、官网机器可读岗位页、或换一个可公开读取的招聘系统。
 
 A claim gets you:
 

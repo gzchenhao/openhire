@@ -207,7 +207,7 @@ def search_jobs(
             on Feishu Recruitment, whose job-list API requires a request signature; we
             treat that as access control and do not work around it. For those (Momenta,
             小马智行 Pony.ai, 智元 AgiBot, MiniMax, 智谱 Zhipu, 商汤 SenseTime, 逐际动力
-            LimX, 自变量 X Square, 千寻智能 Spirit AI, 加速进化 Booster) the empty-result
+            LimX, 自变量 X Square, 千寻智能 Spirit AI, 加速进化 Booster, 穹彻智能 Noematrix, 众擎 EngineAI) the empty-result
             object carries `known_not_indexed` with the employer's own careers portal URL,
             the reason, and `employer_opt_in` (the employer can authorize the read-only
             Feishu open-platform scopes hire:site:readonly and hire:site_job_post:readonly).
@@ -217,6 +217,11 @@ def search_jobs(
             the crawler or authorize the same read-only scopes.
             Send the user to that portal; do not retry with a looser filter, and do not
             present the absence as "not hiring".
+            A few more are on the same list because their own site has no readable job
+            list (云深处 DeepRobotics publishes only on BOSS直聘; 智平方, 轻舟智航 QCraft,
+            鉴智 PhiGent and 松延动力 Noetix keep a page with no list, a form, a JavaScript
+            shell or a robots-disallowed API), and 毫末智行 HAOMO has ceased operations:
+            for it, tell the user that and send them nowhere.
         location: caseless substring over the employer's location text, either language
             ("北京", "Beijing", "Mountain View", "Remote"). Alias-aware for the cities
             Chinese employers spell several ways: 广州 / Guangzhou also reaches rows that
@@ -325,8 +330,7 @@ def get_company_info(company_id: str) -> dict:
     Takes an id or any part of the name in either language, like search_jobs' `company`.
 
     Known-but-not-indexed employers (Momenta, 小马智行 Pony.ai, 智元 AgiBot, MiniMax, 智谱
-    Zhipu, 商汤 SenseTime, 逐际动力 LimX, 自变量 X Square, 千寻智能 Spirit AI, 加速进化
-    Booster) return a structured answer instead of ERR_COMPANY_NOT_FOUND: `indexed: false`,
+    Zhipu, 商汤 SenseTime, 逐际动力 LimX, 自变量 X Square, 千寻智能 Spirit AI, 加速进化 Booster, 穹彻智能 Noematrix, 众擎 EngineAI) return a structured answer instead of ERR_COMPANY_NOT_FOUND: `indexed: false`,
     `careers_url` (their own portal), `reason` (their careers site runs on Feishu
     Recruitment, whose job-list API requires a request signature; we treat that as access
     control and do not work around it) and `employer_opt_in` (the employer can authorize
@@ -402,8 +406,8 @@ def refresh_index(company: str) -> dict:
     * At most one crawl per employer per 6 hours. A throttled call returns immediately with
       `refreshed: false`, `reason: "throttled"` and `last_refreshed_at` — no network request
       is made. That is not an error: it means the data you already hold is that fresh.
-    * An employer we know but deliberately do not index (the Feishu-hosted ones and 蔚来
-      NIO, see search_jobs) returns `reason: "known_not_indexed"` with the same portal,
+    * An employer we know but deliberately do not index (the Feishu-hosted ones, 蔚来 NIO, the ones whose own site has no readable job
+      list, and 毫末智行 which has ceased operations; see search_jobs) returns `reason: "known_not_indexed"` with the same portal,
       reason and `employer_opt_in` the other tools give, never `unknown_company`.
     * Do NOT call this speculatively or in a loop. Every call hits somebody else's public
       endpoint. Search first; refresh only when the user needs today's state of one employer.

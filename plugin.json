@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "openhire",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "description": "Job postings read straight from employers' own ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka) with the employer's real posting date, days open and a direct apply link. AI infra, autonomous driving and embodied AI across US/EU/China. Your résumé never leaves your machine. The MCP server is started with `uvx openhire@latest serve`; needs uv on PATH.",
   "author": { "name": "gzchenhao" },
   "homepage": "https://github.com/gzchenhao/openhire",

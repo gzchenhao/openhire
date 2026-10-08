@@ -100,6 +100,43 @@ NIO_OPT_IN = {
 }
 
 
+# --- Employers whose own site offers no readable job list (2026-10-08 survey, reports/060) ---
+# A one-GET survey of 28 small employers in our target industry found no schema.org JobPosting
+# markup anywhere; the Chinese ones either run Feishu Recruitment, publish only on the
+# BOSS直聘 platform, or keep a careers page with no job list. The registry says which.
+OWN_PAGE_ATS = "first-party page without a readable job list"
+OWN_PAGE_OPT_IN = {
+    "who": "the employer",
+    "what": (
+        "Publish the postings on the employer's own site in a machine-readable form "
+        "(schema.org JobPosting JSON-LD, or a JSON feed) and tell us the URL; or move them to "
+        "an ATS whose public board API we already read (Greenhouse, Lever, Ashby, Beisen, "
+        "Moka); or authorise the read-only Feishu open-platform scopes for a recruitment "
+        "site. All three are read-only: they expose the public postings, nothing about "
+        "candidates, and they cannot buy rank or a lower ghost_score (both are locked pure "
+        "functions)."
+    ),
+    "scopes": list(FEISHU_OPT_IN_SCOPES),
+    "how": FEISHU_OPT_IN["how"],
+    "summary": (
+        "publishing a machine-readable careers page, moving to a publicly readable ATS, "
+        "or authorising the read-only Feishu open-platform scopes "
+        + ", ".join(FEISHU_OPT_IN_SCOPES)
+    ),
+}
+PLATFORM_ONLY_ATS = "BOSS直聘 only (a platform, not the employer's own system)"
+PLATFORM_ONLY_REASON = (
+    "this employer publishes its postings only on the BOSS直聘 platform and its own site has "
+    "no careers page; this index reads employers' own systems and never platforms, so none "
+    "of its postings are here"
+)
+PLATFORM_ONLY_REASON_ZH = "雇主只在 BOSS 直聘上发布岗位，官网没有招聘页；我们只读雇主自己的系统，不读平台"
+
+# A company that no longer exists is still something a seeker types. The entry keeps the
+# dated facts and offers no opt-in, because there is nobody left to opt in.
+CEASED_ATS = "none (the company has ceased operations)"
+
+
 @dataclass(frozen=True)
 class NotIndexedEmployer:
     id: str                       # our stable slug, same convention as companies.id
@@ -186,6 +223,19 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         aliases=("booster", "booster robotics", "加速进化"),
         careers_url="https://booster.jobs.feishu.cn/",          # <title>Join Booster Robotics</title>
     ),
+    # 2026-10-08 survey (reports/060). Confirmed by <title> on that day.
+    NotIndexedEmployer(
+        id="noematrix", name="穹彻智能 Noematrix",
+        aliases=("noematrix", "穹彻智能", "穹彻"),
+        # Its own page (www.noematrix.ai/join-us, <title>加入我们 | 穹彻智能</title>) links to
+        # this Feishu tenant, which belongs to 非夕 Flexiv: <title>加入穹彻智能</title>.
+        careers_url="https://flexivrobotics.jobs.feishu.cn/971932",
+    ),
+    NotIndexedEmployer(
+        id="engineai", name="众擎机器人 EngineAI",
+        aliases=("engineai", "engine ai", "众擎机器人", "众擎"),
+        careers_url="https://dx3a2bminsq.jobs.feishu.cn/",      # <title>加入深圳市众擎机器人科技有限公司</title>
+    ),
     # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
     # 1,784-row roster inside __NEXT_DATA__, see ats/nio.py), and the same GET from this
     # crawler's HTTP client answers 567 with a Tencent Cloud EdgeOne security-policy page.
@@ -202,6 +252,86 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         reason=NIO_REASON,
         reason_zh=NIO_REASON_ZH,
         employer_opt_in=dict(NIO_OPT_IN),
+    ),
+    # --- 2026-10-08 survey (reports/060): no readable job list on the employer's own site ---
+    NotIndexedEmployer(
+        id="deeprobotics", name="云深处科技 DeepRobotics",
+        aliases=("deeprobotics", "deep robotics", "云深处科技", "云深处"),
+        careers_url="https://www.deeprobotics.cn/",
+        confirmed_by=(
+            "homepage <title> names the employer; its 加入我们 link goes to zhipin.com "
+            "(BOSS直聘) and the in-page jobs anchor is commented out; there is no careers page"
+        ),
+        ats=PLATFORM_ONLY_ATS,
+        reason=PLATFORM_ONLY_REASON,
+        reason_zh=PLATFORM_ONLY_REASON_ZH,
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+    ),
+    NotIndexedEmployer(
+        id="ai2robotics", name="智平方 AI2 Robotics",
+        aliases=("ai2robotics", "ai2 robotics", "ai² robotics", "智平方科技", "智平方"),
+        careers_url="https://ai2robotics.com/joinus/",           # <title>加入我们 - 智平方科技</title>
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's own careers page lists no postings and takes applications by "
+            "email, so there is nothing machine-readable for this index to read"
+        ),
+        reason_zh="雇主官网的招聘页没有岗位列表，只给了投递邮箱，没有可读的岗位数据",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+    ),
+    NotIndexedEmployer(
+        id="qcraft", name="轻舟智航 QCraft",
+        aliases=("qcraft", "轻舟智航", "轻舟"),
+        careers_url="https://www.qcraft.ai/cn/careers",          # <title>轻舟智航-成为全球领先的通用物理AI公司</title>
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's own careers page collects résumés through a Feishu form and lists "
+            "no postings, so there is nothing machine-readable for this index to read"
+        ),
+        reason_zh="雇主官网的招聘页只放了一个飞书收简历表单，没有岗位列表",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+    ),
+    NotIndexedEmployer(
+        id="phigent", name="鉴智机器人 PhiGent Robotics",
+        aliases=("phigent", "phigent robotics", "鉴智机器人", "鉴智"),
+        careers_url="https://www.phigent.ai/",                   # <title>PhiGent</title>, a 439-byte JS shell
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's own site is a JavaScript application that exposes no job list to "
+            "a plain GET; we do not execute a site's scripts, so there is nothing for this "
+            "index to read"
+        ),
+        reason_zh="雇主官网是纯 JS 应用，普通请求拿不到岗位列表；我们不执行站点脚本",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+    ),
+    NotIndexedEmployer(
+        id="noetix", name="松延动力 Noetix Robotics",
+        aliases=("noetix", "noetix robotics", "松延动力", "松延"),
+        careers_url="https://www.noetixrobotics.com/recruitment/jobs",  # <title>职位列表-北京松延动力科技集团股份有限公司官网</title>
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's own careers page loads its postings from the site's own API, "
+            "which the site's robots.txt disallows; we honour robots.txt, so none of its "
+            "postings are here"
+        ),
+        reason_zh="雇主官网的岗位列表来自它自己的接口，而站点 robots.txt 禁止抓取该接口；我们遵守 robots",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+    ),
+    # A former employer. Dated facts only; no opt-in because there is nobody to opt in.
+    NotIndexedEmployer(
+        id="haomo", name="毫末智行 HAOMO.AI",
+        aliases=("haomo", "haomo.ai", "haomo ai", "毫末智行", "毫末"),
+        careers_url=None,
+        confirmed_by="not applicable: the company has ceased operations",
+        ats=CEASED_ATS,
+        reason=(
+            "the company has ceased operations: a work-stoppage notice went out on 2025-11-29 "
+            "(reported by 腾讯新闻 and 新浪科技), its Moka careers portal was retired by "
+            "2026-09-02, and haomo.ai redirected to an unrelated site by 2026-10-08; there is "
+            "nothing to index"
+        ),
+        reason_zh="公司已停止运营（2025-11-29 停工通知，媒体公开报道；Moka 招聘门户 2026-09-02 已关停，官网域名 2026-10 已易主）",
+        employer_opt_in={},
     ),
 )
 

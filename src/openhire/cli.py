@@ -318,8 +318,12 @@ def search(
             # Known and deliberately absent: give the portal, so the seeker is not left
             # with "not indexed" and nowhere to go. The English `hint` is written for an
             # agent relaying the answer; a person at this terminal gets only this note.
-            portal = known.get("careers_url") or "（招聘站地址未确认）"
             reason_zh = known.get("reason_zh") or "我们视为访问控制、不绕过"
+            if not known.get("employer_opt_in"):
+                # A former employer: there is no portal to send anyone to.
+                console.note(f"{known['name']} 未收录（{reason_zh}）。")
+                continue
+            portal = known.get("careers_url") or "（招聘站地址未确认）"
             console.note(f"{known['name']} 未收录（{reason_zh}）。请直接去雇主自己的招聘站：{portal}")
         for tag, close in (why.get("suggestions") or {}).items():
             if close:
@@ -1301,9 +1305,12 @@ def refresh(
                 c_print = f"  {c['company_id'] or '(未收录)':22} {c['name']}"
                 console.out(c_print)
         elif res.get("reason") == "known_not_indexed":
-            portal = res.get("careers_url") or "（招聘站地址未确认）"
-            console.note(f"{res['name']} 未收录（{res.get('reason_zh')}），没有可刷新的来源。"
-                         f"请直接去雇主自己的招聘站：{portal}")
+            if not res.get("employer_opt_in"):
+                console.note(f"{res['name']} 未收录（{res.get('reason_zh')}），没有可刷新的来源。")
+            else:
+                portal = res.get("careers_url") or "（招聘站地址未确认）"
+                console.note(f"{res['name']} 未收录（{res.get('reason_zh')}），没有可刷新的来源。"
+                             f"请直接去雇主自己的招聘站：{portal}")
         elif res.get("reason") == "ats_unreachable":
             # A failed crawl used to print the same "✓ 已刷新 · 新增 0 · 下线 0" as a
             # genuinely unchanged employer. Loud, on stderr, and non-zero exit, so a

@@ -949,6 +949,14 @@ def known_not_indexed_hint(known: list["not_indexed.NotIndexedEmployer"]) -> str
     """One sentence a seeker can act on: where the postings actually are, why they are
     not here, and that the employer (not the seeker) holds the key to changing that."""
     first = known[0]
+    if not first.employer_opt_in:
+        # A former employer: nothing to send the seeker to and nobody left to opt in.
+        return (
+            f"{first.name} is known to us but NOT in this index: {first.reason}. "
+            "It no longer has a careers portal, so do not send the user anywhere; tell them "
+            "what happened. This is not a typo and dropping the company filter will not "
+            "find it; see known_not_indexed[].reason."
+        )
     where = (
         f"Its postings are on its own careers portal at {first.careers_url}, so send the "
         "user there directly."

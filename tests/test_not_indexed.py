@@ -51,25 +51,64 @@ def session():
 
 # --- the registry itself ------------------------------------------------------------------
 FEISHU_IDS = ["momenta", "ponyai", "agibot", "minimax", "zhipu", "sensetime", "limx",
-              "xsquare", "spiritai", "booster"]
+              "xsquare", "spiritai", "booster", "noematrix", "engineai"]
+# 2026-10-08 survey (reports/060): no readable job list on the employer's own site.
+OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix"]
+CEASED_IDS = ["haomo"]
 
 
-def test_registry_holds_the_ten_feishu_employers_and_nio_with_honest_fields():
+def test_registry_holds_the_feishu_employers_nio_the_own_page_ones_and_haomo():
     ids = [e.id for e in not_indexed.NOT_INDEXED]
-    assert ids == [*FEISHU_IDS, "nio"]
+    assert ids == [*FEISHU_IDS, "nio", *OWN_PAGE_IDS, *CEASED_IDS]
     assert len(set(ids)) == len(ids)
     for e in not_indexed.NOT_INDEXED:
         assert e.aliases, e.id
         # A portal URL is either confirmed (https, employer's own host) or absent; never a guess.
         assert e.careers_url is None or e.careers_url.startswith("https://"), e.id
+        assert e.reason_zh
+        if e.id in CEASED_IDS:
+            # Nobody left to opt in: the entry says so instead of offering scopes.
+            assert e.employer_opt_in == {} and e.careers_url is None
+            assert e.ats == not_indexed.CEASED_ATS and "ceased operations" in e.reason
+            assert "2025-11-29" in e.reason and "2026-09-02" in e.reason
+            continue
         assert e.employer_opt_in["scopes"] == ["hire:site:readonly", "hire:site_job_post:readonly"]
         assert "read-only" in e.employer_opt_in["what"]
         assert "never by payment" in e.employer_opt_in["how"]
-        assert e.employer_opt_in["summary"] and e.reason_zh
+        assert e.employer_opt_in["summary"]
         if e.id in FEISHU_IDS:
             assert e.ats == "feishu"
             assert "request signature" in e.reason and "access control" in e.reason
             assert "do not work around it" in e.reason
+        if e.id in OWN_PAGE_IDS:
+            assert e.ats in (not_indexed.OWN_PAGE_ATS, not_indexed.PLATFORM_ONLY_ATS)
+            assert "machine-readable careers page" in e.employer_opt_in["summary"]
+
+
+def test_a_ceased_employer_gets_a_hint_that_sends_the_seeker_nowhere():
+    """毫末智行 stopped work in 2025-11; its Moka portal and domain are gone. A seeker who
+    types the name must hear that, not a portal URL or a scope to authorise."""
+    assert [e.id for e in not_indexed.lookup("毫末")] == ["haomo"]
+    assert [e.id for e in not_indexed.lookup("haomo.ai 招聘")] == ["haomo"]
+    hint = service.known_not_indexed_hint([not_indexed.by_id("haomo")])
+    assert "ceased operations" in hint and "do not send the user anywhere" in hint
+    assert "employer_opt_in" not in hint and "scope" not in hint
+    info = service.known_not_indexed_info(not_indexed.by_id("haomo"))
+    assert info["careers_url"] is None and info["employer_opt_in"] == {}
+
+
+def test_the_own_page_entries_say_what_the_employer_can_do():
+    """The survey's non-Feishu Chinese employers: the reason names the actual obstacle (a
+    platform-only presence, a page with no list, a robots-disallowed API) and the opt-in
+    is a machine-readable page, an ATS we read, or the Feishu scopes."""
+    for cid in OWN_PAGE_IDS:
+        hint = service.known_not_indexed_hint([not_indexed.by_id(cid)])
+        assert "deliberately NOT in this index" in hint and "machine-readable careers page" in hint
+    assert "BOSS直聘" in not_indexed.by_id("deeprobotics").reason
+    assert "robots.txt" in not_indexed.by_id("noetix").reason
+    assert "JavaScript" in not_indexed.by_id("phigent").reason
+    assert [e.id for e in not_indexed.lookup("轻舟智航")] == ["qcraft"]
+    assert [e.id for e in not_indexed.lookup("穹彻智能 招聘")] == ["noematrix"]
 
 
 def test_nio_is_registered_for_its_own_reason_not_feishus():
@@ -117,8 +156,18 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
     assert urls["spiritai"] == "https://nwd4iy9rd2s.jobs.feishu.cn/"
     assert urls["booster"] == "https://booster.jobs.feishu.cn/"
     assert urls["nio"] == "https://www.nio.cn/careers/jobs"
+    # 2026-10-08 survey entries, each confirmed by one plain GET that day.
+    assert urls["noematrix"] == "https://flexivrobotics.jobs.feishu.cn/971932"
+    assert urls["engineai"] == "https://dx3a2bminsq.jobs.feishu.cn/"
+    assert urls["deeprobotics"] == "https://www.deeprobotics.cn/"
+    assert urls["ai2robotics"] == "https://ai2robotics.com/joinus/"
+    assert urls["qcraft"] == "https://www.qcraft.ai/cn/careers"
+    assert urls["phigent"] == "https://www.phigent.ai/"
+    assert urls["noetix"] == "https://www.noetixrobotics.com/recruitment/jobs"
+    assert urls["haomo"] is None
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
-    assert by_title == set(urls) - {"sensetime", "nio"}
+    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"}
+    assert "zhipin.com" in not_indexed.by_id("deeprobotics").confirmed_by
     sensetime = not_indexed.by_id("sensetime")
     assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by
 
