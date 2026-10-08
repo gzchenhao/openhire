@@ -37,6 +37,10 @@ refuses to install any snapshot whose user-state tables are non-empty.
   (Greenhouse, Lever, Ashby, Beisen, Moka) and first-party employer career-site mirrors
   (currently Li Auto: `www.lixiang.com` and `api-web.lixiang.com`) to read job postings,
   and (b) GitHub Releases to download the public snapshot.
+- `check_employer` (v0.8.0) sends the **company's** name or domain to RDAP (rdap.org), the Internet
+  Archive (web.archive.org) and the company's own homepage, and to 天眼查's API only when you set
+  `TIANYANCHA_API_KEY` on your own machine (your account pays, your machine holds the key, we never
+  see either). Nothing about you is sent, and nothing fetched is stored in the index or snapshot.
 - We do not use analytics, tracking pixels, advertising SDKs or telemetry of any kind.
 - We never sell, share or transfer data to third parties. There is no data to sell.
 

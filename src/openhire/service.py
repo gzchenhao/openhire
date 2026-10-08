@@ -1627,3 +1627,54 @@ def preview_claim_titles(
         "unmatched": misses,
         "did_you_mean": near,
     }
+
+
+# --- employer background checklist (reports/065) -------------------------------------
+def employer_check(
+    session: Session,
+    company: str | None = None,
+    domain: str | None = None,
+    posting_text: str | None = None,
+    run_network: bool = True,
+    now: dt.datetime | None = None,
+) -> dict:
+    """Facts about one employer with sources and times. Never a score, never a verdict.
+
+    Resolves `company` the way search does (id or any part of the name, either language);
+    an ambiguous name is refused with the candidates rather than guessed. A company we hold
+    nothing of but know (the Feishu-hosted ones, 蔚来, a ceased one) comes back with that
+    record instead of a bare "not indexed". `domain` is the employer's own site; when it is
+    not given it is taken from the employer's careers page only if that page is on the
+    employer's domain (a Greenhouse or Moka board says nothing about the employer's domain).
+    """
+    from .verify import build_checklist
+    from .verify.checks import normalise_domain, own_domain_from_url
+
+    query = {"company": company, "domain": domain, "posting_text_given": bool(posting_text)}
+    if not (company or domain):
+        raise OpenHireError("ERR_BAD_QUERY", "Give a company (name or id) or a domain, or both.")
+    index_facts = None
+    known = None
+    resolved_domain = normalise_domain(domain) if domain else None
+    if company:
+        matched = resolve_company(session, company)
+        if len(matched) > 1:
+            names = ", ".join(f"{c.id} ({c.name})" for c in matched[:10])
+            raise OpenHireError(
+                "ERR_AMBIGUOUS_COMPANY",
+                f"{company!r} matches {len(matched)} employers: {names}. Re-ask with one id.",
+            )
+        if len(matched) == 1:
+            index_facts = get_company_info(session, matched[0].id, now=now)
+            if not resolved_domain:
+                resolved_domain = own_domain_from_url(matched[0].careers_url)
+        else:
+            entries = not_indexed.lookup(company)
+            if len(entries) == 1:
+                known = entries[0].as_dict()
+                if not resolved_domain:
+                    resolved_domain = own_domain_from_url(known.get("careers_url"))
+    return build_checklist(
+        query=query, index_facts=index_facts, known_not_indexed=known,
+        domain=resolved_domain, posting_text=posting_text, run_network=run_network,
+    )

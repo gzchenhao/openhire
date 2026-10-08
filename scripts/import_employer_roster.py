@@ -27,32 +27,7 @@ import sys
 COLUMNS = ["职位名称", "工作城市", "发布日期", "投递链接或投递邮箱", "薪资范围", "岗位描述"]
 REFUSED = ("手机", "微信", "联系人", "身份证", "电话")
 
-# The shapes recruitment scams take (the 缅北 playbook: a high-paid job abroad, flights and
-# board paid, no experience needed, "customer service" or "typist" roles, pay by the day).
-# A posting that matches any of these is refused outright, whatever the employer says; a
-# real robotics or autonomous-driving role never needs these words (reports/064).
-RED_FLAGS = (
-    "境外", "海外高薪", "柬埔寨", "缅甸", "缅北", "迪拜", "菲律宾", "包机票", "包吃住", "日结", "周结",
-    "高薪诚聘", "无需经验", "不限经验", "不限学历", "打字员", "网络推广", "博彩", "彩票", "电销",
-    "电话销售", "刷单", "急招", "签证办理", "护照", "出国务工", "月入过万", "轻松",
-    "no experience", "visa provided", "flights paid", "typing job", "daily pay",
-)
-
-
-def red_flags_in(*texts) -> list:
-    blob = " ".join(str(t or "") for t in texts).lower()
-    return [w for w in RED_FLAGS if w.lower() in blob]
-
-
-def email_on_domain(email: str, domain: str) -> bool:
-    """A published application address must be the company's own mailbox."""
-    host = email.rsplit("@", 1)[-1].strip().lower()
-    domain = domain.lower()
-    return bool(host) and (host == domain or host.endswith("." + domain))
-
-_SALARY = re.compile(
-    r"(?P<lo>\d+(?:\.\d+)?)\s*(?P<lok>[kK千万]?)\s*(?:[-~～到至]|到)\s*(?P<hi>\d+(?:\.\d+)?)\s*(?P<hik>[kK千万]?)"
-)
+from openhire.verify.checks import RED_FLAGS, email_on_domain, red_flags_in  # noqa: E402,F401
 
 
 def _num(s: str, unit: str) -> int:

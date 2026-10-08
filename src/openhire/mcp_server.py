@@ -437,6 +437,72 @@ def refresh_index(company: str) -> dict:
 
 
 @mcp.tool(
+    title="Check an employer",
+    annotations=ToolAnnotations(title="Check an employer", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=True),
+)
+def check_employer(company: str | None = None, domain: str | None = None, posting_text: str | None = None) -> dict:
+    """Facts about one employer, each with a source and a time. Never a score or a verdict.
+
+    Use it when the user asks "is this company real / legit / what it says it is?" or is
+    about to apply somewhere they have never heard of. It answers with a checklist, not a
+    judgement: a company can fail an item and be fine (a young domain, an overseas site
+    with no ICP record) or pass every item and still waste the user's time. Relay the
+    items; do not total them, and do not call a company "safe" or "a scam" on this basis.
+
+    What runs for free, with nothing from the user:
+    * `in_index`: whether the employer's own system is in this index, how many postings
+      are live, the median days open, whether the posting dates are the employer system's
+      own or self-reported (`date_source`), whether the employer claimed its tenant. For an
+      employer we know but do not index (Feishu-hosted, 蔚来, or one that has ceased
+      operations) the item says that instead.
+    * `domain_age` (RDAP registration date; under 180 days is reported, not judged),
+      `site_history` (earliest Wayback Machine capture), `icp_on_homepage` (the ICP 备案号
+      the employer's own homepage carries, if any). These need the employer's own domain:
+      pass `domain` when the employer's careers page is on a vendor host.
+    * `posting_red_flags`: when the user pastes the posting text, the words recruitment
+      scams rely on (境外高薪, 包机票, 不限经验, 打字员, visa provided ...) are listed if
+      present. Absence proves nothing; presence is worth saying out loud.
+
+    What costs money and is therefore `pending_user` unless the user set their own key:
+    * `registry_record`: the company register (成立日期, 经营状态, 注册资本, 参保人数, 法定
+      代表人). The government site sits behind a captcha; 天眼查 sells it per call. With
+      `TIANYANCHA_API_KEY` set on the user's machine this tool fetches it once per call, paid
+      by the user's own 天眼查 account; the key and the lookup never reach us. Without it,
+      `pending_user[]` lists the ways: set the key, use a 天眼查 MCP the assistant already
+      has, or the free manual lookups (爱企查, 国家企业信用信息公示系统). Offer them; do not
+      invent the record.
+
+    Privacy: this tool sends the company's name or domain to RDAP, the Internet Archive and
+    the company's own site, and to 天眼查 only with the user's key. Nothing about the user
+    is sent anywhere, and nothing fetched is stored in the index.
+
+    Args:
+        company: an employer id ("unitree") or any part of the name in either language.
+            Ambiguous input is refused with the candidates, never guessed.
+        domain: the employer's own web domain ("unitree.com"), when the user has it or when
+            the company is not in the index. Either argument alone is enough.
+        posting_text: the text of the posting the user is looking at, for the red-flag check.
+
+    Returns: `checks[]` (id, label, status: verified | not_verified | unavailable |
+    not_applicable | pending_user, note, source, checked_at, plus the item's own fields),
+    `pending_user[]` with `how[]`, `summary`, `not_a_verdict`, `privacy`.
+    """
+    _await_index()
+
+    def _run() -> dict:
+        with session_scope() as s:
+            try:
+                return service.employer_check(s, company=company, domain=domain, posting_text=posting_text)
+            except OpenHireError as e:
+                return e.as_dict()
+
+    # Plain blocking HTTP calls (RDAP, Wayback, the employer's homepage): keep them off the
+    # server's event loop the same way refresh_index keeps the crawler off it.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(_run).result()
+
+
+@mcp.tool(
     title="Check watches",
     annotations=ToolAnnotations(title="Check watches", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )

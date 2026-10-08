@@ -605,6 +605,36 @@ def _print_check_results(res: dict) -> None:
         _maybe_star_hint()
 
 
+# --- check-company --------------------------------------------------------------
+@app.command(name="check-company", rich_help_panel=FIND_PANEL)
+def check_company(
+    company: str = typer.Argument(None, help="Employer id or any part of the name, either language."),
+    domain: str = typer.Option(None, "--domain", help="The employer's own web domain, e.g. unitree.com."),
+    jd: typer.FileText = typer.Option(None, "--jd", help="A file with the posting text, for the red-flag check."),
+    offline: bool = typer.Option(False, "--offline", help="Skip the network checks."),
+) -> None:
+    """Facts about one employer with sources and times: index, domain age, site history, ICP, register. Never a verdict."""
+    init_db()
+    _banner()
+    console.cmd(f"ohp check-company {company or ''}" + (f" --domain {domain}" if domain else ""))
+    text = jd.read() if jd else None
+    with session_scope() as s:
+        try:
+            res = service.employer_check(s, company=company, domain=domain, posting_text=text, run_network=not offline)
+        except OpenHireError as e:
+            console.error(e.code, e.message)
+            raise typer.Exit(2)
+    console.out(f"{res.get('company') or company or ''}  域名 {res.get('domain') or '（未知）'}")
+    mark = {"verified": "✓", "not_verified": "✗", "unavailable": "?", "not_applicable": "-", "pending_user": "…"}
+    for item in res["checks"]:
+        console.out(f"  {mark.get(item['status'], '?')} {item['label']}：{item['note']}  [{item['source']}]")
+    for p in res.get("pending_user", []):
+        console.note(f"待你补查：{p['label']}。{p['why_pending']}")
+        for how in p["how"]:
+            console.out(f"    - {how['steps']}")
+    console.note("这是带出处和时间的事实清单，不是对这家公司的判断；逐项看，不要加总。")
+
+
 # --- apply --------------------------------------------------------------------
 @app.command(rich_help_panel=FIND_PANEL)
 def apply(

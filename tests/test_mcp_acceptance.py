@@ -78,7 +78,7 @@ async def test_all_five_acceptance_scripts(seeded):
         tools = {t.name for t in (await client.list_tools()).tools}
         assert tools == {
             "search_jobs", "get_company_info", "watch_intent", "check_watches",
-            "authorize_application", "refresh_index",
+            "authorize_application", "refresh_index", "check_employer",
         }
 
         # --- Script 1: search remote Rust/K8s infra jobs ----------------------

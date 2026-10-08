@@ -112,7 +112,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.7.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -148,7 +148,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.7.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.0.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **Cursor / Claude Code** — or paste this to your agent: *"Install the MCP server at
@@ -192,7 +192,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.7.0", "serve"]`.
+matters: `"args": ["openhire==0.8.0", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -263,6 +263,7 @@ point `command` at that environment's `ohp` executable with `"args": ["serve"]`.
 | `check_watches` | Pull the matches that are new since your last check (client-pull; stdio has no push). |
 | `authorize_application` | One explicit confirmation per job. It records your authorization and returns the employer's **own** application URL — you apply as yourself. It **cannot** accept a résumé. |
 | `get_company_info` | Aggregate, anonymous trust signals for one employer (`ghost_score_avg`, `active_jobs`, `index_built_at`). Never any candidate data. |
+| `check_employer` | Facts about one employer with sources and times: whether its own system is in the index, domain age (RDAP), site history (Wayback), the ICP record on its homepage, scam red flags in a pasted posting, and the company register with **your own** 天眼查 key (`TIANYANCHA_API_KEY`, never ours). A checklist, never a score. |
 
 Optional, entirely local: `ohp init --scan <dir>` derives a **skill fingerprint** from your
 own repos. You never write a résumé; the code never leaves your machine — only an anonymous
@@ -362,6 +363,18 @@ abandoned; open 327 days but touched 13 days ago reads as a tended evergreen req
 
 None of these measure intent. A long-open role can equally mean hard-to-fill — treat the
 numbers as a reason to ask, not a verdict.
+
+### Is this employer what it says it is?
+
+`check_employer` (CLI: `ohp check-company 宇树 --domain unitree.com --jd posting.txt`) returns a
+checklist, each item `verified` / `not_verified` / `unavailable` / `not_applicable` /
+`pending_user` with its source and time: whether the employer's own system is in the index
+and what it shows, the domain's registration date, the earliest Wayback capture, the ICP
+备案号 on the homepage, and the recruitment-scam red flags in a posting you paste. The
+company register (成立日期, 经营状态, 参保人数) costs money: set `TIANYANCHA_API_KEY` on your
+own machine and the tool fetches it with your 天眼查 account, or follow the free manual
+links it lists. There is no total and no verdict on purpose: a young domain or a missing
+ICP record is a fact to weigh, not a sentence.
 
 ### Asking about one employer
 
