@@ -8,8 +8,11 @@ postings. Those employers cannot be indexed, so they cannot claim either. This a
 the smallest honest way in, and it exists under four conditions that keep it from turning
 this index into a job board:
 
-  1. Only an employer whose corporate identity was verified (a roster sent from the
-     corporate domain, the same proof a claim needs, never payment) gets an entry.
+  1. Only an employer whose corporate identity was verified gets an entry, and the
+     corporate email is only the first step: the registry record (gsxt), the ICP record
+     binding the domain to the legal entity, the domain's age and site history, a callback
+     to the number on the company's own site, and an industry footprint that predates the
+     request (scripts/verify_employer.py, reports/064). Never payment.
   2. Every row says what it is: `source` is `employer_self_reported`, and the posting
      date carries `date_signal: self_reported`, because the employer typed it. An ATS
      date is system-written and cannot be edited; this one can, and the row says so.
@@ -54,6 +57,11 @@ class SelfReportedEmployer:
     domain: str        # the corporate domain the roster was sent from (identity proof)
     careers_url: str   # the employer's own page a seeker can always be sent to
     verified_on: str   # ISO date the corporate identity was verified
+    # What was checked, by whom and when: the sentence scripts/verify_employer.py prints
+    # after the registry lookup (gsxt), the ICP record, the domain age, the site history
+    # and the callback to the company's own public number. A corporate email alone proves
+    # control of a domain, not that a company exists; this field is where the rest lives.
+    verification: str = ""
 
 
 # Declarative. An employer enters here only after the maintainer verified the corporate

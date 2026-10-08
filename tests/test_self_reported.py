@@ -36,6 +36,7 @@ def registered(monkeypatch):
     emp = sr.SelfReportedEmployer(
         slug=SLUG, name=ROSTER["name"], domain=ROSTER["domain"],
         careers_url=ROSTER["careers_url"], verified_on=ROSTER["verified_on"],
+        verification="test fixture: gsxt, ICP, domain age, callback all pretend",
     )
     monkeypatch.setitem(sr.SELF_REPORTED_EMPLOYERS, SLUG, emp)
     return emp
@@ -54,6 +55,10 @@ def test_seed_rows_are_derived_from_the_declared_employers():
     ]
     rows = [c for c in all_candidates() if c.vendor == "self_reported"]
     assert len(rows) == len(sr.SELF_REPORTED_EMPLOYERS)
+    # A declared employer must say what was verified; an empty field is a registration
+    # that skipped the ladder (reports/064).
+    for e in sr.SELF_REPORTED_EMPLOYERS.values():
+        assert e.verification.strip() and e.verified_on, e.slug
     assert candidate_count() == len(all_candidates())
 
 

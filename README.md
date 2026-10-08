@@ -281,7 +281,7 @@ domain — and **never by payment**. We answer within 3 business days, claiming 
 paid follow-up of any kind, and your proof is used to verify and then nothing else.
 
 No GitHub account? **Email gdchenhao@qq.com** with "Employer claim" and your company name in the
-subject — sending from your corporate domain is itself the verification — or have anyone
+subject — sending from your corporate domain is the first step of verification (enough for a claim; a self-reported roster is also checked against the company register, the ICP record and a callback to your public number) — or have anyone
 file the form on your behalf, since what we verify is the company and not the filer.
 没有 GitHub 账号？**直接发邮件到 gdchenhao@qq.com**，用贵公司企业邮箱发出来即完成身份核验。
 
@@ -289,7 +289,7 @@ No ATS, or on Feishu Recruitment? Then your postings are not in the index yet an
 nothing to claim: the index reads employers' own systems only. Three read-only, free ways in,
 none of which touch ranking. The simplest needs no IT staff: fill in
 [one spreadsheet](https://gzchenhao.github.io/openhire/openhire-岗位表.xlsx) and email it from
-your corporate domain; each posting is marked `employer_self_reported`, carries
+your corporate domain (we then check the company register, the ICP record, the domain's age and call the public number on your own site); each posting is marked `employer_self_reported`, carries
 `date_signal: self_reported`, and expires after 90 days unless you send the sheet again. The
 other two: grant the two read-only Feishu scopes (`hire:site:readonly`,
 `hire:site_job_post:readonly`), or put machine-readable postings on your own careers page

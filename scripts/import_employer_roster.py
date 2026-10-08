@@ -1,6 +1,6 @@
 """Turn an employer's spreadsheet into `employers/<slug>.json` (maintainer tool).
 
-Usage (after verifying the corporate identity of the sender, never before):
+Usage (after scripts/verify_employer.py and the manual steps it lists, never before):
 
     python scripts/import_employer_roster.py --xlsx "岗位表.xlsx" --slug example-robotics \
         --name "示例机器人 Example Robotics" --domain example-robotics.cn \
@@ -26,6 +26,29 @@ import sys
 
 COLUMNS = ["职位名称", "工作城市", "发布日期", "投递链接或投递邮箱", "薪资范围", "岗位描述"]
 REFUSED = ("手机", "微信", "联系人", "身份证", "电话")
+
+# The shapes recruitment scams take (the 缅北 playbook: a high-paid job abroad, flights and
+# board paid, no experience needed, "customer service" or "typist" roles, pay by the day).
+# A posting that matches any of these is refused outright, whatever the employer says; a
+# real robotics or autonomous-driving role never needs these words (reports/064).
+RED_FLAGS = (
+    "境外", "海外高薪", "柬埔寨", "缅甸", "缅北", "迪拜", "菲律宾", "包机票", "包吃住", "日结", "周结",
+    "高薪诚聘", "无需经验", "不限经验", "不限学历", "打字员", "网络推广", "博彩", "彩票", "电销",
+    "电话销售", "刷单", "急招", "签证办理", "护照", "出国务工", "月入过万", "轻松",
+    "no experience", "visa provided", "flights paid", "typing job", "daily pay",
+)
+
+
+def red_flags_in(*texts) -> list:
+    blob = " ".join(str(t or "") for t in texts).lower()
+    return [w for w in RED_FLAGS if w.lower() in blob]
+
+
+def email_on_domain(email: str, domain: str) -> bool:
+    """A published application address must be the company's own mailbox."""
+    host = email.rsplit("@", 1)[-1].strip().lower()
+    domain = domain.lower()
+    return bool(host) and (host == domain or host.endswith("." + domain))
 
 _SALARY = re.compile(
     r"(?P<lo>\d+(?:\.\d+)?)\s*(?P<lok>[kK千万]?)\s*(?:[-~～到至]|到)\s*(?P<hi>\d+(?:\.\d+)?)\s*(?P<hik>[kK千万]?)"
@@ -68,12 +91,16 @@ def _date(value) -> str | None:
         return None
 
 
-def row_to_posting(row: dict, slug: str) -> dict | None:
+def row_to_posting(row: dict, slug: str, domain: str = "") -> dict | None:
     """One sheet row -> one roster posting, or None (with a reason printed) when unusable."""
     title = re.sub(r"\s+", " ", str(row.get("职位名称") or "")).strip()
     posted = _date(row.get("发布日期"))
     if not title or not posted:
         print(f"  跳过：缺职位名称或发布日期 -> {row}", file=sys.stderr)
+        return None
+    flags = red_flags_in(title, row.get("岗位描述"), row.get("薪资范围"), row.get("工作城市"))
+    if flags:
+        print(f"  拒绝：「{title}」命中骗局招聘的特征词 {flags}", file=sys.stderr)
         return None
     contact = str(row.get("投递链接或投递邮箱") or "").strip()
     posting: dict = {
@@ -83,7 +110,10 @@ def row_to_posting(row: dict, slug: str) -> dict | None:
         "description": str(row.get("岗位描述") or "").strip(),
     }
     if "@" in contact and not contact.lower().startswith("http"):
-        posting["apply_email"] = contact
+        if domain and not email_on_domain(contact, domain):
+            print(f"  「{title}」的投递邮箱 {contact} 不在 {domain} 域名下，不收录该邮箱（候选人会被送到招聘页）", file=sys.stderr)
+        else:
+            posting["apply_email"] = contact
     elif contact:
         posting["apply_url"] = contact
     posting.update(parse_salary(row.get("薪资范围")))
@@ -94,14 +124,16 @@ def row_to_posting(row: dict, slug: str) -> dict | None:
 
 
 def build_roster(rows: list[dict], *, slug: str, name: str, domain: str,
-                 careers_url: str, verified_on: str) -> dict:
+                 careers_url: str, verified_on: str, verification: str = "") -> dict:
     for col in (c for r in rows for c in r):
         if any(bad in str(col) for bad in REFUSED):
             raise SystemExit(f"拒绝导入：表里有疑似个人联系方式的列「{col}」，岗位表只放岗位，不放人")
-    postings = [p for p in (row_to_posting(r, slug) for r in rows) if p]
+    if not verification.strip():
+        raise SystemExit("缺 --verification：先跑 scripts/verify_employer.py，把人工核过的那句话填进来")
+    postings = [p for p in (row_to_posting(r, slug, domain) for r in rows) if p]
     return {
         "id": slug, "name": name, "domain": domain, "careers_url": careers_url,
-        "verified_on": verified_on, "postings": postings,
+        "verified_on": verified_on, "verification": verification, "postings": postings,
     }
 
 
@@ -130,12 +162,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--domain", required=True)
     ap.add_argument("--careers-url", required=True)
     ap.add_argument("--verified-on", default=dt.date.today().isoformat())
+    ap.add_argument("--verification", required=True,
+                    help="what was checked, by whom and when (the sentence scripts/verify_employer.py prints)")
     ap.add_argument("--out-dir", default=pathlib.Path("employers"), type=pathlib.Path)
     a = ap.parse_args(argv)
     if not a.careers_url.startswith("https://"):
         raise SystemExit("careers_url 必须是 https")
     roster = build_roster(read_xlsx(a.xlsx), slug=a.slug, name=a.name, domain=a.domain,
-                          careers_url=a.careers_url, verified_on=a.verified_on)
+                          careers_url=a.careers_url, verified_on=a.verified_on,
+                          verification=a.verification)
     a.out_dir.mkdir(parents=True, exist_ok=True)
     out = a.out_dir / f"{a.slug}.json"
     out.write_text(json.dumps(roster, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

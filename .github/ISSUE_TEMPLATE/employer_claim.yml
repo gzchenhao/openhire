@@ -49,7 +49,8 @@ body:
 
         - **Email gdchenhao@qq.com** with "Employer claim" and your company name in the subject,
           answering the questions below in the body. Sending from your corporate domain is
-          itself the verification.
+          the first step of verification (enough for a claim; a self-reported roster is also
+          checked against the company register, the ICP record and a callback to your public number).
         - Have anyone file this form on your behalf — a colleague, an engineer, your agency —
           because what we verify is the *company's* identity, not the filer's account.
 
@@ -66,8 +67,11 @@ body:
 
         1. **Fill in one spreadsheet and email it from your corporate domain** (no IT staff
            needed): template at https://gzchenhao.github.io/openhire/openhire-岗位表.xlsx , sent to
-           gdchenhao@qq.com with "Job sheet + company name" in the subject. Each posting is marked
-           as self-reported and expires after 90 days; sending the sheet again renews it.
+           gdchenhao@qq.com with "Job sheet + company name" in the subject, with the 公司信息 sheet filled
+           in (company register number, ICP record, the public phone on your own site, two industry
+           footprints). The corporate email is only the first step: we check the register, the ICP
+           record, the domain's age and call the public number. Each posting is marked as
+           self-reported and expires after 90 days; sending the sheet again renews it.
         2. **Feishu Recruitment**: grant two read-only scopes on the Feishu open platform
            (`hire:site:readonly`, `hire:site_job_post:readonly`); they expose your published
            postings and nothing about candidates.
