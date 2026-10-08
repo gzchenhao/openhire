@@ -61,7 +61,9 @@ CLAUDE.md 在插件根目录不会被加载（它本来就是给我们自己看�
 **GitHub push webhook。** 选了这个选项后要在插件页点「Set up push updates」→「生成密钥」，页面一次性显示 webhook URL 和 secret，再填进仓库 Settings → Webhooks。
 我点到「生成密钥」时被权限分类器拦下（判定为写入密钥存储），按规矩不绕。
 **不做也没损失：** 目录每 6 小时自己检查一次 main；webhook 只是把「推送后几分钟被发现」换掉「最多等 6 小时」。
-领导想做的话：在那个 Chrome 标签页（我留着没关）点「生成密钥」，把 URL 和 secret 填进 https://github.com/gzchenhao/openhire/settings/hooks/new ，Content type 按页面要求选，事件只勾 push。
+提交后插件页显示「A webhook secret exists for this repository, but no delivery signed with it has arrived」：密钥已经在目录那边生成了，但从没显示给任何人（我没读到，页面也没再弹出来），按页面说法算「secret was lost」。
+领导想做的话：在那个 Chrome 标签页（我留着没关）→「设置」tab →「Updates」→「Rotate secret」，页面给出 webhook URL 和新 secret（只显示一次），
+填进 https://github.com/gzchenhao/openhire/settings/hooks/new ，Content type 按页面要求选，事件只勾 push。填完目录页的「更新」一栏会从「Waiting for GitHub's first delivery」变成已收到。
 
 ## 八、下一步
 
