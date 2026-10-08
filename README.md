@@ -23,7 +23,7 @@
 > question, not a verdict. [Claim your company](#for-employers-claim-your-tenant) — free,
 > no payment, ever — and say why in your own words, or ask us to remove you and we will,
 > without arguing.
-> 贵司被收录了、而且不是贵司提交的？[点这里认领](#for-employers-claim-your-tenant)，免费，
+> 贵公司被收录了、而且不是贵公司提交的？[点这里认领](#for-employers-claim-your-tenant)，免费，
 > 可以用自己的话解释，也可以直接要求我们移除。
 
 ## 三不原则 · Three things OpenHire never does
@@ -283,7 +283,7 @@ paid follow-up of any kind, and your proof is used to verify and then nothing el
 No GitHub account? **Email gdchenhao@qq.com** with "Employer claim" and your company name in the
 subject — sending from your corporate domain is itself the verification — or have anyone
 file the form on your behalf, since what we verify is the company and not the filer.
-没有 GitHub 账号？**直接发邮件到 gdchenhao@qq.com**，用贵司企业邮箱发出来即完成身份核验。
+没有 GitHub 账号？**直接发邮件到 gdchenhao@qq.com**，用贵公司企业邮箱发出来即完成身份核验。
 
 No ATS, or on Feishu Recruitment? Then your postings are not in the index yet and there is
 nothing to claim: the index reads employers' own systems only. Three read-only, free ways in,
@@ -292,7 +292,7 @@ none of which touch ranking: grant the two read-only Feishu scopes (`hire:site:r
 (schema.org `JobPosting` JSON-LD or a static JSON file) and send us the URL; or move to a
 publicly readable ATS. The claim form has a field for which of these fits you, and
 [the employer page](https://gzchenhao.github.io/openhire/employers.html) walks through all three.
-没有招聘系统或用飞书招聘？贵司岗位还不在索引里，三条只读免费的进来方式写在认领表单里：飞书只读授权、官网机器可读岗位页、或换一个可公开读取的招聘系统。
+没有招聘系统或用飞书招聘？贵公司岗位还不在索引里，三条只读免费的进来方式写在认领表单里：飞书只读授权、官网机器可读岗位页、或换一个可公开读取的招聘系统。
 
 A claim gets you:
 
