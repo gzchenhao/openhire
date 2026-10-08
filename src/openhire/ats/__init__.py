@@ -19,6 +19,7 @@ from .lever import LeverClient
 from .lixiang import LixiangClient
 from .moka import MokaClient
 from .nio import NioClient
+from .self_reported import SelfReportedClient
 
 _CLIENTS: dict[str, ATSClient] = {
     "greenhouse": GreenhouseClient(),
@@ -28,6 +29,8 @@ _CLIENTS: dict[str, ATSClient] = {
     "moka": MokaClient(),
     "lixiang": LixiangClient(),  # first-party employer mirror (理想汽车), one tenant
     "nio": NioClient(),
+    # Employer self-reported rosters, verified by corporate identity (ats/self_reported.py).
+    "self_reported": SelfReportedClient(),
 }
 
 
@@ -54,6 +57,7 @@ __all__ = [
     "LixiangClient",
     "MokaClient",
     "NioClient",
+    "SelfReportedClient",
     "canonical_apply_url",
     "get_client",
     "all_vendors",

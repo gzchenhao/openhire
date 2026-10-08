@@ -30,6 +30,17 @@ from .hashing import content_hash, normalize_title
 SOURCE_ATS = "ats_public_api"  # protocol field ②
 
 
+def source_for(company) -> str:
+    """Protocol field ② for a row of this employer: what kind of system it was read from.
+    An employer's self-reported roster is not a public ATS API and must not be labelled as
+    one (ats/self_reported.py)."""
+    from ..ats import self_reported
+
+    if getattr(company, "ats_vendor", None) == self_reported.VENDOR:
+        return self_reported.SOURCE
+    return SOURCE_ATS
+
+
 @dataclass
 class IngestStats:
     companies_crawled: int = 0
@@ -203,7 +214,7 @@ def _insert_new_job(
         relist_count=relist_count,
         ghost_score=compute_ghost_score(relist_count, age_anchor, now),  # ③
         response_sla_days=None,  # ④ — always NULL in v0.1
-        source=SOURCE_ATS,  # ②
+        source=source_for(company),  # ②
         apply_channel=rec.apply_channel,  # ⑤
         content_hash=chash,
     )

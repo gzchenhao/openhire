@@ -383,6 +383,29 @@ def role_group(company_id: str, title: str) -> str:
     return "rg_" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:8]
 
 
+def date_signal_for(job: Job, company: Company | None) -> str | None:
+    """The per-row caveat on datePosted, or None when the date is the employer's system's.
+
+    `self_reported`: the employer typed this date into a roster (ats/self_reported.py); an
+    ATS date is system-written and cannot be edited, this one can, and the row says so.
+    `not_reported_by_ats`: the source carries no date at all, so datePosted is the day this
+    index first saw the row.
+    """
+    if company is not None and getattr(company, "ats_vendor", None) == "self_reported":
+        return "self_reported" if job.posted_at is not None else "not_reported_by_ats"
+    return "not_reported_by_ats" if job.posted_at is None else None
+
+
+def _extra_apply_hosts(company: Company | None) -> set[str]:
+    """For a self-reported roster, the employer's own verified domain is the one host an
+    apply link may be on (ats/self_reported.py); every other vendor has fixed ATS hosts."""
+    if company is not None and getattr(company, "ats_vendor", None) == "self_reported":
+        from .ats.self_reported import trusted_hosts
+
+        return trusted_hosts(company.id)
+    return set()
+
+
 def job_posting(job: Job, company: Company | None, requested_skills: list[str], now: dt.datetime) -> dict:
     """schema.org/JobPosting + the five OpenHire fields (protocol contract)."""
     mq = match_quality(requested_skills, job.skills)
@@ -398,7 +421,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
     _sal_lo, _sal_hi, _sal_note = usable_salary(
         job.salary_min, job.salary_max, getattr(job, "salary_period", None)
     )
-    _apply_ok = apply_url_is_trusted(job.apply_channel)
+    _apply_ok = apply_url_is_trusted(job.apply_channel, extra_hosts=_extra_apply_hosts(company))
     return {
         "@type": "JobPosting",
         "job_id": job.id,
@@ -414,7 +437,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # then anchored on the day WE first saw the row, and a reader must not take them
         # for the employer's own date. Same shape as update_signal below, and same rule:
         # this names a limit of the source, not a fact about the employer.
-        **({"date_signal": "not_reported_by_ats"} if job.posted_at is None else {}),
+        **({"date_signal": _ds} if (_ds := date_signal_for(job, company)) else {}),
         "location": job.location,
         "remote_policy": job.remote_policy,
         "remote_scope": _rs,          # worldwide | region_locked | country_locked | null
@@ -1103,6 +1126,9 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         # False means no live row carries the employer's own posting date, so every
         # days_open here counts from first sight (per-row `date_signal`), a lower bound.
         "posting_dates_reported": int(active_jobs) > int(dates_missing),
+        # Present only for an employer whose roster is self-reported (ats/self_reported.py):
+        # the dates above are the employer's own typing, not an ATS's system clock.
+        **({"date_source": "employer_self_reported"} if company.ats_vendor == "self_reported" else {}),
         "postings_without_reported_date": int(dates_missing),
         "active_jobs": int(active_jobs),
         "claimed": bool(company.verified),

@@ -64,12 +64,16 @@ body:
         index yet, and there is nothing to claim: the index reads employers' own systems only.
         Three ways in, all read-only, all free, none of them touch ranking:
 
-        1. **Feishu Recruitment**: grant two read-only scopes on the Feishu open platform
+        1. **Fill in one spreadsheet and email it from your corporate domain** (no IT staff
+           needed): template at https://gzchenhao.github.io/openhire/openhire-岗位表.xlsx , sent to
+           gdchenhao@qq.com with "Job sheet + company name" in the subject. Each posting is marked
+           as self-reported and expires after 90 days; sending the sheet again renews it.
+        2. **Feishu Recruitment**: grant two read-only scopes on the Feishu open platform
            (`hire:site:readonly`, `hire:site_job_post:readonly`); they expose your published
            postings and nothing about candidates.
-        2. **Your own careers page**: add machine-readable postings to it (schema.org
-           `JobPosting` JSON-LD, or a static JSON file) and tell us the URL; we have a template.
-        3. **Move to a publicly readable ATS** (any of the five above) and send us the URL.
+        3. **Your own careers page** (if you have a web developer): add machine-readable postings
+           (schema.org `JobPosting` JSON-LD, or a static JSON file) and tell us the URL; or **move
+           to a publicly readable ATS** (any of the five above) and send us the URL.
 
         Pick where your postings live today in the next field and we answer along that path.
   - type: dropdown

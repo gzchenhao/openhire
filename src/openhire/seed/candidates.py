@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..ats.self_reported import SELF_REPORTED_EMPLOYERS
+
 
 @dataclass(frozen=True)
 class Candidate:
@@ -266,6 +268,12 @@ _LIXIANG = [
     ("social", "理想汽车 Li Auto", "lixiang"),
 ]
 
+# --- Employer self-reported rosters (ats/self_reported.py) ---------------------------------
+# The door for employers whose own system we cannot read (reports/060). Derived from the
+# adapter's registry so an employer is declared in exactly one place, after the maintainer
+# verified the corporate identity behind the roster. The tenant is our own slug.
+_SELF_REPORTED = [(e.slug, e.name) for e in SELF_REPORTED_EMPLOYERS.values()]
+
 
 def all_candidates() -> list[Candidate]:
     out: list[Candidate] = []
@@ -277,6 +285,7 @@ def all_candidates() -> list[Candidate]:
         ("moka", _MOKA),
         ("lixiang", _LIXIANG),
         ("nio", _NIO),
+        ("self_reported", _SELF_REPORTED),
     ):
         for row in rows:
             tenant, name = row[0], row[1]
@@ -292,4 +301,5 @@ def candidate_count() -> int:
         len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN) + len(_MOKA)
         + len(_LIXIANG)
         + len(_NIO)
+        + len(_SELF_REPORTED)
     )

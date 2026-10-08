@@ -13,6 +13,7 @@ import datetime as dt
 import html
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
@@ -62,7 +63,9 @@ def _apply_hosts(vendor: str, tenant: str) -> set[str]:
     return hosts
 
 
-def apply_url_is_trusted(url: str | None, vendor: str | None = None) -> bool:
+def apply_url_is_trusted(
+    url: str | None, vendor: str | None = None, extra_hosts: "Iterable[str]" = ()
+) -> bool:
     """Is this URL one we will hand to an agent, or open in the user's browser?
 
     `resolve_apply_channel` already only BUILDS canonical URLs, but nothing re-checked a
@@ -91,6 +94,12 @@ def apply_url_is_trusted(url: str | None, vendor: str | None = None) -> bool:
         known = set(ATS_APPLY_HOSTS.get(vendor, set()))
     if host in known:
         return True
+    # An employer's own domain, passed by the caller for a self-reported roster
+    # (ats/self_reported.py): the bare domain and its subdomains, nothing else.
+    for d in extra_hosts:
+        d = (d or "").lower()
+        if d and (host == d or host.endswith("." + d)):
+            return True
     for pattern in _PER_TENANT_HOST.values():
         domain = pattern.split(".", 1)[1].lower()  # "{tenant}.zhiye.com" -> "zhiye.com"
         if host == domain or host.endswith("." + domain):

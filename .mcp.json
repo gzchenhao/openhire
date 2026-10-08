@@ -3,7 +3,7 @@
     "openhire": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["openhire==0.6.9", "serve"]
+      "args": ["openhire==0.7.0", "serve"]
     }
   }
 }

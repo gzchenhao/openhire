@@ -669,9 +669,13 @@ def apply(
     # the user's machine. The URL came out of an employer's ATS response; if it is not on
     # a host we recognise, print it and let the user decide rather than launching it.
     from .ats import apply_url_is_trusted
+    from .ats.self_reported import trusted_hosts
 
     url = res["apply_channel"]
-    trusted = apply_url_is_trusted(url)
+    # A self-reported roster's apply link may be on the employer's own verified domain
+    # (ats/self_reported.py); every other vendor has fixed ATS hosts. Job ids are
+    # "<company_id>:<ats_job_id>", so the employer is the prefix.
+    trusted = apply_url_is_trusted(url, extra_hosts=trusted_hosts(str(job_id).split(":", 1)[0]))
     opened = False
     if not no_open and trusted:
         try:

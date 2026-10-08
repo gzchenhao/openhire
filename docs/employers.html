@@ -56,31 +56,27 @@ td,th{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left;ve
 不是我们挑的，是读不到：飞书的岗位接口要请求签名，我们视为访问控制、不绕；平台不是贵公司自己的系统，我们不读；
 自建页面多数没有机器可读的岗位数据。下面三条路，任选一条，都是只读、免费，十分钟。</p>
 
-<h2>四、三条路</h2>
+<h2>四、三条路，最简单的放第一条</h2>
 <ol>
-<li><b>飞书招聘：授权两个只读 scope。</b>在飞书开放平台给我们的应用授权
+<li><b>填一张表，用企业邮箱发给我们（不需要 IT 人员，两分钟）。</b>
+下载 <a href="openhire-岗位表.xlsx">岗位表（Excel）</a>，每行一个岗位，六列：职位名称、工作城市、发布日期、投递链接或投递邮箱、薪资范围（可空）、岗位描述。
+用贵公司企业邮箱把文件发到 <b>gdchenhao@qq.com</b>，主题写「岗位表 + 公司名」，正文留一个官网招聘页网址。
+企业邮箱发出来本身就是身份核验，不需要营业执照。3 个工作日内上线。<br>
+<span class="dim">三条规矩，先说在前面：每条岗位带「雇主自报」标记，发布日期按贵公司填的算，在架天数从它起算；每条岗位 90 天后自动下架，还在招就把表再发一次；
+投递链接只认贵公司自己网站上的 https 页面，没有的话我们把候选人送到贵公司招聘页，并在岗位里写明投递邮箱。</span></li>
+<li><b>飞书招聘：授权两个只读 scope（十分钟）。</b>在飞书开放平台给我们的应用授权
 <code>hire:site:readonly</code> 和 <code>hire:site_job_post:readonly</code>。它们只暴露贵公司已经公开的招聘站和岗位，
-不涉及任何候选人数据，撤销只要一下。</li>
-<li><b>官网自建页面：放一份机器可读的岗位数据。</b>在招聘页里加一段 schema.org <code>JobPosting</code> 的 JSON-LD
-（Google 招聘用的同一个标准），或者挂一个静态 JSON 文件，把网址告诉我们。模板：
-<pre>&lt;script type="application/ld+json"&gt;
-{
-  "@context": "https://schema.org",
-  "@type": "JobPosting",
-  "title": "感知算法工程师",
-  "datePosted": "2026-10-08",
-  "hiringOrganization": {"@type": "Organization", "name": "贵公司名称", "sameAs": "https://贵公司官网"},
-  "jobLocation": {"@type": "Place", "address": {"@type": "PostalAddress", "addressLocality": "北京", "addressCountry": "CN"}},
-  "description": "岗位描述……",
-  "url": "https://贵公司官网/careers/这个岗位的页面"
-}
-&lt;/script&gt;</pre>
-每个岗位一段，<code>datePosted</code> 写真实上线日。我们按这个日期算在架天数，并在数据里标明它是贵公司自报的。</li>
-<li><b>换到一个可公开读取的招聘系统。</b>上面五家任一，把招聘页网址告诉我们即可，其余不用做。</li>
+不涉及任何候选人数据，撤销只要一下。走这条路的岗位带的是贵公司系统里的真实发布日，不用再续期。</li>
+<li><b>有网站开发人员的话：在官网放机器可读的岗位数据。</b>在招聘页里加一段 schema.org <code>JobPosting</code> 的 JSON-LD
+（Google 招聘用的同一个标准），或者挂一个静态 JSON 文件，把网址告诉我们。模板和字段说明我们按需提供；
+这条路的好处是岗位更新不用再发表，我们定期读页面。</li>
 </ol>
+<p>用 Greenhouse、Lever、Ashby、北森、Moka 的雇主不用走这三条，多半已经在索引里，去
+<a href="https://github.com/gzchenhao/openhire#employers">仓库的雇主一节</a>认领即可。</p>
 
 <h2>五、怎么联系，多久回复</h2>
 <ul>
+<li>最简单：把 <a href="openhire-岗位表.xlsx">岗位表</a> 用企业邮箱发到 <b>gdchenhao@qq.com</b>，主题「岗位表 + 公司名」；</li>
 <li>GitHub 表单：<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml">雇主认领（中文）</a>，
 里面有一项「贵公司的岗位目前发布在哪里」，选了我们就按那条路回；</li>
 <li>没有 GitHub 账号：发邮件到 <b>gdchenhao@qq.com</b>，主题写「雇主认领 + 公司名」，用贵公司企业域名邮箱发出来本身就完成了身份核验；</li>

@@ -1,0 +1,47 @@
+{
+  "id": "example-robotics",
+  "name": "示例机器人 Example Robotics",
+  "domain": "example-robotics.cn",
+  "careers_url": "https://www.example-robotics.cn/careers",
+  "verified_on": "2026-10-08",
+  "postings": [
+    {
+      "id": "perception-sh",
+      "title": "感知算法工程师",
+      "location": "上海",
+      "posted_at": "2026-10-01",
+      "apply_url": "https://www.example-robotics.cn/careers/perception",
+      "salary_min": 25000,
+      "salary_max": 40000,
+      "salary_currency": "CNY",
+      "salary_period": "monthly",
+      "description": "负责多传感器融合与 BEV 感知模型开发。要求：3 年以上感知算法经验，熟悉 PyTorch。"
+    },
+    {
+      "title": "嵌入式软件工程师",
+      "location": "深圳",
+      "posted_at": "2026-09-20",
+      "apply_url": "https://jobs.somewhere-else.com/123",
+      "apply_email": "hr@example-robotics.cn",
+      "description": "负责机器人底层驱动与实时系统。"
+    },
+    {
+      "title": "运动控制算法工程师",
+      "location": "上海",
+      "posted_at": "2026-05-01",
+      "description": "过期的岗位：发布超过 90 天且未续期。"
+    },
+    {
+      "title": "机器人产品经理",
+      "location": "北京",
+      "posted_at": "2026-05-01",
+      "renewed_at": "2026-10-05",
+      "description": "续期过的岗位：发布日早，但雇主 10 月重新发了表。"
+    },
+    {
+      "title": "没有日期的岗位",
+      "location": "杭州",
+      "description": "没有 posted_at，不应入库。"
+    }
+  ]
+}
