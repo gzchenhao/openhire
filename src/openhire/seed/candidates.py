@@ -48,6 +48,10 @@ _GREENHOUSE = [
     ("botauto", "Bot Auto"),
     ("figureai", "Figure"),
     ("agilityrobotics", "Agility Robotics"),
+    # 2026-10-08 embodied-AI startups found by the SME careers-page survey (reports/060);
+    # each board answered the public API with its postings on that day.
+    ("skildai-careers", "Skild AI", "skildai"),
+    ("apptronik", "Apptronik"),
     ("carbonrobotics", "Carbon Robotics"),
     ("pathrobotics", "Path Robotics"),
     ("nebius", "Nebius"),
@@ -114,6 +118,7 @@ _LEVER = [
     ("zoox", "Zoox"),
     ("waabi", "Waabi"),
     ("dexterity", "Dexterity"),
+    ("field-ai", "Field AI", "fieldai"),  # 2026-10-08, see reports/060
     ("ambirobotics", "Ambi Robotics"),
 ]
 
@@ -128,6 +133,9 @@ _ASHBY = [
     ("temporal", "Temporal", "temporaltechnologies"),
     # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
     ("1x", "1X Technologies"),
+    # 2026-10-08 embodied-AI startups (reports/060), each verified live on the public board API.
+    ("dyna-robotics", "Dyna Robotics", "dynarobotics"),
+    ("generalist", "Generalist AI"),
     ("standardbots", "Standard Bots"),
     ("saronic", "Saronic"),
     ("cobot", "Collaborative Robotics"),
