@@ -6,9 +6,17 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.6.9 · 2026-10-08；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.7.0 · 2026-10-08；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.6.9）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.7.0）
+- **v0.7.0（2026-10-08，同日第二版，`reports/062`）：** **雇主自报岗位表**（`ats/self_reported.py`，来源 `employer_self_reported`）。
+  领导要「傻瓜式」：HR 填一张六列 Excel（`docs/openhire-岗位表.xlsx`）用企业邮箱发来，我核实身份后 `scripts/import_employer_roster.py` 转成 `employers/<slug>.json` 并在
+  `SELF_REPORTED_EMPLOYERS` 登记，适配器像读别家接口一样读它（raw.githubusercontent.com）。**四个条件写死在代码和测试里**：只收企业身份核实过的雇主；
+  每行 `source=employer_self_reported` + `date_signal=self_reported`（雇主自己填的日期，不是系统时钟），`get_company_info` 带 `date_source`；
+  发布日 / 续期日起 90 天自动下架，再发一次表才续；投递链接只信雇主自己域名的 https，否则送到我们核过的招聘页。排序、ghost_score、三条红线不动。
+  这是我当天早些时候说「不做自建发岗」的**有条件撤回**：有身份核验、有标记、有到期、无 UI 无排序无收费，它就不是岗位库。
+  雇主页 / 认领模板 / README 都把填表放第一条；**对外一律「贵公司」不写「贵司」**（领导 10-08 纠正，全仓库已改）。
+  发版细节同 0.6.9：`pip install -e . --no-deps` 两次、mcpb `npx -y @anthropic-ai/mcpb pack`、PYTHONUTF8=1 twine。
 - **v0.6.9（2026-10-08，`reports/060`、`reports/061`）：** 「已知未收录」登记表从 11 家到 19 家：穹彻智能、众擎（飞书）；云深处（只在 BOSS 直聘）、智平方、轻舟智航、鉴智、松延动力（官网无可读岗位列表：邮箱投递 / 飞书表单 / 纯 JS 壳 / robots 禁抓自家接口，我们遵守 robots）；
   **毫末智行「已停止运营」**（2025-11-29 停工通知，媒体报道；Moka 门户 2026-09-02 关停；haomo.ai 2026-10 跳无关站），**不给 opt-in**，提示句「告诉用户发生了什么，不要把人送去任何地方」。
   认领表单（中英）加「贵司的岗位目前发布在哪里」下拉和三条只读进入路径（飞书两个只读 scope / 官网机器可读页 / 换可公开读取的 ATS），README 同段。
