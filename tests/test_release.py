@@ -86,3 +86,16 @@ def test_plugin_mcp_configs_start_the_published_package():
     for name in (".mcp.json", "mcp.json"):
         cfg = _json(name)["mcpServers"]["openhire"]
         assert cfg["command"] == "uvx" and cfg["args"] == [f"openhire=={_declared()}", "serve"], name
+
+
+def test_uv_lock_pins_the_declared_version():
+    """The Anthropic directory wants pyproject.toml + uv.lock at the plugin root for the
+    Verified badge. A lock left over from before a version bump would pin the wrong
+    release, so after bumping run `uv lock` and commit the result."""
+    import re
+    from pathlib import Path
+
+    lock = (Path(__file__).resolve().parents[1] / "uv.lock").read_text(encoding="utf-8")
+    m = re.search(r'^name = "openhire"\nversion = "([^"]+)"', lock, re.M)
+    assert m, "uv.lock has no openhire entry; run `uv lock`"
+    assert m.group(1) == _declared(), "uv.lock is stale; run `uv lock` after bumping the version"

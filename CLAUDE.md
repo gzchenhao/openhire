@@ -64,7 +64,7 @@
   版本号一共**五处**：`pyproject.toml`、`server.json`（两处）、`mcpb/manifest.json`、**`mcpb/pyproject.toml`**、`README.md`。
   **2026-09-28 起再加四处插件清单**：`.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json`（plugins[0]）、`.cursor-plugin/plugin.json`、根目录 `plugin.json`（agent-plugins.org 标准）。
   **2026-10-08 起根目录 `.mcp.json` 和 `mcp.json` 也钉版本**（`uvx openhire==X serve`）：Anthropic 目录的检查把 `@latest` 判为阻塞项「Unpinned uvx launcher」。
-  发版时一条 `sed 's/0\.6\.x/0\.6\.y/g'` 把这**十一个**文件一起换；`tests/test_release.py` 全部钉死。插件图标 `.claude-plugin/icon.png`（512px，目录只在首次提交时采用）。
+  发版时一条 `sed 's/0\.6\.x/0\.6\.y/g'` 把这**十一个**文件一起换；**第十二处 `uv.lock` 不用 sed，bump 后跑 `uv lock` 重生成**（目录 Verified 徽章要 pyproject + uv.lock；单文件上限 256 KiB，现约 240 KB）；`tests/test_release.py` 全部钉死。插件图标 `.claude-plugin/icon.png`（512px，目录只在首次提交时采用）。
   **第五处是 2026-09-23 才发现的，而且是最要命的一处：** `.mcpb` 里跑的是 `uv run --directory <bundle> src/server.py`，
   真正装什么由 `mcpb/pyproject.toml` 的 `dependencies = ["openhire==X"]` 决定，manifest 里的版本号只是标签。
   v0.6.1 的 mcpb 标签写 0.6.1、依赖钉 0.5.1，**所有双击安装的用户一直在跑 0.5.1**。
@@ -93,7 +93,10 @@
   从 Registry 自动收录的有 mcpservers.org、mcpmarket.com、Glama；**PulseMCP 和 mcp.so 没有我们**（2026-09-28 核实，此前写「自动同步」是错的）。
 - **上架渠道全景（057，2026-09-28）：** 仓库本身已是 **Claude Code 插件市场**（`.claude-plugin/`，用户 `/plugin marketplace add gzchenhao/openhire` + `/plugin install openhire@openhire`，端到端实测过）、
   **Cursor 插件**（`.cursor-plugin/plugin.json`）和 **Agent Plugins 标准包**（根目录 `plugin.json` + `mcp.json`）。已提：火山引擎 `volcengine/mcp-server` PR #437、mcp.so 目录 `chatmcp/mcpso` issue #4473。
-  README 有 TRAE 一键导入链接。**要领导登录才能走的**：Anthropic 目录（claude.ai/directory/manage，插件包路径，旧 MCPB 表单已废弃）、Cursor Marketplace、cursor.directory、Smithery、LobeHub、AIBase；清单在 `drafts/listing-handoff-2026-09-28.md`。
+  README 有 TRAE 一键导入链接。**Anthropic 目录已提交（2026-10-08，`reports/058`）**：插件页 https://claude.ai/directory/manage/plugins/1a281d9a-66a9-437d-a666-5635047cc35a （领导 Max 账号登录才能看），等待安全扫描 + 人工审核（三类保留项，答复在 058 第四节）；审核邮件到领导 icloud 邮箱。
+  内置浏览器面板打不开 claude.ai，这类操作走 Chrome 扩展。接受目录条款那一勾每次都要领导在对话里明确说「可以」。push webhook 密钥要领导自己生成（分类器不让我碰密钥），不做也行，目录每 6 小时自查 main。
+  **仍要领导登录的**：Cursor Marketplace、cursor.directory、Smithery、LobeHub、AIBase；清单在 `drafts/listing-handoff-2026-09-28.md`。
+  **SECURITY.md + GitHub 私密漏洞报告（2026-10-08 开启）**：目录条款要求漏洞报告机制；报告落在仓库 Security → Advisories，领导邮箱收通知，承诺 3 天确认、14 天评估。
   **不可**：扣子 / 讯飞星辰 / ChatGPT Apps / 元器都要公网托管端点；百炼、千帆、华为云、豆包、TRAE 市场无第三方入口；Goose 停收，PulseMCP 停收，Continue 没了。
   **本机坑：** `~/.claude/plugins/known_marketplaces.json` 曾损坏成全零字节，任何 `claude plugin marketplace` 命令都报 JSON 错；已重置为 `{}`（备份 `.corrupt-20260928`）。
 - **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。

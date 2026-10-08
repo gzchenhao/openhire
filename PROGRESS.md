@@ -9,13 +9,19 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
-## 2026-10-08 · 观察期到期汇报；阮一峰周刊自荐已提；Anthropic 目录提交卡在浏览器
+## 2026-10-08 · 观察期到期汇报；阮一峰周刊自荐已提；Anthropic 目录已提交（Chrome 扩展）
 
 **已完成（证据）**
 - **观察期（09-19 到 10-03）结果：** GitHub issue 零条（`gh issue list` 空）；知乎通知只有赞同、关注和两条评论（一条简历服务广告、一条求职服务软广），没有任何雇主投诉、认领或移除要求；Downloads 没有新的体验报告；邮箱 `gdchenhao@qq.com` 我读不到，请领导自己看一眼。**要不要继续点名，待领导定**；我的建议见下。
 - **阮一峰《科技爱好者周刊》开源自荐已提交**（原计划 10-06/07，10-08 补提；周刊 10-07 起已复刊收 issue）。数字按 `numbers.json`（143 家）、雇主名用「小鹏汇天」不用「小鹏」、人设按规矩 2 改成「做智驾和具身方向的猎头，工具是和 AI 结对做出来的」。一票，不重提。
 - 每周快照 10-05 定时成功；六条上架申请（火山引擎 PR #437、mcp.so #4473、punkpeye #14921、Awesome-MCP-ZH #602、Docker #5055、Cline #2501）全部仍 OPEN，无回复；stars 7。
-- **Anthropic 目录：** 领导已用 Max 账号登录，portal 显示「0 份提交」和「提交新内容」入口。但内置浏览器一进 `/directory/manage/new/plugin` 就永久「加载中」，之后整个 claude.ai 域都打不开（`fetch` 立刻 Failed to fetch，而 claude.com、github.com、知乎、X 都正常），像是浏览器面板对 claude.ai 的站点许可被拒了。**待领导：在面板里重新允许 claude.ai，或自己点三下提交，或允许我用 Chrome 扩展。**
+- **Anthropic 目录：已提交（`reports/058`）。** 内置浏览器面板对 claude.ai 永久加载中，领导改授权 Chrome 扩展，在他的 Max 账号里走完五步。
+  首检一条阻塞项「Unpinned uvx launcher」：根目录 `.mcp.json` / `mcp.json` 改钉 `openhire==0.6.8`（版本号第十、十一处，`tests/test_release.py` 钉死）+ 补 `.claude-plugin/icon.png`，通过。
+  数据处理四题按事实：不读个人数据 / 不向声明外服务发数据 / 不留存 / 不面向 18 岁以下。四项合规声明（含接受目录条款）**先把条款要点报给领导，领导回「可以」后才勾**。
+  最终源 main @ 62bbee9，7 警告 15 政策保留项（pinned uvx、4 个 PNG、「用户机器凭据」10 处 = 维护者侧 `.env` 抽取 key，serve 不用），进人工审核。
+  插件页 https://claude.ai/directory/manage/plugins/1a281d9a-66a9-437d-a666-5635047cc35a ，状态「等待审核 → 正在扫描」，审核邮件到 haolu98@icloud.com。
+- **顺手补齐条款要求：** 仓库开启 GitHub 私密漏洞报告 + `SECURITY.md`（条款要漏洞报告机制，原来没有）；`uv.lock`（目录 Verified 徽章要 pyproject + uv.lock，58 包约 240 KB；**bump 后跑 `uv lock`**，新测试钉死版本一致）。
+- **留给领导（可选）：** push webhook 的「生成密钥」被我的权限分类器拦下（密钥存储写入），要领导自己点并填进仓库 Settings → Webhooks；不做则目录每 6 小时自查一次 main。
 
 **建议（点名）**
 - 14 天零反应，说明点名既没惹来投诉，也没带来认领。按 050 的定位（主句是底座、「幽灵」停用、中立即生命），我倾向于**保留月报页但停止在文案里点名具体雇主**，页面只按雇主自己的数据列数字；认领入口照旧。领导定。
