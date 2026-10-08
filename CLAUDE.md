@@ -63,7 +63,8 @@
   **往后每次改动用户可见行为，当天就要走完：PyPI → 打 tag → 建 Release → 挂 mcpb → 文案版本号同步。**
   版本号一共**五处**：`pyproject.toml`、`server.json`（两处）、`mcpb/manifest.json`、**`mcpb/pyproject.toml`**、`README.md`。
   **2026-09-28 起再加四处插件清单**：`.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json`（plugins[0]）、`.cursor-plugin/plugin.json`、根目录 `plugin.json`（agent-plugins.org 标准）。
-  发版时一条 `sed 's/0\.6\.x/0\.6\.y/g'` 把这九个文件一起换；`tests/test_release.py` 全部钉死。根目录 `mcp.json` / `.mcp.json` 不带版本号（`uvx openhire@latest`）。
+  **2026-10-08 起根目录 `.mcp.json` 和 `mcp.json` 也钉版本**（`uvx openhire==X serve`）：Anthropic 目录的检查把 `@latest` 判为阻塞项「Unpinned uvx launcher」。
+  发版时一条 `sed 's/0\.6\.x/0\.6\.y/g'` 把这**十一个**文件一起换；`tests/test_release.py` 全部钉死。插件图标 `.claude-plugin/icon.png`（512px，目录只在首次提交时采用）。
   **第五处是 2026-09-23 才发现的，而且是最要命的一处：** `.mcpb` 里跑的是 `uv run --directory <bundle> src/server.py`，
   真正装什么由 `mcpb/pyproject.toml` 的 `dependencies = ["openhire==X"]` 决定，manifest 里的版本号只是标签。
   v0.6.1 的 mcpb 标签写 0.6.1、依赖钉 0.5.1，**所有双击安装的用户一直在跑 0.5.1**。

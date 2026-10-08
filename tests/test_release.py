@@ -85,4 +85,4 @@ def test_plugin_mcp_configs_start_the_published_package():
     checkout, so a plugin install works on a machine that never cloned this repo."""
     for name in (".mcp.json", "mcp.json"):
         cfg = _json(name)["mcpServers"]["openhire"]
-        assert cfg["command"] == "uvx" and cfg["args"] == ["openhire@latest", "serve"], name
+        assert cfg["command"] == "uvx" and cfg["args"] == [f"openhire=={_declared()}", "serve"], name
