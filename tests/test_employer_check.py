@@ -201,6 +201,10 @@ def test_tool_is_registered_read_only_open_world_and_says_it_is_not_a_verdict():
     doc = " ".join((mcp_server.check_employer.__doc__ or "").split())
     for phrase in ("Never a score", "pending_user", "TIANYANCHA_API_KEY", "Nothing about the user"):
         assert phrase in doc, phrase
+    # 0.8.1: an assistant that already has a 天眼查 tool (Tencent WorkBuddy ships one) fills
+    # the register itself; it must not send the user off to buy a key first.
+    assert "use it to fill `registry_record` directly instead of sending the user off to apply for a key" in doc
+    assert "WorkBuddy" in doc
     assert EM_DASH not in doc and EM_DASH not in employer_check.NOT_A_VERDICT
     assert set(t.inputSchema["properties"]) == {"company", "domain", "posting_text"}
 

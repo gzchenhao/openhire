@@ -470,7 +470,9 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
       by the user's own 天眼查 account; the key and the lookup never reach us. Without it,
       `pending_user[]` lists the ways: set the key, use a 天眼查 MCP the assistant already
       has, or the free manual lookups (爱企查, 国家企业信用信息公示系统). Offer them; do not
-      invent the record.
+      invent the record. If the assistant already has a 天眼查 tool or connector (for
+      example the one built into Tencent WorkBuddy), use it to fill `registry_record`
+      directly instead of sending the user off to apply for a key.
 
     Privacy: this tool sends the company's name or domain to RDAP, the Internet Archive and
     the company's own site, and to 天眼查 only with the user's key. Nothing about the user
