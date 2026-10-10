@@ -1,26 +1,27 @@
-# Build and publish one release: PyPI (Trusted Publishing), the .mcpb bundle, the GitHub Release.
+# Release when the version on main changes: test, tag, PyPI (Trusted Publishing), .mcpb, GitHub Release.
 #
-# Why this exists (reports/066): releases ran from the maintainer's Windows machine with a
-# PyPI token in %USERPROFILE%\.pypirc. That blocks releasing from a Claude Code cloud
-# session, because the cloud's network secrets are never attached to pypi.org requests,
-# and putting the token in a plain environment variable breaks the rule that keys stay in
-# the password manager. PyPI Trusted Publishing removes the token: this workflow proves it
-# is gzchenhao/openhire's release.yml (OIDC), the same way publish-mcp-registry.yml does.
+# Why this exists (reports/066, 067): releases ran from the maintainer's Windows machine with a
+# PyPI token in %USERPROFILE%\.pypirc. Claude Code cloud sessions cannot do that: network
+# secrets are never attached to pypi.org, and the cloud's GitHub proxy refuses tag pushes and
+# workflow dispatches (only branch pushes go through). So the trigger is the one thing every
+# session can do, a push to main, and the gate is the version number: a push that changes
+# pyproject's version to one with no tag yet is a release. Nothing else publishes.
 #
-# One-time setup on PyPI (the maintainer, logged in): project openhire → Publishing →
-# Add a trusted publisher → GitHub; owner gzchenhao, repository openhire, workflow
-# release.yml, environment pypi.
+# PyPI side (done 2026-10-10): project openhire → Publishing → GitHub trusted publisher,
+# owner gzchenhao, repository openhire, workflow release.yml, environment pypi.
+# No token is stored anywhere. The MCP Registry workflow runs after this one succeeds.
 #
-# Manual for now (Actions → Release → Run workflow, give the tag). Once one run has
-# succeeded, it can take over from the local twine upload and get a tag trigger; the
-# MCP Registry workflow must then run after it, since the Registry checks PyPI.
+# Manual run (Actions → Release → Run workflow) re-releases an existing tag, e.g. to retry.
 name: Release
 
 on:
+  push:
+    branches: [main]
+    paths: [pyproject.toml]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to release, e.g. v0.8.1 (must already be pushed)"
+        description: "Existing tag to (re)release, e.g. v0.8.1"
         required: true
 
 jobs:
@@ -29,50 +30,82 @@ jobs:
     permissions:
       contents: read
     outputs:
+      release: ${{ steps.v.outputs.release }}
       version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
+      sha: ${{ steps.v.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.tag || github.sha }}
+          fetch-depth: 0
+
+      - name: Is this a release? (new version on main, or a manual run naming its tag)
+        id: v
+        run: |
+          v=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          tag="v$v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            test "${{ inputs.tag }}" = "$tag" || { echo "tag ${{ inputs.tag }} != pyproject $tag"; exit 1; }
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          elif git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists: pyproject changed but the version did not. Nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-python@v5
+        if: steps.v.outputs.release == 'true'
         with:
           python-version: "3.11"
 
       - uses: actions/setup-node@v4
+        if: steps.v.outputs.release == 'true'
         with:
           node-version: "20"
 
-      - name: The tag must equal pyproject's version, and the bundle must pin it
-        id: v
+      - name: The bundle must install the version it claims
+        if: steps.v.outputs.release == 'true'
+        run: grep -q "\"openhire==${{ steps.v.outputs.version }}\"" mcpb/pyproject.toml || { echo "mcpb/pyproject.toml does not pin openhire==${{ steps.v.outputs.version }}"; exit 1; }
+
+      - name: Full test suite (nothing is published unless it is green)
+        if: steps.v.outputs.release == 'true'
         run: |
-          v=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          test "${{ inputs.tag }}" = "v$v" || { echo "tag ${{ inputs.tag }} != pyproject v$v"; exit 1; }
-          grep -q "\"openhire==$v\"" mcpb/pyproject.toml || { echo "mcpb/pyproject.toml does not pin openhire==$v"; exit 1; }
-          echo "version=$v" >> "$GITHUB_OUTPUT"
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pytest -q
 
       - name: Build sdist and wheel
+        if: steps.v.outputs.release == 'true'
         run: |
           python -m pip install --upgrade build
           python -m build
 
       - name: Pack the .mcpb and check what it installs
+        if: steps.v.outputs.release == 'true'
         run: |
           mkdir -p bundle
           npx -y @anthropic-ai/mcpb pack mcpb "bundle/openhire-${{ steps.v.outputs.version }}.mcpb"
           unzip -p "bundle/openhire-${{ steps.v.outputs.version }}.mcpb" pyproject.toml | grep -q "\"openhire==${{ steps.v.outputs.version }}\""
 
       - uses: actions/upload-artifact@v4
+        if: steps.v.outputs.release == 'true'
         with:
           name: dist
           path: dist/
       - uses: actions/upload-artifact@v4
+        if: steps.v.outputs.release == 'true'
         with:
           name: bundle
           path: bundle/
 
   pypi:
     needs: build
+    if: needs.build.outputs.release == 'true'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -93,17 +126,18 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: ${{ inputs.tag }}
+      TAG: ${{ needs.build.outputs.tag }}
+      SHA: ${{ needs.build.outputs.sha }}
       FILE: bundle/openhire-${{ needs.build.outputs.version }}.mcpb
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: bundle
           path: bundle/
-      - name: Create the release or attach the bundle to it
+      - name: Create the tag and release, or attach the bundle to an existing release
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "$FILE" --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" "$FILE" --generate-notes --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" "$FILE" --target "$SHA" --title "$TAG" --generate-notes --repo "$GITHUB_REPOSITORY"
           fi

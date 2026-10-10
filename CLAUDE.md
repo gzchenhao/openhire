@@ -6,14 +6,15 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.1 · 2026-10-10 代码在 main，tag / PyPI / Release 待发；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.1 · 2026-10-10；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.0；v0.8.1 的 tag 待领导本机推）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.1）
 - **v0.8.1（2026-10-10，云端会话首次发版，`reports/067`）：** 只改说明和版本号：`check_employer` 工具说明加一句「助手已有天眼查工具或连接器（如腾讯 WorkBuddy 内置的）
   就直接用它补 `registry_record`，不要让用户去申请 key」，`tests/test_employer_check.py` 钉住。提交 `5bd4298` 在 main，全量 599 通过。
-  **云端会话推不了 tag**（git 代理只放行分支推送，REST API 建 tag 也 403，上报不绕）：tag 由领导本机打并推（`git fetch origin main && git tag -a v0.8.1 -m v0.8.1 5bd4298 && git push origin v0.8.1`）。
-  **PyPI / mcpb / GitHub Release 改由 `release.yml` 发**（Actions → Release → Run workflow，填 tag；可信发布，不再 twine），首次成功后改成推 tag 自动触发并让 Registry 排在它后面；
-  在那之前「Publish to MCP Registry」被 tag 自动触发会因 PyPI 没货失败，Release 跑完后 Re-run 它。云端跑测试：`uv sync --frozen --extra dev` + `uv pip install openpyxl`（不在 dev extra，少它跳过 1 条）。
+  **云端会话推不了 tag 也触发不了工作流**（git 代理只放行分支推送，REST API 建 tag 403，上报不绕）。0.8.1 由本机推 tag、手动跑 `release.yml` 发出：
+  PyPI 可信发布首发成功（wheel + sdist）、mcpb 挂 Release、Registry 重跑成功。随后 `release.yml` **改为 main 上 `pyproject.toml` 版本号变了就自动发**：
+  先跑全量测试，绿了才发 PyPI，再由 Actions 自己建 tag 和 Release；版本号没变的推送直接跳过。Registry 改为在 Release 成功后跑（`workflow_run`），已是最新则跳过。
+  openpyxl 进了 dev extra（`uv lock` 已重生成），云端 `pip install -e ".[dev]"` 就是 599 全绿。
 - **v0.8.0（2026-10-08，同日第三版，`reports/065`）：** 求职者一键企业背景查证 **`check_employer`**（CLI `ohp check-company`）。返回**查证清单**不是分数：
   每项五种状态（verified / not_verified / unavailable / not_applicable / pending_user）带来源与时间，结尾写明「不是判断」。免费项：索引里的在架数 / 中位在架天数 / 发布日来源 / 认领、
   或「已知未收录 + 原因」、或「已停止运营」；RDAP 域名注册日期；档案馆首次抓取；首页备案号；JD 红线词。付费项工商登记走天眼查 OpenAPI，**用求职者自己的 `TIANYANCHA_API_KEY`**（放在他机器上，我们看不到 key 也看不到他查谁），
@@ -147,7 +148,7 @@
   `drafts/`（gitignored，宣传文案与任务书），它镜像在私有仓库 **https://github.com/gzchenhao/openhire-private** ，
   用 `.venv/Scripts/python.exe scripts/backup_drafts.py` 同步（幂等；检测到 `.env` 等密钥形态文件会拒绝执行）。
   `.env` / API key **永不进任何仓库**（含私有），存密码管理器。**唯一例外（领导 2026-10-10 定，`reports/066`）：DeepSeek key 可以存成 Claude Code 云端环境的「网络密钥」（会话看不到明文，只附到 api.deepseek.com），由领导自己粘贴；PyPI 改走 `.github/workflows/release.yml` 可信发布，token 不进云端。**`dist/`、`.tools/`、本地 DB 均可重建，不必备份。
-- 再发新版流程（2026-10-10 起）：bump 十二处版本（含 `uv lock`）→ 全量测试 → 提交推 main → **本机**打 tag 并推（云端推不了）→ Actions 跑 Release（PyPI 可信发布 + mcpb + GitHub Release）→ Re-run「Publish to MCP Registry」。不再 twine，README `mcp-name` 保持不变。
+- 再发新版流程（2026-10-10 起，云端和本机一样）：bump 十二处版本（含 `uv lock`）→ 全量测试 → 提交推 main。**到此为止**：Actions 的 Release 看到新版本号会自己测、发 PyPI（可信发布）、打 tag、挂 mcpb、建 Release，然后 Registry 自动跟上。不要手动推 tag（会和 Actions 建的 tag 冲突），不再 twine，README `mcp-name` 保持不变。发完用 `curl -s https://pypi.org/pypi/openhire/json` 核对版本。
 
 ## 常设工作制度（持续遵守）
 

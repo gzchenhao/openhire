@@ -7,39 +7,58 @@
 # namespace requires. No stored token, nothing to expire, nothing to rotate.
 #
 # Publishes whatever version server.json declares, so bump it in the same commit as the
-# PyPI release. Run it manually (Actions → Run workflow) or let a v* tag trigger it.
+# PyPI release. Since 0.8.1 it runs after the Release workflow succeeds (the Registry checks
+# that the version is on PyPI, so a tag-push trigger raced PyPI and failed), or manually.
 name: Publish to MCP Registry
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
 
 jobs:
   publish:
+    # After Release: only when it succeeded. A Release run for a push that did not change the
+    # version also "succeeds" with its publishing jobs skipped; the first step below sees the
+    # registry already serving this version and the rest is skipped.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write # required for the OIDC token used by `login github-oidc`
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Already published?
+        id: seen
+        run: |
+          want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")
+          got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" | python3 -c "import json,sys;v=[s['server']['version'] for s in json.load(sys.stdin).get('servers',[]) if s['_meta']['io.modelcontextprotocol.registry/official'].get('isLatest')];print(v[0] if v else 'none')" || echo none)
+          echo "server.json=$want registry-isLatest=$got"
+          if [ "$want" = "$got" ]; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Install mcp-publisher
+        if: steps.seen.outputs.done != 'true'
         run: |
           curl -sSL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.0/mcp-publisher_linux_amd64.tar.gz" \
             | tar xz mcp-publisher
           ./mcp-publisher --version
 
       - name: Validate server.json
+        if: steps.seen.outputs.done != 'true'
         run: ./mcp-publisher validate
 
       - name: Publish
+        if: steps.seen.outputs.done != 'true'
         run: |
           ./mcp-publisher login github-oidc
           ./mcp-publisher publish
 
       - name: Verify the registry now serves this version
+        if: steps.seen.outputs.done != 'true'
         run: |
           # The search returns EVERY published version, oldest first — so match on the
           # entry flagged isLatest rather than taking servers[0], which is the old one.

@@ -110,3 +110,9 @@ def test_release_workflow_publishes_to_pypi_without_a_stored_token():
     assert "id-token: write" in wf
     assert "password:" not in wf
     assert "secrets." not in wf
+    # reports/067: cloud sessions can push branches but not tags, so the release trigger is a
+    # version change on main, and nothing is published unless the full suite is green first.
+    assert "branches: [main]" in wf and "python -m pytest" in wf
+    assert wf.index("python -m pytest") < wf.index("python -m build")
+    reg = (ROOT / ".github" / "workflows" / "publish-mcp-registry.yml").read_text(encoding="utf-8")
+    assert "workflow_run:" in reg and "workflows: [Release]" in reg and "tags:" not in reg

@@ -25,7 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.1"]
-dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "openpyxl>=3.1"]
 
 [project.scripts]
 ohp = "openhire.cli:app"
