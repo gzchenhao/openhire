@@ -4,7 +4,7 @@
 
 ## 📌 待办（不急，等有空再做）
 
-- **企业背景查证（已发 0.8.0，`reports/065`）：** 下一步只剩两件：拿一个真天眼查 key 实测客户端；看评论区有没有人要更多查证项（司法、行政处罚、经营异常），按需求加。
+- **企业背景查证（0.8.0 `reports/065`；0.8.1 说明补「助手有天眼查工具就自己补」`reports/067`）：** 下一步只剩两件：拿一个真天眼查 key 实测客户端；看评论区有没有人要更多查证项（司法、行政处罚、经营异常），按需求加。
 
 - **无 ATS 中小雇主：** 抽样后结论改为「不做 JSON-LD 适配器；美国补种子（已做）；国内进 `not_indexed.py` 登记 + 认领模板加 opt-in 选项（0.6.9）」，见 `reports/060`。
 
@@ -12,6 +12,25 @@
   号已注册（`gzchenhao`），但**两次踩到 Discord 新号风控**，第一个号被警告。领导决定暂缓，由本人操作、不自动化。
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
+
+## 2026-10-10 · 云端会话首次开工：0.8.1 代码部分已在 main，tag 要领导本机推；PyPI 可信发布就位
+
+**已完成（证据：全量 599 通过；提交 `5bd4298` 在 `origin/main`）**
+- **云端环境（`reports/066`）：** 环境 OpenHire（自定义网络 13 个域名 + 默认软件源）；DeepSeek key 由领导自己粘成网络密钥（只附到 api.deepseek.com，会话看不到明文）；PyPI 已加可信发布者（`release.yml`，环境 `pypi`）；`.github/workflows/release.yml` 写好，目前手动触发；新测试钉死工作流里不许出现 PyPI 密码或密钥。
+- **0.8.1 代码部分（`reports/067`，在云端会话里做）：** `check_employer` 工具说明加一句「助手已有天眼查工具或连接器（如腾讯 WorkBuddy 内置的）就直接用它补 `registry_record`，不要让用户去申请 key」；`tests/test_employer_check.py` 钉住这句；十二处版本号 0.8.1（含 `uv lock`）。全量 599 通过。提交 `5bd4298` 已推到 main。
+- **云端推不了 tag：** 会话的 git 代理只放行分支推送，`git push origin v0.8.1` 和 REST API 建 tag 都是 403（「Write access to this GitHub API path is not permitted through this proxy」）。本地 tag 已打，远端要领导在本机推：`git fetch origin main && git tag -a v0.8.1 -m v0.8.1 5bd4298 && git push origin v0.8.1`。
+- 云端跑测试：`uv sync --frozen --extra dev`；`openpyxl` 不在 dev extra 里，少它跳过 1 条（岗位表导入测试），`uv pip install openpyxl` 后 599 全绿。
+- 开工巡查：GitHub issue 零条；邮箱 / 知乎 / Downloads 云端看不到，请领导自己看。
+
+**下一步（发版剩余，按顺序）**
+1. 领导本机推 tag v0.8.1（上面那条命令）。
+2. Actions → Release → Run workflow，填 `v0.8.1`：PyPI（可信发布）→ mcpb → GitHub Release 一次走完，不再 twine。首次成功后再把它改成推 tag 自动触发、让 Registry 排在它后面。
+3. tag 一推，「Publish to MCP Registry」会自动跑，PyPI 还没有 0.8.1 时预期失败；第 2 步成功后在 Actions 里 Re-run 一次。
+4. 发完在 X 发一条（本机会话）。
+
+**待领导确认**
+- 要不要我直接触发 Release 工作流（发 PyPI 不可撤回，没擅自跑）。
+- 要不要把 `openpyxl` 加进 `pyproject.toml` 的 dev extra（下一次 bump 时顺手）。
 
 ## 2026-10-08 · 观察期到期汇报；阮一峰周刊自荐已提；Anthropic 目录已提交；0.6.9 当天发出
 
