@@ -99,3 +99,14 @@ def test_uv_lock_pins_the_declared_version():
     m = re.search(r'^name = "openhire"\nversion = "([^"]+)"', lock, re.M)
     assert m, "uv.lock has no openhire entry; run `uv lock`"
     assert m.group(1) == _declared(), "uv.lock is stale; run `uv lock` after bumping the version"
+
+
+def test_release_workflow_publishes_to_pypi_without_a_stored_token():
+    """reports/066: PyPI goes through Trusted Publishing (OIDC), so a release can run from
+    a cloud session or Actions with no token anywhere. A `password:` or a PyPI secret
+    creeping back into the workflow would undo that."""
+    wf = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    assert "pypa/gh-action-pypi-publish" in wf
+    assert "id-token: write" in wf
+    assert "password:" not in wf
+    assert "secrets." not in wf
