@@ -1695,3 +1695,146 @@ def employer_check(
         query=query, index_facts=index_facts, known_not_indexed=known,
         domain=resolved_domain, posting_text=posting_text, run_network=run_network,
     )
+
+
+# --- read any employer's board on demand (reports/069) ------------------------------------
+# A seeker's market is wider than this index's three sectors. Any employer whose careers
+# page sits on a vendor the adapters already read can be read live for the seeker, with
+# nothing stored: the same request the weekly crawl makes, once per board per
+# BOARD_CACHE_TTL_MINUTES per server process so a chatty client never hammers a vendor.
+BOARD_CACHE_TTL_MINUTES = 15
+_BOARD_CACHE: dict[tuple[str, str], tuple[dt.datetime, Any]] = {}
+BOARD_READ_NOTE = (
+    "Read live from the employer's own board and not stored in this index: no skills, no "
+    "ghost_score and no relist history, because those need repeated observation. datePosted "
+    "and days_open are the board's own where it reports them; date_signal says when it does not."
+)
+BOARD_READ_PRIVACY = (
+    "This read sent only the board's tenant to the vendor's public endpoint, the same request "
+    "the weekly crawl makes. Nothing about you was sent, and nothing read was stored."
+)
+
+
+def _fetch_board(vendor: str, tenant: str):
+    """One live read of a board. The network call lives in pipeline.crawler, never in this
+    module (tests/test_three_nos.py: nothing in the apply path can call out)."""
+    from .pipeline.crawler import fetch_board
+
+    return fetch_board(vendor, tenant)
+
+
+def _board_posting(rec, now: dt.datetime) -> dict:
+    posted = _aware(rec.posted_at) if rec.posted_at else None
+    updated = _aware(rec.updated_at) if rec.updated_at else None
+    scope, regions = classify_remote(rec.remote_hint, rec.location)
+    out = {
+        "ats_job_id": rec.ats_job_id,
+        "title": rec.title,
+        "location": rec.location,
+        "remote_policy": rec.remote_hint or "unknown",
+        "remote_scope": scope,
+        "eligible_regions": regions,
+        "datePosted": posted.date().isoformat() if posted else None,
+        "days_open": (now - posted).days if posted else None,
+        "date_signal": "ats_reported" if posted else "not_reported_by_ats",
+        "updated_at": updated.isoformat() if updated else None,
+        "days_since_update": (now - updated).days if updated else None,
+        "apply_channel": rec.apply_channel,
+        "description_excerpt": (rec.description_raw or "")[:400],
+        "description_chars": len(rec.description_raw or ""),
+    }
+    if rec.salary_min or rec.salary_max:
+        out.update(salary_min=rec.salary_min, salary_max=rec.salary_max,
+                   salary_currency=rec.salary_currency, salary_period=rec.salary_period)
+    return out
+
+
+def read_board(
+    session: Session,
+    url: str,
+    location: str | None = None,
+    title: str | list[str] | None = None,
+    limit: int = 30,
+    offset: int = 0,
+    now: dt.datetime | None = None,
+    fetch=None,
+    cache_ttl_minutes: int = BOARD_CACHE_TTL_MINUTES,
+) -> dict:
+    """Read one employer's public board live, whether or not the employer is indexed.
+
+    `url` is the careers URL as the seeker pasted it; `ats.boards.detect_board` turns it
+    into the (vendor, tenant) the adapter takes, or refuses it with the reason (a Feishu
+    portal, Workday, a job site). The board's postings come back with the same honest date
+    semantics as the index (the board's own date or `not_reported_by_ats`) and a direct
+    apply link on the employer's own tenant; nothing is written to the index. A board that
+    does not answer is reported as such, never as a fact about the employer.
+    """
+    from .ats import get_client
+    from .ats.boards import BoardNotSupported, detect_board
+
+    now = _now(now)
+    try:
+        vendor, tenant = detect_board(url)
+    except BoardNotSupported as e:
+        raise OpenHireError("ERR_UNSUPPORTED_BOARD", f"[{e.reason}] {e.hint}") from None
+    if limit < 1:
+        raise OpenHireError("ERR_BAD_PAGE", "limit must be at least 1.")
+    offset = max(0, int(offset or 0))
+
+    key = (vendor, tenant)
+    cached = _BOARD_CACHE.get(key)
+    if cached and now - cached[0] < dt.timedelta(minutes=cache_ttl_minutes):
+        fetched_at, result = cached
+        from_cache = True
+    else:
+        result = (fetch or _fetch_board)(vendor, tenant)
+        fetched_at, from_cache = now, False
+        if result.ok:
+            _BOARD_CACHE[key] = (fetched_at, result)
+
+    company = session.execute(
+        select(Company).where(Company.ats_vendor == vendor, Company.ats_tenant == tenant)
+    ).scalars().first()
+    out = {
+        "@type": "BoardRead",
+        "vendor": vendor,
+        "tenant": tenant,
+        "careers_url": get_client(vendor).careers_url(tenant),
+        "source": "ats_public_api",
+        "stored": False,
+        "fetched_at": fetched_at.isoformat(timespec="seconds"),
+        "from_cache": from_cache,
+        "ok": bool(result.ok),
+        "status": result.status,
+        "error": result.error,
+        "in_index": {"company_id": company.id, "name": company.name} if company else None,
+        "count_on_board": result.count if result.ok else 0,
+        "total_matching": 0,
+        "postings": [],
+        "truncated": False,
+        "note": BOARD_READ_NOTE,
+        "privacy": BOARD_READ_PRIVACY,
+    }
+    if company:
+        out["hint"] = (f"{company.name} is in this index as {company.id}: search_jobs(company=\"{company.id}\") "
+                       "carries skills, ghost_score, relist history and watches for it; this live read does not.")
+    if not result.ok:
+        out["hint"] = (f"The board did not answer (HTTP {result.status}, {result.error or 'no detail'}); "
+                       "nothing about the employer follows from that. Open the careers page yourself.")
+        return out
+
+    terms = title_terms(title)
+    aliases = [a.casefold() for a in location_aliases(location)] if location else []
+    rows = []
+    for rec in result.records:
+        if aliases and not any(a in (rec.location or "").casefold() for a in aliases):
+            continue
+        if terms and not title_matches(rec.title, terms):
+            continue
+        rows.append(rec)
+    rows.sort(key=lambda r: (r.posted_at is None, -_aware(r.posted_at).timestamp() if r.posted_at else 0))
+    page = rows[offset:offset + limit]
+    out["total_matching"] = len(rows)
+    out["truncated"] = offset + len(page) < len(rows)
+    out["postings"] = [_board_posting(rec, now) for rec in page]
+    return out

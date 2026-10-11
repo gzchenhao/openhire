@@ -41,6 +41,9 @@ refuses to install any snapshot whose user-state tables are non-empty.
   Archive (web.archive.org) and the company's own homepage, and to 天眼查's API only when you set
   `TIANYANCHA_API_KEY` on your own machine (your account pays, your machine holds the key, we never
   see either). Nothing about you is sent, and nothing fetched is stored in the index or snapshot.
+- `read_board` (v0.8.3) sends only the board's tenant (the part of a careers URL after the
+  vendor's host) to that vendor's public endpoint, the same request the weekly crawl makes.
+  Nothing about you is sent, and nothing read is stored.
 - We do not use analytics, tracking pixels, advertising SDKs or telemetry of any kind.
 - We never sell, share or transfer data to third parties. There is no data to sell.
 

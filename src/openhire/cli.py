@@ -636,6 +636,39 @@ def check_company(
     console.note("这是带出处和时间的事实清单，不是对这家公司的判断；逐项看，不要加总。")
 
 
+# --- read-board -------------------------------------------------------------------
+@app.command(name="read-board", rich_help_panel=FIND_PANEL)
+def read_board(
+    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森."),
+    location: str = typer.Option(None, "--location", help="Only postings whose location contains this (either language)."),
+    title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. partner,ecosystem / 招聘,hr."),
+    limit: int = typer.Option(30, "--limit", help="How many to print."),
+) -> None:
+    """Read one employer's public board live, indexed or not, any sector. Nothing is stored."""
+    init_db()
+    _banner()
+    console.cmd(f"ohp read-board {url}" + (f" --location {location}" if location else "") + (f" --title {title}" if title else ""))
+    terms = [t.strip() for t in title.split(",") if t.strip()] if title else None
+    with session_scope() as s:
+        try:
+            res = service.read_board(s, url=url, location=location, title=terms, limit=limit)
+        except OpenHireError as e:
+            console.error(e.code, e.message)
+            raise typer.Exit(2)
+    where = f"索引里有：{res['in_index']['company_id']}" if res["in_index"] else "不在索引里，现读"
+    if not res["ok"]:
+        console.error("board", f"{res['vendor']}:{res['tenant']} 没有答复（HTTP {res['status']}，{res.get('error') or ''}）；这说明不了雇主什么")
+        raise typer.Exit(1)
+    console.out(f"{res['vendor']}:{res['tenant']}  板上 {res['count_on_board']} 条，匹配 {res['total_matching']} 条（{where}）")
+    for p in res["postings"]:
+        age = f"{p['days_open']} 天" if p["days_open"] is not None else "板上无日期"
+        console.out(f"  {p['datePosted'] or '----------'}  {age:>8}  {p['title']}  [{p['location'] or ''}]")
+        console.out(f"      {p['apply_channel']}")
+    if res["truncated"]:
+        console.note(f"还有 {res['total_matching'] - len(res['postings'])} 条没打印，加 --limit。")
+    console.note(res["note"])
+
+
 # --- apply --------------------------------------------------------------------
 @app.command(rich_help_panel=FIND_PANEL)
 def apply(

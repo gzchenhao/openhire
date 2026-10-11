@@ -37,7 +37,9 @@ mcp = FastMCP(
         "the live index (results carry verified_at, ghost_score and apply_channel); "
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; authorize_application to record an "
-        "authorized, employer-direct application. Never pass a résumé, file, name, email or "
+        "authorized, employer-direct application; read_board to read any employer's public "
+        "board live (Greenhouse, Lever, Ashby, Moka, 北森, any sector) when the employer is not "
+        "in the index, with nothing stored. Never pass a résumé, file, name, email or "
         "phone to any tool. ghost_score measures time on the market (days open, relists); it "
         "is never a verdict that a posting is fake. Tell the user what was measured (open N "
         "days, last touched M days ago, or that the ATS reports no such date) and do not call "
@@ -510,6 +512,63 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
 
     # Plain blocking HTTP calls (RDAP, Wayback, the employer's homepage): keep them off the
     # server's event loop the same way refresh_index keeps the crawler off it.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(_run).result()
+
+
+@mcp.tool(
+    title="Read an employer's board",
+    annotations=ToolAnnotations(title="Read an employer's board", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=True),
+)
+def read_board(url: str, location: str | None = None, title: list[str] | None = None, limit: int = 30, offset: int = 0) -> dict:
+    """Read one employer's public job board live, whether or not the employer is in this index.
+
+    Use it when the user names an employer this index does not carry (search_jobs returned
+    the empty-result object, or the employer is outside AI infra, autonomous driving and
+    embodied AI) and has, or can find on the employer's careers page, a board URL on a
+    vendor this index knows how to read: Greenhouse (job-boards.greenhouse.io/<board>),
+    Lever (jobs.lever.co/<site>), Ashby (jobs.ashbyhq.com/<board>), Moka
+    (app.mokahr.com/apply/<org>/<siteId>) or 北森 (<tenant>.zhiye.com). Any sector.
+
+    What you get: the board's own postings with title, location, the board's own posting
+    date and `days_open` where it reports one (`date_signal: not_reported_by_ats` otherwise),
+    a direct apply link on the employer's own tenant, and a description excerpt. What you
+    do not get: skills, ghost_score, relist history or watches, which need repeated
+    observation; and nothing is stored. If the employer turns out to be in the index the
+    result says so and search_jobs is the richer source.
+
+    Refused with ERR_UNSUPPORTED_BOARD, with the reason: a Feishu Hire / Lark portal
+    (request signatures, an access control this index never bypasses), Workday,
+    SuccessFactors, Taleo, iCIMS, LinkedIn, JobsDB or BOSS直聘. Tell the user to open that
+    page themselves; never look for another way in.
+
+    Politeness: one live read per board per 15 minutes per server process (a repeat within
+    that window is answered from memory, `from_cache: true`), with the same request headers
+    as the weekly crawl. A board that does not answer is reported as such, never as a fact
+    about the employer.
+
+    Privacy: sends only the board's tenant to the vendor's public endpoint. Nothing about the
+    user is sent anywhere, and nothing read is stored.
+
+    Args:
+        url: the careers or board URL as the user pasted it.
+        location: only postings whose location text contains this, in either language
+            (香港 = Hong Kong = HK, 广州 reaches 天河区).
+        title: words in the job title, any match ("hr" reaches HR, HRBP, recruiter, talent
+            acquisition); the filter for roles no skill tag names.
+        limit / offset: page through `total_matching` (newest posting date first, undated last).
+    """
+    _await_index()
+
+    def _run() -> dict:
+        with session_scope() as s:
+            try:
+                return service.read_board(s, url=url, location=location, title=title, limit=limit, offset=offset)
+            except OpenHireError as e:
+                return e.as_dict()
+
+    # The adapters are async and run their own loop; keep that off the server's loop the
+    # same way refresh_index keeps the crawler off it.
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
         return ex.submit(_run).result()
 

@@ -56,3 +56,25 @@ async def fetch_all(
         await asyncio.gather(*(one(c) for c in companies))
 
     return results
+
+
+def fetch_board(vendor: str, tenant: str) -> FetchResult:
+    """One live read of one board for `service.read_board` (reports/069): the crawler's own
+    client settings and headers, one tenant, no database. Works whether or not the calling
+    thread already runs an event loop (the MCP server does; the CLI may), by running the
+    read on a private loop in a worker thread when it must."""
+    headers = {"User-Agent": config.USER_AGENT, "Accept": "application/json"}
+    timeout = httpx.Timeout(config.HTTP_TIMEOUT_SECONDS)
+
+    async def _go() -> FetchResult:
+        async with httpx.AsyncClient(timeout=timeout, headers=headers, follow_redirects=True) as client:
+            return await get_client(vendor).fetch(client, tenant)
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(_go())
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(lambda: asyncio.run(_go())).result()
