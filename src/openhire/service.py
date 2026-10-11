@@ -1150,8 +1150,12 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
 
 _WATCH_FILTER_KEYS = (
     "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
-    "title",
+    "title", "board_url",
 )
+# A board watch (reports/070) reads one employer's public board live on every pull, so the
+# only filters that mean anything on it are the ones a live read can apply.
+_BOARD_WATCH_KEYS = frozenset({"board_url", "location", "title"})
+_SEEN_CAP = 5000
 
 
 def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
@@ -1194,6 +1198,24 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
         # Stored as typed; the alias expansion happens at match time, so a watch on 广州
         # registered today also reaches a 天河区 row posted next week.
         allowed["location"] = str(filters["location"]).strip()
+    if filters.get("board_url"):
+        from .ats.boards import BoardNotSupported, detect_board
+
+        url = str(filters["board_url"]).strip()
+        try:
+            vendor, tenant = detect_board(url)
+        except BoardNotSupported as e:
+            raise OpenHireError("ERR_UNSUPPORTED_BOARD", f"[{e.reason}] {e.hint}") from None
+        extra = sorted(set(allowed) - _BOARD_WATCH_KEYS)
+        if extra:
+            raise OpenHireError(
+                "ERR_BAD_QUERY",
+                f"A board watch reads the employer's board live, which carries no skills, salary or "
+                f"role_family: it takes only location and title. Drop {extra}, or register a separate "
+                "index watch for them.",
+            )
+        allowed["board_url"] = url
+        allowed["board"] = {"vendor": vendor, "tenant": tenant}
     return allowed
 
 
@@ -1300,6 +1322,11 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         # only jobs first seen strictly after the last notification (the increment).
         since = _aware(w.last_notified_at)
         f = w.filters or {}
+        if f.get("board_url"):
+            entry = _check_board_watch(session, w, f, since, now)
+            total_new += len(entry["new_matches"])
+            results.append(entry)
+            continue
         # Rank the WHOLE standing set, then page it. The old call asked for 20 and then
         # marked the watch notified: everything past row 20 was reported never, and on a
         # broad first pull those 20 were an alphabetical slice, not the best matches.
@@ -1352,6 +1379,43 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         )
         w.last_notified_at = now
     return {"fingerprint": fingerprint, "watches": len(watches), "new_matches": total_new, "results": results}
+
+
+def _check_board_watch(session: Session, w: Watch, f: dict, since: dt.datetime | None, now: dt.datetime) -> dict:
+    """One pull of a board watch (reports/070): read the board live, report what appeared
+    since the last pull and what disappeared, remember what is on it now. A board that does
+    not answer leaves the remembered set alone, so nothing is reported closed by accident."""
+    seen: dict[str, str] = dict(f.get("_seen") or {})
+    base = {"watch_id": w.watch_id, "board_url": f["board_url"], "board": f.get("board"),
+            "since": since.isoformat() if since else None, "new_matches": [], "closed_since_last": []}
+    try:
+        board = read_board(session, url=f["board_url"], location=f.get("location"), title=f.get("title"),
+                           limit=100_000, now=now)
+    except OpenHireError as e:
+        return {**base, "board_error": e.as_dict(), "note": "这次没有读到板，已见清单不变"}
+    if not board["ok"]:
+        return {**base, "board_error": {"status": board["status"], "error": board["error"]},
+                "hint": board.get("hint"), "note": "板没有答复，已见清单不变，不把任何岗位报为已关闭"}
+    current = {p["ats_job_id"]: p for p in board["postings"]}
+    new = [p for pid, p in current.items() if pid not in seen]
+    closed = [{"ats_job_id": pid, "title": title} for pid, title in seen.items() if pid not in current]
+    first = since is None and not seen
+    remembered = {pid: p["title"] for pid, p in current.items()}
+    if len(remembered) > _SEEN_CAP:
+        remembered = dict(list(remembered.items())[:_SEEN_CAP])
+    w.filters = {**f, "_seen": remembered}
+    w.last_notified_at = now
+    return {
+        **base,
+        "is_first_pull": first,
+        "total_matching": board["total_matching"],
+        "new_matches": new[:MAX_PAGE_SIZE],
+        "truncated": len(new) > MAX_PAGE_SIZE,
+        "closed_since_last": closed,
+        "baseline": ("Everything on this board matching the watch right now; later pulls report only "
+                     "postings that appeared or disappeared since.") if first else None,
+        "note": BOARD_READ_NOTE,
+    }
 
 
 # --- apply (refuses résumés) --------------------------------------------------

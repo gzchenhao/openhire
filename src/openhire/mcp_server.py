@@ -377,6 +377,13 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     whose stated pay is below the floor. Pay is stated mostly where law requires it (US
     postings on Greenhouse/Lever/Ashby), so a watch that needs a number will lean US.
 
+    A board watch: pass `board_url` (a Greenhouse / Lever / Ashby / Moka / 北森 careers URL,
+    as for read_board) with optional `location` and `title` and nothing else; check_watches
+    then reads that board live on every pull and reports what appeared and what
+    disappeared since the last pull. This is how an employer outside the index is watched.
+    Not combinable with company, skills, remote, min_salary or role_family; a closed
+    portal (Feishu, Workday, a job site) is refused with the reason.
+
     Returns { watch_id, status, fingerprint, existing_watches, fingerprint_notice }.
     `existing_watches` > 0 means this fingerprint was already in use; if those watches are
     not yours, pick a longer random fingerprint.
@@ -464,6 +471,12 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
     * `posting_red_flags`: when the user pastes the posting text, the words recruitment
       scams rely on (境外高薪, 包机票, 不限经验, 打字员, visa provided ...) are listed if
       present. Absence proves nothing; presence is worth saying out loud.
+    * `sanctions_screen`: the OFAC SDN and consolidated sanctions lists, downloaded to the
+      user's machine at most once a day and matched against the company's name there (the
+      name is sent nowhere). A match names the entry, list and programme; it is a reason
+      to read the entry, not a verdict, since names collide. A live company registration
+      proves little on its own: Prince Group's Hong Kong companies were on the register
+      the day they were sanctioned.
 
     What costs money and is therefore `pending_user` unless the user set their own key:
     * `registry_record`: the company register (成立日期, 经营状态, 注册资本, 参保人数, 法定
@@ -582,6 +595,10 @@ def check_watches(fingerprint: str) -> dict:
 
     stdio has no server push, so clients pull: call this at the start of a session.
     Returns the new matches per watch and advances each watch's last-notified marker.
+    A board watch (registered with board_url) is read live here: its entry carries
+    `new_matches` (appeared on the board since the last pull), `closed_since_last` (gone
+    from the board) and `total_matching`; a board that does not answer comes back as
+    `board_error` and nothing is marked closed on its account.
 
     The FIRST pull on a watch returns everything matching it, not an increment: nothing
     has been reported for that watch before, so the whole standing set is new to the user.

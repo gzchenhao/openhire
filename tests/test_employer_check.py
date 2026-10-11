@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from openhire import mcp_server, service
 from openhire.db.models import Base, Company, Job
 from openhire.errors import OpenHireError
-from openhire.verify import checks, employer_check, tianyancha
+from openhire.verify import checks, employer_check, sanctions, tianyancha
 
 UTC = dt.timezone.utc
 NOW = dt.datetime(2026, 10, 8, tzinfo=UTC)
@@ -62,6 +62,8 @@ def no_network(monkeypatch):
     monkeypatch.setattr(checks, "wayback_first_capture", lambda d: {"status": "verified", "first_capture": "2018-05-01", "age_days": 2900, "note": "首次抓取 2018-05-01"})
     monkeypatch.setattr(checks, "homepage_check", lambda d, icp=None, name=None: {"status": "verified", "icp_on_page": ["京ICP备12345678号"], "name_on_page": True, "note": "首页页脚有备案号"})
     monkeypatch.setattr(tianyancha, "fetch_baseinfo", lambda name, key=None: {"status": "pending_user", "note": "没有 TIANYANCHA_API_KEY"})
+    monkeypatch.setattr(sanctions, "screen", lambda name, aliases=(), allow_network=True, lists=None: {
+        "status": "verified", "note": "没有同名条目", "source": "stub", "matches": []})
 
 
 def _run(session, **kw):
@@ -75,6 +77,7 @@ def test_indexed_employer_on_a_vendor_board_has_facts_but_no_domain_to_check(ses
     assert by["in_index"]["status"] == "verified"
     assert by["in_index"]["active_jobs"] == 3 and by["in_index"]["posting_dates_reported"] is True
     assert by["domain"]["status"] == "not_applicable" and "domain" in by["domain"]["note"]
+    assert by["sanctions_screen"]["status"] == "verified" and by["sanctions_screen"]["matches"] == []
     assert by["registry_record"]["status"] == "pending_user"
     assert res["pending_user"][0]["id"] == "registry_record"
     ways = [h["way"] for h in res["pending_user"][0]["how"]]
@@ -252,7 +255,7 @@ def test_tool_is_registered_read_only_open_world_and_says_it_is_not_a_verdict():
     t = tools["check_employer"]
     assert t.annotations.readOnlyHint is True and t.annotations.openWorldHint is True
     doc = " ".join((mcp_server.check_employer.__doc__ or "").split())
-    for phrase in ("Never a score", "pending_user", "TIANYANCHA_API_KEY", "Nothing about the user"):
+    for phrase in ("Never a score", "pending_user", "TIANYANCHA_API_KEY", "Nothing about the user", "sanctions_screen"):
         assert phrase in doc, phrase
     # 0.8.1: an assistant that already has a 天眼查 tool (Tencent WorkBuddy ships one) fills
     # the register itself; it must not send the user off to buy a key first.

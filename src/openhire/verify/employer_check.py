@@ -15,7 +15,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import Callable
 
-from . import checks, tianyancha
+from . import checks, sanctions, tianyancha
 
 NOT_A_VERDICT = (
     "These are facts with sources and times, not a judgement of the employer. A company "
@@ -57,6 +57,7 @@ def build_checklist(
     domain_age_fn: Callable[[str], dict] | None = None,
     wayback_fn: Callable[[str], dict] | None = None,
     register_fn: Callable[[str], dict] | None = None,
+    sanctions_fn: Callable[..., dict] | None = None,
 ) -> dict:
     """Assemble the checklist. Network functions are injectable so tests stay hermetic;
     the defaults are looked up at call time so a monkeypatched module attribute is seen."""
@@ -64,6 +65,7 @@ def build_checklist(
     domain_age_fn = domain_age_fn or checks.domain_age
     wayback_fn = wayback_fn or checks.wayback_first_capture
     register_fn = register_fn or tianyancha.fetch_baseinfo
+    sanctions_fn = sanctions_fn or sanctions.screen
     items: list[dict] = []
     pending: list[dict] = []
     name = (index_facts or {}).get("company") or (known_not_indexed or {}).get("name") or query.get("company")
@@ -131,6 +133,19 @@ def build_checklist(
                            ("命中：" + "、".join(flags) + "。这些词在真实的智驾 / 具身 / AI 基础设施岗位里几乎不会出现") if flags
                            else "没有命中境外高薪、包机票、不限经验、打字员这类特征词",
                            source="OpenHire red-flag list (reports/064)", flags=flags))
+
+    # 3b. Sanctions lists, matched on this machine (reports/070): a live registration proved
+    # nothing about Prince Group's eleven Hong Kong companies; the OFAC designation did.
+    if ceased:
+        items.append(_item("sanctions_screen", "制裁名单", "not_applicable", "公司已停止运营", source="n/a"))
+    elif not name:
+        items.append(_item("sanctions_screen", "制裁名单", "not_applicable", "没有公司名可比对", source="n/a"))
+    else:
+        s = sanctions_fn(name, aliases=(), allow_network=run_network)
+        items.append(_item("sanctions_screen", "制裁名单（OFAC SDN 与综合名单，下载到本机后本机比对）",
+                           s.get("status", "unavailable"), s.get("note", ""),
+                           source=s.get("source", sanctions.SOURCE), matches=s.get("matches", []),
+                           reason=s.get("reason"), lists_downloaded=s.get("downloaded")))
 
     # 4. The company register: the seeker's own key, or the ways to get it.
     if ceased:

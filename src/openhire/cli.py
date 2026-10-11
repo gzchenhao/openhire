@@ -613,18 +613,28 @@ def check_company(
     jd: typer.FileText = typer.Option(None, "--jd", help="A file with the posting text, for the red-flag check."),
     job: str = typer.Option(None, "--job", help="A job id from search: the employer and the posting text come from the index."),
     offline: bool = typer.Option(False, "--offline", help="Skip the network checks."),
+    as_json: bool = typer.Option(False, "--json", help="Print the raw result as JSON (for scripts/run_local_tasks.py)."),
 ) -> None:
-    """Facts about one employer with sources and times: index, domain age, site history, ICP, register. Never a verdict."""
+    """Facts about one employer with sources and times: index, domain age, site history, ICP, sanctions, register. Never a verdict."""
+    import json as _json
+
     init_db()
-    _banner()
-    console.cmd(f"ohp check-company {company or ''}" + (f" --domain {domain}" if domain else "") + (f" --job {job}" if job else ""))
+    if not as_json:
+        _banner()
+        console.cmd(f"ohp check-company {company or ''}" + (f" --domain {domain}" if domain else "") + (f" --job {job}" if job else ""))
     text = jd.read() if jd else None
     with session_scope() as s:
         try:
             res = service.employer_check(s, company=company, domain=domain, posting_text=text, run_network=not offline, job_id=job)
         except OpenHireError as e:
-            console.error(e.code, e.message)
+            if as_json:
+                print(_json.dumps(e.as_dict(), ensure_ascii=False))
+            else:
+                console.error(e.code, e.message)
             raise typer.Exit(2)
+    if as_json:
+        print(_json.dumps(res, ensure_ascii=False, indent=2, default=str))
+        return
     console.out(f"{res.get('company') or company or ''}  域名 {res.get('domain') or '（未知）'}")
     mark = {"verified": "✓", "not_verified": "✗", "unavailable": "?", "not_applicable": "-", "pending_user": "…"}
     for item in res["checks"]:
@@ -643,18 +653,28 @@ def read_board(
     location: str = typer.Option(None, "--location", help="Only postings whose location contains this (either language)."),
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. partner,ecosystem / 招聘,hr."),
     limit: int = typer.Option(30, "--limit", help="How many to print."),
+    as_json: bool = typer.Option(False, "--json", help="Print the raw result as JSON (for scripts/run_local_tasks.py)."),
 ) -> None:
     """Read one employer's public board live, indexed or not, any sector. Nothing is stored."""
+    import json as _json
+
     init_db()
-    _banner()
-    console.cmd(f"ohp read-board {url}" + (f" --location {location}" if location else "") + (f" --title {title}" if title else ""))
+    if not as_json:
+        _banner()
+        console.cmd(f"ohp read-board {url}" + (f" --location {location}" if location else "") + (f" --title {title}" if title else ""))
     terms = [t.strip() for t in title.split(",") if t.strip()] if title else None
     with session_scope() as s:
         try:
             res = service.read_board(s, url=url, location=location, title=terms, limit=limit)
         except OpenHireError as e:
-            console.error(e.code, e.message)
+            if as_json:
+                print(_json.dumps(e.as_dict(), ensure_ascii=False))
+            else:
+                console.error(e.code, e.message)
             raise typer.Exit(2)
+    if as_json:
+        print(_json.dumps(res, ensure_ascii=False, indent=2, default=str))
+        return
     where = f"索引里有：{res['in_index']['company_id']}" if res["in_index"] else "不在索引里，现读"
     if not res["ok"]:
         console.error("board", f"{res['vendor']}:{res['tenant']} 没有答复（HTTP {res['status']}，{res.get('error') or ''}）；这说明不了雇主什么")

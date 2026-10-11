@@ -112,7 +112,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.3.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.4.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -148,7 +148,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.3.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.4.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **Cursor / Claude Code** — or paste this to your agent: *"Install the MCP server at
@@ -192,7 +192,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.3", "serve"]`.
+matters: `"args": ["openhire==0.8.4", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -378,6 +378,9 @@ set `TIANYANCHA_API_KEY` on your own machine and the tool fetches it with your �
 account, or follow the free manual links it lists; for a Hong Kong or overseas employer
 those are the HK Companies Registry e-Services search, the HK Police Scameter (a phone
 number, URL or receiving account against the police scam database) and OpenCorporates.
+It also screens the name against the OFAC SDN and consolidated sanctions lists, downloaded
+to your machine daily and matched locally, because a live registration proves little on its
+own: Prince Group's Hong Kong companies were on the register the day they were sanctioned.
 There is no total and no verdict on purpose: a young domain or a missing ICP record is a
 fact to weigh, not a sentence. An `unavailable` item says whether the source was reached
 and had no record, or whether this query never reached it (`reason: network`), because a
@@ -396,6 +399,9 @@ watches, because those need repeated observation, and nothing is stored. A Feish
 portal, Workday, SuccessFactors, LinkedIn or a job site is refused with the reason: those
 are access controls or other people's sites, and this index never looks for another way in.
 One live read per board per 15 minutes per server process; a repeat is answered from memory.
+A board can also be watched: `watch_intent` with `board_url` (plus `location` / `title`)
+makes `check_watches` read it live on every pull and report what appeared and what
+disappeared since the last pull.
 
 ### Asking about one employer
 
