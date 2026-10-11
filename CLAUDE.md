@@ -6,9 +6,15 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.2 · 2026-10-11；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.3 · 2026-10-11；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.2 由 Actions 建）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.3 由 Actions 建）
+- **v0.8.3（2026-10-11，云端会话，`reports/069`）：** 领导把求职目标改为「香港注册雇主、地点不限」（续签高才通），索引三个行业装不下，于是加 **`read_board`**（CLI `ohp read-board <url>`）：
+  贴招聘页 URL 现读雇主自己的板（Greenhouse / Lever / Ashby / Moka / 北森，任何行业，索引内外都行），板自己的日期与在架天数、雇主租户上的投递链接、`location` / `title` 过滤；
+  **不入库**、无 skills / ghost_score / 重挂 / watch；封闭门户（飞书、Workday、SuccessFactors、Taleo、iCIMS、LinkedIn、JobsDB、BOSS）`ERR_UNSUPPORTED_BOARD` 加原因，不找别的路；
+  每进程每板 15 分钟一次现读；板不答复不缓存、不说成雇主的问题。URL 解析在 `ats/boards.py`，网络调用在 `pipeline/crawler.fetch_board`（有事件循环时自动换工作线程），
+  `service.py` 仍不许出现 httpx（`tests/test_three_nos.py`）。隐私说明 §3 加了对应一条。622 tests。
+  **实测**：UiPath 3 条港岗、Airwallex 18、Lalamove 51、OKX 13、Animoca 3；猜错租户名的板如实报 404。下一步：按官网找板、公司註冊處开放接口（本机验证）、read_board 加 watch、Workable / SmartRecruiters。
 - **v0.8.2（2026-10-11，云端会话，`reports/068`）：** 用 OpenHire 替领导找香港工作的实战修订：`check_employer(job_id=...)`（CLI `--job`，雇主与红线词筛查取自索引里那条岗位）；
   `unavailable` 项带 `reason`（`network` = 这次没连上来源，说明的是网络不是雇主；`no_record` / `http_status` = 来源答了）；`pending_user` 加香港与境外免费核验路径（公司註冊處 e-Services、
   警务处防騙視伏器、OpenCorporates）；红线词表补繁体写法与香港警方骗局特征。602 tests。推 main 即自动发版（PyPI 可信发布、tag、mcpb、Release、Registry），发完 `curl -s https://pypi.org/pypi/openhire/json` 核对。

@@ -13,6 +13,22 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-11（续）· 目标改为「香港注册雇主、地点不限」；0.8.3 `read_board` 让索引外的雇主也能读（`reports/069`）
+
+**已完成（证据：622 tests；提交 `ca69fb0` 推 main 后自动发版）**
+- 领导定：雇主是香港注册公司、发港薪即可，地点不限（2027-12 续签高才通）；投港企不出中文简历；不受 ATS 限制，要结果。
+- **0.8.3 `read_board`**（CLI `ohp read-board`）：贴招聘页 URL 就现读雇主自己的板（Greenhouse / Lever / Ashby / Moka / 北森，任何行业，索引内外都行），板自己的日期与在架天数、雇主租户上的投递链接、`location` / `title` 过滤；不入库、无 skills / ghost_score / 重挂；封闭门户（飞书、Workday、SuccessFactors、LinkedIn、JobsDB、BOSS）拒绝并说明原因；每板 15 分钟一次现读；板不答复不等于雇主有问题。网络调用放在 `pipeline/crawler.fetch_board`，service 仍不碰网络。
+- 实测 12 个香港雇主的板：UiPath 3 条港岗、AIFT 10、Airwallex 18、Lalamove 51、OKX 13（含 AI Enablement PMO Director、VP AI Strategy & Transformation、Senior Talent Acquisition Partner）、Animoca 3；猜错租户名的 6 家如实报 404。
+- 候选清单按「香港注册公司」重排，见 069 第三节；高才通续签条件以入境处官网为准，媒体说法已标注。
+
+**下一步（领导定优先级）**
+1. 按官网找板（GET 一次招聘页找供应商链接），解决猜租户名猜错的问题。
+2. 香港公司註冊處开放接口进 `check_employer`（先本机验证条款与限流）。
+3. `read_board` 可加 watch；支持 Workable / SmartRecruiters。
+
+**待领导确认**
+- 第一梯队（OKX、UiPath、Airwallex、Animoca、Lalamove）要不要投；加密行业的两家要看清雇佣主体。
+
 ## 2026-10-11 · 双角色实战：替领导找香港工作 + 0.8.2 求职者视角修订（`reports/068`）
 
 **已完成（证据：602 tests；提交推 main 后 `release.yml` 自动发版）**
