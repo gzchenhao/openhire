@@ -13,6 +13,24 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-11 · 双角色实战：替领导找香港工作 + 0.8.2 求职者视角修订（`reports/068`）
+
+**已完成（证据：602 tests；提交推 main 后 `release.yml` 自动发版）**
+- **求职者侧：** 从 67 份 reports 和私库稿件挖出领导 2026 年的亮点，定位为「深科技人才与生态操盘手 + AI 原生产品负责人」；英文通用简历 `Hao_Chen_CV_2026.docx`（两页，数字全部有出处）通过会话文件交付，**不进任何仓库**。OpenHire 搜香港：10 条 / 3 家（驭势、MongoDB、理想），最匹配的是驭势「项目经理（海外项目）」；香港无 HR 岗；大湾区候选见报告。六条候选岗位红线词全过；域名三项云端跑不了（出网白名单），本机可补。
+- **0.8.2：** `check_employer(job_id)`（CLI `--job`，雇主与 JD 取自索引）；`unavailable` 带 `reason`（network / no_record / http_status），没连上不再写成「查不到」；香港与境外免费核验路径（公司註冊處、防騙視伏器、OpenCorporates）；红线词补繁体与香港警方骗局特征。
+- **他山之石：** hiring.cafe / Hirebase 的生命周期字段、Otta / Indeed 的量化响应率、LinkedIn 的 Reposted 与徽章附注、Greenhouse 18 到 22% 无活动岗位、Scameter 无 API、HK CR 开放 API（待验证）、job 类 MCP 普遍低 star。
+- **求职者视角打分 76 / 100**：差距在覆盖面与生命周期信号，不在代码质量。
+
+**下一步（领导定优先级）**
+1. 岗位生命周期 first_seen / last_seen / closed + check_watches 报「已关闭」。
+2. relist 时年龄写成下限；投递难度字段。
+3. 查证加制裁 / LEI 核对与 HK CR 开放 API（先验证条款）。
+4. 香港种子雇主（只加受支持的 ATS）；role_family 加 HR 与 AI-enablement 族（要重抽，约 ¥6）。
+
+**待领导确认**
+- 大湾区跨境岗位是否纳入投递范围；简历要不要中文版。
+- 香港种子：AIFT 集团 / OneDegree（Greenhouse，10 条在港）、UiPath（Ashby，3 条在港）、Lynx Analytics（Greenhouse）都在受支持的 ATS 上，但都不是智驾 / 具身 / AI 基础设施的一线雇主，加不加由领导按收录标准定。
+
 ## 2026-10-10 · 云端会话首次开工：0.8.1 代码部分已在 main，tag 要领导本机推；PyPI 可信发布就位
 
 **已完成（证据：全量 599 通过；提交 `5bd4298` 在 `origin/main`）**

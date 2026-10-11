@@ -6,9 +6,13 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.1 · 2026-10-10；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.2 · 2026-10-11；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.1）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.2 由 Actions 建）
+- **v0.8.2（2026-10-11，云端会话，`reports/068`）：** 用 OpenHire 替领导找香港工作的实战修订：`check_employer(job_id=...)`（CLI `--job`，雇主与红线词筛查取自索引里那条岗位）；
+  `unavailable` 项带 `reason`（`network` = 这次没连上来源，说明的是网络不是雇主；`no_record` / `http_status` = 来源答了）；`pending_user` 加香港与境外免费核验路径（公司註冊處 e-Services、
+  警务处防騙視伏器、OpenCorporates）；红线词表补繁体写法与香港警方骗局特征。602 tests。推 main 即自动发版（PyPI 可信发布、tag、mcpb、Release、Registry），发完 `curl -s https://pypi.org/pypi/openhire/json` 核对。
+  **云端容器出网白名单不含 rdap.org / web.archive.org / 雇主官网**，`check_employer` 的域名三项在云端一律 `reason: network`，要本机跑。求职者视角打分 76 / 100，路线图见 068 第二节第 4 条。
 - **v0.8.1（2026-10-10，云端会话首次发版，`reports/067`）：** 只改说明和版本号：`check_employer` 工具说明加一句「助手已有天眼查工具或连接器（如腾讯 WorkBuddy 内置的）
   就直接用它补 `registry_record`，不要让用户去申请 key」，`tests/test_employer_check.py` 钉住。提交 `5bd4298` 在 main，全量 599 通过。
   **云端会话推不了 tag 也触发不了工作流**（git 代理只放行分支推送，REST API 建 tag 403，上报不绕）。0.8.1 由本机推 tag、手动跑 `release.yml` 发出：
