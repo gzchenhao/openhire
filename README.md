@@ -112,7 +112,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.1.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.2.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -148,7 +148,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.1.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.2.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **Cursor / Claude Code** — or paste this to your agent: *"Install the MCP server at
@@ -192,7 +192,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.1", "serve"]`.
+matters: `"args": ["openhire==0.8.2", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -370,11 +370,17 @@ numbers as a reason to ask, not a verdict.
 checklist, each item `verified` / `not_verified` / `unavailable` / `not_applicable` /
 `pending_user` with its source and time: whether the employer's own system is in the index
 and what it shows, the domain's registration date, the earliest Wayback capture, the ICP
-备案号 on the homepage, and the recruitment-scam red flags in a posting you paste. The
-company register (成立日期, 经营状态, 参保人数) costs money: set `TIANYANCHA_API_KEY` on your
-own machine and the tool fetches it with your 天眼查 account, or follow the free manual
-links it lists. There is no total and no verdict on purpose: a young domain or a missing
-ICP record is a fact to weigh, not a sentence.
+备案号 on the homepage, and the recruitment-scam red flags in a posting you paste (or, with
+`job_id`, in the posting as this index holds it, so the assistant can check the role it just
+found without copying text). The company register (成立日期, 经营状态, 参保人数) costs money:
+set `TIANYANCHA_API_KEY` on your own machine and the tool fetches it with your 天眼查
+account, or follow the free manual links it lists; for a Hong Kong or overseas employer
+those are the HK Companies Registry e-Services search, the HK Police Scameter (a phone
+number, URL or receiving account against the police scam database) and OpenCorporates.
+There is no total and no verdict on purpose: a young domain or a missing ICP record is a
+fact to weigh, not a sentence. An `unavailable` item says whether the source was reached
+and had no record, or whether this query never reached it (`reason: network`), because a
+check that could not run says nothing about the employer.
 
 ### Asking about one employer
 

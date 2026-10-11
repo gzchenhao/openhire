@@ -28,6 +28,7 @@ UTC = dt.timezone.utc
 NOW = dt.datetime(2026, 10, 8, tzinfo=UTC)
 EM_DASH = chr(0x2014)
 REAL_FETCH = tianyancha.fetch_baseinfo  # captured before the autouse fixture replaces it
+REAL_DOMAIN_AGE, REAL_WAYBACK, REAL_HOMEPAGE = checks.domain_age, checks.wayback_first_capture, checks.homepage_check
 
 
 @pytest.fixture()
@@ -77,8 +78,12 @@ def test_indexed_employer_on_a_vendor_board_has_facts_but_no_domain_to_check(ses
     assert by["registry_record"]["status"] == "pending_user"
     assert res["pending_user"][0]["id"] == "registry_record"
     ways = [h["way"] for h in res["pending_user"][0]["how"]]
-    assert ways == ["tianyancha_key", "tianyancha_mcp", "manual_free"]
+    assert ways == ["tianyancha_key", "tianyancha_mcp", "manual_free", "manual_free_hk_overseas"]
     assert "aiqicha.baidu.com" in res["pending_user"][0]["how"][2]["steps"]
+    # 0.8.2: a Hong Kong or overseas employer is not in the mainland register; the free ways
+    # name the HK Companies Registry, the HK Police Scameter and OpenCorporates.
+    hk = res["pending_user"][0]["how"][3]["steps"]
+    assert "e-services.cr.gov.hk" in hk and "cyberdefender.hk/scameter" in hk and "opencorporates.com" in hk
     assert res["summary"]["pending_user"] == 1
 
 
@@ -88,6 +93,7 @@ def test_first_party_employer_derives_its_own_domain_and_dates_are_marked(sessio
     assert res["domain"] == "lixiang.com"
     assert by["in_index"]["posting_dates_reported"] is False and "首次抓到" in by["in_index"]["note"]
     assert by["domain_age"]["status"] == "verified" and by["domain_age"]["registered"] == "2018-03-01"
+    assert "reason" in by["domain_age"] and "reason" in by["site_history"] and "reason" in by["icp_on_homepage"]
     assert by["site_history"]["source"].startswith("Internet Archive")
     assert by["icp_on_homepage"]["icp_on_page"] == ["京ICP备12345678号"]
 
@@ -158,6 +164,53 @@ def test_offline_run_marks_network_items_unavailable(session):
     assert by["domain"]["status"] == "unavailable" and by["registry_record"]["status"] == "unavailable"
 
 
+def test_network_failure_is_named_as_the_network_not_as_a_missing_record(monkeypatch):
+    """0.8.2 (reports/068): run from a restricted network, every domain item came back
+    'RDAP 查不到注册日期' as if the registry had no record. A GET that never reached the
+    source says nothing about the employer, so it carries reason=network and says so."""
+    monkeypatch.setattr(checks, "_get", lambda url, timeout=None: None)
+    for fn in (REAL_DOMAIN_AGE, REAL_WAYBACK, REAL_HOMEPAGE):
+        out = fn("example.com")
+        assert out["status"] == "unavailable" and out["reason"] == "network" and "没有连上" in out["note"], fn.__name__
+
+    class Answered:  # the source was reached and has nothing
+        status_code = 404
+        text = ""
+
+    monkeypatch.setattr(checks, "_get", lambda url, timeout=None: Answered())
+    assert REAL_DOMAIN_AGE("example.com")["reason"] == "no_record"
+    assert REAL_WAYBACK("example.com")["reason"] == "http_status"
+    assert REAL_HOMEPAGE("example.com")["reason"] == "http_status"
+
+
+def test_job_id_resolves_the_employer_and_screens_the_stored_posting(session):
+    """0.8.2 (reports/068): the assistant checks the role it just found by job_id; the
+    employer comes from the row and the red-flag screen reads the stored title and JD."""
+    session.add(Job(id="minieye:bad", company_id="minieye", title="海外客服", description_raw="包机票包吃住，无需经验，日结",
+                    skills=[], remote_policy="onsite", location="柬埔寨", posted_at=NOW, first_seen_at=NOW, verified_at=NOW,
+                    source="ats_public_api", apply_channel="https://app.mokahr.com/apply/minieye/118570#/job/bad",
+                    content_hash="hb", ghost_score=0.0, role_family=None))
+    session.commit()
+    res = _run(session, job_id="minieye:bad")
+    by = {i["id"]: i for i in res["checks"]}
+    assert res["company"] == "佑驾创新 MINIEYE" and res["query"]["posting_text_source"] == "index"
+    assert by["posting_red_flags"]["status"] == "not_verified" and "包机票" in by["posting_red_flags"]["flags"]
+    clean = _run(session, job_id="minieye:0")
+    assert {i["id"]: i for i in clean["checks"]}["posting_red_flags"]["status"] == "verified"
+    given = _run(session, job_id="minieye:bad", posting_text="负责 BEV 感知模型开发")
+    assert given["query"]["posting_text_source"] == "user"
+    assert {i["id"]: i for i in given["checks"]}["posting_red_flags"]["status"] == "verified"
+    with pytest.raises(OpenHireError) as ei:
+        _run(session, job_id="nobody:1")
+    assert ei.value.code == "ERR_JOB_NOT_FOUND"
+
+
+def test_traditional_character_lures_are_flagged_like_the_simplified_ones():
+    flags = checks.red_flags_in("海外高薪，包機票包食宿，無需經驗，日結")
+    assert flags == ["海外高薪", "包機票", "包食宿", "日結", "無需經驗"]  # tuple order, not text order
+    assert checks.red_flags_in("Senior Perception Engineer, Hong Kong. 5+ years, LiDAR fusion.") == []
+
+
 def test_tianyancha_envelope_handling_without_network(monkeypatch):
     class R:
         def __init__(self, status, body):
@@ -206,7 +259,8 @@ def test_tool_is_registered_read_only_open_world_and_says_it_is_not_a_verdict():
     assert "use it to fill `registry_record` directly instead of sending the user off to apply for a key" in doc
     assert "WorkBuddy" in doc
     assert EM_DASH not in doc and EM_DASH not in employer_check.NOT_A_VERDICT
-    assert set(t.inputSchema["properties"]) == {"company", "domain", "posting_text"}
+    assert set(t.inputSchema["properties"]) == {"company", "domain", "posting_text", "job_id"}
+    assert "job_id" in doc and "reason" in doc
 
 
 def test_result_carries_no_user_data_and_no_key(session, monkeypatch):

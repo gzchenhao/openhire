@@ -611,16 +611,17 @@ def check_company(
     company: str = typer.Argument(None, help="Employer id or any part of the name, either language."),
     domain: str = typer.Option(None, "--domain", help="The employer's own web domain, e.g. unitree.com."),
     jd: typer.FileText = typer.Option(None, "--jd", help="A file with the posting text, for the red-flag check."),
+    job: str = typer.Option(None, "--job", help="A job id from search: the employer and the posting text come from the index."),
     offline: bool = typer.Option(False, "--offline", help="Skip the network checks."),
 ) -> None:
     """Facts about one employer with sources and times: index, domain age, site history, ICP, register. Never a verdict."""
     init_db()
     _banner()
-    console.cmd(f"ohp check-company {company or ''}" + (f" --domain {domain}" if domain else ""))
+    console.cmd(f"ohp check-company {company or ''}" + (f" --domain {domain}" if domain else "") + (f" --job {job}" if job else ""))
     text = jd.read() if jd else None
     with session_scope() as s:
         try:
-            res = service.employer_check(s, company=company, domain=domain, posting_text=text, run_network=not offline)
+            res = service.employer_check(s, company=company, domain=domain, posting_text=text, run_network=not offline, job_id=job)
         except OpenHireError as e:
             console.error(e.code, e.message)
             raise typer.Exit(2)

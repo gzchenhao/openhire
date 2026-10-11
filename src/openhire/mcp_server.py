@@ -440,7 +440,7 @@ def refresh_index(company: str) -> dict:
     title="Check an employer",
     annotations=ToolAnnotations(title="Check an employer", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=True),
 )
-def check_employer(company: str | None = None, domain: str | None = None, posting_text: str | None = None) -> dict:
+def check_employer(company: str | None = None, domain: str | None = None, posting_text: str | None = None, job_id: str | None = None) -> dict:
     """Facts about one employer, each with a source and a time. Never a score or a verdict.
 
     Use it when the user asks "is this company real / legit / what it says it is?" or is
@@ -469,10 +469,16 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
       `TIANYANCHA_API_KEY` set on the user's machine this tool fetches it once per call, paid
       by the user's own 天眼查 account; the key and the lookup never reach us. Without it,
       `pending_user[]` lists the ways: set the key, use a 天眼查 MCP the assistant already
-      has, or the free manual lookups (爱企查, 国家企业信用信息公示系统). Offer them; do not
+      has, or the free manual lookups (爱企查, 国家企业信用信息公示系统; for a Hong Kong or
+      overseas employer the HK Companies Registry e-Services search, the HK Police Scameter
+      for a phone number / URL / receiving account, and OpenCorporates). Offer them; do not
       invent the record. If the assistant already has a 天眼查 tool or connector (for
       example the one built into Tencent WorkBuddy), use it to fill `registry_record`
       directly instead of sending the user off to apply for a key.
+
+    An `unavailable` item carries `reason`: `network` means this query could not reach the
+    source (a restricted network, a timeout) and says nothing about the employer; say that
+    rather than "no record". `no_record` / `http_status` mean the source answered.
 
     Privacy: this tool sends the company's name or domain to RDAP, the Internet Archive and
     the company's own site, and to 天眼查 only with the user's key. Nothing about the user
@@ -484,6 +490,10 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
         domain: the employer's own web domain ("unitree.com"), when the user has it or when
             the company is not in the index. Either argument alone is enough.
         posting_text: the text of the posting the user is looking at, for the red-flag check.
+        job_id: a posting from search_jobs / check_watches. The employer is taken from it and
+            the red-flag check runs over the posting as this index holds it, so you can check
+            a role you just found without pasting anything. `posting_text`, if also given,
+            wins.
 
     Returns: `checks[]` (id, label, status: verified | not_verified | unavailable |
     not_applicable | pending_user, note, source, checked_at, plus the item's own fields),
@@ -494,7 +504,7 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
     def _run() -> dict:
         with session_scope() as s:
             try:
-                return service.employer_check(s, company=company, domain=domain, posting_text=posting_text)
+                return service.employer_check(s, company=company, domain=domain, posting_text=posting_text, job_id=job_id)
             except OpenHireError as e:
                 return e.as_dict()
 

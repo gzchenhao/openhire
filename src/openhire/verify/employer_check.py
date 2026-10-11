@@ -26,6 +26,13 @@ NOT_A_VERDICT = (
 AIQICHA = "https://aiqicha.baidu.com/s?q={name}"
 GSXT = "https://www.gsxt.gov.cn/"
 MIIT_ICP = "https://beian.miit.gov.cn/"
+# Hong Kong and overseas employers are not in the mainland register at all (reports/068):
+# the HK Companies Registry's e-Services Portal (company name search is free, no account),
+# the HK Police Scameter (a phone number, URL, email or receiving account against the
+# police scam database), and OpenCorporates for most other jurisdictions.
+HK_CR_ESERVICES = "https://www.e-services.cr.gov.hk/"
+HK_SCAMETER = "https://cyberdefender.hk/scameter/"
+OPENCORPORATES = "https://opencorporates.com/companies?q={name}"
 
 
 def _now() -> str:
@@ -102,16 +109,20 @@ def build_checklist(
     elif not run_network:
         items.append(_item("domain", "官网域名", "unavailable", "本次没有联网检查", source="n/a", domain=domain))
     else:
+        # `reason` tells "we could not reach the source" (network) apart from "the source
+        # answered and has no record"; the first says nothing about the employer.
         age = domain_age_fn(domain)
         items.append(_item("domain_age", "域名注册日期", age.get("status", "unavailable"), age.get("note", ""),
                            source="RDAP (the registry's own record)", domain=domain,
-                           registered=age.get("registered"), age_days=age.get("age_days")))
+                           registered=age.get("registered"), age_days=age.get("age_days"), reason=age.get("reason")))
         hist = wayback_fn(domain)
         items.append(_item("site_history", "网站历史", hist.get("status", "unavailable"), hist.get("note", ""),
-                           source="Internet Archive Wayback Machine", first_capture=hist.get("first_capture")))
+                           source="Internet Archive Wayback Machine", first_capture=hist.get("first_capture"),
+                           reason=hist.get("reason")))
         home = homepage_fn(domain, None, name)
         items.append(_item("icp_on_homepage", "首页备案号", home.get("status", "unavailable"), home.get("note", ""),
-                           source=f"https://{domain}/ (one GET)", icp_on_page=home.get("icp_on_page", [])))
+                           source=f"https://{domain}/ (one GET)", icp_on_page=home.get("icp_on_page", []),
+                           reason=home.get("reason")))
 
     # 3. The posting the seeker is looking at, if they pasted it.
     if posting_text:
@@ -141,6 +152,11 @@ def build_checklist(
                     {"way": "tianyancha_key", "steps": "到 open.tianyancha.com 注册并充值，拿到 API key，在运行 OpenHire 的环境里设置 TIANYANCHA_API_KEY，再问一次；每次查询由天眼查从你的账户扣费"},
                     {"way": "tianyancha_mcp", "steps": "如果你的助手已经接了天眼查 MCP（https://mcp.tianyancha.com/v1，你自己的 key），让它查这家公司的基本信息：" + str(name)},
                     {"way": "manual_free", "steps": f"免费手动：爱企查 {AIQICHA.format(name=name)} ，或国家企业信用信息公示系统 {GSXT}（按全称查，有验证码）"},
+                    {"way": "manual_free_hk_overseas",
+                     "steps": (f"香港公司：公司註冊處電子服務網站 {HK_CR_ESERVICES} 免费查公司名称（无需账户）；"
+                               f"招聘方留的电话、网址、邮箱或收款账户可在香港警务处防騙視伏器 {HK_SCAMETER} 查；"
+                               f"其他境外公司：OpenCorporates {OPENCORPORATES.format(name=name)} 。"
+                               "任何要你先出境面试、先付费、先交护照的招聘，先停下来查")},
                 ],
             })
 

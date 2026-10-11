@@ -1637,6 +1637,7 @@ def employer_check(
     posting_text: str | None = None,
     run_network: bool = True,
     now: dt.datetime | None = None,
+    job_id: str | None = None,
 ) -> dict:
     """Facts about one employer with sources and times. Never a score, never a verdict.
 
@@ -1646,18 +1647,34 @@ def employer_check(
     record instead of a bare "not indexed". `domain` is the employer's own site; when it is
     not given it is taken from the employer's careers page only if that page is on the
     employer's domain (a Greenhouse or Moka board says nothing about the employer's domain).
+    `job_id` names a posting in this index: the employer is taken from it and, unless
+    `posting_text` is given, the red-flag screen runs over the posting as the index holds it
+    (title and description), so an assistant can check the role it just found without
+    copying text around (reports/068).
     """
     from .verify import build_checklist
     from .verify.checks import normalise_domain, own_domain_from_url
 
-    query = {"company": company, "domain": domain, "posting_text_given": bool(posting_text)}
+    posting_source = "user" if posting_text else None
+    job_company = None
+    if job_id:
+        job = session.get(Job, job_id)
+        if job is None:
+            raise OpenHireError("ERR_JOB_NOT_FOUND", f"No job with id '{job_id}'.")
+        job_company = session.get(Company, job.company_id)
+        company = company or job.company_id
+        if posting_text is None:
+            posting_text = " ".join(t for t in (job.title, job.description_raw) if t) or None
+            posting_source = "index" if posting_text else None
+    query = {"company": company, "domain": domain, "job_id": job_id,
+             "posting_text_given": bool(posting_text), "posting_text_source": posting_source}
     if not (company or domain):
         raise OpenHireError("ERR_BAD_QUERY", "Give a company (name or id) or a domain, or both.")
     index_facts = None
     known = None
     resolved_domain = normalise_domain(domain) if domain else None
     if company:
-        matched = resolve_company(session, company)
+        matched = [job_company] if job_company is not None else resolve_company(session, company)
         if len(matched) > 1:
             names = ", ".join(f"{c.id} ({c.name})" for c in matched[:10])
             raise OpenHireError(

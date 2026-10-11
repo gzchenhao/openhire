@@ -39,6 +39,14 @@ RED_FLAGS = (
     "高薪诚聘", "无需经验", "不限经验", "不限学历", "打字员", "网络推广", "博彩", "彩票", "电销",
     "电话销售", "刷单", "急招", "签证办理", "护照", "出国务工", "月入过万", "轻松",
     "no experience", "visa provided", "flights paid", "typing job", "daily pay",
+    # The same lures in traditional characters, as Hong Kong and Taiwan ads write them
+    # (reports/068). Words whose traditional form equals the simplified one are not repeated.
+    "包機票", "免費機票", "免费机票", "包食宿", "日結", "週結", "高薪誠聘", "無需經驗", "不限經驗",
+    "不限學歷", "打字員", "網絡推廣", "電銷", "電話銷售", "刷單", "簽證辦理", "護照", "出國務工",
+    "月入過萬", "輕鬆",
+    # Hong Kong Police / Security Bureau job-scam markers (reports/068): money asked up front,
+    # no interview, contact only through a messaging app.
+    "押金", "保证金", "保證金", "培训费", "培訓費", "无需面试", "無需面試", "telegram", "whatsapp only",
 )
 
 # Hosts that belong to a recruiting vendor, never to the employer: a careers_url on one of
@@ -127,8 +135,12 @@ def _get(url: str, timeout: float | None = None) -> httpx.Response | None:
 def homepage_check(domain: str, icp: str | None = None, name: str | None = None) -> dict:
     """What the employer's own homepage says: its ICP 备案号 and whether the name appears."""
     r = _get(f"https://{domain}/")
-    if r is None or r.status_code != 200:
-        return {"status": "unavailable", "note": f"https://{domain}/ 打不开或非 200", "icp_on_page": []}
+    if r is None:
+        return {"status": "unavailable", "reason": "network", "icp_on_page": [],
+                "note": f"本次没有连上 https://{domain}/（网络不通或超时），说明的是这次查询的网络，不是这个站"}
+    if r.status_code != 200:
+        return {"status": "unavailable", "reason": "http_status", "icp_on_page": [],
+                "note": f"https://{domain}/ 回了 HTTP {r.status_code}，首页读不到"}
     html = r.text
     found = sorted({re.sub(r"\s+", "", f) for f in ICP_RE.findall(html)})
     out = {"icp_on_page": found, "name_on_page": bool(name and name in html)}
@@ -149,8 +161,14 @@ def homepage_check(domain: str, icp: str | None = None, name: str | None = None)
 def domain_age(domain: str) -> dict:
     """Registration date via RDAP (rdap.org bootstraps to the right registry)."""
     r = _get(f"https://rdap.org/domain/{domain}")
-    if r is None or r.status_code != 200:
-        return {"status": "unavailable", "note": "RDAP 查不到注册日期（.cn 常见）"}
+    if r is None:
+        # A network failure is about this query, not about the domain: say so, or a seeker
+        # behind a restricted network reads "no record" as a mark against the employer.
+        return {"status": "unavailable", "reason": "network",
+                "note": "本次没有连上 RDAP（网络不通或超时），说明的是这次查询的网络，不是这个域名"}
+    if r.status_code != 200:
+        return {"status": "unavailable", "reason": "no_record",
+                "note": f"RDAP 没有这个域名的注册记录（HTTP {r.status_code}；.cn 域名常见）"}
     try:
         events = r.json().get("events", [])
         reg = next((e["eventDate"] for e in events if e.get("eventAction") == "registration"), None)
@@ -168,8 +186,11 @@ def domain_age(domain: str) -> dict:
 def wayback_first_capture(domain: str) -> dict:
     """Earliest Wayback Machine capture that answered 200."""
     r = _get(f"https://web.archive.org/cdx/search/cdx?url={domain}&output=json&limit=1&fl=timestamp&filter=statuscode:200")
-    if r is None or r.status_code != 200:
-        return {"status": "unavailable", "note": "互联网档案馆查不到"}
+    if r is None:
+        return {"status": "unavailable", "reason": "network",
+                "note": "本次没有连上互联网档案馆（网络不通或超时），说明的是这次查询的网络，不是这个站"}
+    if r.status_code != 200:
+        return {"status": "unavailable", "reason": "http_status", "note": f"互联网档案馆回了 HTTP {r.status_code}，没有给出记录"}
     try:
         rows = r.json()
         ts = rows[1][0] if len(rows) > 1 else None
