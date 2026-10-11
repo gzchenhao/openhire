@@ -9,7 +9,7 @@
 ## 发布状态（最新 v0.8.3 · 2026-10-11；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.3 由 Actions 建）
-- **v0.8.3（2026-10-11，云端会话，`reports/069`）：** 领导把求职目标改为「香港注册雇主、地点不限」（续签高才通），索引三个行业装不下，于是加 **`read_board`**（CLI `ohp read-board <url>`）：
+- **v0.8.3（2026-10-11，云端会话，`reports/069`）：** 领导的真实求职场景要的雇主范围比索引三个行业大得多（求职者侧材料一律放私库 `openhire-private/job-search-*.md`，公开报告只留产品侧），于是加 **`read_board`**（CLI `ohp read-board <url>`）：
   贴招聘页 URL 现读雇主自己的板（Greenhouse / Lever / Ashby / Moka / 北森，任何行业，索引内外都行），板自己的日期与在架天数、雇主租户上的投递链接、`location` / `title` 过滤；
   **不入库**、无 skills / ghost_score / 重挂 / watch；封闭门户（飞书、Workday、SuccessFactors、Taleo、iCIMS、LinkedIn、JobsDB、BOSS）`ERR_UNSUPPORTED_BOARD` 加原因，不找别的路；
   每进程每板 15 分钟一次现读；板不答复不缓存、不说成雇主的问题。URL 解析在 `ats/boards.py`，网络调用在 `pipeline/crawler.fetch_board`（有事件循环时自动换工作线程），

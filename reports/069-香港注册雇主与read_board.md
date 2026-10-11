@@ -36,22 +36,7 @@
 
 ## 三、求职者侧：按新目标的候选清单
 
-高才通续签：入境处要求延长逗留时证明已在香港受聘并有稳定收入，或已在香港开办或参与业务；2025 年报道称受聘者要提交雇佣合约并证明薪酬达市场水平；2026-01-30 起递交延期申请前须先完成指定问卷（KPMG 2026-02 解读）。另有报道称年薪 250 万以上受聘于非本港企业且有纳税也可续签三年，这条只见于媒体，以入境处官网为准：https://www.immd.gov.hk/hkt/services/visas/TTPS.html 。所以「香港公司受聘、港薪、有稳定收入」是硬条件，上班地点确实不是。
-
-**第一梯队（香港注册公司，头衔正是「AI 原生 + 生态 / 人才」方向，都是雇主自己的招聘板现读，投递链接在雇主自己租户上）：**
-- OKX：AI Enablement PMO Director（07-24，78 天）、Vice President, AI Strategy & Transformation（03-31，194 天）、Senior Strategy PMO / Project Manager (AI & Org)（03-03）、Senior Talent Acquisition Partner（07-16）、Senior Manager, Global Partnerships（07-31）。加密行业，要看清雇佣主体是哪家香港公司。
-- UiPath 香港：Senior Partner Sales Manager (Agentic AI Automation)（08-27，45 天），生态伙伴拓展；Customer Engineering Director（06-18）。UiPath 在港有实体，雇佣主体要在 offer 阶段确认。
-- Airwallex：GTM Partnerships Manager (Partner Acquisition)（06-29，104 天）。
-- Animoca Brands：Director, Institutional Distribution & Partnerships（09-02）；Talent Acquisition Specialist 6 个月合约（09-29，合约工能否续签要先问入境处）。
-- Lalamove：Data Enablement Lead（07-24）。
-
-**第二梯队（索引内，地点含香港）：** 驭势科技「项目经理（海外项目）」（09-08，32 天，香港离岛区在四个地点里，雇佣主体要问清是不是香港公司）；MongoDB 香港 CSM 两条。
-
-**第三梯队（机构，自建站或 SuccessFactors，去官网投，均为摘要未亲自打开）：** HKSTP Senior Manager, Partnerships 与 Assistant Director, InnoHK and University Collaborations（08-21）；ASTRI 策略经理；中科院香港创新院 HR Manager；商汤香港公共事务 / 政府关系经理；华为香港研究所 Technology Cooperation Manager；宏利 AI Adoption Manager, Asia（07-31，可能已关）。
-
-**不用再出中文简历**，英文通用版已交付。
-
-防骗：第一、二梯队全部从雇主自己的招聘系统读出，投递链接只在雇主自己的租户上；公司主体到公司註冊處电子服务网站免费查名核对；任何要你先付费、出境面试、交护照的一律停。
+（求职者侧的定位、简历、候选清单与投递细节属于个人求职材料，已移至私库 `openhire-private/job-search-notes-068-069.md`；本公开报告只保留产品侧内容。）
 
 ## 四、项目经理侧
 
