@@ -6,9 +6,14 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.3 · 2026-10-11；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.4 · 2026-10-11；v0.1 首发 2026-07-15）
 
-- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.3 由 Actions 建）
+- **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.4（2026-10-11，云端会话，`reports/070`）：** ① `check_employer` 加 **`sanctions_screen`**：OFAC SDN 与综合名单（公开 CSV，无 key）下载到 `OPENHIRE_HOME/sanctions/` 每日一次，
+  公司名**本机比对**（只剥法律形式后缀，不剥 group / holdings；双语名各试），命中报条目不报判决，拿不到名单报 `reason`；云端连不上 treasury.gov，要本机跑。
+  ② **板也能盯**：`watch_intent` 收 `board_url`（只配 location / title），`check_watches` 现读板报 `new_matches` 与 `closed_since_last`，板不答复不标关闭；`read_board` 仍不入库（原因见 070 第二节）。
+  **`ohp bootstrap` 整文件覆盖会清 watches / applications**，进路线图。③ **本机任务队列**：云端写私库 `local-tasks.json`（只收 `check-company` / `read-board`），
+  本机 `.venv\Scripts\python.exe scripts\run_local_tasks.py --sync` 跑完回传 `drafts/local-results/`；两条命令新增 `--json`。634 tests。
 - **v0.8.3（2026-10-11，云端会话，`reports/069`）：** 领导的真实求职场景要的雇主范围比索引三个行业大得多（求职者侧材料一律放私库 `openhire-private/job-search-*.md`，公开报告只留产品侧），于是加 **`read_board`**（CLI `ohp read-board <url>`）：
   贴招聘页 URL 现读雇主自己的板（Greenhouse / Lever / Ashby / Moka / 北森，任何行业，索引内外都行），板自己的日期与在架天数、雇主租户上的投递链接、`location` / `title` 过滤；
   **不入库**、无 skills / ghost_score / 重挂 / watch；封闭门户（飞书、Workday、SuccessFactors、Taleo、iCIMS、LinkedIn、JobsDB、BOSS）`ERR_UNSUPPORTED_BOARD` 加原因，不找别的路；
@@ -161,6 +166,8 @@
   **云端写稿交接：** 云端会话同时选 `openhire` 和 `openhire-private` 两个仓库，稿子写在 `openhire-private` 根目录（它就是本机的 `drafts/`），提交并推它的 main。
   不要写进 `openhire/drafts/`：那里被 gitignore，推不上去，会话结束就丢。本机发布前先跑上面那条同步命令把稿拉下来。
   同步脚本 2026-10-10 起是**双向三方合并**（`drafts/.sync-state.json` 记上次同步时每个文件的内容）：只有一边改了就同步那边，两边都改了报 CONFLICT、不覆盖，人工合并后 `--resolved <文件>`。
+  **本机任务队列（2026-10-11 起，`reports/070`）：** 云端跑不了的查证（RDAP / 档案馆 / 雇主官网 / OFAC），云端写进私库根目录 `local-tasks.json`，本机一条命令
+  `.venv\Scripts\python.exe scripts\run_local_tasks.py --sync` 拉任务、跑、推回 `drafts/local-results/`；云端读私库的 `local-results/`。要本机先 `git pull` 并重装包。
   `.env` / API key **永不进任何仓库**（含私有），存密码管理器。**唯一例外（领导 2026-10-10 定，`reports/066`）：DeepSeek key 可以存成 Claude Code 云端环境的「网络密钥」（会话看不到明文，只附到 api.deepseek.com），由领导自己粘贴；PyPI 改走 `.github/workflows/release.yml` 可信发布，token 不进云端。**`dist/`、`.tools/`、本地 DB 均可重建，不必备份。
 - 再发新版流程（2026-10-10 起，云端和本机一样）：bump 十二处版本（含 `uv lock`）→ 全量测试 → 提交推 main。**到此为止**：Actions 的 Release 看到新版本号会自己测、发 PyPI（可信发布）、打 tag、挂 mcpb、建 Release，然后 Registry 自动跟上。不要手动推 tag（会和 Actions 建的 tag 冲突），不再 twine，README `mcp-name` 保持不变。发完用 `curl -s https://pypi.org/pypi/openhire/json` 核对版本。
 

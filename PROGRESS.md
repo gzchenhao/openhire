@@ -13,6 +13,18 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-11（再续）· 0.8.4：制裁名单本机比对、板也能盯、本机任务队列（`reports/070`）
+
+**已完成（证据：634 tests；推 main 自动发版）**
+- `check_employer` 加 `sanctions_screen`：OFAC SDN 与综合名单下载到本机（每日一次），公司名本机比对，命中报条目不报判决；拿不到名单如实报 `reason`。来自 Prince Group 的教训（注册有效不等于没问题）。
+- `watch_intent` 接受 `board_url`，`check_watches` 现读板并报新增与消失；`read_board` 仍不入库，原因写在 070 第二节。发现 `ohp bootstrap` 会清用户态表，进路线图。
+- `scripts/run_local_tasks.py` + `--json`：云端把查证写进私库 `local-tasks.json`，本机一条命令跑完自动回传 `local-results/`。第一批任务已排好。
+- 求职者侧：候选清单去掉驭势两条技术岗（领导判断不匹配），简历补 LinkedIn 与 GitHub 链接，材料在私库。
+
+**下一步**
+1. 领导本机跑一次 `run_local_tasks.py --sync`，云端读结果后再投递。
+2. 路线图：按官网找板；HK 公司註冊處开放接口；装快照保留用户态表；OpenSanctions；Workable / SmartRecruiters。
+
 ## 2026-10-11（续）· 目标改为「香港注册雇主、地点不限」；0.8.3 `read_board` 让索引外的雇主也能读（`reports/069`）
 
 **已完成（证据：622 tests；提交 `ca69fb0` 推 main 后自动发版）**
