@@ -10,7 +10,7 @@
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
 - **v0.8.5（2026-10-12，云端会话，`reports/072`）：** 领导四条指示的落地。① **装机文案点名五个助手**（README 主句与 Works with、`docs/employers.html`）：Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy；
-  豆包走本机 `ohp serve --transport streamable-http --port 8000` + 自定义连接器 `http://127.0.0.1:8000/mcp`（**尚未在豆包里实测**，README 那句括号等实测后删）；DeepSeek 经 Cherry Studio / Chatbox 这类客户端。文案规矩第 7 条。
+  豆包走本机 `ohp serve --transport streamable-http --port 8000` + 自定义连接器 `http://127.0.0.1:8000/mcp`（领导 10-12 在豆包工作里实测通过）；DeepSeek 经 Cherry Studio / Chatbox 这类客户端。文案规矩第 7 条。
   ② **「深科技」不再用**，一律英文 deep tech（CLAUDE.md 人设条、私库 15 份稿件已改；公开 reports 历史不动）。③ **封闭门户给浏览器提示**：`boards.py` 的 `BROWSER_HINT` 接在飞书 / Lark / Workday / SuccessFactors / Taleo / iCIMS 的拒绝理由后，
   `known_not_indexed_hint` 对有门户地址的雇主加一句「有浏览器工具的助手可以自己打开读，OpenHire 不入库、不标日期、不盯」；招聘网站（LinkedIn / JobsDB / BOSS）不加。回答领导「WorkBuddy 能读飞书而我们不能会不会尴尬」：
   谁都读不了飞书的列表接口（要签名；WorkBuddy 也没有雇主授权），能读的只是浏览器里渲染出来的那一页，和人一样；OpenHire 的价值在索引、日期、在架天数和盯岗，不在替人看一页。
@@ -252,7 +252,7 @@
 
 7. **装机文案点名五个助手（领导 2026-10-12 定）。** 凡是说「把 OpenHire 装进 AI 助手」的文案（README、docs 站、知乎、LinkedIn、目录描述），一律写
    **Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy**，不能只写 Claude 和 Cursor：中国大陆用户用不了 Claude，只写它们没有代入感。
-   准确写法：豆包（豆包工作）的自定义连接器只收 HTTP 地址，所以给它的路径是本机 `ohp serve --transport streamable-http --port 8000` 加 `http://127.0.0.1:8000/mcp`（2026-10-12 按豆包公开说明写，**尚未实测**，实测后改 README 那句括号）；
+   准确写法：豆包（豆包工作）的自定义连接器只收 HTTP 地址，所以给它的路径是本机 `ohp serve --transport streamable-http --port 8000` 加 `http://127.0.0.1:8000/mcp`（2026-10-12 领导在豆包工作里实测通过，README 已改成实测口径）；
    DeepSeek 自己的 App 没有 MCP 入口，写法是「DeepSeek 经 Cherry Studio / Chatbox 这类支持 MCP 的客户端」；WorkBuddy 走 `~/.workbuddy/mcp.json`。
 
 5. **主句是底座，不是楔子（领导 2026-09-23 批准，见 `reports/050`）。** 对外第一句永远是

@@ -248,7 +248,7 @@ ohp serve --transport streamable-http --port 8000      # 本机 http://127.0.0.1
 ```
 然后在豆包里新建自定义连接器：传输类型 HTTP，服务器 URL `http://127.0.0.1:8000/mcp`，Headers 留空，保存后打开开关。
 索引、指纹和匹配都在你自己的电脑上，豆包只是通过本机端口调用它。
-（这段按豆包连接器的公开说明写，2026-10-12 尚未在豆包里实测；实测后会更新这里。）
+（2026-10-12 在豆包工作里实测通过：新建连接器后直接问「用 openhire 搜香港的岗位」就有结果。）
 
 **DeepSeek** — DeepSeek 自己的 App 没有 MCP 入口。把 DeepSeek 当模型用在任何支持 MCP 的客户端里
 （Cherry Studio、Chatbox、Cline、腾讯 WorkBuddy、TRAE 都行），再把上面那段 `uvx` 配置填进该客户端的
