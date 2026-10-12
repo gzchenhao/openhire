@@ -62,7 +62,14 @@ jobs:
         run: |
           # The search returns EVERY published version, oldest first — so match on the
           # entry flagged isLatest rather than taking servers[0], which is the old one.
+          # The search index lags the publish by a few seconds: 0.8.2 and 0.8.3 both
+          # published fine and then "failed" right here (reports/072). Poll before giving up.
           want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")
-          got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" | python3 -c "import json,sys;v=[s['server']['version'] for s in json.load(sys.stdin).get('servers',[]) if s['_meta']['io.modelcontextprotocol.registry/official'].get('isLatest')];print(v[0] if v else 'none')")
-          echo "server.json=$want registry-isLatest=$got"
-          test "$want" = "$got"
+          for i in 1 2 3 4 5 6; do
+            got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" | python3 -c "import json,sys;v=[s['server']['version'] for s in json.load(sys.stdin).get('servers',[]) if s['_meta']['io.modelcontextprotocol.registry/official'].get('isLatest')];print(v[0] if v else 'none')" || echo none)
+            echo "try $i: server.json=$want registry-isLatest=$got"
+            if [ "$want" = "$got" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::registry still serves $got as latest, wanted $want"
+          exit 1

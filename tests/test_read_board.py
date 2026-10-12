@@ -143,3 +143,18 @@ def test_tool_is_registered_read_only_open_world_and_names_its_limits():
         assert phrase in doc, phrase
     assert set(t.inputSchema["properties"]) == {"url", "location", "title", "limit", "offset"}
     assert "read_board" in mcp_server.mcp.instructions
+
+
+def test_closed_portal_refusal_carries_the_browser_hint(session):
+    """0.8.5: the refusal for a signed or JS-only portal tells an assistant with a browser
+    tool that it may open the page itself, and that OpenHire reads nothing from it."""
+    from openhire.ats.boards import BROWSER_HINT, CLOSED_PORTALS
+    assert "浏览器" in BROWSER_HINT and "不入库" in BROWSER_HINT
+    for host in ("feishu.cn", "larksuite.com", "myworkdayjobs.com", "successfactors.com", "taleo.net", "icims.com"):
+        assert CLOSED_PORTALS[host].endswith(BROWSER_HINT), host
+    # Job boards (LinkedIn, JobsDB, BOSS) are not employer systems: no hint, the reason stands alone.
+    for host in ("linkedin.com", "jobsdb.com", "zhipin.com"):
+        assert BROWSER_HINT not in CLOSED_PORTALS[host], host
+    with pytest.raises(service.OpenHireError) as ei:
+        service.read_board(session, url="https://ponyai.jobs.feishu.cn/ponyai/", now=NOW, fetch=lambda v, t: None)
+    assert ei.value.code == "ERR_UNSUPPORTED_BOARD" and "浏览器" in ei.value.message

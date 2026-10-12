@@ -248,6 +248,16 @@ def test_empty_search_for_a_truly_unknown_employer_keeps_the_generic_hint(sessio
     assert EM_DASH not in d["hint"]
 
 
+def test_known_not_indexed_hint_tells_a_browser_assistant_it_may_read_the_portal(session):
+    """0.8.5: an assistant with a browser tool (WorkBuddy, 豆包, Claude with a browser) can
+    open a Feishu portal and read it as a person would. The hint says so, and says what
+    OpenHire does not do with that page (index, date, watch), so the two are not confused."""
+    d = service.diagnose_empty_search(session, company="Momenta")
+    assert "browser tool" in d["hint"] and "read the listings as a person would" in d["hint"]
+    assert "does not index, date or watch" in d["hint"]
+    assert EM_DASH not in d["hint"]
+
+
 def test_several_registry_matches_take_the_generic_hint_listing_them(session):
     """"robot" is inside AgiBot's, X Square's and Booster's aliases. The structured answer
     is about one employer (one portal, one reason), so with several it would silently be

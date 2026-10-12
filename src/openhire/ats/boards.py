@@ -23,13 +23,18 @@ _ASHBY_HOSTS = {"jobs.ashbyhq.com", "api.ashbyhq.com"}
 _MOKA_HOSTS = {"app.mokahr.com"}
 
 # Portals we know and deliberately cannot read, with the reason a seeker should hear.
+# One sentence shared by every portal a person can read but this index cannot: an assistant
+# that has a browser tool (WorkBuddy, 豆包, Claude with a browser) may open the page and read
+# it the way a person does. That is reading, not scraping, and it is the assistant's call.
+BROWSER_HINT = "助手有浏览器工具的话，可以直接打开这个门户阅读：现读、不入库、不盯、无发布日期。"
+
 CLOSED_PORTALS = {
-    "feishu.cn": "飞书招聘门户的列表接口要请求签名，属于访问控制，这个索引不读（见 reports/014）；只能打开门户自己看，或由雇主在飞书开放平台授权只读。",
-    "larksuite.com": "Lark Hire 门户的列表接口要请求签名，属于访问控制，这个索引不读；只能打开门户自己看。",
-    "myworkdayjobs.com": "Workday 没有公开的岗位接口，这个索引不读；打开页面自己看。",
-    "successfactors.com": "SuccessFactors 没有公开的岗位接口，这个索引不读；打开页面自己看。",
-    "taleo.net": "Taleo 没有公开的岗位接口，这个索引不读；打开页面自己看。",
-    "icims.com": "iCIMS 没有公开的岗位接口，这个索引不读；打开页面自己看。",
+    "feishu.cn": "飞书招聘门户的列表接口要请求签名，属于访问控制，这个索引不读（见 reports/014）；只能打开门户自己看，或由雇主在飞书开放平台授权只读。" + BROWSER_HINT,
+    "larksuite.com": "Lark Hire 门户的列表接口要请求签名，属于访问控制，这个索引不读；只能打开门户自己看。" + BROWSER_HINT,
+    "myworkdayjobs.com": "Workday 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
+    "successfactors.com": "SuccessFactors 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
+    "taleo.net": "Taleo 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
+    "icims.com": "iCIMS 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
     "linkedin.com": "LinkedIn 禁止自动访问，这个索引不读；在 LinkedIn 上自己看。",
     "jobsdb.com": "JobsDB 是招聘网站不是雇主自己的系统，这个索引只读雇主自己的招聘系统。",
     "zhipin.com": "BOSS 直聘是招聘网站不是雇主自己的系统，这个索引只读雇主自己的招聘系统。",

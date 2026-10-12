@@ -982,7 +982,9 @@ def known_not_indexed_hint(known: list["not_indexed.NotIndexedEmployer"]) -> str
         )
     where = (
         f"Its postings are on its own careers portal at {first.careers_url}, so send the "
-        "user there directly."
+        "user there directly. An assistant with a browser tool can open that portal and "
+        "read the listings as a person would; OpenHire does not index, date or watch what "
+        "that page shows."
         if first.careers_url else
         "We have not confirmed its careers portal URL, so do not guess one."
     )

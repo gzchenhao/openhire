@@ -67,7 +67,8 @@ to hire. A long-open role can equally mean "hard to fill". Treat it as a reason 
 
 ---
 
-An MCP server that turns **any** MCP-speaking assistant — Claude, Cursor, Windsurf, Cline,
+An MCP server that turns **any** MCP-speaking assistant — Claude, 豆包 Doubao, DeepSeek (through
+an MCP client such as Cherry Studio or Chatbox), Cursor, 腾讯 WorkBuddy, TRAE, Windsurf, Cline,
 ChatGPT via connectors — into a private radar for
 **AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **143 employers'**
 own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka, plus
@@ -112,7 +113,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.4.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.5.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -148,12 +149,17 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.4.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.5.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
-> **Cursor / Claude Code** — or paste this to your agent: *"Install the MCP server at
+> **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — or paste this to your agent: *"Install the MCP server at
 > github.com/gzchenhao/openhire. Install `uv` first if it is missing, then add
 > `uvx openhire@latest serve` to my MCP config and tell me which file you changed."*
+> **豆包（豆包工作）** — its custom connectors take an HTTP address, not a command: run
+> `ohp serve --transport streamable-http --port 8000` on your machine, then add
+> `http://127.0.0.1:8000/mcp` as a 自定义连接器 (see the 豆包 entry under Works with).
+> **DeepSeek** — the DeepSeek app has no MCP slot; use DeepSeek inside an MCP client
+> (Cherry Studio, Chatbox, Cline, WorkBuddy, TRAE) and give that client the config below.
 
 **Prerequisite:** `uvx` ships with [uv](https://docs.astral.sh/uv/). Without it the config
 below fails with nothing but "server failed to start" in your client — install uv first:
@@ -192,7 +198,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.4", "serve"]`.
+matters: `"args": ["openhire==0.8.5", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -233,6 +239,20 @@ file when it starts, so after editing it quit and reopen the app (or add the ser
 its MCP panel's 「添加 MCP」 instead); a hand-written entry does not appear in the list until
 then. No `uv` on the machine? `pip install openhire` into any Python ≥ 3.11 environment and
 point `command` at that environment's `ohp` executable with `"args": ["serve"]`.
+
+**豆包 · 豆包工作（字节）** — 豆包的「技能·连接器·伙伴 → 新建 → 新建自定义连接器」只收 HTTP 地址，
+不收命令行。先在本机起一个 HTTP 端：
+```bash
+pipx install openhire
+ohp serve --transport streamable-http --port 8000      # 本机 http://127.0.0.1:8000/mcp
+```
+然后在豆包里新建自定义连接器：传输类型 HTTP，服务器 URL `http://127.0.0.1:8000/mcp`，Headers 留空，保存后打开开关。
+索引、指纹和匹配都在你自己的电脑上，豆包只是通过本机端口调用它。
+（这段按豆包连接器的公开说明写，2026-10-12 尚未在豆包里实测；实测后会更新这里。）
+
+**DeepSeek** — DeepSeek 自己的 App 没有 MCP 入口。把 DeepSeek 当模型用在任何支持 MCP 的客户端里
+（Cherry Studio、Chatbox、Cline、腾讯 WorkBuddy、TRAE 都行），再把上面那段 `uvx` 配置填进该客户端的
+MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 → 类型 STDIO，命令 `uvx`，参数 `openhire@latest serve`」。
 
 > First start downloads the ~30 MB public snapshot (jobs/companies only) — give it a moment.
 > To refresh later run `ohp bootstrap --force` or `ohp ingest`. On Windows Claude Desktop from

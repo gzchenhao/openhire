@@ -6,9 +6,15 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.4 · 2026-10-11；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.5 · 2026-10-12；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.5（2026-10-12，云端会话，`reports/072`）：** 领导四条指示的落地。① **装机文案点名五个助手**（README 主句与 Works with、`docs/employers.html`）：Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy；
+  豆包走本机 `ohp serve --transport streamable-http --port 8000` + 自定义连接器 `http://127.0.0.1:8000/mcp`（**尚未在豆包里实测**，README 那句括号等实测后删）；DeepSeek 经 Cherry Studio / Chatbox 这类客户端。文案规矩第 7 条。
+  ② **「深科技」不再用**，一律英文 deep tech（CLAUDE.md 人设条、私库 15 份稿件已改；公开 reports 历史不动）。③ **封闭门户给浏览器提示**：`boards.py` 的 `BROWSER_HINT` 接在飞书 / Lark / Workday / SuccessFactors / Taleo / iCIMS 的拒绝理由后，
+  `known_not_indexed_hint` 对有门户地址的雇主加一句「有浏览器工具的助手可以自己打开读，OpenHire 不入库、不标日期、不盯」；招聘网站（LinkedIn / JobsDB / BOSS）不加。回答领导「WorkBuddy 能读飞书而我们不能会不会尴尬」：
+  谁都读不了飞书的列表接口（要签名；WorkBuddy 也没有雇主授权），能读的只是浏览器里渲染出来的那一页，和人一样；OpenHire 的价值在索引、日期、在架天数和盯岗，不在替人看一页。
+  ④ **Registry 工作流核对步骤加重试**（6 次 × 10 秒）：0.8.2 与 0.8.3 都是发布成功后立刻核对、搜索索引还没更新而「失败」。⑤ **Gmail 托管**：见下方「每次开工要主动查的四个入口」第 2 条，Routine `OpenHire 邮箱日检`（trig_014FzhejmdLSWLn9mimarsMu）。636 tests。
 - **v0.8.4（2026-10-11，云端会话，`reports/070`）：** ① `check_employer` 加 **`sanctions_screen`**：OFAC SDN 与综合名单（公开 CSV，无 key）下载到 `OPENHIRE_HOME/sanctions/` 每日一次，
   公司名**本机比对**（只剥法律形式后缀，不剥 group / holdings；双语名各试），命中报条目不报判决，拿不到名单报 `reason`；云端连不上 treasury.gov，要本机跑。
   ② **板也能盯**：`watch_intent` 收 `board_url`（只配 location / title），`check_watches` 现读板报 `new_matches` 与 `closed_since_last`，板不答复不标关闭；`read_board` 仍不入库（原因见 070 第二节）。
@@ -204,7 +210,10 @@
 
 **每次开工要主动查的四个入口**（有动静立刻处理，不等到期）：
 1. GitHub issues（`gh issue list --repo gzchenhao/openhire`）—— 雇主认领模板会落在这里
-2. 邮箱 `gdchenhao@qq.com`（认领的非 GitHub 通道，我读不到，**需要提醒领导自己看**）
+2. 邮箱：**Gmail `globalheadhunter007@gmail.com` 自 2026-10-12 起托管给云端会话**（领导原话：「属于 openhire 的项目，你都全权负责处理」）。
+   云端会话有 Gmail 连接器，每天一次例行查过去 24 小时的 OpenHire 相关邮件（GitHub 通知、PyPI、Glama、Registry、目录收录、雇主认领、用户吐槽附件），
+   能处理的直接处理（我们自己仓库的 CI 红了就修并推；目录邮件按规矩回；认领走认领流程），处理记录追加到私库 `gmail-log.md`；要密码、密钥、授权码的邮件一律不动只报告。
+   已建 Routine「OpenHire 邮箱日检」每天 08:51（香港时间）唤醒本会话。QQ 邮箱 `gdchenhao@qq.com` 仍读不到，**认领若走 QQ 邮箱仍要提醒领导自己看**。
 3. 知乎通知与评论（https://www.zhihu.com/notifications）
 3.5 **体验报告附件：看 `C:\Users\gdche\Downloads` 里有没有新的 `吐槽-*.md` / `体验报告-*.md`。**
    Gmail 连接器**只给附件 id、不给内容**；`RAW` 能取到整封 MIME，但要把 12KB base64 手抄进文件，有损坏风险。
@@ -224,7 +233,7 @@
    「139 家」在所有文章里出现过，而表里是 140 行——那不是写错数，是**两个不同的问题共用了一个标签**。
    文件里每个字段名都说清了它数的是什么（`companies_in_index` vs `employers_with_live_postings`）。
    百分比对外一律取整并标注实测日期，索引每周刷新，小数必然漂移。
-2. **人设：主叙事是「深科技猎头，覆盖智驾与具身」**（领导 2026-09-14 批准）。
+2. **人设：主叙事是「deep tech 猎头，覆盖智驾与具身」**（领导 2026-09-14 批准；**2026-10-12 定：「深科技」三个字不再用，中英文文案里一律写英文 deep tech**，行业内人士都看得懂）。
    「用 AI 结对写代码」只作为**方法说明**出现，绝不作为身份——写成「我不是程序员，是个 PM」会让
    同一个号在一个月里出现三张名片，读者连着刷到会觉得「这人谱系好满」，可信度反而掉。
 3. **零破折号。** 这是 023 号定的行文规矩，但 Round 3 实测四篇文章里有 11 处——**规矩是我们自己破的**。
@@ -240,6 +249,11 @@
    先回答「哪个字段能证明」；答不上来就删掉，改写成我们真正量到的东西（在架天数）。
 
 6. **称呼与用词（领导 2026-10-08 定）。** 对雇主一律「贵公司」，不写「贵司」（语法错误）；「小公司」带贬义，正文用「中小型公司」或「小型公司」，只有引用问题原文时照抄。
+
+7. **装机文案点名五个助手（领导 2026-10-12 定）。** 凡是说「把 OpenHire 装进 AI 助手」的文案（README、docs 站、知乎、LinkedIn、目录描述），一律写
+   **Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy**，不能只写 Claude 和 Cursor：中国大陆用户用不了 Claude，只写它们没有代入感。
+   准确写法：豆包（豆包工作）的自定义连接器只收 HTTP 地址，所以给它的路径是本机 `ohp serve --transport streamable-http --port 8000` 加 `http://127.0.0.1:8000/mcp`（2026-10-12 按豆包公开说明写，**尚未实测**，实测后改 README 那句括号）；
+   DeepSeek 自己的 App 没有 MCP 入口，写法是「DeepSeek 经 Cherry Studio / Chatbox 这类支持 MCP 的客户端」；WorkBuddy 走 `~/.workbuddy/mcp.json`。
 
 5. **主句是底座，不是楔子（领导 2026-09-23 批准，见 `reports/050`）。** 对外第一句永远是
    **「让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑」**；「原始发布日 / 在架天数」只作为
