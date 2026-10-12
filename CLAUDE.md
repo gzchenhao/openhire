@@ -178,6 +178,7 @@
   同步脚本 2026-10-10 起是**双向三方合并**（`drafts/.sync-state.json` 记上次同步时每个文件的内容）：只有一边改了就同步那边，两边都改了报 CONFLICT、不覆盖，人工合并后 `--resolved <文件>`。
   **本机任务队列（2026-10-11 起，`reports/070`）：** 云端跑不了的查证（RDAP / 档案馆 / 雇主官网 / OFAC），云端写进私库根目录 `local-tasks.json`，本机一条命令
   `.venv\Scripts\python.exe scripts\run_local_tasks.py --sync` 拉任务、跑、推回 `drafts/local-results/`；云端读私库的 `local-results/`。要本机先 `git pull` 并重装包。
+  **外部事实源的分工（2026-10-12 定）：** 外部事实源（私库 `*-org-events-decisions-*.md`）的生产侧（规格、导出、回填、上传、验收）归对方项目经理；OpenHire 只管消费侧（怎么读、company_key 匹配、展示规矩），要求写成裁定条目经领导转达，**不直接指挥对方的 agent 改对方仓库**（10-12 夜越过一次，对方项目经理来函纠正）。
   `.env` / API key **永不进任何仓库**（含私有），存密码管理器。**唯一例外（领导 2026-10-10 定，`reports/066`）：DeepSeek key 可以存成 Claude Code 云端环境的「网络密钥」（会话看不到明文，只附到 api.deepseek.com），由领导自己粘贴；PyPI 改走 `.github/workflows/release.yml` 可信发布，token 不进云端。**`dist/`、`.tools/`、本地 DB 均可重建，不必备份。
 - 再发新版流程（2026-10-10 起，云端和本机一样）：bump 十二处版本（含 `uv lock`）→ 全量测试 → 提交推 main。**到此为止**：Actions 的 Release 看到新版本号会自己测、发 PyPI（可信发布）、打 tag、挂 mcpb、建 Release，然后 Registry 自动跟上。不要手动推 tag（会和 Actions 建的 tag 冲突），不再 twine，README `mcp-name` 保持不变。发完用 `curl -s https://pypi.org/pypi/openhire/json` 核对版本。
 
