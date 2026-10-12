@@ -236,8 +236,8 @@ Or paste the `uvx` config above into TRAE's MCP settings by hand.
 
 **腾讯 WorkBuddy** — `~/.workbuddy/mcp.json`, same `mcpServers` shape. WorkBuddy reads the
 file when it starts, so after editing it quit and reopen the app (or add the server through
-its MCP panel's 「添加 MCP」 instead); a hand-written entry does not appear in the list until
-then. No `uv` on the machine? `pip install openhire` into any Python ≥ 3.11 environment and
+the app's 专家·技能·连接器 → 自定义连接器 button instead); a hand-written entry does not appear in
+the list until then. No `uv` on the machine? `pip install openhire` into any Python ≥ 3.11 environment and
 point `command` at that environment's `ohp` executable with `"args": ["serve"]`.
 
 **豆包 · 豆包工作（字节）** — 豆包的「技能·连接器·伙伴 → 新建 → 新建自定义连接器」只收 HTTP 地址，
