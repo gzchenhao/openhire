@@ -13,6 +13,13 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-12（五续）· 0.8.7：Workable 与 SmartRecruiters 首批六家雇主入库（`reports/076`）
+
+- **已完成：** 五家候选板（搜索引擎按两家系统域名筛出）本机 22:19 一次读通，连同 Robotec.ai 共六家入种子表：Workable `robotec-ai`、`flexion-robotics`、`andromeda-robotics`、`agile-robots`；SmartRecruiters `AeroVect`（slug `aerovect`）、`PalRobotics`（`palrobotics`）。真实载荷教的修复：Workable 接口把岗位按城市重复给出（同 shortcode 两条），解析层按 shortcode 合并、城市用分号连起，一岗一主键；`on-site` 写法放宽。索引来源说明三处加上两家。656 tests，十二处版本号到 0.8.7，推 main 自动发版。
+- **关键决策：** 博世不入库（4,947 条多为客服技工，不属三个行业，读板照读）；AeroVect 六条全是 2020 到 2022 年的岗，照入，在架天数如实报不解释；雇主数 143 等周一快照后 `ohp numbers` 再改（数字只引 `numbers.json`）。
+- **下一步：** 周一快照把六家带进公开库后更新 numbers 与 README 雇主数；大租户先过滤再取详情进路线图；继续按域名筛两家系统上的目标行业雇主，每家本机读通再入。
+- **待确认：** 无。
+
 ## 2026-10-12（四续）· 0.8.6：Workable 与 SmartRecruiters 适配器（`reports/075`）
 
 **已完成（证据：654 tests；推 main 自动发版）**

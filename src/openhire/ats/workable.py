@@ -51,11 +51,23 @@ class WorkableClient(ATSClient):
         return isinstance(payload, dict) and isinstance(payload.get("jobs"), list)
 
     def parse(self, payload, tenant: str) -> list[JobRecord]:
-        records: list[JobRecord] = []
+        # The widget lists a job once per city it is open in, same shortcode each time (live
+        # 2026-10-12: Flexion's Zürich + San Francisco roles came back as two entries, Agile
+        # Robots' Palo Alto + Petaluma technician likewise). One job is one row here, carrying
+        # every city it names, so the index keeps one primary key per job and count_on_board
+        # counts jobs, not job-city pairs.
+        grouped: dict[str, tuple[dict, list[str]]] = {}
         for j in payload["jobs"]:
             ats_job_id = str(j.get("shortcode") or j.get("id") or "").strip()
             if not ats_job_id:
                 continue
+            if ats_job_id in grouped:
+                locs = grouped[ats_job_id][1]
+                locs.extend(loc for loc in self._locations(j) if loc not in locs)
+                continue
+            grouped[ats_job_id] = (j, self._locations(j))
+        records: list[JobRecord] = []
+        for ats_job_id, (j, locs) in grouped.items():
             parts = [j.get("description"), j.get("requirements"), j.get("benefits")]
             desc = "\n\n".join(p for p in parts if isinstance(p, str) and p.strip())
             vendor_url = j.get("application_url") or j.get("url")
@@ -65,7 +77,7 @@ class WorkableClient(ATSClient):
                     title=(j.get("title") or "").strip(),
                     description_raw=html_to_text(desc),
                     apply_channel=self.resolve_apply(tenant, ats_job_id, vendor_url),
-                    location=self._location(j),
+                    location="; ".join(locs) or None,
                     remote_hint=self._remote_hint(j),
                     posted_at=_date_to_dt(j.get("published_on") or j.get("published") or j.get("created_at")),
                     # The widget carries no last-touched field.
@@ -75,26 +87,30 @@ class WorkableClient(ATSClient):
         return records
 
     @staticmethod
-    def _location(j) -> str | None:
+    def _locations(j) -> list[str]:
+        """Every city the entry names, each as "city, region, country"; de-duplicated, in order."""
         locs = j.get("locations")
-        if isinstance(locs, list) and locs and isinstance(locs[0], dict):
-            first = locs[0]
-            parts = [first.get("city"), first.get("region") or first.get("state"), first.get("country")]
-        else:
-            parts = [j.get("city"), j.get("state"), j.get("country")]
-        text = ", ".join(str(p).strip() for p in parts if p and str(p).strip())
-        return text or None
+        entries = [loc for loc in locs if isinstance(loc, dict)] if isinstance(locs, list) else []
+        if not entries:
+            entries = [{"city": j.get("city"), "region": j.get("state"), "country": j.get("country")}]
+        out: list[str] = []
+        for e in entries:
+            parts = [e.get("city"), e.get("region") or e.get("state"), e.get("country")]
+            text = ", ".join(str(x).strip() for x in parts if x and str(x).strip())
+            if text and text not in out:
+                out.append(text)
+        return out
 
     @staticmethod
     def _remote_hint(j) -> str:
         if j.get("telecommuting") is True or j.get("remote") is True:
             return "remote"
-        wt = str(j.get("workplace") or j.get("workplace_type") or "").lower().replace("_", "")
+        wt = str(j.get("workplace") or j.get("workplace_type") or "").lower().replace("_", "").replace("-", "").replace(" ", "")
         if wt in ("remote", "hybrid"):
             return wt
         if wt in ("onsite", "on site"):
             return "onsite"
-        loc = str(WorkableClient._location(j) or "").lower()
+        loc = "; ".join(WorkableClient._locations(j)).lower()
         if "remote" in loc:
             return "remote"
         return "unknown"

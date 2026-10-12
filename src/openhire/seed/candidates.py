@@ -268,6 +268,24 @@ _LIXIANG = [
     ("social", "理想汽车 Li Auto", "lixiang"),
 ]
 
+# --- Workable ----------------------------------------------------------------------
+# Each board read live on 2026-10-12 through the local task queue (reports/075 §5, 076):
+# the cloud session cannot reach apply.workable.com, so the maintainer's machine did.
+_WORKABLE = [
+    ("robotec-ai", "Robotec.ai"),  # robotics simulation / physical-AI tooling, Warsaw: 6 postings, dated
+    ("flexion-robotics", "Flexion Robotics"),  # humanoid intelligence layer, Zürich + SF: 14 job-city rows
+    ("andromeda-robotics", "Andromeda Robotics"),  # companion humanoid, SF + Melbourne: 16 rows
+    ("agile-robots", "Agile Robots"),  # industrial + humanoid robotics; the board carries the US roles: 4 rows
+]
+
+# --- SmartRecruiters ----------------------------------------------------------------
+# Same day, same route. The tenant keeps the vendor's casing (it is part of the URL); the
+# company slug is ours and lowercase like every other.
+_SMARTRECRUITERS = [
+    ("AeroVect", "AeroVect", "aerovect"),  # autonomous airport tow tractors, SF: 6 postings, all dated 2020-2022
+    ("PalRobotics", "PAL Robotics", "palrobotics"),  # humanoid service robots, Barcelona: 3 postings
+]
+
 # --- Employer self-reported rosters (ats/self_reported.py) ---------------------------------
 # The door for employers whose own system we cannot read (reports/060). Derived from the
 # adapter's registry so an employer is declared in exactly one place, after the maintainer
@@ -285,6 +303,8 @@ def all_candidates() -> list[Candidate]:
         ("moka", _MOKA),
         ("lixiang", _LIXIANG),
         ("nio", _NIO),
+        ("workable", _WORKABLE),
+        ("smartrecruiters", _SMARTRECRUITERS),
         ("self_reported", _SELF_REPORTED),
     ):
         for row in rows:
@@ -301,5 +321,7 @@ def candidate_count() -> int:
         len(_GREENHOUSE) + len(_LEVER) + len(_ASHBY) + len(_BEISEN) + len(_MOKA)
         + len(_LIXIANG)
         + len(_NIO)
+        + len(_WORKABLE)
+        + len(_SMARTRECRUITERS)
         + len(_SELF_REPORTED)
     )

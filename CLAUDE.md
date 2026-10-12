@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.6 · 2026-10-12；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.7 · 2026-10-12；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.7（2026-10-12，云端会话，`reports/076`）：** 两家系统首批六家雇主入种子表（Workable：Robotec.ai、Flexion Robotics、Andromeda Robotics、Agile Robots；SmartRecruiters：AeroVect、PAL Robotics），每家 10-12 本机真实读通后才进；Workable 接口把岗位按城市重复给出（同 shortcode 两条），解析层按 shortcode 合并、城市用分号连起，一岗一主键；索引来源说明三处加上两家。博世不入库（4,947 条多为客服技工）。656 tests。**周一快照之后雇主数才变，README 的 143 等 `ohp numbers` 再改。**
 - **v0.8.6（2026-10-12，云端会话，`reports/075`）：** **Workable 与 SmartRecruiters 适配器**（073 做市商结论的落地：一个供应商写一次，长尾雇主边际成本为零）。Workable 走 Widget API（`apply.workable.com/api/v1/widget/accounts/<sub>?details=true`，`published_on` 裸日期存 UTC 零点）；
   SmartRecruiters 分页列表 + 每条详情（6 并发，单条失败不影响整批）。两家接进 `read_board` / 板 watch / `ohp seed`；`ATS_APPLY_HOSTS` 加 `apply.workable.com`、`jobs.smartrecruiters.com`。
   **云端连不上两家、文档站也打不开，适配器按文档写、18 条测试钉住；10-12 夜本机实测两家都通**（Robotec.ai 6 条，发布日 ats_reported；博世 4,947 条、德国 738 条，详情合并成功，`reports/075` 第五节）；索引来源说明没改，种子表还没有这两家的雇主。654 tests。

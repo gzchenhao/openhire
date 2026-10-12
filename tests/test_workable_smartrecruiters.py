@@ -90,6 +90,23 @@ def test_workable_parse_reads_shortcode_dates_locations_and_remote():
     assert _date_to_dt("not a date") is None and _date_to_dt(None) is None
 
 
+def test_workable_lists_a_job_once_per_city_and_one_row_keeps_every_city():
+    # Live 2026-10-12: Flexion's "AI Research Engineer" came back twice with the same shortcode,
+    # once for Zürich and once for San Francisco. One job, one primary key, both cities.
+    payload = {"name": "Flexion", "jobs": [
+        {"title": "AI Research Engineer", "shortcode": "CC3F9AC458", "published_on": "2026-10-08",
+         "locations": [{"city": "Zürich", "region": "Zurich", "country": "Switzerland"}], "description": "<p>x</p>"},
+        {"title": "AI Research Engineer", "shortcode": "CC3F9AC458", "published_on": "2026-10-08",
+         "locations": [{"city": "San Francisco", "region": "California", "country": "United States"}], "description": "<p>x</p>"},
+        {"title": "Solo", "shortcode": "0001", "published_on": "2026-10-08",
+         "locations": [{"city": "Palo Alto", "country": "United States"}, {"city": "Petaluma", "country": "United States"}]},
+    ]}
+    recs = WorkableClient().parse(payload, "flexion-robotics")
+    assert [r.ats_job_id for r in recs] == ["CC3F9AC458", "0001"]
+    assert recs[0].location == "Zürich, Zurich, Switzerland; San Francisco, California, United States"
+    assert recs[1].location == "Palo Alto, United States; Petaluma, United States"
+
+
 def test_workable_fetch_validates_the_tenant_like_every_other_vendor():
     calls = []
 
