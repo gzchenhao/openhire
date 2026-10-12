@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -29,6 +30,12 @@ DRAFTS = ROOT / "drafts"
 ALLOWED = {"check-company", "read-board"}
 DEFAULT_TASKS = DRAFTS / "local-tasks.json"
 DEFAULT_OUT = DRAFTS / "local-results"
+# `ohp --json` prints Chinese with ensure_ascii=False. On a Chinese Windows box with stdout
+# piped, Python encodes that in the console code page (GBK) unless told otherwise, and this
+# side decodes UTF-8: on 2026-10-12 six of eight finished checks came back as a decode error
+# in the reader thread, returncode 0, no output. The child is told to write UTF-8, and a
+# stray byte is replaced, never raised, so a finished check is never lost.
+CHILD_ENV = {"PYTHONIOENCODING": "utf-8"}
 
 
 def ohp_path() -> list[str]:
@@ -58,8 +65,9 @@ def load_tasks(path: Path) -> list[dict]:
 def run_task(task: dict, ohp: list[str] | None = None, runner=subprocess.run) -> dict:
     cmd = [*(ohp or ohp_path()), task["kind"], *task["args"], "--json"]
     started = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    env = {**os.environ, **CHILD_ENV}
     try:
-        r = runner(cmd, capture_output=True, text=True, encoding="utf-8", timeout=900)
+        r = runner(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900, env=env)
         rc, out, err = r.returncode, r.stdout or "", r.stderr or ""
     except Exception as exc:  # a missing ohp, a timeout: the task reports it, the batch goes on
         rc, out, err = -1, "", f"{type(exc).__name__}: {exc}"
@@ -79,7 +87,8 @@ def summarise(outcome: dict) -> list[str]:
     res = outcome.get("result") or {}
     lines = [f"## {outcome['id']} · {outcome['kind']} {' '.join(outcome['args'])}", ""]
     if not outcome["ok"]:
-        lines += [f"失败（returncode {outcome['returncode']}）：{outcome['stderr_tail'].strip()[-400:]}", ""]
+        why = outcome["stderr_tail"].strip()[-400:] or "退出码 0，但标准输出里没有可解析的 JSON"
+        lines += [f"失败（returncode {outcome['returncode']}）：{why}", ""]
         return lines
     if outcome["kind"] == "check-company":
         lines.append(f"公司：{res.get('company') or ''}  域名：{res.get('domain') or '（未知）'}")
