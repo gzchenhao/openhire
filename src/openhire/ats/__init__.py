@@ -20,6 +20,8 @@ from .lixiang import LixiangClient
 from .moka import MokaClient
 from .nio import NioClient
 from .self_reported import SelfReportedClient
+from .smartrecruiters import SmartRecruitersClient
+from .workable import WorkableClient
 
 _CLIENTS: dict[str, ATSClient] = {
     "greenhouse": GreenhouseClient(),
@@ -27,6 +29,8 @@ _CLIENTS: dict[str, ATSClient] = {
     "ashby": AshbyClient(),
     "beisen": BeisenClient(),
     "moka": MokaClient(),
+    "workable": WorkableClient(),
+    "smartrecruiters": SmartRecruitersClient(),
     "lixiang": LixiangClient(),  # first-party employer mirror (理想汽车), one tenant
     "nio": NioClient(),
     # Employer self-reported rosters, verified by corporate identity (ats/self_reported.py).
@@ -58,6 +62,8 @@ __all__ = [
     "MokaClient",
     "NioClient",
     "SelfReportedClient",
+    "SmartRecruitersClient",
+    "WorkableClient",
     "canonical_apply_url",
     "get_client",
     "all_vendors",

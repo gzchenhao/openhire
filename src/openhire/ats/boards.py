@@ -40,7 +40,12 @@ CLOSED_PORTALS = {
     "zhipin.com": "BOSS 直聘是招聘网站不是雇主自己的系统，这个索引只读雇主自己的招聘系统。",
 }
 
-SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)"
+SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)、Workable (apply.workable.com/<subdomain>)、SmartRecruiters (jobs.smartrecruiters.com/<company>)"
+
+_WORKABLE_HOSTS = {"apply.workable.com"}
+# Workable's own sites on the same domain, never a tenant.
+_WORKABLE_NOT_TENANTS = {"www", "apply", "jobs", "help", "resources", "careers", "api", "app"}
+_SMARTRECRUITERS_HOSTS = {"jobs.smartrecruiters.com", "careers.smartrecruiters.com", "api.smartrecruiters.com"}
 
 _SLUG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
@@ -107,6 +112,25 @@ def detect_board(url: str) -> tuple[str, str]:
         if not m:
             raise BoardNotSupported("bad_url", "A Moka portal URL looks like app.mokahr.com/apply/<org>/<siteId>.")
         return "moka", f"{m.group(1)}/{m.group(2)}"
+
+    if host in _WORKABLE_HOSTS:
+        m = re.match(r"^/api/v1/widget/accounts/([^/?]+)", path)
+        tenant = m.group(1) if m else _first_segment(path)
+        return _checked("workable", tenant, "apply.workable.com/<subdomain>")
+
+    if host.endswith(".workable.com") and host.count(".") == 2:
+        tenant = host.split(".", 1)[0]
+        if tenant in _WORKABLE_NOT_TENANTS:
+            raise BoardNotSupported("bad_url", "A Workable board URL looks like apply.workable.com/<subdomain>.")
+        return _checked("workable", tenant, "apply.workable.com/<subdomain>")
+
+    if host in _SMARTRECRUITERS_HOSTS:
+        if host == "api.smartrecruiters.com":
+            m = re.match(r"^/v1/companies/([^/]+)", path)
+            tenant = m.group(1) if m else None
+        else:
+            tenant = _first_segment(path)
+        return _checked("smartrecruiters", tenant, "jobs.smartrecruiters.com/<company>")
 
     if host.endswith(".zhiye.com") and host.count(".") == 2:
         tenant = host.split(".", 1)[0]

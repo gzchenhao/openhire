@@ -13,6 +13,16 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-12（四续）· 0.8.6：Workable 与 SmartRecruiters 适配器（`reports/075`）
+
+**已完成（证据：654 tests；推 main 自动发版）**
+- 两家供应商接进 `read_board`、板 watch 和将来的 `ohp seed`：Workable 走 Widget API 一次读全；SmartRecruiters 分页列表加每条详情（6 并发）。投递链接只信各自租户主机。
+- 云端连不上两家，按文档写、测试钉住；第一次真实读取排进本机任务队列（Robotec.ai、BoschGroup）。索引来源说明未改，种子表里还没有这两家的雇主。
+
+**下一步**
+1. 本机跑 `run_local_tasks.py --sync`，看两条 read-board 结果，与文档不符就按载荷改。
+2. 找目标行业里用 Workable / SmartRecruiters 的雇主进种子表（先本机实测再入库）。
+
 ## 2026-10-12（三续）· 一站式事实层：求职者问雇主 15 件、雇主问候选人 6 件（`reports/074`，无代码改动）
 
 **决策**

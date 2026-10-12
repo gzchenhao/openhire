@@ -39,6 +39,8 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
     "lever": {"jobs.lever.co"},
     "ashby": {"jobs.ashbyhq.com"},
     "moka": {"app.mokahr.com"},
+    "workable": {"apply.workable.com"},
+    "smartrecruiters": {"jobs.smartrecruiters.com"},
     # First-party employer mirror, not an ATS: the apply page is the employer's own site.
     "lixiang": {"www.lixiang.com"},
     # NIO 蔚来 is a first-party employer mirror (www.nio.cn/careers/jobs), not an ATS: the
@@ -134,6 +136,12 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
         # `tenant` is already "<org>/<siteId>". The portal is a hash-routed SPA, so the
         # job id lives in the fragment — the path form 404s.
         return f"https://app.mokahr.com/apply/{tenant}#/job/{ats_job_id}"
+    if vendor == "workable":
+        # The hosted job page on apply.workable.com; the shortcode is the job id.
+        return f"https://apply.workable.com/{tenant}/j/{ats_job_id}/"
+    if vendor == "smartrecruiters":
+        # The posting page on the employer's SmartRecruiters tenant, which carries the apply button.
+        return f"https://jobs.smartrecruiters.com/{tenant}/{ats_job_id}"
     if vendor == "lixiang":
         # Li Auto's own job page, which carries the 立即申请 button. `tenant` is the board
         # (social); the page URL does not vary by board.

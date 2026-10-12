@@ -649,7 +649,7 @@ def check_company(
 # --- read-board -------------------------------------------------------------------
 @app.command(name="read-board", rich_help_panel=FIND_PANEL)
 def read_board(
-    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森."),
+    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters."),
     location: str = typer.Option(None, "--location", help="Only postings whose location contains this (either language)."),
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. partner,ecosystem / 招聘,hr."),
     limit: int = typer.Option(30, "--limit", help="How many to print."),

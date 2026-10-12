@@ -6,9 +6,12 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.5 · 2026-10-12；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.6 · 2026-10-12；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.6（2026-10-12，云端会话，`reports/075`）：** **Workable 与 SmartRecruiters 适配器**（073 做市商结论的落地：一个供应商写一次，长尾雇主边际成本为零）。Workable 走 Widget API（`apply.workable.com/api/v1/widget/accounts/<sub>?details=true`，`published_on` 裸日期存 UTC 零点）；
+  SmartRecruiters 分页列表 + 每条详情（6 并发，单条失败不影响整批）。两家接进 `read_board` / 板 watch / `ohp seed`；`ATS_APPLY_HOSTS` 加 `apply.workable.com`、`jobs.smartrecruiters.com`。
+  **云端连不上两家、文档站也打不开，适配器按文档写、18 条测试钉住，第一次真实读取排在本机任务队列**（robotec-ai、BoschGroup）；索引来源说明没改，种子表还没有这两家的雇主。654 tests。
 - **v0.8.5（2026-10-12，云端会话，`reports/072`）：** 领导四条指示的落地。① **装机文案点名五个助手**（README 主句与 Works with、`docs/employers.html`）：Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy；
   豆包走本机 `ohp serve --transport streamable-http --port 8000` + 自定义连接器 `http://127.0.0.1:8000/mcp`（领导 10-12 在豆包工作里实测通过）；DeepSeek 经 Cherry Studio / Chatbox 这类客户端。文案规矩第 7 条。
   ② **「深科技」不再用**，一律英文 deep tech（CLAUDE.md 人设条、私库 15 份稿件已改；公开 reports 历史不动）。③ **封闭门户给浏览器提示**：`boards.py` 的 `BROWSER_HINT` 接在飞书 / Lark / Workday / SuccessFactors / Taleo / iCIMS 的拒绝理由后，

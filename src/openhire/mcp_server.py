@@ -38,7 +38,7 @@ mcp = FastMCP(
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; authorize_application to record an "
         "authorized, employer-direct application; read_board to read any employer's public "
-        "board live (Greenhouse, Lever, Ashby, Moka, 北森, any sector) when the employer is not "
+        "board live (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters, any sector) when the employer is not "
         "in the index, with nothing stored. Never pass a résumé, file, name, email or "
         "phone to any tool. ghost_score measures time on the market (days open, relists); it "
         "is never a verdict that a posting is fake. Tell the user what was measured (open N "
@@ -377,7 +377,7 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     whose stated pay is below the floor. Pay is stated mostly where law requires it (US
     postings on Greenhouse/Lever/Ashby), so a watch that needs a number will lean US.
 
-    A board watch: pass `board_url` (a Greenhouse / Lever / Ashby / Moka / 北森 careers URL,
+    A board watch: pass `board_url` (a Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters careers URL,
     as for read_board) with optional `location` and `title` and nothing else; check_watches
     then reads that board live on every pull and reports what appeared and what
     disappeared since the last pull. This is how an employer outside the index is watched.
@@ -541,7 +541,9 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
     embodied AI) and has, or can find on the employer's careers page, a board URL on a
     vendor this index knows how to read: Greenhouse (job-boards.greenhouse.io/<board>),
     Lever (jobs.lever.co/<site>), Ashby (jobs.ashbyhq.com/<board>), Moka
-    (app.mokahr.com/apply/<org>/<siteId>) or 北森 (<tenant>.zhiye.com). Any sector.
+    (app.mokahr.com/apply/<org>/<siteId>), 北森 (<tenant>.zhiye.com), Workable
+    (apply.workable.com/<subdomain>) or SmartRecruiters (jobs.smartrecruiters.com/<company>).
+    Any sector.
 
     What you get: the board's own postings with title, location, the board's own posting
     date and `days_open` where it reports one (`date_signal: not_reported_by_ats` otherwise),
