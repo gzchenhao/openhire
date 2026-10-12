@@ -11,7 +11,8 @@
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
 - **v0.8.6（2026-10-12，云端会话，`reports/075`）：** **Workable 与 SmartRecruiters 适配器**（073 做市商结论的落地：一个供应商写一次，长尾雇主边际成本为零）。Workable 走 Widget API（`apply.workable.com/api/v1/widget/accounts/<sub>?details=true`，`published_on` 裸日期存 UTC 零点）；
   SmartRecruiters 分页列表 + 每条详情（6 并发，单条失败不影响整批）。两家接进 `read_board` / 板 watch / `ohp seed`；`ATS_APPLY_HOSTS` 加 `apply.workable.com`、`jobs.smartrecruiters.com`。
-  **云端连不上两家、文档站也打不开，适配器按文档写、18 条测试钉住，第一次真实读取排在本机任务队列**（robotec-ai、BoschGroup）；索引来源说明没改，种子表还没有这两家的雇主。654 tests。
+  **云端连不上两家、文档站也打不开，适配器按文档写、18 条测试钉住；10-12 夜本机实测两家都通**（Robotec.ai 6 条，发布日 ats_reported；博世 4,947 条、德国 738 条，详情合并成功，`reports/075` 第五节）；索引来源说明没改，种子表还没有这两家的雇主。654 tests。
+  本机任务脚本修了一处编码缺陷（main `60055b5`，不发版）：本机 `ohp --json` 在 PowerShell 管道里按 GBK 输出，脚本按 UTF-8 读，6/8 任务记成「退出码 0 无输出」；现强制子进程 UTF-8、解不出的字节替换不报错。
 - **v0.8.5（2026-10-12，云端会话，`reports/072`）：** 领导四条指示的落地。① **装机文案点名五个助手**（README 主句与 Works with、`docs/employers.html`）：Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy；
   豆包走本机 `ohp serve --transport streamable-http --port 8000` + 自定义连接器 `http://127.0.0.1:8000/mcp`（领导 10-12 在豆包工作里实测通过）；DeepSeek 经 Cherry Studio / Chatbox 这类客户端。文案规矩第 7 条。
   ② **「深科技」不再用**，一律英文 deep tech（CLAUDE.md 人设条、私库 15 份稿件已改；公开 reports 历史不动）。③ **封闭门户给浏览器提示**：`boards.py` 的 `BROWSER_HINT` 接在飞书 / Lark / Workday / SuccessFactors / Taleo / iCIMS 的拒绝理由后，

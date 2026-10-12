@@ -22,6 +22,7 @@
 **下一步**
 1. 本机跑 `run_local_tasks.py --sync`，看两条 read-board 结果，与文档不符就按载荷改。
 2. 找目标行业里用 Workable / SmartRecruiters 的雇主进种子表（先本机实测再入库）。
+- **10-12 夜本机实测补记（`reports/075` 第五节）：** 两家真实读取都通。Workable `robotec-ai` 6 条在架，`published_on` 齐全（在架 12 到 244 天），投递链接是供应商自己的 `apply.workable.com/j/<shortcode>/apply`；SmartRecruiters `BoschGroup` 板上 4,947 条、德国 738 条，分页到底、详情全部合并（描述与 `?oga=true` 投递链接都来自详情），`location.remote` / `hybrid` 是雇主自己的标记原样报。无需改代码。顺手修了本机任务脚本的编码缺陷（main `60055b5`，脚本不发版）：子进程强制 UTF-8，解不出的字节替换不报错。待办进路线图：大租户（博世 4,947 条）每次现读要打 4,947 次详情，`read_board` / 盯板应先按地点与标题过滤再取详情。
 
 ## 2026-10-12（三续）· 一站式事实层：求职者问雇主 15 件、雇主问候选人 6 件（`reports/074`，无代码改动）
 
