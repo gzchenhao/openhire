@@ -47,7 +47,7 @@ refuses to install any snapshot whose user-state tables are non-empty.
 - `check_employer` (v0.8.8) also downloads EarlyTip's public file of organisational and financing
   events (`https://earlytip.com/data/org_events.json`) to your machine at most once a day and
   matches the company's name there; EarlyTip sees an ordinary download, never the name. What is
-  shown is the event type, a date, the source domain and a plain link to the source page.
+  shown is the event type, a date, the amount where recorded, the source domain and a plain link to the source page.
 - `read_board` (v0.8.3) sends only the board's tenant (the part of a careers URL after the
   vendor's host) to that vendor's public endpoint, the same request the weekly crawl makes.
   Nothing about you is sent, and nothing read is stored.

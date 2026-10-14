@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.8 · 2026-10-14；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.9 · 2026-10-14；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.9（2026-10-14，云端会话，`reports/077` 第八节）：** 领导两条裁定落地。① 律师过目域名清单 **12 月再议**（六个域名不放链接、其余普通链接的处理已够）。② **`org_events` 每条加 `amount`**（EarlyTip 从自家标题 / 推荐理由原样抄录、过了 D3 的金额，取不到 null），note 里融资类带「（数亿元）」，出处句改成「只转事件类型、日期、金额、来源域名和链接，不转标题」。十二处版本号到 0.8.9。
 - **v0.8.8（2026-10-14，云端会话，`reports/077`）：** **EarlyTip 事件导出接入 `check_employer`**（新项 `org_events`）。EarlyTip 首版导出 10-14 上线（`earlytip.com/data/org_events.json`，schema 1，83 条回填，日常追加未启用），OpenHire 只做消费侧：
   整份公开文件一天一读到 `OPENHIRE_HOME/earlytip/`、本机比对，服务器看不到查谁；`company_key` 按规格二.1 复刻（`verify/org_events.py`）；只给类型 / 日期 / 域名 / 普通链接，**不转标题、推荐理由、金额**；
   六个域名不放链接（cs.com.cn、bloomberg.com、reuters.com、sina.com.cn、chinastarmarket.cn、cls.cn，含子域，比生产侧通知的三个多三个，是 OpenHire 自己的规矩）；撤回过滤、`company` 空跳过、`unverified` 透传；无记录 = `unavailable` + `no_record`。

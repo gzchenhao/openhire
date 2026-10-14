@@ -12,8 +12,10 @@ machine, at most once a day, cached under OPENHIRE_HOME/earlytip. The server nev
 which company the seeker asked about, and nothing about the seeker is sent.
 
 What it shows, per event: the event type as the export labels it, one date (the event's
-own date when the export has it, else the day EarlyTip published it), the source domain
-and a plain link to the source page. Never the headline and never EarlyTip's summary: the
+own date when the export has it, else the day EarlyTip published it), the amount where the
+export carries one (verbatim from EarlyTip's own headline or summary, its D3 rule; shown
+since 0.8.9 by Howard's ruling of 2026-10-14), the source domain and a plain link to the
+source page. Never the headline and never EarlyTip's summary: the
 source sites' terms govern copying, a plain link is a pointer. Where a site's terms list
 "linking" itself among the prohibited acts (reports/077), no link either, only the
 domain. Retracted events are dropped, an event whose company the export could not name is
@@ -48,7 +50,7 @@ MAX_SHOWN = 20
 # published headline and summary, not the source article. Said as-is, every time.
 PROVENANCE = (
     "据 EarlyTip 整理的公开事件索引：公司名、金额、日期只与 EarlyTip 自己发布的标题和推荐理由核对过，"
-    "没有和来源正文逐字核对；这里只转事件类型、日期、来源域名和链接，不转标题"
+    "没有和来源正文逐字核对；这里只转事件类型、日期、金额、来源域名和链接，不转标题"
 )
 # Sites whose terms list "linking" itself among the prohibited acts (cs.com.cn, bloomberg,
 # reuters from the first round; sina 8.4 and 财联社 8.2.3 quoted in reports/077). For these
@@ -213,6 +215,7 @@ def present(ev: dict, role: str) -> dict:
         "role": role,
         "company": ev.get("company"),
         "related_companies": [c for c in (ev.get("related_companies") or []) if isinstance(c, str)],
+        "amount": ev.get("amount") if isinstance(ev.get("amount"), str) and ev.get("amount") else None,
         "source": source,
         "url": ev.get("url") if allowed else None,
         "link_withheld": None if allowed else "该站条款把「链接」本身列为禁止行为，只给域名，见原文",
@@ -248,7 +251,8 @@ def screen(name: str | None, aliases=(), allow_network: bool = True, data: dict 
     shown = found[:MAX_SHOWN]
     counts = Counter(e["event_type"] for e in found)
     desc = "；".join(
-        f"{e['date'] or '日期未知'} {e['event_type']}" + ("（作为另一方）" if e["role"] == "counterparty" else "")
+        f"{e['date'] or '日期未知'} {e['event_type']}" + (f"（{e['amount']}）" if e.get("amount") else "")
+        + ("（作为另一方）" if e["role"] == "counterparty" else "")
         + ("（待核实）" if e["unverified"] else "") + f" 来源 {e['source'] or '未知'}"
         for e in shown[:5]
     )

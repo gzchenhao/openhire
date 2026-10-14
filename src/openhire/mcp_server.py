@@ -482,9 +482,10 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
       acquisitions, bankruptcies, new companies; 2026-09-20 onwards), read from its public
       export, downloaded whole to the user's machine once a day and matched there by the
       export's published `company_key`. Each event is a type, one date (the event's own when
-      known, else EarlyTip's publication day: `date_kind`), the source domain and a plain
-      link; never the headline, and no link where the source site's terms list linking among
-      the prohibited acts (`link_withheld`). `role` says whether the employer is the event's
+      known, else EarlyTip's publication day: `date_kind`), the amount where EarlyTip's record
+      carries one (`amount`, verbatim), the source domain and a plain link; never the headline,
+      and no link where the source site's terms list linking among the prohibited acts
+      (`link_withheld`). `role` says whether the employer is the event's
       subject or its counterparty; `unverified` carries EarlyTip's own "待核实" marker.
       EarlyTip checked its values against its own published headline and summary, not the
       source article: relay an event as "on EarlyTip's record, see the source", never as an

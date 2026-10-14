@@ -13,6 +13,13 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-14（续）· 0.8.9：事件金额显示；律师过目 12 月再议（`reports/077` 第八节）
+
+- **已完成：** 领导裁定金额显示：`org_events` 每条加 `amount`（EarlyTip 原样抄录、过 D3 的金额），note 里融资类带「（数亿元）」；出处句同步。README、隐私说明、工具说明各改一句。十二处版本号到 0.8.9，推 main 自动发版。
+- **关键决策：** 律师过目域名清单 12 月再议（领导定：六个域名不放链接、其余普通链接已够）。
+- **下一步：** 本机跑队列（EarlyTip 首版审计）；日常追加启用后次日再审。
+- **待确认：** 无。
+
 ## 2026-10-14 · 0.8.8：EarlyTip 事件导出接入 `check_employer`（`reports/077`）
 
 - **已完成：** EarlyTip 的累积事件导出首版上线（`earlytip.com/data/org_events.json`，schema 1，生产侧声明 83 条回填），生产侧通知可读。`check_employer` 多一项 `org_events`：整份公开文件一天一读到本机、本机比对；`company_key` 按公开算法复刻；主体 / 别名 / 另一方三种命中；只给事件类型、日期、来源域名、普通链接，不转标题、推荐理由、金额；六个域名（cs.com.cn、bloomberg.com、reuters.com、sina.com.cn、chinastarmarket.cn、cls.cn，含子域）不放链接；撤回过滤、无名条目跳过、待核实透传、出处句固定。维护者审计 `ohp org-events-audit` 从读者侧核规格（18 键、id 与 key 重算、黑窗、D10 等），进本机任务队列 `ALLOWED`。670 tests，十二处版本到 0.8.8，推 main 自动发版。

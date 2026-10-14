@@ -176,12 +176,12 @@ def test_events_match_by_key_alias_or_counterparty_and_skip_retracted_and_namele
 def test_what_is_shown_is_type_date_domain_and_link_and_never_the_title(export):
     sina = org_events.events_for(export, "地瓜机器人")[0]
     assert sina["url"] is None and sina["link_withheld"] and sina["source"] == "t.cj.sina.com.cn"
-    assert "title" not in sina and "amount" not in sina and "地瓜机器人完成" not in json.dumps(sina, ensure_ascii=False)
+    assert "title" not in sina and sina["amount"] == "数亿元" and "地瓜机器人完成" not in json.dumps(sina, ensure_ascii=False)
     assert sina["date"] == "2026-09-24" and sina["date_kind"] == "published_date"
     bd = org_events.events_for(export, "Boston Dynamics")[0]
     assert bd["url"] == "https://biz.chosun.com/x" and bd["link_withheld"] is None
     assert bd["date"] == "2026-10-06" and bd["date_kind"] == "event_date" and bd["unverified"] is True
-    assert bd["related_companies"] == ["亚马逊"] and bd["backfilled"] is True
+    assert bd["related_companies"] == ["亚马逊"] and bd["backfilled"] is True and bd["amount"] is None
 
 
 def test_screen_statuses_say_what_was_read_and_never_judge(export):
@@ -193,6 +193,8 @@ def test_screen_statuses_say_what_was_read_and_never_judge(export):
     assert hit["status"] == "verified" and hit["total"] == 1 and hit["events"][0]["event_type"] == "对外M&A"
     assert "对外M&A 1" in hit["note"] and org_events.PROVENANCE in hit["note"] and "therobotreport.com" in hit["note"]
     assert hit["generated_at"] == export["generated_at"]
+    fund = org_events.screen("地瓜机器人", data=export)
+    assert "融资进展（数亿元）" in fund["note"], "the amount rides the note since 0.8.9"
     down = org_events.screen("高通", data={"error": "network"})
     assert down["status"] == "unavailable" and down["reason"] == "network" and "不是雇主" in down["note"]
     old = org_events.screen("高通", data={"error": "schema_version", "schema_version": 2})
@@ -241,7 +243,7 @@ def test_the_default_item_reads_through_the_module_and_the_tool_doc_names_it(hom
     item = next(i for i in res["checks"] if i["id"] == "org_events")
     assert item["status"] == "verified" and item["events"][0]["related_companies"] == ["PickNik Robotics"]
     doc = mcp_server.check_employer.__doc__ or ""
-    for phrase in ("org_events", "company_key", "link_withheld", "never the headline", "no_record"):
+    for phrase in ("org_events", "company_key", "link_withheld", "never the headline", "no_record", "amount"):
         assert phrase in doc, phrase
 
 
