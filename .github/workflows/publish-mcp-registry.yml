@@ -35,10 +35,12 @@ jobs:
       - name: Already published?
         id: seen
         run: |
+          # scripts/registry_state.py exits 0 (flagged latest), 2 (in the registry, flag not
+          # yet moved), 1 (absent) or 3 (registry unreadable). A version that is in the
+          # registry at all was published: never publish it twice.
           want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")
-          got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" | python3 -c "import json,sys;v=[s['server']['version'] for s in json.load(sys.stdin).get('servers',[]) if s['_meta']['io.modelcontextprotocol.registry/official'].get('isLatest')];print(v[0] if v else 'none')" || echo none)
-          echo "server.json=$want registry-isLatest=$got"
-          if [ "$want" = "$got" ]; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
+          python3 scripts/registry_state.py "$want" && rc=0 || rc=$?
+          if [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Install mcp-publisher
         if: steps.seen.outputs.done != 'true'
@@ -60,16 +62,18 @@ jobs:
       - name: Verify the registry now serves this version
         if: steps.seen.outputs.done != 'true'
         run: |
-          # The search returns EVERY published version, oldest first — so match on the
-          # entry flagged isLatest rather than taking servers[0], which is the old one.
-          # The search index lags the publish by a few seconds: 0.8.2 and 0.8.3 both
-          # published fine and then "failed" right here (reports/072). Poll before giving up.
+          # The search index lags the publish: 0.8.2 and 0.8.3 "failed" here seconds after a
+          # good publish (reports/072), and 0.8.8 served NO isLatest entry at all for over a
+          # minute (reports/077). So: poll up to three minutes for the flag; a version that is
+          # in the registry but not flagged yet is a warning, not a failure; only "absent"
+          # fails, because only that means the publish did not land.
           want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")
-          for i in 1 2 3 4 5 6; do
-            got=$(curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire" | python3 -c "import json,sys;v=[s['server']['version'] for s in json.load(sys.stdin).get('servers',[]) if s['_meta']['io.modelcontextprotocol.registry/official'].get('isLatest')];print(v[0] if v else 'none')" || echo none)
-            echo "try $i: server.json=$want registry-isLatest=$got"
-            if [ "$want" = "$got" ]; then exit 0; fi
-            sleep 10
+          rc=3
+          for i in $(seq 1 12); do
+            python3 scripts/registry_state.py "$want" && rc=0 || rc=$?
+            if [ "$rc" -eq 0 ]; then exit 0; fi
+            sleep 15
           done
-          echo "::error::registry still serves $got as latest, wanted $want"
+          if [ "$rc" -eq 2 ]; then echo "::warning::registry has $want but has not flagged it latest yet"; exit 0; fi
+          echo "::error::registry does not serve $want (last state $rc: 1 = absent, 3 = unreadable)"
           exit 1
