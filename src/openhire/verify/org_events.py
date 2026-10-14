@@ -25,7 +25,8 @@ Matching: the export carries `company_key`, a published normalisation; the same 
 is implemented here (`company_key`) and applied to every spelling this index holds for the
 employer (the bilingual display name, each half of it, the registry aliases). An employer
 is matched as the event's subject (`company`) or as its counterparty
-(`related_companies`), and the item says which.
+(`related_companies`), and the item says which. The export's own names are split the same
+way before keying, since 0.8.10: its first version wrote 庞伯特Pongbot as one word.
 """
 
 from __future__ import annotations
@@ -189,8 +190,14 @@ def events_for(data: dict, name: str | None, aliases=()) -> list[dict]:
         if not isinstance(ev, dict) or ev.get("retracted") or not ev.get("company"):
             continue
         subject_keys = {ev.get("company_key") or company_key(ev.get("company"))}
-        subject_keys |= {company_key(a) for a in (ev.get("company_aliases") or []) if isinstance(a, str)}
-        related = {company_key(c) for c in (ev.get("related_companies") or []) if isinstance(c, str)}
+        # The export's own spelling can glue two scripts into one word (庞伯特Pongbot in the
+        # first export, reports/077 §9): each script half of its company, alias and
+        # counterparty names keys as well, so a seeker's 庞伯特 or Pongbot both land.
+        aliases = [a for a in (ev.get("company_aliases") or []) if isinstance(a, str)]
+        subject_keys |= {company_key(v) for v in name_variants(ev.get("company"), aliases)}
+        related = {company_key(v) for c in (ev.get("related_companies") or []) if isinstance(c, str) for v in name_variants(c)}
+        subject_keys.discard("")
+        related.discard("")
         if keys & subject_keys:
             role = "subject"
         elif keys & related:

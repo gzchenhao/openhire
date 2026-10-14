@@ -173,6 +173,21 @@ def test_events_match_by_key_alias_or_counterparty_and_skip_retracted_and_namele
     assert org_events.events_for(export, "理想汽车 Li Auto")[0]["event_type"] == "组织架构调整"
 
 
+def test_a_glued_bilingual_name_in_the_export_matches_on_either_half():
+    # The first export (2026-10-14) wrote 庞伯特Pongbot as one word; a seeker types either half,
+    # and a counterparty written the same way must land too.
+    data = _export([
+        _ev(company="庞伯特Pongbot", title="庞伯特完成融资", url="https://36kr.com/p/7", published_date="2026-10-12"),
+        _ev(company="京东", event_type="大佬离职", related_companies=["贝塔无限 Beta Infinity"], title="t2",
+            url="https://www.163.com/dy/article/y.html", published_date="2026-09-24"),
+    ])
+    assert org_events.events_for(data, "Pongbot")[0]["company"] == "庞伯特Pongbot"
+    assert org_events.events_for(data, "庞伯特")[0]["company"] == "庞伯特Pongbot"
+    assert org_events.events_for(data, "Beta Infinity")[0]["role"] == "counterparty"
+    assert org_events.events_for(data, "贝塔无限")[0]["role"] == "counterparty"
+    assert org_events.events_for(data, "Infinity") == [], "a bare word is not a half: no over-matching"
+
+
 def test_what_is_shown_is_type_date_domain_and_link_and_never_the_title(export):
     sina = org_events.events_for(export, "地瓜机器人")[0]
     assert sina["url"] is None and sina["link_withheld"] and sina["source"] == "t.cj.sina.com.cn"

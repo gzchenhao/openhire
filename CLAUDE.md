@@ -6,9 +6,11 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.9 · 2026-10-14；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.10 · 2026-10-14；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.10（2026-10-14，云端会话，`reports/077` 第九节）：** EarlyTip 首版的读者侧审计本机跑完：**83 / 83，problem_count 0**（18 键、id 与 key 重算、黑窗、D10、撤回、待核实标记全过）；`event_date` 10 条、`amount` 46 条、`related` 20 条；不放链接域名命中 8 条。匹配实测高通（对外M&A，另一方 PickNik Robotics）、Boston Dynamics（高管流动，另一方 亚马逊）都命中，理想汽车 no_record。
+  提给生产侧两条（经领导转达）：**D18** `Tesla` 与 `特斯拉` 两个规范名按 D4 合并；**D19** `庞伯特Pongbot` 中英粘连，改 `庞伯特` + 别名。读者侧同日修：导出里的公司 / 别名 / 另一方名按中英半边各算一次键（`events_for`），「庞伯特」「Pongbot」都能命中。本机队列已清空。
 - **v0.8.9（2026-10-14，云端会话，`reports/077` 第八节）：** 领导两条裁定落地。① 律师过目域名清单 **12 月再议**（六个域名不放链接、其余普通链接的处理已够）。② **`org_events` 每条加 `amount`**（EarlyTip 从自家标题 / 推荐理由原样抄录、过了 D3 的金额，取不到 null），note 里融资类带「（数亿元）」，出处句改成「只转事件类型、日期、金额、来源域名和链接，不转标题」。十二处版本号到 0.8.9。
 - **v0.8.8（2026-10-14，云端会话，`reports/077`）：** **EarlyTip 事件导出接入 `check_employer`**（新项 `org_events`）。EarlyTip 首版导出 10-14 上线（`earlytip.com/data/org_events.json`，schema 1，83 条回填，日常追加未启用），OpenHire 只做消费侧：
   整份公开文件一天一读到 `OPENHIRE_HOME/earlytip/`、本机比对，服务器看不到查谁；`company_key` 按规格二.1 复刻（`verify/org_events.py`）；只给类型 / 日期 / 域名 / 普通链接，**不转标题、推荐理由、金额**；

@@ -74,3 +74,19 @@ PyPI、Release、mcpb 都正常。Registry 工作流红了三次，真因是**�
 ## 八、领导裁定与 0.8.9（10-14）
 
 第六节两件待定事领导当天定了：① 律师过目域名清单 12 月再议，六个域名连链接都不放、其余只放普通链接的处理已经够；② **金额显示**。0.8.9 把 `amount` 加进每条事件（EarlyTip 从自家标题或推荐理由原样抄录、过了 D3 子串校验的金额，取不到为 null），note 里融资类写成「2026-09-24 融资进展（数亿元） 来源 …」；出处句改为「只转事件类型、日期、金额、来源域名和链接，不转标题」。第三节表格里「不转金额」一行自 0.8.9 起作废。
+
+## 九、首版的读者侧审计结果（10-14 本机跑，`local-results/org-events-audit.json`）
+
+**结构与规矩全部通过：** 声明 83 条、实有 83 条；18 键齐全、无 why / critic；`event_id` 与 `company_key` 按公开算法重算全部一致、无重复；`company` 无空值、无括号；日期格式合法；`published_date` 范围 2026-09-20 至 10-13、黑窗内零条；融资类 `related_companies` 全空（D10）；`retracted` 0 条；`unverified` 4 条且标题都带「待核实」；`problem_count` 0。同一键对应两个公司名：零。
+
+**覆盖率（规格说低是设计结果，如实记）：** `event_date` 10 条（12%），`amount` 46 条（55%），`related_companies` 20 条。只对标题查：金额在标题里的 39 / 46，事件日在标题里的 0 / 10（其余按 D3 应在推荐理由里，推荐理由不导出，查不了）。
+
+**分布：** 融资进展 39、对外M&A 15、新增的企业 9、大佬离职 6、组织架构调整 4、大佬出走创业 4、被收并购 2、高管流动 2、破产的企业 1、融资带来组织变化 1。来源前几位 163.com 8、news.qq.com 6、m.toutiao.com 5、tmtpost.com 5、finance.sina.com.cn 4。不放链接的域名命中 8 条（finance.sina.com.cn 4、chinastarmarket.cn 2、t.cj.sina.com.cn 1、cj.sina.com.cn 1）。
+
+**匹配实测（`check-company` 本机跑）：** 高通命中 1 条「2026-09-24 对外M&A，另一方 PickNik Robotics，来源 therobotreport.com」；Boston Dynamics 命中 1 条「2026-10-07 高管流动，另一方 亚马逊，来源 biz.chosun.com」；理想汽车无记录（`unavailable` + `no_record`，文件里确实没有）。三条都带出处句和文件生成 / 下载时间。
+
+**提给生产侧的两条裁定（经领导转达）：**
+- **D18 同一组织两个规范名。** 导出里 `Tesla`（2026-09-24 大佬离职）和 `特斯拉`（2026-09-22 组织架构调整）是两个 company，键不同，名称对齐连不上。按 D4 改名流程合并为 `特斯拉`，`Tesla` 进 `company_aliases`。
+- **D19 规范名不要中英粘连。** `庞伯特Pongbot` 作为 company，键是 `庞伯特pongbot`，求职者输入「庞伯特」或「Pongbot」都对不上。按规格「中文优先，英文进 aliases」改为 `庞伯特` + 别名 `Pongbot`。
+
+**读者侧同日修（0.8.10）：** 导出里的公司名、别名、另一方名在算键前也按中文半边 / 拉丁半边各算一次，所以 D19 改不改，OpenHire 这边「庞伯特」和「Pongbot」都已能命中；D18 那种两行各自独立的情况读者侧解不了，要生产侧合并。
