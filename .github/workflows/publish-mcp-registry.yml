@@ -68,9 +68,10 @@ jobs:
       - name: Verify the registry now serves this version
         if: steps.seen.outputs.done != 'true'
         run: |
-          # The search index lags the publish: 0.8.2 and 0.8.3 "failed" here seconds after a
-          # good publish (reports/072), and 0.8.8 served NO isLatest entry at all for over a
-          # minute (reports/077). So: poll up to three minutes for the flag; a version that is
+          # The search index lags the publish by seconds (0.8.2 and 0.8.3 "failed" here right
+          # after a good publish, reports/072), and the list pages at 30 entries oldest first,
+          # so from the 31st version (0.8.8) the old single-page check saw neither the version
+          # nor any isLatest flag (reports/077). The helper reads every page; a version that is
           # in the registry but not flagged yet is a warning, not a failure; only "absent"
           # fails, because only that means the publish did not land. 8 x (read + 15 s).
           want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")

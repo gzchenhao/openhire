@@ -66,3 +66,7 @@ MCP 工具说明里加了对应一段，要求助手把事件转述成「EarlyTi
 3. 本机跑一次任务队列（先 `git pull` 并重装包，新子命令在 0.8.8 里）：`.venv\Scripts\python.exe scripts\run_local_tasks.py --sync`。
 
 下一步：等审计结果出裁定条目；日常追加启用后次日再跑一次审计，核对旧 `event_id` 全在、总数等于旧数加新增（规格六.f 的读者侧）。
+
+## 七、发版后记（10-14 05:10 UTC 自检）
+
+PyPI、Release、mcpb 都正常。Registry 工作流红了三次，真因是**列表接口每页 30 条、最旧在前，0.8.8 是这个服务器的第 31 个版本**：核对步骤只读第一页，看到的是 0.1.1 到 0.8.7 且没有任何 isLatest，于是把一次成功的发布判成失败；重跑则被 Registry 以「duplicate version」拒绝，恰好证明已发布。核对改成 `scripts/registry_state.py`：`limit=100` 并跟 `metadata.nextCursor` 翻页，退出码分开「已标 latest / 在库里没翻标 / 不在 / 读不到」，在库里就算发布成功，只有「答了且不在」才红；Publish 一步把 duplicate 当已发布。验证运行 38515084510 绿：`versions=31 newest=0.8.8 latest=0.8.8`。另：`/v0/servers?search=` 接口当天对 runner 常 20 秒超时，而 validate 与 publish 秒回，脚本 curl 优先、urllib 兜底。
