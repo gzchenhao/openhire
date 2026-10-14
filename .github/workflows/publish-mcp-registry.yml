@@ -56,8 +56,14 @@ jobs:
       - name: Publish
         if: steps.seen.outputs.done != 'true'
         run: |
+          set -o pipefail
           ./mcp-publisher login github-oidc
-          ./mcp-publisher publish
+          # "cannot publish duplicate version" means an earlier run already published this
+          # version and the step above could not read the registry to see it (the 0.8.8
+          # rerun, reports/077): that is success, and the next step verifies it.
+          if ./mcp-publisher publish 2>&1 | tee publish.log; then exit 0; fi
+          if grep -q "duplicate version" publish.log; then echo "already in the registry; verifying"; exit 0; fi
+          exit 1
 
       - name: Verify the registry now serves this version
         if: steps.seen.outputs.done != 'true'
@@ -66,10 +72,10 @@ jobs:
           # good publish (reports/072), and 0.8.8 served NO isLatest entry at all for over a
           # minute (reports/077). So: poll up to three minutes for the flag; a version that is
           # in the registry but not flagged yet is a warning, not a failure; only "absent"
-          # fails, because only that means the publish did not land.
+          # fails, because only that means the publish did not land. 8 x (read + 15 s).
           want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")
           rc=3
-          for i in $(seq 1 12); do
+          for i in $(seq 1 8); do
             python3 scripts/registry_state.py "$want" && rc=0 || rc=$?
             if [ "$rc" -eq 0 ]; then exit 0; fi
             sleep 15

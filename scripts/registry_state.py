@@ -19,6 +19,7 @@ was published; which entry carries the flag is the index's business.
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -28,15 +29,36 @@ URL = f"https://registry.modelcontextprotocol.io/v0/servers?search={SERVER}"
 FLAG = "io.modelcontextprotocol.registry/official"
 
 
+USER_AGENT = "openhire-release-check/1 (+https://github.com/gzchenhao/openhire)"
+
+
 def read(url: str = URL) -> tuple[int, str]:
-    """HTTP status and body; status 0 when the request itself failed."""
+    """HTTP status and body; status 0 when the request itself failed.
+
+    curl first, the way the inline check always read the registry within a second; urllib
+    only if curl is missing. The first version of this script used urllib alone and sat on
+    its 30 s timeout on the runner (2026-10-14, run 38514031731) while curl kept answering."""
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
     try:
-        with urllib.request.urlopen(url, timeout=30) as r:
-            return r.status, r.read().decode("utf-8", "replace")
+        r = subprocess.run(
+            ["curl", "-sS", "--max-time", "20", "-A", USER_AGENT, "-H", "Accept: application/json",
+             "-o", "-", "-w", "\n%{http_code}", url],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+        body, _, status = r.stdout.rpartition("\n")
+        if r.returncode == 0 and status.isdigit():
+            return int(status), body
+        note = r.stderr.strip() or f"curl exit {r.returncode}"
+    except (OSError, subprocess.SubprocessError) as e:
+        note = f"{type(e).__name__}: {e}"
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.status, resp.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
         return e.code, ""
     except Exception as e:  # DNS, timeout, TLS: the registry was not reached
-        return 0, f"{type(e).__name__}: {e}"
+        return 0, f"curl: {note}; urllib: {type(e).__name__}: {e}"
 
 
 def parse(text: str) -> tuple[list[str], str | None]:
