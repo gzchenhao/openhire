@@ -74,6 +74,7 @@ jobs:
           # in the registry but not flagged yet is a warning, not a failure; only "absent"
           # fails, because only that means the publish did not land. 8 x (read + 15 s).
           want=$(python3 -c "import json;print(json.load(open('server.json',encoding='utf-8'))['version'])")
+          REGISTRY_URL="https://registry.modelcontextprotocol.io/v0/servers?search=io.github.gzchenhao/openhire"
           rc=3
           for i in $(seq 1 8); do
             python3 scripts/registry_state.py "$want" && rc=0 || rc=$?
@@ -81,5 +82,9 @@ jobs:
             sleep 15
           done
           if [ "$rc" -eq 2 ]; then echo "::warning::registry has $want but has not flagged it latest yet"; exit 0; fi
-          echo "::error::registry does not serve $want (last state $rc: 1 = absent, 3 = unreadable)"
+          # Unreadable for the whole window (run 38514235853: the search endpoint timed out for
+          # eight minutes while validate and publish answered at once) says nothing about the
+          # publish, which the step above already reported as accepted or duplicate.
+          if [ "$rc" -eq 3 ]; then echo "::warning::registry search endpoint unreadable for the whole window; publish was accepted, verify by hand: ${REGISTRY_URL}"; exit 0; fi
+          echo "::error::registry answered and does not have $want: the publish did not land"
           exit 1
