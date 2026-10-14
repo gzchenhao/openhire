@@ -34,15 +34,35 @@ def test_only_this_servers_entries_count_and_the_flag_is_read():
 
 
 def test_exit_codes_tell_latest_present_absent_and_unreadable_apart():
-    assert rs.state("0.8.8", 200, BODY)[0] == 0
-    assert rs.state("0.8.7", 200, BODY)[0] == 2, "in the registry, not flagged: published, poll for the flag"
-    assert rs.state("0.8.9", 200, BODY)[0] == 1, "absent: the publish did not land"
-    assert rs.state("0.8.8", 429, "")[0] == 3
-    assert rs.state("0.8.8", 0, "URLError: timeout")[0] == 3
-    assert rs.state("0.8.8", 200, "<html>maintenance</html>")[0] == 3
-    # The 2026-10-14 shape: the index served entries with no isLatest flag at all.
+    assert rs.state("0.8.8", [(200, BODY)])[0] == 0
+    assert rs.state("0.8.7", [(200, BODY)])[0] == 2, "in the registry, not flagged: published, poll for the flag"
+    assert rs.state("0.8.9", [(200, BODY)])[0] == 1, "absent: the publish did not land"
+    assert rs.state("0.8.8", [(429, "")])[0] == 3
+    assert rs.state("0.8.8", [(0, "URLError: timeout")])[0] == 3
+    assert rs.state("0.8.8", [(200, "<html>maintenance</html>")])[0] == 3
     unflagged = json.dumps({"servers": [_entry("io.github.gzchenhao/openhire", "0.8.8")]})
-    assert rs.state("0.8.8", 200, unflagged)[0] == 2
+    assert rs.state("0.8.8", [(200, unflagged)])[0] == 2
+
+
+def test_the_latest_version_on_the_second_page_is_found(monkeypatch):
+    # 2026-10-14: 30 versions on page one, none flagged; 0.8.8 and the flag on page two.
+    page1 = json.dumps({"servers": [_entry("io.github.gzchenhao/openhire", f"0.{i}.0") for i in range(30)],
+                        "metadata": {"nextCursor": "c2", "count": 30}})
+    page2 = json.dumps({"servers": [_entry("io.github.gzchenhao/openhire", "0.8.8", latest=True)], "metadata": {"count": 1}})
+    seen = []
+
+    def fake_read(url=rs.URL):
+        seen.append(url)
+        return (200, page2) if "cursor=c2" in url else (200, page1)
+
+    monkeypatch.setattr(rs, "read", fake_read)
+    pages = rs.read_pages()
+    assert len(pages) == 2 and seen[1].endswith("&cursor=c2") and "limit=100" in seen[0]
+    code, line = rs.state("0.8.8", pages)
+    assert code == 0 and "pages=2" in line and "versions=31" in line
+    assert rs.state("0.8.8", pages[:1])[0] == 1, "page one alone would call it absent: that was the bug"
+    monkeypatch.setattr(rs, "read", lambda url=rs.URL: (0, "timeout"))
+    assert rs.read_pages() == [(0, "timeout")]
 
 
 def test_main_prints_one_line_and_returns_the_code(monkeypatch, capsys):
