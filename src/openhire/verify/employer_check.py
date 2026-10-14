@@ -15,7 +15,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import Callable
 
-from . import checks, sanctions, tianyancha
+from . import checks, org_events, sanctions, tianyancha
 
 NOT_A_VERDICT = (
     "These are facts with sources and times, not a judgement of the employer. A company "
@@ -58,6 +58,7 @@ def build_checklist(
     wayback_fn: Callable[[str], dict] | None = None,
     register_fn: Callable[[str], dict] | None = None,
     sanctions_fn: Callable[..., dict] | None = None,
+    org_events_fn: Callable[..., dict] | None = None,
 ) -> dict:
     """Assemble the checklist. Network functions are injectable so tests stay hermetic;
     the defaults are looked up at call time so a monkeypatched module attribute is seen."""
@@ -66,6 +67,7 @@ def build_checklist(
     wayback_fn = wayback_fn or checks.wayback_first_capture
     register_fn = register_fn or tianyancha.fetch_baseinfo
     sanctions_fn = sanctions_fn or sanctions.screen
+    org_events_fn = org_events_fn or org_events.screen
     items: list[dict] = []
     pending: list[dict] = []
     name = (index_facts or {}).get("company") or (known_not_indexed or {}).get("name") or query.get("company")
@@ -147,6 +149,20 @@ def build_checklist(
                            source=s.get("source", sanctions.SOURCE), matches=s.get("matches", []),
                            reason=s.get("reason"), lists_downloaded=s.get("downloaded")))
 
+    # 3c. Organisational events on public record (reports/077): EarlyTip's export, read
+    # whole to this machine once a day and matched here by its published company_key.
+    # Type, date, domain and link only; never the headline. A ceased employer still gets
+    # it: the bankruptcy may be exactly the event on record.
+    if not name:
+        items.append(_item("org_events", "组织变化与融资并购事件", "not_applicable", "没有公司名可比对", source="n/a"))
+    else:
+        aliases = tuple((known_not_indexed or {}).get("aliases") or ())
+        o = org_events_fn(name, aliases=aliases, allow_network=run_network)
+        items.append(_item("org_events", "组织变化与融资并购事件（EarlyTip 公开索引，下载到本机后本机比对）",
+                           o.get("status", "unavailable"), o.get("note", ""),
+                           source=o.get("source", org_events.SOURCE), events=o.get("events", []), total=o.get("total", 0),
+                           reason=o.get("reason"), file_generated_at=o.get("generated_at"), file_downloaded=o.get("downloaded")))
+
     # 4. The company register: the seeker's own key, or the ways to get it.
     if ceased:
         items.append(_item("registry_record", "工商登记", "not_applicable", "公司已停止运营", source="n/a"))
@@ -191,6 +207,7 @@ def build_checklist(
         },
         "not_a_verdict": NOT_A_VERDICT,
         "privacy": "This check sent the company's name or domain to RDAP, the Internet Archive and the company's own site, "
-                   "and to 天眼查 only if you set your own key. Nothing about you was sent anywhere.",
+                   "and to 天眼查 only if you set your own key. The OFAC lists and the EarlyTip events file were downloaded "
+                   "whole and matched on this machine, so neither learned the name. Nothing about you was sent anywhere.",
         "checked_at": _now(),
     }

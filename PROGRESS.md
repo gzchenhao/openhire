@@ -13,6 +13,13 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-14 · 0.8.8：EarlyTip 事件导出接入 `check_employer`（`reports/077`）
+
+- **已完成：** EarlyTip 的累积事件导出首版上线（`earlytip.com/data/org_events.json`，schema 1，生产侧声明 83 条回填），生产侧通知可读。`check_employer` 多一项 `org_events`：整份公开文件一天一读到本机、本机比对；`company_key` 按公开算法复刻；主体 / 别名 / 另一方三种命中；只给事件类型、日期、来源域名、普通链接，不转标题、推荐理由、金额；六个域名（cs.com.cn、bloomberg.com、reuters.com、sina.com.cn、chinastarmarket.cn、cls.cn，含子域）不放链接；撤回过滤、无名条目跳过、待核实透传、出处句固定。维护者审计 `ohp org-events-audit` 从读者侧核规格（18 键、id 与 key 重算、黑窗、D10 等），进本机任务队列 `ALLOWED`。670 tests，十二处版本到 0.8.8，推 main 自动发版。
+- **关键决策：** 提前接入（10-12 预案是 12 月下旬满 90 天后）：首版是静态回填、日常追加未启用，读者侧保护全部到位，剩下的暴露面只是普通链接；律师过目改为接入后补做。文件里没有这家 = `unavailable` + `no_record`（和 RDAP 同一语义），不是 verified。云端连不上 earlytip.com，首版真实审计排进本机队列。
+- **下一步：** 本机跑队列（先 `git pull` + 重装包），按审计结果出裁定条目；日常追加启用后次日再审一次（旧 id 全在、总数相符）。
+- **待确认：** 律师过目域名清单做不做、何时做；要不要把 `amount` 也展示（一行改动）。
+
 ## 2026-10-12（五续）· 0.8.7：Workable 与 SmartRecruiters 首批六家雇主入库（`reports/076`）
 
 - **已完成：** 五家候选板（搜索引擎按两家系统域名筛出）本机 22:19 一次读通，连同 Robotec.ai 共六家入种子表：Workable `robotec-ai`、`flexion-robotics`、`andromeda-robotics`、`agile-robots`；SmartRecruiters `AeroVect`（slug `aerovect`）、`PalRobotics`（`palrobotics`）。真实载荷教的修复：Workable 接口把岗位按城市重复给出（同 shortcode 两条），解析层按 shortcode 合并、城市用分号连起，一岗一主键；`on-site` 写法放宽。索引来源说明三处加上两家。656 tests，十二处版本号到 0.8.7，推 main 自动发版。

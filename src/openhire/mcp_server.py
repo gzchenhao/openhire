@@ -477,6 +477,19 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
       to read the entry, not a verdict, since names collide. A live company registration
       proves little on its own: Prince Group's Hong Kong companies were on the register
       the day they were sanctioned.
+    * `org_events`: the organisational and financing events EarlyTip (earlytip.com) has on
+      public record for the employer (executive departures, restructurings, funding rounds,
+      acquisitions, bankruptcies, new companies; 2026-09-20 onwards), read from its public
+      export, downloaded whole to the user's machine once a day and matched there by the
+      export's published `company_key`. Each event is a type, one date (the event's own when
+      known, else EarlyTip's publication day: `date_kind`), the source domain and a plain
+      link; never the headline, and no link where the source site's terms list linking among
+      the prohibited acts (`link_withheld`). `role` says whether the employer is the event's
+      subject or its counterparty; `unverified` carries EarlyTip's own "待核实" marker.
+      EarlyTip checked its values against its own published headline and summary, not the
+      source article: relay an event as "on EarlyTip's record, see the source", never as an
+      established fact, and `reason: no_record` means the file holds nothing on this
+      employer, which says nothing about it.
 
     What costs money and is therefore `pending_user` unless the user set their own key:
     * `registry_record`: the company register (成立日期, 经营状态, 注册资本, 参保人数, 法定
@@ -496,7 +509,8 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
     rather than "no record". `no_record` / `http_status` mean the source answered.
 
     Privacy: this tool sends the company's name or domain to RDAP, the Internet Archive and
-    the company's own site, and to 天眼查 only with the user's key. Nothing about the user
+    the company's own site, and to 天眼查 only with the user's key. The OFAC lists and the
+    EarlyTip file are downloaded whole, so neither learns the name. Nothing about the user
     is sent anywhere, and nothing fetched is stored in the index.
 
     Args:

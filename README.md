@@ -113,7 +113,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.7.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.8.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -149,7 +149,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.7.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.8.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — or paste this to your agent: *"Install the MCP server at
@@ -198,7 +198,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.7", "serve"]`.
+matters: `"args": ["openhire==0.8.8", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -283,7 +283,7 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 | `check_watches` | Pull the matches that are new since your last check (client-pull; stdio has no push). |
 | `authorize_application` | One explicit confirmation per job. It records your authorization and returns the employer's **own** application URL — you apply as yourself. It **cannot** accept a résumé. |
 | `get_company_info` | Aggregate, anonymous trust signals for one employer (`ghost_score_avg`, `active_jobs`, `index_built_at`). Never any candidate data. |
-| `check_employer` | Facts about one employer with sources and times: whether its own system is in the index, domain age (RDAP), site history (Wayback), the ICP record on its homepage, scam red flags in a pasted posting, and the company register with **your own** 天眼查 key (`TIANYANCHA_API_KEY`, never ours). A checklist, never a score. |
+| `check_employer` | Facts about one employer with sources and times: whether its own system is in the index, domain age (RDAP), site history (Wayback), the ICP record on its homepage, scam red flags in a pasted posting, the OFAC sanctions lists, the organisational and financing events on EarlyTip's public record, and the company register with **your own** 天眼查 key (`TIANYANCHA_API_KEY`, never ours). A checklist, never a score. |
 | `read_board` | Read any employer's public board live from its careers URL (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters; any sector; indexed or not): the board's own dates, direct apply links, `location` / `title` filters. Nothing stored; closed portals refused with the reason. |
 
 Optional, entirely local: `ohp init --scan <dir>` derives a **skill fingerprint** from your
@@ -401,6 +401,14 @@ number, URL or receiving account against the police scam database) and OpenCorpo
 It also screens the name against the OFAC SDN and consolidated sanctions lists, downloaded
 to your machine daily and matched locally, because a live registration proves little on its
 own: Prince Group's Hong Kong companies were on the register the day they were sanctioned.
+Since 0.8.8 it also reads EarlyTip's public export of organisational and financing events
+(executive departures, restructurings, funding rounds, acquisitions, bankruptcies;
+`earlytip.com/data/org_events.json`), downloaded whole to your machine once a day and matched
+there by the export's own published `company_key`, and lists what is on record for the employer
+as a type, a date, a source domain and a plain link: never the headline, no link at all where
+the source site's terms list linking among the prohibited acts, retracted events dropped, and a
+note that EarlyTip checked its values against its own published headline and summary, not the
+source article.
 There is no total and no verdict on purpose: a young domain or a missing ICP record is a
 fact to weigh, not a sentence. An `unavailable` item says whether the source was reached
 and had no record, or whether this query never reached it (`reason: network`), because a

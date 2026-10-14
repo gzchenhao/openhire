@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from openhire import mcp_server, service
 from openhire.db.models import Base, Company, Job
 from openhire.errors import OpenHireError
-from openhire.verify import checks, employer_check, sanctions, tianyancha
+from openhire.verify import checks, employer_check, org_events, sanctions, tianyancha
 
 UTC = dt.timezone.utc
 NOW = dt.datetime(2026, 10, 8, tzinfo=UTC)
@@ -64,6 +64,8 @@ def no_network(monkeypatch):
     monkeypatch.setattr(tianyancha, "fetch_baseinfo", lambda name, key=None: {"status": "pending_user", "note": "没有 TIANYANCHA_API_KEY"})
     monkeypatch.setattr(sanctions, "screen", lambda name, aliases=(), allow_network=True, lists=None: {
         "status": "verified", "note": "没有同名条目", "source": "stub", "matches": []})
+    monkeypatch.setattr(org_events, "screen", lambda name, aliases=(), allow_network=True, data=None: {
+        "status": "unavailable", "reason": "no_record", "note": "没有条目", "source": "stub", "events": [], "total": 0})
 
 
 def _run(session, **kw):
@@ -255,7 +257,7 @@ def test_tool_is_registered_read_only_open_world_and_says_it_is_not_a_verdict():
     t = tools["check_employer"]
     assert t.annotations.readOnlyHint is True and t.annotations.openWorldHint is True
     doc = " ".join((mcp_server.check_employer.__doc__ or "").split())
-    for phrase in ("Never a score", "pending_user", "TIANYANCHA_API_KEY", "Nothing about the user", "sanctions_screen"):
+    for phrase in ("Never a score", "pending_user", "TIANYANCHA_API_KEY", "Nothing about the user", "sanctions_screen", "org_events"):
         assert phrase in doc, phrase
     # 0.8.1: an assistant that already has a 天眼查 tool (Tencent WorkBuddy ships one) fills
     # the register itself; it must not send the user off to buy a key first.

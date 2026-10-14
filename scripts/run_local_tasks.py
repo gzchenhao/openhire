@@ -8,8 +8,9 @@ the next sync pushes them back for the cloud session to read.
 
     .venv\\Scripts\\python.exe scripts\\run_local_tasks.py --sync    # pull, run, push
 
-Only two subcommands can be queued, `check-company` and `read-board`: the task file is
-data, not a shell, and nothing in it is executed except as arguments to those two.
+Only three read-only subcommands can be queued, `check-company`, `read-board` and
+`org-events-audit`: the task file is data, not a shell, and nothing in it is executed
+except as arguments to those three.
 
 Task file shape (a JSON list):
     [{"id": "okx-domain", "kind": "check-company", "args": ["OKX", "--domain", "okx.com"]},
@@ -27,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DRAFTS = ROOT / "drafts"
-ALLOWED = {"check-company", "read-board"}
+ALLOWED = {"check-company", "read-board", "org-events-audit"}
 DEFAULT_TASKS = DRAFTS / "local-tasks.json"
 DEFAULT_OUT = DRAFTS / "local-results"
 # `ohp --json` prints Chinese with ensure_ascii=False. On a Chinese Windows box with stdout
@@ -94,6 +95,11 @@ def summarise(outcome: dict) -> list[str]:
         lines.append(f"公司：{res.get('company') or ''}  域名：{res.get('domain') or '（未知）'}")
         for item in res.get("checks", []):
             lines.append(f"- {item.get('status')} · {item.get('label')}：{item.get('note')}")
+    elif outcome["kind"] == "org-events-audit":
+        lines.append(f"schema {res.get('schema_version')}  生成 {res.get('generated_at')}  声明 {res.get('event_count_declared')} 条，"
+                     f"实有 {res.get('event_count_actual')} 条，problem_count {res.get('problem_count')}")
+        for kind, ids in (res.get("problems") or {}).items():
+            lines.append(f"- {kind}: {len(ids)}  {' '.join(ids[:8])}")
     else:
         lines.append(f"{res.get('vendor')}:{res.get('tenant')}  板上 {res.get('count_on_board')} 条，匹配 {res.get('total_matching')} 条")
         for p in res.get("postings", []):

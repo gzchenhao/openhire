@@ -1,6 +1,6 @@
 """scripts/run_local_tasks.py: the cloud session's checks run on the maintainer's machine.
 
-Pinned here: only the two read-only subcommands can be queued (the task file is data, not
+Pinned here: only the three read-only subcommands can be queued (the task file is data, not
 a shell), a task's JSON is parsed out of whatever else the CLI printed, and a failed task
 is recorded and does not stop the batch.
 """
@@ -25,10 +25,12 @@ class _R:
         self.returncode, self.stdout, self.stderr = rc, out, err
 
 
-def test_only_the_two_read_only_subcommands_can_be_queued(tmp_path):
+def test_only_the_three_read_only_subcommands_can_be_queued(tmp_path):
     p = tmp_path / "t.json"
     p.write_text(json.dumps([{"id": "a b/c", "kind": "check-company", "args": ["OKX", "--domain", "okx.com"]}]), encoding="utf-8")
     assert rlt.load_tasks(p) == [{"id": "a_b_c", "kind": "check-company", "args": ["OKX", "--domain", "okx.com"]}]
+    p.write_text(json.dumps([{"id": "audit", "kind": "org-events-audit", "args": []}]), encoding="utf-8")
+    assert rlt.load_tasks(p) == [{"id": "audit", "kind": "org-events-audit", "args": []}]
     p.write_text(json.dumps([{"id": "x", "kind": "seed", "args": []}]), encoding="utf-8")
     with pytest.raises(SystemExit):
         rlt.load_tasks(p)

@@ -615,7 +615,7 @@ def check_company(
     offline: bool = typer.Option(False, "--offline", help="Skip the network checks."),
     as_json: bool = typer.Option(False, "--json", help="Print the raw result as JSON (for scripts/run_local_tasks.py)."),
 ) -> None:
-    """Facts about one employer with sources and times: index, domain age, site history, ICP, sanctions, register. Never a verdict."""
+    """Facts about one employer with sources and times: index, domain age, site history, ICP, sanctions, public events, register. Never a verdict."""
     import json as _json
 
     init_db()
@@ -644,6 +644,50 @@ def check_company(
         for how in p["how"]:
             console.out(f"    - {how['steps']}")
     console.note("这是带出处和时间的事实清单，不是对这家公司的判断；逐项看，不要加总。")
+
+
+# --- org-events-audit (maintainer, reports/077) ------------------------------------------
+@app.command(name="org-events-audit", rich_help_panel=INDEX_PANEL)
+def org_events_audit(
+    file: str = typer.Option(None, "--file", help="Audit a local copy of org_events.json instead of downloading."),
+    fresh: bool = typer.Option(False, "--fresh", help="Ignore today's cache and download the file again."),
+    as_json: bool = typer.Option(False, "--json", help="Print the audit as JSON (for scripts/run_local_tasks.py)."),
+) -> None:
+    """Maintainer: check EarlyTip's org_events export against its published spec from the reader's side. Changes nothing."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from .verify import org_events
+
+    if file:
+        data = org_events.parse(_Path(file).read_text(encoding="utf-8"))
+    else:
+        if fresh:
+            org_events._cache_path().unlink(missing_ok=True)
+        data = org_events.load()
+    if "error" in data:
+        if as_json:
+            print(_json.dumps({"error": data["error"], "schema_version": data.get("schema_version")}, ensure_ascii=False))
+        else:
+            console.error("ERR_ORG_EVENTS", f"could not read the export: {data['error']}")
+        raise typer.Exit(2)
+    out = org_events.audit(data)
+    out["downloaded"] = data.get("downloaded")
+    if as_json:
+        print(_json.dumps(out, ensure_ascii=False, indent=2))
+        return
+    _banner()
+    console.out(f"schema_version {out['schema_version']}  generated_at {out['generated_at']}  "
+                f"declared {out['event_count_declared']}  actual {out['event_count_actual']}")
+    console.out(f"retracted {out['retracted']}  backfilled {out['backfilled']}  unverified {out['unverified']}  "
+                f"company_null {out['company_null']}  with event_date {out['with_event_date']}  "
+                f"with amount {out['with_amount']}  with related {out['with_related']}")
+    console.out("event_types: " + ", ".join(f"{k} {v}" for k, v in out["event_types"].items()))
+    console.out("sources: " + ", ".join(f"{k} {v}" for k, v in list(out["sources"].items())[:15]))
+    console.out("no-link sources: " + (", ".join(f"{k} {v}" for k, v in out["no_link_sources"].items()) or "none"))
+    for kind, ids in out["problems"].items():
+        console.out(f"  {kind}: {len(ids)}  {' '.join(ids[:8])}")
+    console.note(f"problem_count {out['problem_count']}（不含 company_null 与 *_not_in_title：前者规格允许，后者只能对标题查）")
 
 
 # --- read-board -------------------------------------------------------------------

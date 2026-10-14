@@ -6,9 +6,13 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.7 · 2026-10-12；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.8 · 2026-10-14；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.8（2026-10-14，云端会话，`reports/077`）：** **EarlyTip 事件导出接入 `check_employer`**（新项 `org_events`）。EarlyTip 首版导出 10-14 上线（`earlytip.com/data/org_events.json`，schema 1，83 条回填，日常追加未启用），OpenHire 只做消费侧：
+  整份公开文件一天一读到 `OPENHIRE_HOME/earlytip/`、本机比对，服务器看不到查谁；`company_key` 按规格二.1 复刻（`verify/org_events.py`）；只给类型 / 日期 / 域名 / 普通链接，**不转标题、推荐理由、金额**；
+  六个域名不放链接（cs.com.cn、bloomberg.com、reuters.com、sina.com.cn、chinastarmarket.cn、cls.cn，含子域，比生产侧通知的三个多三个，是 OpenHire 自己的规矩）；撤回过滤、`company` 空跳过、`unverified` 透传；无记录 = `unavailable` + `no_record`。
+  维护者审计 `ohp org-events-audit`（`--file` / `--fresh` / `--json`）从读者侧核规格，本机任务队列 `ALLOWED` 加了它。**云端连不上 earlytip.com（403）**，首版真实审计排在本机队列，结果回来再出 D 条目；提前于 10-12 预案的「满 90 天」接入，律师过目改为接入后补做（待领导定）。670 tests。
 - **v0.8.7（2026-10-12，云端会话，`reports/076`）：** 两家系统首批六家雇主入种子表（Workable：Robotec.ai、Flexion Robotics、Andromeda Robotics、Agile Robots；SmartRecruiters：AeroVect、PAL Robotics），每家 10-12 本机真实读通后才进；Workable 接口把岗位按城市重复给出（同 shortcode 两条），解析层按 shortcode 合并、城市用分号连起，一岗一主键；索引来源说明三处加上两家。博世不入库（4,947 条多为客服技工）。656 tests。**快照重跑后 `ohp numbers` 重生成（10-13 02:54 UTC）：employers_with_live_postings 154、live_postings 18,145，README 四处 143 已改 154。** 10-12 的定时快照实际 15:13 UTC 才起跑（GitHub cron 常延迟数小时），没带上这六家；10-13 01:46 UTC 用 GitHub MCP 的 `actions_run_trigger` 手动触发了 `refresh-snapshot.yml`（**云端会话能触发 workflow_dispatch**，「触发不了工作流」只指 REST 建 tag 的 403）。
 - **v0.8.6（2026-10-12，云端会话，`reports/075`）：** **Workable 与 SmartRecruiters 适配器**（073 做市商结论的落地：一个供应商写一次，长尾雇主边际成本为零）。Workable 走 Widget API（`apply.workable.com/api/v1/widget/accounts/<sub>?details=true`，`published_on` 裸日期存 UTC 零点）；
   SmartRecruiters 分页列表 + 每条详情（6 并发，单条失败不影响整批）。两家接进 `read_board` / 板 watch / `ohp seed`；`ATS_APPLY_HOSTS` 加 `apply.workable.com`、`jobs.smartrecruiters.com`。
