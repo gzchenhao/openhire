@@ -1196,7 +1196,7 @@ def _sqlite_db_path() -> str | None:
 def bootstrap(
     fresh: bool = typer.Option(False, "--fresh", help="Skip the snapshot; crawl the public ATS live (heuristic, free)."),
     deepseek: bool = typer.Option(False, "--deepseek", help="Use DeepSeek extraction (needs your own DEEPSEEK_API_KEY)."),
-    force: bool = typer.Option(False, "--force", help="Overwrite an existing local index."),
+    force: bool = typer.Option(False, "--force", help="Overwrite an existing local index (your watches and application records are carried over)."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt."),
     snapshot_url: str = typer.Option(None, "--snapshot-url", help="Override the snapshot URL."),
 ) -> None:
@@ -1276,7 +1276,7 @@ def bootstrap(
     from .db.session import dispose_engine
     dispose_engine()  # release the SQLite file handle before overwriting it
     try:
-        res = install_snapshot(url, db_path)
+        res = install_snapshot(url, db_path, preserve_user_state=bool(existing))
     except SnapshotError as e:
         console.error("ERR_SNAPSHOT_INVALID", str(e))
         raise typer.Exit(1)

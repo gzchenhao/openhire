@@ -6,9 +6,13 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.10 · 2026-10-14；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.11 · 2026-10-15；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.11（2026-10-15，云端会话，`reports/079`）：** **托管端点**，给 ChatGPT 这类只收网址的客户端（领导裁定「那我们就挂吧，你来操作」）。`src/openhire/hosted.py`，`OPENHIRE_HOSTED=1` 时随 `ohp serve --transport streamable-http` 启动：首页 `/` 与 `/healthz`、instructions 加托管披露句、每地址 300 / 全站 3,000 每分钟限流、无状态 HTTP、不记访问日志、**快照刷新线程**（每 6 小时 HEAD 公开快照，变了就下载到 `openhire.db.staged` 并 SIGTERM 自己，`hosted/entrypoint.sh` 循环拉起，`serve()` 启动时先换文件再开库）。
+  **换快照不丢 watches / applications**（`snapshot.stage_snapshot / activate_staged / carry_over_user_state`，`ohp bootstrap --force` 也保留了，0.8.4 路线图项关闭）。**SSRF 防线**：`verify/checks._get` 取用户给的域名 / 页面前先解析地址，私网、回环、链路本地、云元数据、`localhost` / `.internal`、非 80 / 443 端口一律不发，重定向手动跟最多 5 跳逐跳检查。
+  部署目标 **Hugging Face Space（Docker，免费）**：`hosted/Dockerfile`（装 PyPI 的 `openhire==X`，**版本号第十二处 sed**）、`hosted/README.md`（Space front matter）、`.github/workflows/deploy-hosted.yml`（Release 成功后推 `hosted/` 到 Space、等 PyPI 有版本、等 `/healthz` 报版本；每天 03:17 UTC 健康检查）。**仓库 secret `HF_TOKEN` 由领导自己放**（HF 账号 → Write token → GitHub Settings → Secrets → Actions），没有 secret 部署步骤只打 notice。
+  预定地址 `https://gzchenhao-openhire.hf.space/mcp`（README、PRIVACY §3、首页、instructions 四处口径一致：主机只见工具参数、不记查询、盯岗记录按指纹存在它的索引里、本机安装仍是推荐）。**云端连不上 huggingface.co，没有真机实测**，等 token 放好后由工作流验证；上线后改知乎文章那句 ChatGPT 括号。714 tests。
 - **知乎文章稿（2026-10-14 夜，不发版，`reports/078`）：** 具身雇主 JD 信号扫描 `scripts/jd_signal_scan.py`（37 家、1,864 条在架、快照 10-13）：论文提及 6%（研究岗 25%；国内研究岗 76% 写成优先，海外 22%）、名校 1%、研究岗写年限 44% 对其他岗 69%、按年份看论文提及率持平。文章 10-14 13:58 UTC 已由本机发出：https://zhuanlan.zhihu.com/p/2093821857900257514 （基线阅读 1，stars 10；稿在私库 `zhihu-embodied-jd-signals-2026-10-14.md`，**10-15 按领导三条意见修订：带货段给可复制的 prompt、点名 ChatGPT、发完投稿到相关问题，见文案规矩第 7 条**）。**本机时钟比知乎服务端慢十几分钟**，本机记时间以服务端为准。**文案里的分析数字一律出自带日期的测量报告（078 这类）加 `numbers.json`，脚本进仓库让人重跑。**
 - **v0.8.10（2026-10-14，云端会话，`reports/077` 第九节）：** EarlyTip 首版的读者侧审计本机跑完：**83 / 83，problem_count 0**（18 键、id 与 key 重算、黑窗、D10、撤回、待核实标记全过）；`event_date` 10 条、`amount` 46 条、`related` 20 条；不放链接域名命中 8 条。匹配实测高通（对外M&A，另一方 PickNik Robotics）、Boston Dynamics（高管流动，另一方 亚马逊）都命中，理想汽车 no_record。
   提给生产侧两条（经领导转达）：**D18** `Tesla` 与 `特斯拉` 两个规范名按 D4 合并；**D19** `庞伯特Pongbot` 中英粘连，改 `庞伯特` + 别名。读者侧同日修：导出里的公司 / 别名 / 另一方名按中英半边各算一次键（`events_for`），「庞伯特」「Pongbot」都能命中。本机队列已清空。
@@ -128,7 +132,8 @@
   版本号一共**五处**：`pyproject.toml`、`server.json`（两处）、`mcpb/manifest.json`、**`mcpb/pyproject.toml`**、`README.md`。
   **2026-09-28 起再加四处插件清单**：`.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json`（plugins[0]）、`.cursor-plugin/plugin.json`、根目录 `plugin.json`（agent-plugins.org 标准）。
   **2026-10-08 起根目录 `.mcp.json` 和 `mcp.json` 也钉版本**（`uvx openhire==X serve`）：Anthropic 目录的检查把 `@latest` 判为阻塞项「Unpinned uvx launcher」。
-  发版时一条 `sed 's/0\.6\.x/0\.6\.y/g'` 把这**十一个**文件一起换；**第十二处 `uv.lock` 不用 sed，bump 后跑 `uv lock` 重生成**（目录 Verified 徽章要 pyproject + uv.lock；单文件上限 256 KiB，现约 240 KB）；`tests/test_release.py` 全部钉死。插件图标 `.claude-plugin/icon.png`（512px，目录只在首次提交时采用）。
+  **2026-10-15 起 `hosted/Dockerfile` 也钉版本**（`pip install "openhire==X"`，托管端点装的就是它）。
+  发版时一条 `sed 's/0\.6\.x/0\.6\.y/g'` 把这**十二个**文件一起换；**第十三处 `uv.lock` 不用 sed，bump 后跑 `uv lock` 重生成**（目录 Verified 徽章要 pyproject + uv.lock；单文件上限 256 KiB，现约 240 KB）；`tests/test_release.py` 全部钉死。插件图标 `.claude-plugin/icon.png`（512px，目录只在首次提交时采用）。
   **第五处是 2026-09-23 才发现的，而且是最要命的一处：** `.mcpb` 里跑的是 `uv run --directory <bundle> src/server.py`，
   真正装什么由 `mcpb/pyproject.toml` 的 `dependencies = ["openhire==X"]` 决定，manifest 里的版本号只是标签。
   v0.6.1 的 mcpb 标签写 0.6.1、依赖钉 0.5.1，**所有双击安装的用户一直在跑 0.5.1**。
@@ -161,7 +166,7 @@
   内置浏览器面板打不开 claude.ai，这类操作走 Chrome 扩展。接受目录条款那一勾每次都要领导在对话里明确说「可以」。push webhook 领导已装好（密钥不经我手），推 main 几分钟内目录就读到新版本。
   **仍要领导登录的**：Cursor Marketplace、cursor.directory、Smithery、LobeHub、AIBase；清单在 `drafts/listing-handoff-2026-09-28.md`。
   **SECURITY.md + GitHub 私密漏洞报告（2026-10-08 开启）**：目录条款要求漏洞报告机制；报告落在仓库 Security → Advisories，领导邮箱收通知，承诺 3 天确认、14 天评估。
-  **不可**：扣子 / 讯飞星辰 / ChatGPT Apps / 元器都要公网托管端点；百炼、千帆、华为云、豆包、TRAE 市场无第三方入口；Goose 停收，PulseMCP 停收，Continue 没了。
+  **不可**：扣子 / 讯飞星辰 / 元器要公网托管端点（**ChatGPT 连接器 0.8.11 起有托管端点可接**，见上）；百炼、千帆、华为云、豆包、TRAE 市场无第三方入口；Goose 停收，PulseMCP 停收，Continue 没了。
   **本机坑：** `~/.claude/plugins/known_marketplaces.json` 曾损坏成全零字节，任何 `claude plugin marketplace` 命令都报 JSON 错；已重置为 `{}`（备份 `.corrupt-20260928`）。
 - **Smithery：** v0.1 放弃（无本地 stdio 网页入口，见 `reports/010`）。
 - 推送用 `gh`（keyring）；PyPI token 仅 `%USERPROFILE%\.pypirc`；`mcp-publisher` 二进制在 `.tools/mcp-publisher.exe`（gitignored，v1.8.1），其 GitHub 登录令牌会过期，过期时 `.tools/mcp-publisher login github` 重登。三者均**不进代码/git**。

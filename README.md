@@ -69,7 +69,7 @@ to hire. A long-open role can equally mean "hard to fill". Treat it as a reason 
 
 An MCP server that turns **any** MCP-speaking assistant — Claude, 豆包 Doubao, DeepSeek (through
 an MCP client such as Cherry Studio or Chatbox), Cursor, 腾讯 WorkBuddy, TRAE, Windsurf, Cline,
-ChatGPT via connectors — into a private radar for
+ChatGPT (through the hosted endpoint below) — into a private radar for
 **AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **154 employers'**
 own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka, plus
 first-party employer career sites such as Li Auto's), across
@@ -113,7 +113,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.10.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.11.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -149,7 +149,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.10.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.11.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — or paste this to your agent: *"Install the MCP server at
@@ -198,7 +198,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.10", "serve"]`.
+matters: `"args": ["openhire==0.8.11", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -258,8 +258,21 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 > To refresh later run `ohp bootstrap --force` or `ohp ingest`. On Windows Claude Desktop from
 > the Microsoft Store, the config is under `…\Packages\<Claude package>\LocalCache\Roaming\Claude\`.
 >
-> **Hosted / remote:** `ohp serve --transport streamable-http --host 0.0.0.0 --port 8000`
-> exposes `http://host:8000/mcp` (also `--transport sse`). A `Dockerfile` is included.
+> **Hosted endpoint, for ChatGPT and any client that only takes a URL (0.8.11):**
+> the maintainer runs a copy of this server at `https://gzchenhao-openhire.hf.space/mcp`
+> (streamable HTTP, no authentication; a Hugging Face Space built from `hosted/`, same
+> package, same public index; `/healthz` tells you it is up and which version).
+> **ChatGPT** (paid plans): Settings → Connectors → Advanced → turn on *Developer mode* →
+> Create: name `OpenHire`, URL above, authentication *none*; then ask in a new chat with the
+> connector enabled. What that host receives is only what the tools take (search filters, a
+> company name or domain, a board URL, the anonymous fingerprint), never a résumé; it keeps no
+> query log; watches live in its index keyed by your fingerprint. The local install above
+> remains the recommended path, because there nothing of a search leaves your machine.
+> Details in `docs/PRIVACY.md` §3.
+>
+> **Self-host the same thing:** `OPENHIRE_HOSTED=1 ohp serve --transport streamable-http --host 0.0.0.0 --port 8000`
+> exposes `http://host:8000/mcp` plus a landing page, `/healthz`, a per-address rate limit and
+> a worker that picks up the weekly snapshot (also `--transport sse`). A `Dockerfile` is included.
 >
 > **GitHub unreachable from your network** (mainland China without a proxy, some sandboxes)?
 > The snapshot is a GitHub Release asset and the download now resumes and retries, but a

@@ -116,3 +116,17 @@ def test_release_workflow_publishes_to_pypi_without_a_stored_token():
     assert wf.index("python -m pytest") < wf.index("python -m build")
     reg = (ROOT / ".github" / "workflows" / "publish-mcp-registry.yml").read_text(encoding="utf-8")
     assert "workflow_run:" in reg and "workflows: [Release]" in reg and "tags:" not in reg
+
+
+def test_hosted_image_installs_the_declared_version():
+    """The hosted endpoint (a Hugging Face Space built from hosted/Dockerfile) must run the
+    released package, pinned, in hosted mode. A stale pin would serve ChatGPT users an old
+    version while the README describes the new one."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    dockerfile = (root / "hosted" / "Dockerfile").read_text(encoding="utf-8")
+    assert f'"openhire=={_declared()}"' in dockerfile, "hosted/Dockerfile must pin the declared version"
+    assert "OPENHIRE_HOSTED=1" in dockerfile
+    entry = (root / "hosted" / "entrypoint.sh").read_text(encoding="utf-8")
+    assert "--transport streamable-http" in entry and "--host 0.0.0.0" in entry

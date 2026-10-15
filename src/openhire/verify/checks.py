@@ -17,8 +17,10 @@ retry with a different client identity (CLAUDE.md: being blocked means stop).
 from __future__ import annotations
 
 import datetime as dt
+import ipaddress
 import re
-from urllib.parse import urlparse
+import socket
+from urllib.parse import urljoin, urlparse
 
 import httpx
 
@@ -122,12 +124,69 @@ def email_on_domain(email: str, domain: str) -> bool:
 
 
 # --- one plain GET each --------------------------------------------------------------------
-def _get(url: str, timeout: float | None = None) -> httpx.Response | None:
+# These helpers fetch addresses a caller typed: an employer's domain, the page a phone number
+# sits on. On a laptop that request leaves the user's own network. On the hosted endpoint it
+# would leave OURS, so a domain that resolves to 127.0.0.1, 10.x, a link-local or a cloud
+# metadata address (169.254.169.254) must never be fetched (SSRF). Redirects are followed by
+# hand so every hop gets the same check.
+_REDIRECTS = (301, 302, 303, 307, 308)
+_MAX_HOPS = 5
+_PRIVATE_SUFFIXES = (".localhost", ".local", ".internal", ".lan", ".home", ".arpa")
+
+
+def _blocked_reason(url: str) -> str | None:
+    """Why this URL must not be fetched from here, or None when it may be."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return "scheme"
+    host = (parsed.hostname or "").strip().lower()
+    if not host:
+        return "no_host"
     try:
-        return httpx.get(
-            url, timeout=timeout or config.HTTP_TIMEOUT_SECONDS, follow_redirects=True,
-            headers={"User-Agent": config.USER_AGENT},
-        )
+        port = parsed.port
+    except ValueError:
+        return "port"
+    if port not in (None, 80, 443):
+        return "port"
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        ip = None
+    if ip is not None:
+        return None if (ip.is_global and not ip.is_multicast) else "private_ip"
+    if host == "localhost" or host.endswith(_PRIVATE_SUFFIXES) or "." not in host:
+        return "private_name"
+    try:
+        infos = socket.getaddrinfo(host, port or (443 if parsed.scheme == "https" else 80),
+                                   proto=socket.IPPROTO_TCP)
+    except (socket.gaierror, UnicodeError, OSError):
+        return None  # unresolvable here: let the request fail as the network failure it is
+    for info in infos:
+        try:
+            addr = ipaddress.ip_address(info[4][0])
+        except (ValueError, IndexError, TypeError):
+            continue
+        if not addr.is_global or addr.is_multicast:
+            return "private_ip"
+    return None
+
+
+def _get(url: str, timeout: float | None = None) -> httpx.Response | None:
+    """One GET; None on a network failure or on an address this process must not reach."""
+    try:
+        for _ in range(_MAX_HOPS + 1):
+            if _blocked_reason(url):
+                return None
+            r = httpx.get(
+                url, timeout=timeout or config.HTTP_TIMEOUT_SECONDS, follow_redirects=False,
+                headers={"User-Agent": config.USER_AGENT},
+            )
+            headers = getattr(r, "headers", None) or {}
+            location = headers.get("location") if r.status_code in _REDIRECTS else None
+            if not location:
+                return r
+            url = urljoin(url, location)
+        return None
     except httpx.HTTPError:
         return None
 

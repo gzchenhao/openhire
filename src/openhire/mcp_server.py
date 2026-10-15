@@ -823,13 +823,51 @@ def _await_index(timeout: float = 180.0) -> None:
     _INDEX_READY.wait(timeout)
 
 
+def _activate_staged_snapshot() -> None:
+    """A snapshot staged next to the index (by the hosted refresh worker, or by hand) goes
+    live now, before anything opens the file; the old file's watches and application
+    records are carried over. No-op when nothing is staged or the index is not SQLite."""
+    from . import config
+    from .pipeline import snapshot as _snapshot
+
+    if not config.DATABASE_URL.startswith("sqlite"):
+        return
+    db_path = config.DATABASE_URL.split(":///", 1)[-1]
+    try:
+        previous = _snapshot.activate_staged(db_path)
+    except OSError as e:
+        print(f"openhire: could not activate the staged snapshot ({e}); keeping the current index",
+              file=sys.stderr)
+        return
+    if previous is None:
+        return
+    try:
+        copied = _snapshot.carry_over_user_state(previous, db_path)
+        print(f"openhire: activated the staged snapshot; carried over {copied or 'no'} user-state rows",
+              file=sys.stderr)
+    finally:
+        previous.unlink(missing_ok=True)
+
+
 def serve(transport: str = "stdio", host: str = "127.0.0.1", port: int = 8000) -> None:
-    """Start the MCP server. transport: "stdio" (default) | "sse" | "streamable-http"."""
+    """Start the MCP server. transport: "stdio" (default) | "sse" | "streamable-http".
+
+    With OPENHIRE_HOSTED=1 and streamable-http, the server runs in hosted mode (see
+    `hosted.py`): landing page, /healthz, rate limit, snapshot refresh worker."""
+    from . import hosted
+
+    _activate_staged_snapshot()
     init_db()
     _start_bootstrap()  # background: startup must stay instant for marketplace probes
     if transport != "stdio":
         mcp.settings.host = host
         mcp.settings.port = port
+    if hosted.is_hosted() and transport == "streamable-http":
+        from . import config
+
+        hosted.serve(mcp, host=host, port=port, snapshot_url=config.SNAPSHOT_URL,
+                     db_path=config.DATABASE_URL.split(":///", 1)[-1], wait_index=_await_index)
+        return
     mcp.run(transport=transport)  # type: ignore[arg-type]
 
 

@@ -195,49 +195,186 @@ def _fetch_to(url: str, dest: Path, attempts: int = FETCH_ATTEMPTS) -> None:
         shutil.copyfile(src, dest)
 
 
-def install_snapshot(url: str, db_path: str) -> SnapshotInstallResult:
-    """Download+decompress a snapshot into db_path. Verifies public-only content before
-    installing (never write user-state). Overwrites db_path."""
+def _validate_snapshot_db(db: Path) -> SnapshotInstallResult:
+    """Refuse anything but a public-only snapshot: jobs present, every user-state table empty."""
+    conn = sqlite3.connect(db)
+    try:
+        jobs = conn.execute("SELECT count(*) FROM jobs").fetchone()[0]
+        companies = conn.execute("SELECT count(*) FROM companies").fetchone()[0]
+        for t in _USER_STATE_TABLES:
+            try:
+                n = conn.execute(f"SELECT count(*) FROM {t}").fetchone()[0]
+            except sqlite3.Error:
+                n = 0
+            if n != 0:
+                raise SnapshotError(
+                    f"downloaded snapshot is invalid: {t} has {n} rows (must be 0)."
+                )
+        if jobs == 0:
+            raise SnapshotError("downloaded snapshot has 0 jobs.")
+        data_as_of = _max_verified_at(conn)
+    finally:
+        conn.close()
+    return SnapshotInstallResult(
+        companies=companies, jobs=jobs, data_as_of=data_as_of, age_days=_age_days(data_as_of),
+    )
+
+
+def download_snapshot(url: str, dest_db: Path) -> SnapshotInstallResult:
+    """Download, decompress and validate a snapshot into dest_db (never the live index path).
+
+    dest_db is removed again if the file turns out not to be a valid public-only snapshot."""
     tmp_gz = _tempfile(".db.gz")
-    tmp_db = _tempfile(".db")
     try:
         _fetch_to(url, tmp_gz)
-        with gzip.open(tmp_gz, "rb") as f_in, open(tmp_db, "wb") as f_out:
+        with gzip.open(tmp_gz, "rb") as f_in, open(dest_db, "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
-
-        conn = sqlite3.connect(tmp_db)
         try:
-            jobs = conn.execute("SELECT count(*) FROM jobs").fetchone()[0]
-            companies = conn.execute("SELECT count(*) FROM companies").fetchone()[0]
-            for t in _USER_STATE_TABLES:
-                try:
-                    n = conn.execute(f"SELECT count(*) FROM {t}").fetchone()[0]
-                except sqlite3.Error:
-                    n = 0
-                if n != 0:
-                    raise SnapshotError(
-                        f"downloaded snapshot is invalid: {t} has {n} rows (must be 0)."
-                    )
-            if jobs == 0:
-                raise SnapshotError("downloaded snapshot has 0 jobs.")
-            data_as_of = _max_verified_at(conn)
-        finally:
-            conn.close()
-
-        target = Path(db_path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(tmp_db, target)
-        # Clear any stale WAL sidecars from a previous DB at this path.
-        for side in (target.with_name(target.name + "-wal"), target.with_name(target.name + "-shm")):
-            side.unlink(missing_ok=True)
-
-        return SnapshotInstallResult(
-            companies=companies, jobs=jobs, data_as_of=data_as_of,
-            age_days=_age_days(data_as_of),
-        )
+            return _validate_snapshot_db(dest_db)
+        except Exception:
+            dest_db.unlink(missing_ok=True)
+            raise
     finally:
         tmp_gz.unlink(missing_ok=True)
-        tmp_db.unlink(missing_ok=True)
+
+
+def staged_path(db_path: str | Path) -> Path:
+    """Where a downloaded snapshot waits until the next start activates it."""
+    p = Path(db_path)
+    return p.with_name(p.name + ".staged")
+
+
+def stage_snapshot(url: str, db_path: str | Path) -> SnapshotInstallResult:
+    """Download a snapshot next to the live index without touching the live file.
+
+    The hosted endpoint uses this: a worker thread stages the new weekly snapshot while the
+    server keeps answering from the old file, then the process restarts and `activate_staged`
+    swaps the files before anything has them open. Overwriting a SQLite file that another
+    thread is reading is how an index gets corrupted."""
+    dest = staged_path(db_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(dest.name + ".part")
+    try:
+        res = download_snapshot(url, tmp)
+        os.replace(tmp, dest)
+        return res
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def _sidecars(target: Path) -> tuple[Path, Path]:
+    return target.with_name(target.name + "-wal"), target.with_name(target.name + "-shm")
+
+
+def _checkpoint(db: Path) -> None:
+    """Fold a WAL into its database so the file can be renamed without losing recent writes."""
+    if not db.exists():
+        return
+    try:
+        conn = sqlite3.connect(db)
+        try:
+            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        pass
+
+
+def activate_staged(db_path: str | Path) -> Path | None:
+    """Make a staged snapshot the live index. Returns the path of the previous index file
+    (so its user state can be carried over with `carry_over_user_state`), or None when
+    nothing was staged. Call this before anything opens the database."""
+    target = Path(db_path)
+    staged = staged_path(target)
+    if not staged.exists():
+        return None
+    previous: Path | None = None
+    if target.exists():
+        _checkpoint(target)
+        previous = target.with_name(target.name + ".previous")
+        os.replace(target, previous)
+    for side in _sidecars(target):
+        side.unlink(missing_ok=True)
+    os.replace(staged, target)
+    return previous
+
+
+def carry_over_user_state(old_db: str | Path, new_db: str | Path) -> dict[str, int]:
+    """Copy the user-state tables (watches, application records) from the index being
+    replaced into the new one. Rows are keyed by the client's anonymous fingerprint and
+    carry no PII; losing them on every refresh is what made `ohp bootstrap --force` wipe a
+    user's watches (roadmap item since 0.8.4). Shared columns only, so a snapshot built by a
+    newer or older version still works; a table the new file lacks is created from the old
+    file's own DDL. Returns rows copied per table."""
+    old, new = Path(old_db), Path(new_db)
+    if not old.exists() or not new.exists():
+        return {}
+    copied: dict[str, int] = {}
+    conn = sqlite3.connect(new)
+    try:
+        conn.execute("ATTACH DATABASE ? AS old", (str(old),))
+        for t in _USER_STATE_TABLES:
+            row = conn.execute(
+                "SELECT sql FROM old.sqlite_master WHERE type='table' AND name=?", (t,)
+            ).fetchone()
+            if not row:
+                continue
+            if not _table_exists(conn, t):
+                conn.execute(row[0])
+            dest_cols = [r[1] for r in conn.execute(f"PRAGMA main.table_info({t})").fetchall()]
+            src_cols = {r[1] for r in conn.execute(f"PRAGMA old.table_info({t})").fetchall()}
+            cols = [c for c in dest_cols if c in src_cols]
+            if not cols:
+                continue
+            collist = ", ".join(cols)
+            cur = conn.execute(f"INSERT OR IGNORE INTO main.{t} ({collist}) SELECT {collist} FROM old.{t}")
+            copied[t] = cur.rowcount if cur.rowcount is not None and cur.rowcount >= 0 else 0
+        conn.commit()
+        conn.execute("DETACH DATABASE old")
+    finally:
+        conn.close()
+    return copied
+
+
+def install_snapshot(url: str, db_path: str, preserve_user_state: bool = False) -> SnapshotInstallResult:
+    """Download+decompress a snapshot into db_path. Verifies public-only content before
+    installing (never write user-state). Overwrites db_path; with preserve_user_state the
+    previous file's watches and application records are carried into the new index first.
+    Callers must have released their own handles on db_path (dispose_engine)."""
+    res = stage_snapshot(url, db_path)
+    previous = activate_staged(db_path)
+    if previous is not None:
+        try:
+            if preserve_user_state:
+                carry_over_user_state(previous, db_path)
+        finally:
+            previous.unlink(missing_ok=True)
+    return res
+
+
+def snapshot_fingerprint(url: str) -> str | None:
+    """Something that changes when the published snapshot does, without downloading it:
+    ETag, length and last-modified from a HEAD (redirects followed), or size and mtime for a
+    local path. None when the source cannot be asked right now."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        src = Path(parsed.path if parsed.scheme == "file" else url)
+        try:
+            st = src.stat()
+        except OSError:
+            return None
+        return f"{st.st_size}:{int(st.st_mtime)}"
+    import httpx
+
+    try:
+        r = httpx.head(url, follow_redirects=True, timeout=httpx.Timeout(30.0, connect=10.0))
+    except httpx.HTTPError:
+        return None
+    if r.status_code != 200:
+        return None
+    parts = [r.headers.get(k, "") for k in ("etag", "content-length", "last-modified")]
+    fp = "|".join(parts)
+    return fp if any(parts) else None
 
 
 def _age_days(data_as_of: str | None) -> int | None:

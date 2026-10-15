@@ -13,6 +13,13 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-15（续）· 0.8.11：托管端点，给 ChatGPT 连接器（`reports/079`）
+
+- **已完成：** 领导裁定「ChatGPT 要公网地址，那我们就挂吧」。托管模式 `hosted.py`（`/`、`/healthz`、instructions 披露句、限流、无状态 HTTP、不记访问日志、每 6 小时查快照、换文件靠重启）；换快照搬 watches / applications（`ohp bootstrap --force` 同样保留，0.8.4 路线图项关闭）；`check_employer` 外联加 SSRF 防线；`hosted/` 三个文件 + `deploy-hosted.yml`（Release 后推 Hugging Face Space，每日健康检查）；README / PRIVACY §3 / 首页 / instructions 四处同一口径。十二处版本到 0.8.11，714 tests。
+- **关键决策：** 选 Hugging Face Space（免费、不绑卡、Docker、公网 https、ChatGPT 能到）；本机安装仍是推荐路径，托管端点只给只收网址的客户端；不在别的线程读着时覆盖 SQLite，新快照先 staged 再重启换。
+- **下一步（只有领导能做）：** HF 账号 → Write token → GitHub 仓库 secret `HF_TOKEN`；放好后我手动触发「Deploy hosted endpoint」，`/healthz` 报 0.8.11 即上线；然后改知乎文章里 ChatGPT 那句括号，并请领导用 ChatGPT 开发者模式实测一次。
+- **待确认：** HF 用户名是否用 `gzchenhao`（决定地址 `gzchenhao-openhire.hf.space`）。
+
 ## 2026-10-15 · 知乎 JD 信号文章按领导三条意见修订；邮箱日检（不发版）
 
 - **已完成：** 私库稿 `zhihu-embodied-jd-signals-2026-10-14.md` 第五节带货段重写：装机 prompt、一行 `mcpServers` 配置、提问 prompt 三个代码块原样给出，读者一键复制；助手名单加 ChatGPT 排第一（注明走连接器要公网地址）；文末「发布备注」加本机会话要执行的两步（改线上文章；投稿到相关问题，含选题标准、每题一条不雷同的回答、每天上限 5 题）。CLAUDE.md 文案规矩第 7 条补三款。本机会话的交接 prompt 已给领导。

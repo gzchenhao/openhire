@@ -125,3 +125,123 @@ def test_build_then_install_roundtrip(tmp_path):
         assert conn.execute("SELECT role_family FROM jobs WHERE id='acme:1'").fetchone()[0] == "engineering"
     finally:
         conn.close()
+
+
+# --- staging, activation and user-state carry-over (0.8.11) ----------------------------
+def _gz_of(db_path, gz_path) -> None:
+    with open(db_path, "rb") as f_in, gzip.open(gz_path, "wb") as f_out:
+        f_out.write(f_in.read())
+
+
+def _public_snapshot(tmp_path, job_id="acme:2", title="Perception Engineer"):
+    """A valid public-only snapshot (one company, one job, empty user tables), gzipped."""
+    from openhire.pipeline.snapshot import build_snapshot
+
+    src = tmp_path / "pub-src.db"
+    engine = create_engine(f"sqlite+pysqlite:///{src.as_posix()}", future=True)
+    Base.metadata.create_all(engine)
+    with Session(engine, future=True) as s:
+        s.add(Company(id="acme", name="Acme AI", ats_vendor="greenhouse", ats_tenant="acme",
+                      careers_url="x", last_crawled_at=NOW))
+        s.add(Job(id=job_id, company_id="acme", title=title, description_raw="x",
+                  skills=["c++"], remote_policy="remote", first_seen_at=NOW,
+                  verified_at=NOW, source="ats_public_api", ghost_score=0.0,
+                  role_family="engineering",
+                  apply_channel="https://boards.greenhouse.io/embed/job_app?for=acme&token=2",
+                  content_hash="h2"))
+        s.commit()
+    engine.dispose()
+    gz = tmp_path / "pub.db.gz"
+    build_snapshot(str(src), str(gz))
+    return gz
+
+
+def test_stage_then_activate_carries_watches_into_the_new_index(tmp_path):
+    """The hosted refresh and `ohp bootstrap --force` both go through this path: the new
+    snapshot waits next to the live file, activation swaps the files, and the old file's
+    watches and application records (anonymous fingerprint + filters, no PII) end up in
+    the new index. Losing them on every refresh was the 0.8.4 roadmap item."""
+    from openhire.pipeline.snapshot import (
+        activate_staged, carry_over_user_state, stage_snapshot, staged_path,
+    )
+
+    live = tmp_path / "openhire.db"
+    _seed_source(live)  # old index: one job, one watch, one application record
+    gz = _public_snapshot(tmp_path)
+
+    res = stage_snapshot(gz.as_uri(), live)
+    assert res.jobs == 1 and staged_path(live).exists()
+    # Staging touched nothing live:
+    with sqlite3.connect(live) as c:
+        assert c.execute("SELECT count(*) FROM watches").fetchone()[0] == 1
+        assert c.execute("SELECT id FROM jobs").fetchone()[0] == "acme:1"
+
+    previous = activate_staged(live)
+    assert previous is not None and previous.exists() and not staged_path(live).exists()
+    copied = carry_over_user_state(previous, live)
+    assert copied == {"watches": 1, "applications": 1}
+    with sqlite3.connect(live) as c:
+        assert [r[0] for r in c.execute("SELECT id FROM jobs")] == ["acme:2"]  # the new snapshot
+        assert c.execute("SELECT fingerprint FROM watches").fetchone()[0] == "#a3f9"
+        assert c.execute("SELECT receipt_id FROM applications").fetchone()[0] == "r_1"
+    # Carry-over is idempotent (INSERT OR IGNORE on the primary keys):
+    assert carry_over_user_state(previous, live) == {"watches": 0, "applications": 0}
+
+
+def test_activate_with_nothing_staged_is_a_noop(tmp_path):
+    from openhire.pipeline.snapshot import activate_staged
+
+    live = tmp_path / "openhire.db"
+    _seed_source(live)
+    assert activate_staged(live) is None
+    with sqlite3.connect(live) as c:
+        assert c.execute("SELECT count(*) FROM watches").fetchone()[0] == 1
+
+
+def test_install_snapshot_keeps_user_state_only_when_asked(tmp_path):
+    from openhire.pipeline.snapshot import install_snapshot
+
+    gz = _public_snapshot(tmp_path)
+    live = tmp_path / "openhire.db"
+    _seed_source(live)
+    install_snapshot(gz.as_uri(), str(live))  # the old contract: a plain overwrite
+    with sqlite3.connect(live) as c:
+        has_table = c.execute(
+            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='watches'"
+        ).fetchone()[0]
+        assert not has_table or c.execute("SELECT count(*) FROM watches").fetchone()[0] == 0
+
+    _seed_source(tmp_path / "again.db")
+    live2 = tmp_path / "again.db"
+    install_snapshot(gz.as_uri(), str(live2), preserve_user_state=True)
+    with sqlite3.connect(live2) as c:
+        assert c.execute("SELECT count(*) FROM watches").fetchone()[0] == 1
+        assert [r[0] for r in c.execute("SELECT id FROM jobs")] == ["acme:2"]
+    assert not (tmp_path / "again.db.previous").exists()
+    assert not (tmp_path / "again.db.staged").exists()
+
+
+def test_staging_rejects_a_snapshot_with_user_state_and_leaves_nothing_behind(tmp_path):
+    from openhire.pipeline.snapshot import SnapshotError, stage_snapshot, staged_path
+
+    bad = tmp_path / "bad.db"
+    _seed_source(bad)  # has watches: must be refused
+    bad_gz = tmp_path / "bad.db.gz"
+    _gz_of(bad, bad_gz)
+    live = tmp_path / "openhire.db"
+    with pytest.raises(SnapshotError):
+        stage_snapshot(bad_gz.as_uri(), live)
+    assert not staged_path(live).exists()
+    assert not list(tmp_path.glob("openhire.db.staged*"))
+
+
+def test_snapshot_fingerprint_changes_with_a_local_file(tmp_path):
+    from openhire.pipeline.snapshot import snapshot_fingerprint
+
+    f = tmp_path / "snap.db.gz"
+    f.write_bytes(b"one")
+    a = snapshot_fingerprint(f.as_uri())
+    assert a and a.startswith("3:")
+    f.write_bytes(b"longer")
+    assert snapshot_fingerprint(f.as_uri()) != a
+    assert snapshot_fingerprint((tmp_path / "missing").as_uri()) is None
