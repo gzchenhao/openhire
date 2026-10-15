@@ -13,6 +13,13 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-15（再续）· 宣传渠道累计成果一页（`reports/080`）；本机会话接管 HF 部署与知乎日检
+
+- **已完成：** `reports/080` 把首发以来每个渠道的数字和状态放在一页（stars 10、14 天浏览 85 / 50、来源 link.zhihu.com 17 独立访客第一、快照下载 14、mcpb 累计 18、PyPI 10-08 日 14 / 周 146 / 月 1,890、知乎累计表、目录状态表、X / 即刻 / 脉脉 / LinkedIn 结果），每个数字带实查日期。领导定：能让本机会话做的事不让领导手工做。于是 HF 账号 / token / GitHub secret / 触发部署 / 核验 `/healthz` / 改文章 ChatGPT 句全部交本机会话（prompt 在私库 `local-session-prompt-2026-10-15-hosted.md`）；知乎评论与数据改为本机每日定时任务（SOP 私库 `zhihu-daily-routine.md`）。
+- **关键决策：** token 走剪贴板直接进 `gh secret set`，不经任何文件、对话或日志；知乎评论处理有分类规则和每日上限，雇主投诉、律师函、媒体、合作、认领一律不回只上报。
+- **下一步：** 本机跑完 HF 部署后读私库 `local-results/hosted-deploy-*.md`，更新 CLAUDE.md / PROGRESS / 079 的「已上线」；知乎一栏从本机日检的 growth-log 刷新。
+- **待确认：** 无。
+
 ## 2026-10-15（续）· 0.8.11：托管端点，给 ChatGPT 连接器（`reports/079`）
 
 - **已完成：** 领导裁定「ChatGPT 要公网地址，那我们就挂吧」。托管模式 `hosted.py`（`/`、`/healthz`、instructions 披露句、限流、无状态 HTTP、不记访问日志、每 6 小时查快照、换文件靠重启）；换快照搬 watches / applications（`ohp bootstrap --force` 同样保留，0.8.4 路线图项关闭）；`check_employer` 外联加 SSRF 防线；`hosted/` 三个文件 + `deploy-hosted.yml`（Release 后推 Hugging Face Space，每日健康检查）；README / PRIVACY §3 / 首页 / instructions 四处同一口径。十二处版本到 0.8.11，714 tests。**发版证据：** PyPI 0.8.11（wheel + sdist）；Release 运行 38667577183 成功；v0.8.11 挂 `openhire-0.8.11.mcpb`（128,974 字节）；Registry 运行 38667692370 成功；`deploy-hosted.yml` 运行 38667692289 成功但无 `HF_TOKEN`、只打 notice 未部署。

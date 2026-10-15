@@ -188,6 +188,8 @@
   `drafts/`（gitignored，宣传文案与任务书），它镜像在私有仓库 **https://github.com/gzchenhao/openhire-private** ，
   用 `.venv/Scripts/python.exe scripts/backup_drafts.py` 同步（幂等；检测到 `.env` 等密钥形态文件会拒绝执行）。
 - **分工（领导 2026-10-10 定）：写稿、查数据、改代码、发版全在云端会话做；本机会话只做知乎、即刻、X 的发布**（要领导浏览器的登录态）。
+  **2026-10-15 领导补：能让本机会话做的事，不让领导手工做。** 凡是要登录态或本机操作的活（注册账号、取 token、放 GitHub secret、目录提交、知乎回复），云端写好 prompt 交本机会话，领导只负责把 prompt 贴过去。
+  **知乎评论与数据自 2026-10-15 起由本机每日定时任务处理**（SOP 私库 `zhihu-daily-routine.md`：分类规则、每日上限、只上报不回的五类、每天记阅读 / 赞同 / 收藏 / 评论进 growth-log）；下方「四个入口」第 3 条云端不再每天看，只在本机日检上报时处理。
   **云端写稿交接：** 云端会话同时选 `openhire` 和 `openhire-private` 两个仓库，稿子写在 `openhire-private` 根目录（它就是本机的 `drafts/`），提交并推它的 main。
   不要写进 `openhire/drafts/`：那里被 gitignore，推不上去，会话结束就丢。本机发布前先跑上面那条同步命令把稿拉下来。
   同步脚本 2026-10-10 起是**双向三方合并**（`drafts/.sync-state.json` 记上次同步时每个文件的内容）：只有一边改了就同步那边，两边都改了报 CONFLICT、不覆盖，人工合并后 `--resolved <文件>`。
