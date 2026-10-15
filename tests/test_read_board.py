@@ -40,6 +40,9 @@ NOW = dt.datetime(2026, 10, 11, tzinfo=UTC)
     ("https://api.ashbyhq.com/posting-api/job-board/airwallex", ("ashby", "airwallex")),
     ("https://app.mokahr.com/apply/yushi/3774#/job/x", ("moka", "yushi/3774")),
     ("https://unitree.zhiye.com/social/jobs", ("beisen", "unitree")),
+    ("https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite", ("workday", "nvidia.wd5/NVIDIAExternalCareerSite")),
+    ("https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA/Engineer_JR1", ("workday", "nvidia.wd5/NVIDIAExternalCareerSite")),
+    ("https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExternalCareerSite/jobs", ("workday", "nvidia.wd5/NVIDIAExternalCareerSite")),
 ])
 def test_detect_board_reads_vendor_and_tenant_off_the_url(url, expected):
     assert detect_board(url) == expected
@@ -47,7 +50,9 @@ def test_detect_board_reads_vendor_and_tenant_off_the_url(url, expected):
 
 @pytest.mark.parametrize("url,reason", [
     ("https://ponyai.jobs.feishu.cn/ponyai/", "closed_portal"),
-    ("https://hsbc.wd3.myworkdayjobs.com/x", "closed_portal"),
+    ("https://hsbc.wd3.myworkdayjobs.com/", "bad_url"),
+    ("https://www.myworkdayjobs.com/x", "bad_url"),
+    ("https://sap.successfactors.com/career?x", "closed_portal"),
     ("https://hk.jobsdb.com/x", "closed_portal"),
     ("https://www.hkstp.org/careers", "unsupported_host"),
     ("https://app.mokahr.com/apply/yushi", "bad_url"),
@@ -150,7 +155,7 @@ def test_closed_portal_refusal_carries_the_browser_hint(session):
     tool that it may open the page itself, and that OpenHire reads nothing from it."""
     from openhire.ats.boards import BROWSER_HINT, CLOSED_PORTALS
     assert "浏览器" in BROWSER_HINT and "不入库" in BROWSER_HINT
-    for host in ("feishu.cn", "larksuite.com", "myworkdayjobs.com", "successfactors.com", "taleo.net", "icims.com"):
+    for host in ("feishu.cn", "larksuite.com", "successfactors.com", "taleo.net", "icims.com"):
         assert CLOSED_PORTALS[host].endswith(BROWSER_HINT), host
     # Job boards (LinkedIn, JobsDB, BOSS) are not employer systems: no hint, the reason stands alone.
     for host in ("linkedin.com", "jobsdb.com", "zhipin.com"):

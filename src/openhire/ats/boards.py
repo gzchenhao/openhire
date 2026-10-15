@@ -6,7 +6,7 @@ seeker pastes the careers URL; this module turns it into the (vendor, tenant) pa
 adapters take. Nothing here touches the network.
 
 Only vendors with a public, unauthenticated board endpoint can be read. A Feishu Hire
-portal (request signatures), Workday, SuccessFactors, Taleo, iCIMS and the like are refused
+portal (request signatures), SuccessFactors, Taleo, iCIMS and the like are refused
 with the reason, never scraped (CLAUDE.md: signatures, captchas and login walls mean stop).
 """
 
@@ -31,7 +31,6 @@ BROWSER_HINT = "助手有浏览器工具的话，可以直接打开这个门户�
 CLOSED_PORTALS = {
     "feishu.cn": "飞书招聘门户的列表接口要请求签名，属于访问控制，这个索引不读（见 reports/014）；只能打开门户自己看，或由雇主在飞书开放平台授权只读。" + BROWSER_HINT,
     "larksuite.com": "Lark Hire 门户的列表接口要请求签名，属于访问控制，这个索引不读；只能打开门户自己看。" + BROWSER_HINT,
-    "myworkdayjobs.com": "Workday 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
     "successfactors.com": "SuccessFactors 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
     "taleo.net": "Taleo 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
     "icims.com": "iCIMS 没有公开的岗位接口，这个索引不读；打开页面自己看。" + BROWSER_HINT,
@@ -40,7 +39,11 @@ CLOSED_PORTALS = {
     "zhipin.com": "BOSS 直聘是招聘网站不是雇主自己的系统，这个索引只读雇主自己的招聘系统。",
 }
 
-SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)、Workable (apply.workable.com/<subdomain>)、SmartRecruiters (jobs.smartrecruiters.com/<company>)"
+SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)、Workable (apply.workable.com/<subdomain>)、SmartRecruiters (jobs.smartrecruiters.com/<company>)、Workday (<account>.wd5.myworkdayjobs.com/<site>)"
+
+_WORKDAY_SUFFIX = ".myworkdayjobs.com"
+_WORKDAY_CLUSTER = re.compile(r"^wd\d+$")
+_LOCALE = re.compile(r"^[a-z]{2}(-[A-Za-z]{2})?$")   # en-US, zh-CN, fr: path prefixes Workday adds
 
 _WORKABLE_HOSTS = {"apply.workable.com"}
 # Workable's own sites on the same domain, never a tenant.
@@ -131,6 +134,26 @@ def detect_board(url: str) -> tuple[str, str]:
         else:
             tenant = _first_segment(path)
         return _checked("smartrecruiters", tenant, "jobs.smartrecruiters.com/<company>")
+
+    if host.endswith(_WORKDAY_SUFFIX):
+        # <account>.<wdN>.myworkdayjobs.com/<locale?>/<site>/... ; the tenant this index keys
+        # on is "<account>.<wdN>/<site>" because the account alone does not name a board
+        # (one account can publish several sites) and the cluster is part of the host.
+        sub = host[: -len(_WORKDAY_SUFFIX)]
+        parts = sub.split(".")
+        shape = "A Workday careers URL looks like <account>.wd5.myworkdayjobs.com/<site> (the site name is the first path segment after an optional locale such as en-US)."
+        if len(parts) != 2 or not parts[0] or not _WORKDAY_CLUSTER.match(parts[1]):
+            raise BoardNotSupported("bad_url", shape)
+        segs = [s for s in path.split("/") if s]
+        if segs and segs[0] == "wday":
+            # the data endpoint itself: /wday/cxs/<account>/<site>/jobs
+            segs = segs[3:4] if len(segs) >= 4 and segs[1] == "cxs" else []
+        else:
+            segs = [s for s in segs if not _LOCALE.match(s)]
+        site = segs[0] if segs else None
+        if not site or not _SLUG.match(site) or site.lower() in ("job", "jobs", "details", "login"):
+            raise BoardNotSupported("bad_url", shape)
+        return "workday", f"{sub}/{site}"
 
     if host.endswith(".zhiye.com") and host.count(".") == 2:
         tenant = host.split(".", 1)[0]

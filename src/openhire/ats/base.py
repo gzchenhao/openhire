@@ -53,12 +53,22 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
 # Beisen (北森) gives every employer its own host (`<tenant>.zhiye.com`), so its canonical
 # apply hosts cannot be enumerated up front the way the others can — they are derived from
 # the tenant instead. See `_apply_hosts`.
-_PER_TENANT_HOST: dict[str, str] = {"beisen": "{tenant}.zhiye.com"}
+# Workday likewise: every account has its own host (`<account>.<wdN>.myworkdayjobs.com`),
+# and this index keys a Workday board as "<account>.<wdN>/<site>" (ats/boards.py).
+_PER_TENANT_HOST: dict[str, str] = {"beisen": "{tenant}.zhiye.com", "workday": "{account}.myworkdayjobs.com"}
+
+
+def workday_host(tenant: str) -> str:
+    """`nvidia.wd5/NVIDIAExternalCareerSite` -> `nvidia.wd5.myworkdayjobs.com`."""
+    return tenant.split("/", 1)[0].lower() + ".myworkdayjobs.com"
 
 
 def _apply_hosts(vendor: str, tenant: str) -> set[str]:
     """Canonical apply hosts for a vendor, including per-tenant ones."""
     hosts = set(ATS_APPLY_HOSTS.get(vendor, set()))
+    if vendor == "workday":
+        hosts.add(workday_host(tenant))
+        return hosts
     pattern = _PER_TENANT_HOST.get(vendor)
     if pattern:
         hosts.add(pattern.format(tenant=tenant).lower())
@@ -150,6 +160,12 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
         # The job's page on NIO's Feishu Hire tenant, which carries the 投递 button. The
         # mirror publishes this URL as http://; the host 301s to https, so build it there.
         return f"https://nio.jobs.feishu.cn/index/position/detail/{ats_job_id}"
+    if vendor == "workday":
+        # Workday's deep link needs the posting's own path (ats/workday.py passes it as the
+        # vendor URL, so this fallback is rarely used): the site searched for the req id
+        # always lands on the employer's own board with that one posting listed.
+        site = tenant.split("/", 1)[1] if "/" in tenant else ""
+        return f"https://{workday_host(tenant)}/{site}?q={ats_job_id}"
     raise ValueError(f"unknown vendor: {vendor!r}")
 
 

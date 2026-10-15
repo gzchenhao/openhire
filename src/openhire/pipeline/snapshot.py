@@ -21,6 +21,19 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
+from urllib.request import url2pathname
+
+
+def _local_path(url: str) -> Path:
+    """A local source given as a path or a file:// URL, as a filesystem path.
+
+    `urlparse("file:///C:/x/y.gz").path` is "/C:/x/y.gz", which Windows reads as a path
+    with an extra leading backslash and cannot find (3 tests failed there on 0.8.12);
+    `url2pathname` turns the URL path into the platform's own spelling on every OS."""
+    parsed = urlparse(url)
+    if parsed.scheme == "file":
+        return Path(url2pathname(parsed.path))
+    return Path(url)
 
 
 def _tempfile(suffix: str) -> Path:
@@ -33,6 +46,9 @@ def _tempfile(suffix: str) -> Path:
 _PUBLIC_TABLES = ("companies", "jobs")
 # These must be zero rows in any published snapshot (privacy red line).
 _USER_STATE_TABLES = ("watches", "applications")
+# Employers a user added to their own index (companies.user_added = 1, 0.8.13) and their
+# postings are the user's too: never published in a snapshot, carried over on every refresh.
+_USER_ADDED_COLUMN = "user_added"
 
 
 class SnapshotError(RuntimeError):
@@ -76,6 +92,20 @@ def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
     ).fetchone() is not None
 
 
+def _has_column(conn: sqlite3.Connection, table: str, column: str, schema: str = "main") -> bool:
+    return any(r[1] == column for r in conn.execute(f"PRAGMA {schema}.table_info({table})").fetchall())
+
+
+def _user_added_rows(conn: sqlite3.Connection, schema: str = "main") -> int:
+    """How many employers in this database are a user's own additions (0 when the column
+    predates this version)."""
+    if schema == "main" and not _table_exists(conn, "companies"):
+        return 0
+    if not _has_column(conn, "companies", _USER_ADDED_COLUMN, schema):
+        return 0
+    return conn.execute(f"SELECT count(*) FROM {schema}.companies WHERE {_USER_ADDED_COLUMN} = 1").fetchone()[0]
+
+
 def build_snapshot(source_db_path: str, dest_gz_path: str) -> SnapshotBuildResult:
     """Build a companies+jobs-only gzipped snapshot from a source DB. Raises on any
     user-state leak. `source_db_path` is a plain filesystem path to the SQLite file."""
@@ -101,8 +131,16 @@ def build_snapshot(source_db_path: str, dest_gz_path: str) -> SnapshotBuildResul
                 dest.execute(ddl[0])
                 cols = [r[1] for r in dest.execute(f"PRAGMA table_info({table})").fetchall()]
                 collist = ", ".join(cols)
+                # A user's own employers (and their postings) are user state in all but
+                # name: they say where that person is looking. They never leave the machine.
+                where = ""
+                if _USER_ADDED_COLUMN in cols:
+                    if table == "companies":
+                        where = f" WHERE {_USER_ADDED_COLUMN} IS NOT 1"
+                elif table == "jobs" and _has_column(dest, "companies", _USER_ADDED_COLUMN, "src"):
+                    where = f" WHERE company_id NOT IN (SELECT id FROM src.companies WHERE {_USER_ADDED_COLUMN} = 1)"
                 dest.execute(
-                    f"INSERT INTO {table} ({collist}) SELECT {collist} FROM src.{table}"
+                    f"INSERT INTO {table} ({collist}) SELECT {collist} FROM src.{table}{where}"
                 )
                 copied[table] = dest.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
             dest.commit()
@@ -189,7 +227,7 @@ def _fetch_to(url: str, dest: Path, attempts: int = FETCH_ATTEMPTS) -> None:
                     raise
                 time.sleep(min(2.0 * attempt, 6.0))
     else:
-        src = Path(parsed.path if parsed.scheme == "file" else url)
+        src = _local_path(url)
         if not src.exists():
             raise SnapshotError(f"snapshot not found at {src}")
         shutil.copyfile(src, dest)
@@ -212,6 +250,11 @@ def _validate_snapshot_db(db: Path) -> SnapshotInstallResult:
                 )
         if jobs == 0:
             raise SnapshotError("downloaded snapshot has 0 jobs.")
+        personal = _user_added_rows(conn)
+        if personal:
+            raise SnapshotError(
+                f"downloaded snapshot is invalid: {personal} user-added employers (must be 0)."
+            )
         data_as_of = _max_verified_at(conn)
     finally:
         conn.close()
@@ -329,11 +372,43 @@ def carry_over_user_state(old_db: str | Path, new_db: str | Path) -> dict[str, i
             collist = ", ".join(cols)
             cur = conn.execute(f"INSERT OR IGNORE INTO main.{t} ({collist}) SELECT {collist} FROM old.{t}")
             copied[t] = cur.rowcount if cur.rowcount is not None and cur.rowcount >= 0 else 0
+        copied.update(_carry_over_user_employers(conn))
         conn.commit()
         conn.execute("DETACH DATABASE old")
     finally:
         conn.close()
     return copied
+
+
+def _carry_over_user_employers(conn: sqlite3.Connection) -> dict[str, int]:
+    """Employers the user added (companies.user_added = 1) and every posting of theirs move
+    from the old index into the new one; the snapshot never carries them, so without this
+    a refresh would silently drop the user's own radar. The new file may predate the
+    column (a snapshot built by an older version): it is added here, before anything
+    opens the index, the same way init_db's migration would."""
+    if not (_table_exists(conn, "companies") and _table_exists(conn, "jobs")):
+        return {}
+    if not _has_column(conn, "companies", _USER_ADDED_COLUMN, "old"):
+        return {}
+    n = conn.execute(f"SELECT count(*) FROM old.companies WHERE {_USER_ADDED_COLUMN} = 1").fetchone()[0]
+    if not n:
+        return {}
+    if not _has_column(conn, "companies", _USER_ADDED_COLUMN):
+        conn.execute(f"ALTER TABLE main.companies ADD COLUMN {_USER_ADDED_COLUMN} BOOLEAN DEFAULT 0")
+    out: dict[str, int] = {}
+    for t, where in (
+        ("companies", f"WHERE {_USER_ADDED_COLUMN} = 1"),
+        ("jobs", f"WHERE company_id IN (SELECT id FROM old.companies WHERE {_USER_ADDED_COLUMN} = 1)"),
+    ):
+        dest_cols = [r[1] for r in conn.execute(f"PRAGMA main.table_info({t})").fetchall()]
+        src_cols = {r[1] for r in conn.execute(f"PRAGMA old.table_info({t})").fetchall()}
+        cols = [c for c in dest_cols if c in src_cols]
+        if not cols:
+            continue
+        collist = ", ".join(cols)
+        cur = conn.execute(f"INSERT OR IGNORE INTO main.{t} ({collist}) SELECT {collist} FROM old.{t} {where}")
+        out[t] = cur.rowcount if cur.rowcount is not None and cur.rowcount >= 0 else 0
+    return out
 
 
 def install_snapshot(url: str, db_path: str, preserve_user_state: bool = False) -> SnapshotInstallResult:
@@ -358,7 +433,7 @@ def snapshot_fingerprint(url: str) -> str | None:
     local path. None when the source cannot be asked right now."""
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
-        src = Path(parsed.path if parsed.scheme == "file" else url)
+        src = _local_path(url)
         try:
             st = src.stat()
         except OSError:

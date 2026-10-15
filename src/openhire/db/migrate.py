@@ -33,6 +33,8 @@ _EXTRACTION_COLUMNS = {
 _COMPANY_COLUMNS = {
     "response_sla_days": ("INTEGER", "INT"),
     "claimed_at": ("TIMESTAMP", "TIMESTAMPTZ"),
+    # 0.8.13: employers the user added themselves (never published, always carried over).
+    "user_added": ("BOOLEAN DEFAULT 0", "BOOLEAN DEFAULT FALSE"),
 }
 
 

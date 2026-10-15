@@ -44,6 +44,10 @@ class Company(Base):
     # so the only honest source is the employer saying it themselves when they claim.
     response_sla_days: Mapped[int | None] = mapped_column(Integer)
     claimed_at: Mapped[dt.datetime | None] = mapped_column(TZDateTime)
+    # An employer this user added to their own index (add_employer, 0.8.13). Such rows and
+    # their postings never go into a published snapshot and survive every refresh; they
+    # say where one person is looking, which makes them that person's data.
+    user_added: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Job(Base):

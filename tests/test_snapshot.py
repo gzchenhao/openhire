@@ -245,3 +245,15 @@ def test_snapshot_fingerprint_changes_with_a_local_file(tmp_path):
     f.write_bytes(b"longer")
     assert snapshot_fingerprint(f.as_uri()) != a
     assert snapshot_fingerprint((tmp_path / "missing").as_uri()) is None
+
+
+def test_local_file_urls_resolve_on_every_platform(tmp_path):
+    """0.8.12 turned file:///C:/... into \\C:\\... on Windows (3 tests red there): the URL
+    path must go through url2pathname, which gives each OS its own spelling."""
+    from openhire.pipeline.snapshot import _local_path
+
+    f = tmp_path / "snap.db.gz"
+    f.write_bytes(b"x")
+    assert _local_path(f.as_uri()) == f
+    assert _local_path(str(f)) == f
+    assert _local_path("file:///C:/Users/x/snap.db.gz").name == "snap.db.gz"

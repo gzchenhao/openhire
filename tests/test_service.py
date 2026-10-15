@@ -121,6 +121,7 @@ def test_ranking_prefers_higher_match(session):
 def test_company_info_aggregate_only(session):
     info = service.get_company_info(session, "acme", now=NOW)
     assert set(info) == {
+        "user_added",
         "company_id", "company", "ghost_score_avg", "active_jobs", "index_built_at",
         # What drove the average — so the number cannot be read as a verdict on its own.
         "median_days_open", "relisted_postings", "last_touched_reported_by_ats",

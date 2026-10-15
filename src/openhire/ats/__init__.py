@@ -22,6 +22,7 @@ from .nio import NioClient
 from .self_reported import SelfReportedClient
 from .smartrecruiters import SmartRecruitersClient
 from .workable import WorkableClient
+from .workday import WorkdayClient
 
 _CLIENTS: dict[str, ATSClient] = {
     "greenhouse": GreenhouseClient(),
@@ -31,6 +32,7 @@ _CLIENTS: dict[str, ATSClient] = {
     "moka": MokaClient(),
     "workable": WorkableClient(),
     "smartrecruiters": SmartRecruitersClient(),
+    "workday": WorkdayClient(),
     "lixiang": LixiangClient(),  # first-party employer mirror (理想汽车), one tenant
     "nio": NioClient(),
     # Employer self-reported rosters, verified by corporate identity (ats/self_reported.py).

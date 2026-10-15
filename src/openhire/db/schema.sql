@@ -15,7 +15,10 @@ CREATE TABLE companies (
   ats_tenant      TEXT NOT NULL,
   careers_url     TEXT,
   verified        BOOLEAN DEFAULT FALSE,      -- v0.3 employer-claim; field reserved
-  last_crawled_at TIMESTAMPTZ
+  last_crawled_at TIMESTAMPTZ,
+  response_sla_days INT,                      -- employer-declared (claim), never inferred
+  claimed_at      TIMESTAMPTZ,
+  user_added      BOOLEAN DEFAULT FALSE       -- 0.8.13: the user's own addition; never in a snapshot
 );
 
 CREATE TABLE jobs (

@@ -51,6 +51,13 @@ refuses to install any snapshot whose user-state tables are non-empty.
 - `read_board` (v0.8.3) sends only the board's tenant (the part of a careers URL after the
   vendor's host) to that vendor's public endpoint, the same request the weekly crawl makes.
   Nothing about you is sent, and nothing read is stored.
+- `add_employer` (v0.8.13) makes the same request and then keeps that employer's postings in
+  the index **on your machine**, flagged `user_added`. Which employers you added says where
+  you are looking, so those rows are treated as your data: they are never written into a
+  published snapshot (the build refuses them, like watches), they are carried over when the
+  index is refreshed, and `remove_employer` deletes them. Workday career sites (v0.8.13) are
+  read through the public JSON their own pages load; the first page view sets an ordinary
+  session cookie and nothing about you is in it.
 - **Hosted endpoint** (v0.8.11): the maintainer runs a copy of this server at
   `https://openhire.onrender.com/mcp` (a Render web service built from `hosted/`) for
   clients that can only reach a URL, such as ChatGPT connectors. It receives exactly what the

@@ -79,6 +79,7 @@ async def test_all_five_acceptance_scripts(seeded):
         assert tools == {
             "search_jobs", "get_company_info", "watch_intent", "check_watches",
             "authorize_application", "refresh_index", "check_employer", "read_board",
+            "add_employer", "remove_employer",
         }
 
         # --- Script 1: search remote Rust/K8s infra jobs ----------------------
@@ -97,6 +98,7 @@ async def test_all_five_acceptance_scripts(seeded):
             "get_company_info", {"company_id": first_company}
         ))
         assert set(info) == {
+        "user_added",
             "company_id", "company", "ghost_score_avg", "active_jobs", "index_built_at",
         # What drove the average — so the number cannot be read as a verdict on its own.
         "median_days_open", "relisted_postings", "last_touched_reported_by_ats",

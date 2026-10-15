@@ -39,7 +39,9 @@ mcp = FastMCP(
         "intent; check_watches to pull new hits; authorize_application to record an "
         "authorized, employer-direct application; read_board to read any employer's public "
         "board live (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters, any sector) when the employer is not "
-        "in the index, with nothing stored. Never pass a résumé, file, name, email or "
+        "in the index, with nothing stored; add_employer to put such a board into the user's own "
+        "index on this machine (kept across refreshes, never published), remove_employer to "
+        "take it out. Never pass a résumé, file, name, email or "
         "phone to any tool. ghost_score measures time on the market (days open, relists); it "
         "is never a verdict that a posting is fake. Tell the user what was measured (open N "
         "days, last touched M days ago, or that the ATS reports no such date) and do not call "
@@ -377,12 +379,12 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     whose stated pay is below the floor. Pay is stated mostly where law requires it (US
     postings on Greenhouse/Lever/Ashby), so a watch that needs a number will lean US.
 
-    A board watch: pass `board_url` (a Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters careers URL,
+    A board watch: pass `board_url` (a Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday careers URL,
     as for read_board) with optional `location` and `title` and nothing else; check_watches
     then reads that board live on every pull and reports what appeared and what
     disappeared since the last pull. This is how an employer outside the index is watched.
     Not combinable with company, skills, remote, min_salary or role_family; a closed
-    portal (Feishu, Workday, a job site) is refused with the reason.
+    portal (Feishu, a job site) is refused with the reason.
 
     Returns { watch_id, status, fingerprint, existing_watches, fingerprint_notice }.
     `existing_watches` > 0 means this fingerprint was already in use; if those watches are
@@ -557,8 +559,9 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
     vendor this index knows how to read: Greenhouse (job-boards.greenhouse.io/<board>),
     Lever (jobs.lever.co/<site>), Ashby (jobs.ashbyhq.com/<board>), Moka
     (app.mokahr.com/apply/<org>/<siteId>), 北森 (<tenant>.zhiye.com), Workable
-    (apply.workable.com/<subdomain>) or SmartRecruiters (jobs.smartrecruiters.com/<company>).
-    Any sector.
+    (apply.workable.com/<subdomain>), SmartRecruiters (jobs.smartrecruiters.com/<company>)
+    or Workday (<account>.wd5.myworkdayjobs.com/<site>). Any sector. To keep the employer,
+    add_employer puts the same board into the user's own index.
 
     What you get: the board's own postings with title, location, the board's own posting
     date and `days_open` where it reports one (`date_signal: not_reported_by_ats` otherwise),
@@ -568,7 +571,7 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
     result says so and search_jobs is the richer source.
 
     Refused with ERR_UNSUPPORTED_BOARD, with the reason: a Feishu Hire / Lark portal
-    (request signatures, an access control this index never bypasses), Workday,
+    (request signatures, an access control this index never bypasses),
     SuccessFactors, Taleo, iCIMS, LinkedIn, JobsDB or BOSS直聘. Tell the user to open that
     page themselves; never look for another way in.
 
@@ -601,6 +604,69 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
     # same way refresh_index keeps the crawler off it.
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
         return ex.submit(_run).result()
+
+
+@mcp.tool(
+    title="Add an employer to my index",
+    annotations=ToolAnnotations(title="Add an employer to my index", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=True),
+)
+def add_employer(url: str, name: str | None = None) -> dict:
+    """Put one employer's public job board into the index on THIS machine, and crawl it now.
+
+    The public index is a curated list (AI infra, autonomous driving, embodied AI). The
+    employers a user actually targets are wider than that, so any board a vendor adapter can
+    read goes into the user's own index on request: Greenhouse, Lever, Ashby, Moka, 北森,
+    Workable, SmartRecruiters or Workday (<account>.wd5.myworkdayjobs.com/<site>), any sector.
+    After this call the employer behaves like a seeded one: search_jobs(company=...) with the
+    board's own posting dates, days_open and ghost_score; watch_intent on it; refresh_index
+    re-crawls it; the weekly refresh keeps it. It is flagged user_added, is never part of the
+    public snapshot, and remove_employer takes it out.
+
+    Use it when the user names an employer this index does not carry and has its careers URL
+    (read_board shows the board first without storing anything; add_employer is the step
+    after, when the user wants it watched). A closed portal (Feishu Hire, SuccessFactors,
+    Taleo, iCIMS, LinkedIn, BOSS直聘) is refused with the reason, as read_board refuses it.
+
+    Privacy: the vendor sees the same tenant read the weekly crawl makes; nothing about the
+    user is sent anywhere, and which employers a user added stays on this machine.
+
+    Args:
+        url: the careers or board URL as the user pasted it.
+        name: the employer's display name (defaults to the board's tenant name).
+
+    Returns: added, company_id, jobs_indexed, count_on_board, and suggest_for_public_index,
+    a prefilled GitHub issue link the user may open to propose the employer for everyone.
+    """
+    _await_index()
+
+    def _run() -> dict:
+        with session_scope() as s:
+            try:
+                return service.add_employer(s, url=url, name=name)
+            except OpenHireError as e:
+                return e.as_dict()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(_run).result()
+
+
+@mcp.tool(
+    title="Remove an employer I added",
+    annotations=ToolAnnotations(title="Remove an employer I added", readOnlyHint=False, destructiveHint=True, idempotentHint=True, openWorldHint=False),
+)
+def remove_employer(company: str) -> dict:
+    """Take an employer the user added (add_employer) and its postings out of this machine's
+    index. Employers in the public index cannot be removed this way (ERR_NOT_USER_ADDED).
+
+    Args:
+        company: the company_id add_employer returned, or any part of the employer's name.
+    """
+    _await_index()
+    with session_scope() as s:
+        try:
+            return service.remove_employer(s, company=company)
+        except OpenHireError as e:
+            return e.as_dict()
 
 
 @mcp.tool(
@@ -711,7 +777,7 @@ def _refuse_undeclared_arguments(tool_name: str) -> None:
     )
 
 
-for _name in ("authorize_application", "watch_intent"):
+for _name in ("authorize_application", "watch_intent", "add_employer"):
     _refuse_undeclared_arguments(_name)
 
 

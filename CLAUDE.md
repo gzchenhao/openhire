@@ -6,9 +6,12 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.12 · 2026-10-15；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.13 · 2026-10-15；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.13（2026-10-15 夜，云端会话，`reports/081`）：** **盲区扫除第一步**（领导：「我要全垒打」）。① **`add_employer(url)` / `ohp add-employer`**：任何适配器读得了的板贴网址就进**本机**索引并当场抓一次，之后 search / watch / refresh / ghost_score 全有；`companies.user_added` 标记（模型、schema.sql、migrate 都加了列），**永不进公开快照**（`build_snapshot` 跳过、`install` 拒收），每周刷新时 `carry_over_user_state` 连 companies / jobs 一起搬；`remove_employer` 移除；`read_board` 结果带 `add_to_my_index` 和预填 issue 链接 `suggest_for_public_index`。
+  ② **Workday 适配器**（`ats/workday.py`，租户键 `<account>.<wdN>/<site>`，列表 POST `/wday/cxs/.../jobs` 每页 20 条 + 详情 `startDate` 为发布日，先 GET 页面拿 cookie，CSRF 头可选）；`myworkdayjobs.com` 从封闭门户清单删掉；**云端连不上，按已知形状写，本机实测通过前不进种子表**（队列里排了 NVIDIA / 宏利 / Intel 三条 read-board）。③ Windows `file://` 路径修（`url2pathname`）。743 tests。
+  **飞书系怎么绕（待领导定）：** 社区清单（Xbotics 471 条公众号链接，要先问许可；Lumina CC BY-NC）当发现层、公众号文章当一手源；`read_board --browser` 本机浏览器渲染读公开页（不登录、守 robots、被拦即停）要领导裁定是否触碰 2026-09 的 CLOSED 判定。
 - **v0.8.12（2026-10-15 夜，云端会话，`reports/079` 第八节）：** **托管端点改走 Render 免费档。** Hugging Face 2026 年起个人免费账号只能建静态 Space，Docker / Gradio 要 PRO（本机会话触发部署时 `402 Payment Required`，run 38672012354；领导的 HF 账号与 `HF_TOKEN` 已建，留着备用）。
   `render.yaml` Blueprint（free、oregon、`hosted/Dockerfile`、autoDeploy 关、健康检查 `/livez`）；`hosted.py` 认 `RENDER_EXTERNAL_URL`、加 `/livez`；`deploy-hosted.yml` 按 secret 选主机（`RENDER_DEPLOY_HOOK` 走 Render，`HF_TOKEN` 走 HF），地址用仓库变量 `HOSTED_URL`（默认 `https://openhire.onrender.com`），每日体检 03:17 UTC 和每 10 分钟 keep-alive（免费实例 15 分钟没流量会睡）都只在 `HOSTED_URL` 设了才跑。
   本机会话负责：Render 用领导 GitHub 登录 → Blueprint 建服务 → `gh variable set HOSTED_URL` + 剪贴板 `gh secret set RENDER_DEPLOY_HOOK` → 手动跑工作流 → `/healthz` 报 0.8.12 → 改知乎 ChatGPT 句。Render 若要卡做 1 美元验证，停下报告领导。715 tests。

@@ -690,10 +690,68 @@ def org_events_audit(
     console.note(f"problem_count {out['problem_count']}（不含 company_null 与 *_not_in_title：前者规格允许，后者只能对标题查）")
 
 
+# --- add-employer / remove-employer (the user's own index, 0.8.13) --------------------
+@app.command(name="add-employer", rich_help_panel=FIND_PANEL)
+def add_employer(
+    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday."),
+    name: str = typer.Option(None, "--name", help="Display name for the employer (defaults to the board's tenant)."),
+    as_json: bool = typer.Option(False, "--json", help="Print the raw result as JSON."),
+) -> None:
+    """Add one employer's board to this machine's index and crawl it now (kept across refreshes, never published)."""
+    import json as _json
+
+    init_db()
+    if not as_json:
+        _banner()
+        console.cmd(f"ohp add-employer {url}" + (f" --name {name}" if name else ""))
+    with session_scope() as s:
+        try:
+            res = service.add_employer(s, url=url, name=name)
+        except OpenHireError as e:
+            if as_json:
+                print(_json.dumps(e.as_dict(), ensure_ascii=False))
+            else:
+                console.error(e.code, e.message)
+            raise typer.Exit(2)
+    if as_json:
+        print(_json.dumps(res, ensure_ascii=False, indent=2, default=str))
+        return
+    if not res.get("added"):
+        console.note(res.get("hint") or res.get("reason") or "")
+        return
+    console.ok(f"已加入本机索引：{res['company']}（{res['company_id']}，{res['vendor']}:{res['tenant']}）· 板上 {res['count_on_board']} 条，入库 {res['jobs_indexed']} 条")
+    console.note("只在这台电脑的索引里，每周刷新会保留，公开快照里永远没有它；`ohp remove-employer <id>` 可移除。")
+    console.note(f"想让它进公开索引，开一个 issue：{res['suggest_for_public_index']}")
+
+
+@app.command(name="remove-employer", rich_help_panel=FIND_PANEL)
+def remove_employer(
+    company: str = typer.Argument(..., help="The company_id add-employer printed, or part of the name."),
+    as_json: bool = typer.Option(False, "--json", help="Print the raw result as JSON."),
+) -> None:
+    """Remove an employer you added (and its postings) from this machine's index."""
+    import json as _json
+
+    init_db()
+    with session_scope() as s:
+        try:
+            res = service.remove_employer(s, company=company)
+        except OpenHireError as e:
+            if as_json:
+                print(_json.dumps(e.as_dict(), ensure_ascii=False))
+            else:
+                console.error(e.code, e.message)
+            raise typer.Exit(2)
+    if as_json:
+        print(_json.dumps(res, ensure_ascii=False, indent=2, default=str))
+        return
+    console.ok(f"已移除：{res['company']}（{res['company_id']}），连同 {res['jobs_removed']} 条岗位")
+
+
 # --- read-board -------------------------------------------------------------------
 @app.command(name="read-board", rich_help_panel=FIND_PANEL)
 def read_board(
-    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters."),
+    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday."),
     location: str = typer.Option(None, "--location", help="Only postings whose location contains this (either language)."),
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. partner,ecosystem / 招聘,hr."),
     limit: int = typer.Option(30, "--limit", help="How many to print."),

@@ -21,7 +21,7 @@ import re
 import secrets
 from typing import Any
 
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import delete, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from .db import Application, Company, Job, Watch
@@ -1133,6 +1133,7 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         **({"date_source": "employer_self_reported"} if company.ats_vendor == "self_reported" else {}),
         "postings_without_reported_date": int(dates_missing),
         "active_jobs": int(active_jobs),
+        "user_added": bool(getattr(company, "user_added", False)),
         "claimed": bool(company.verified),
         "claimed_at": _aware(company.claimed_at).isoformat() if company.claimed_at else None,
         "response_sla_days": company.response_sla_days,
@@ -1815,6 +1816,151 @@ def _board_posting(rec, now: dt.datetime) -> dict:
     return out
 
 
+
+# --- the user's own employers (0.8.13) ----------------------------------------------------
+# The public index is a curated seed list (three sectors, one roster for everyone). A real
+# search is wider than that: the employers one person targets are theirs to pick. Any
+# board a vendor adapter can read goes into THIS machine's index on request, with the same
+# dates, ghost_score, watches and refresh as a seeded employer; the row is flagged
+# user_added so it never enters a published snapshot and survives every weekly refresh
+# (pipeline/snapshot.carry_over_user_state). Nothing about the user leaves the machine:
+# the vendor sees the same tenant read the weekly crawl would make.
+PUBLIC_INDEX_ISSUE_URL = "https://github.com/gzchenhao/openhire/issues/new"
+USER_EMPLOYER_NOTE = (
+    "This employer is in the index on this machine only (user_added): search_jobs, watch_intent, "
+    "refresh_index and ghost_score cover it like any seeded employer; the weekly refresh keeps it; "
+    "it is never part of the public snapshot. remove_employer takes it out again."
+)
+
+
+def suggest_public_index_url(vendor: str, tenant: str, careers_url: str | None) -> str:
+    """A prefilled GitHub issue the user can open to propose the employer for the public
+    index. A link, not a request: nothing is sent unless the user opens it."""
+    from urllib.parse import quote
+
+    title = f"Add employer to the public index: {tenant} ({vendor})"
+    body = (
+        f"Employer board: {careers_url or ''}\n"
+        f"Vendor / tenant: {vendor} / {tenant}\n"
+        "Sector (AI infra / autonomous driving / embodied AI / other): \n"
+        "Why it belongs in the public index: \n"
+    )
+    return f"{PUBLIC_INDEX_ISSUE_URL}?title={quote(title)}&body={quote(body)}"
+
+
+def _default_employer_name(vendor: str, tenant: str) -> str:
+    head = tenant.split("/", 1)[0]
+    if vendor == "workday":
+        head = head.split(".", 1)[0]
+    return head
+
+
+def _user_company_id(session: Session, vendor: str, tenant: str) -> str:
+    base = re.sub(r"[^a-z0-9._-]+", "-", _default_employer_name(vendor, tenant).lower()).strip("-.") or vendor
+    if session.get(Company, base) is None:
+        return base
+    alt = f"{vendor}-{base}"
+    n = 2
+    while session.get(Company, alt) is not None:
+        alt = f"{vendor}-{base}-{n}"
+        n += 1
+    return alt
+
+
+def add_employer(
+    session: Session,
+    url: str,
+    name: str | None = None,
+    now: dt.datetime | None = None,
+    fetch=None,
+) -> dict:
+    """Put one employer's board into this machine's index and crawl it once, now."""
+    from .ats import get_client
+    from .ats.boards import BoardNotSupported, detect_board
+    from .pipeline.extract import get_extractor
+    from .pipeline.ingest import IngestStats, ingest_company
+
+    now = _now(now)
+    try:
+        vendor, tenant = detect_board(url)
+    except BoardNotSupported as e:
+        raise OpenHireError("ERR_UNSUPPORTED_BOARD", f"[{e.reason}] {e.hint}") from None
+
+    existing = session.execute(
+        select(Company).where(Company.ats_vendor == vendor, Company.ats_tenant == tenant)
+    ).scalars().first()
+    if existing is not None:
+        return {
+            "added": False,
+            "reason": "already_in_index",
+            "company_id": existing.id,
+            "company": existing.name,
+            "user_added": bool(getattr(existing, "user_added", False)),
+            "hint": (f"{existing.name} is already in this index as {existing.id}"
+                     + (" (added by the user)." if getattr(existing, "user_added", False) else " (part of the public index).")
+                     + f" search_jobs(company=\"{existing.id}\") has its postings; refresh_index re-crawls it."),
+        }
+
+    result = (fetch or _fetch_board)(vendor, tenant)
+    if not result.ok:
+        raise OpenHireError(
+            "ERR_BOARD_UNREADABLE",
+            f"{vendor}:{tenant} did not answer (HTTP {result.status}, {result.error or 'no detail'}); "
+            "nothing about the employer follows from that, and nothing was added. Check the URL on the "
+            "employer's careers page and try again later.",
+        )
+
+    client = get_client(vendor)
+    company_id = _user_company_id(session, vendor, tenant)
+    display = (name or "").strip() or _default_employer_name(vendor, tenant)
+    company = Company(
+        id=company_id, name=display, ats_vendor=vendor, ats_tenant=tenant,
+        careers_url=client.careers_url(tenant), verified=False, user_added=True,
+    )
+    session.add(company)
+    session.flush()
+    stats = IngestStats()
+    ingest_company(session, company, result, get_extractor(), stats, now=now)
+    session.flush()
+    return {
+        "added": True,
+        "company_id": company_id,
+        "company": display,
+        "vendor": vendor,
+        "tenant": tenant,
+        "careers_url": company.careers_url,
+        "count_on_board": result.count,
+        "jobs_indexed": stats.jobs_new,
+        "user_added": True,
+        "stored": "this machine's index only",
+        "hint": (f"Added. search_jobs(company=\"{company_id}\") lists its postings with dates and days_open; "
+                 f"watch_intent(filters={{\"company\": \"{company_id}\"}}) watches it; refresh_index re-crawls it. "
+                 "Pass name= to give it a proper display name."),
+        "note": USER_EMPLOYER_NOTE,
+        "suggest_for_public_index": suggest_public_index_url(vendor, tenant, company.careers_url),
+    }
+
+
+def remove_employer(session: Session, company: str) -> dict:
+    """Take a user-added employer (and its postings) out of this machine's index."""
+    matched = resolve_company(session, company)
+    if not matched:
+        raise OpenHireError("ERR_COMPANY_NOT_FOUND", f"No employer in this index matches {company!r}.")
+    if len(matched) > 1:
+        names = ", ".join(f"{c.id} ({c.name})" for c in matched[:10])
+        raise OpenHireError("ERR_AMBIGUOUS_COMPANY", f"{company!r} matches {len(matched)} employers: {names}. Re-ask with one id.")
+    target = matched[0]
+    if not getattr(target, "user_added", False):
+        raise OpenHireError(
+            "ERR_NOT_USER_ADDED",
+            f"{target.name} ({target.id}) is part of the public index, not an employer the user added; "
+            "only user-added employers can be removed here.",
+        )
+    n = session.execute(delete(Job).where(Job.company_id == target.id)).rowcount or 0
+    session.delete(target)
+    session.flush()
+    return {"removed": True, "company_id": target.id, "company": target.name, "jobs_removed": int(n)}
+
 def read_board(
     session: Session,
     url: str,
@@ -1884,6 +2030,10 @@ def read_board(
     if company:
         out["hint"] = (f"{company.name} is in this index as {company.id}: search_jobs(company=\"{company.id}\") "
                        "carries skills, ghost_score, relist history and watches for it; this live read does not.")
+    else:
+        out["add_to_my_index"] = (f"add_employer(url=\"{url}\") puts this board in the user's own index on this "
+                                  "machine: then search_jobs, watch_intent, refresh_index and ghost_score cover it.")
+        out["suggest_for_public_index"] = suggest_public_index_url(vendor, tenant, out["careers_url"])
     if not result.ok:
         out["hint"] = (f"The board did not answer (HTTP {result.status}, {result.error or 'no detail'}); "
                        "nothing about the employer follows from that. Open the careers page yourself.")
