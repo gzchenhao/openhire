@@ -18,6 +18,7 @@
 - **已完成：** 本机会话触发部署，HF 建 Space 回 `402 Payment Required`（官方文档：个人免费账号只能静态 Space）。不订 PRO，换 Render 免费档：`render.yaml` Blueprint、`/livez`、`RENDER_EXTERNAL_URL`、工作流按 secret 选主机、`HOSTED_URL` 变量、每日体检 + 每 10 分钟 keep-alive；README / PRIVACY 地址改 `https://openhire.onrender.com/mcp`。十二处版本到 0.8.12。**发版证据：** PyPI 0.8.12（wheel + sdist，150 秒）；Release 运行 38672777198 成功，v0.8.12 挂 mcpb；Registry 运行 38672908400 成功；部署运行 38672908425 红（只有 `HF_TOKEN` 时仍走 HF 再 402），已改为 HF 路径须同时设变量 `HF_SPACE` 才走（`0adaac8`）。
 - **关键决策：** 免费实例会睡，用公开仓库的 Actions 每 10 分钟摸 `/livez` 顶住；Render 要卡验证就停下由领导定；HF 账号和 token 保留备用。
 - **下一步：** 本机会话按任务书第二版建 Render 服务并设 `HOSTED_URL` / `RENDER_DEPLOY_HOOK`，上线后云端更新三处「已上线」并发「有事才发」那一轮。
+- **本机知乎日检首跑（10-15 10:50 北京时间）：** 定时任务已设（每天 21:30）；无新评论；数据记入 growth-log 并刷进 `reports/080`。领导裁定「按照你的来办」：该回的评论当天回不等点头、明显广告可删、折叠回答只记录不申诉，已写进 SOP。
 - **待确认：** 无（除非 Render 要卡）。
 
 ## 2026-10-15（再续）· 宣传渠道累计成果一页（`reports/080`）；本机会话接管 HF 部署与知乎日检
