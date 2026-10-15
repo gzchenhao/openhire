@@ -3,7 +3,7 @@
 # OpenHire · 开聘
 
 > **A job-search radar for your AI assistant — first-party listings, every posting's real age, and your résumé never touches our servers.**
-> 让 AI 助手替你盯岗的求职雷达 —— 一手职位、岗位在架时长打分，简历不经过我们的服务器。
+> 让 AI 助手替你盯岗的求职雷达：一手职位、岗位在架时长打分，简历不经过我们的服务器。
 
 ![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![143 employers hiring](https://img.shields.io/badge/employers%20hiring-143-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
 
