@@ -9,10 +9,11 @@
 # Settings → Secrets and variables → Actions; nothing here stores a token):
 #   - RENDER_DEPLOY_HOOK: the deploy hook URL of the Render web service created from
 #     render.yaml (free tier). The hook is POSTed once PyPI has the version.
-#   - HF_TOKEN: a Hugging Face write token; hosted/ is pushed to the Space named by the
-#     repository variable HF_SPACE (default gzchenhao/openhire). Needs a PRO account since
-#     2026 (Docker Spaces are no longer free), so Render is the default path.
-# Without either secret the deploy job says so and stops.
+#   - HF_TOKEN plus the repository variable HF_SPACE (owner/name): hosted/ is pushed to that
+#     Space. Needs a PRO account since 2026 (Docker Spaces are no longer free: HTTP 402 on
+#     create, run 38672012354), so this path is opt-in through the variable; a token alone
+#     does nothing.
+# Without a configured host the deploy job says so and stops, green.
 #
 # The public URL is the repository variable HOSTED_URL (default https://openhire.onrender.com).
 # The daily job asks /healthz and fails loudly (GitHub mails the maintainer) when the host
@@ -43,7 +44,7 @@ jobs:
     env:
       RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      HF_SPACE: ${{ vars.HF_SPACE || 'gzchenhao/openhire' }}
+      HF_SPACE: ${{ vars.HF_SPACE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -52,10 +53,10 @@ jobs:
         run: |
           if [ -n "$RENDER_DEPLOY_HOOK" ]; then
             echo "target=render" >> "$GITHUB_OUTPUT"
-          elif [ -n "$HF_TOKEN" ]; then
+          elif [ -n "$HF_TOKEN" ] && [ -n "$HF_SPACE" ]; then
             echo "target=hf" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::Neither RENDER_DEPLOY_HOOK nor HF_TOKEN is set; the hosted endpoint was not deployed."
+            echo "::notice::No host configured (RENDER_DEPLOY_HOOK, or HF_TOKEN with the HF_SPACE variable); the hosted endpoint was not deployed."
             echo "target=none" >> "$GITHUB_OUTPUT"
           fi
 
