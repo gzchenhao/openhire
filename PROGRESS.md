@@ -17,7 +17,7 @@
 
 ## 2026-10-15（四续）· 0.8.13：盲区扫除第一步，自己的雷达 + Workday（`reports/081`）
 
-- **已完成：** `add_employer` / `remove_employer`（MCP 工具 + CLI），用户自加雇主进本机索引、永不进快照、刷新时搬运；Workday 适配器（待本机实测，三条 read-board 已排进本机队列）；`read_board` 带下一步与提议进公开索引的 issue 链接；Windows file:// 路径修。README、PRIVACY §3、工具说明同步。743 tests，十二处版本到 0.8.13。
+- **已完成：** `add_employer` / `remove_employer`（MCP 工具 + CLI），用户自加雇主进本机索引、永不进快照、刷新时搬运；Workday 适配器（待本机实测，三条 read-board 已排进本机队列）；`read_board` 带下一步与提议进公开索引的 issue 链接；Windows file:// 路径修。README、PRIVACY §3、工具说明同步。743 tests，十二处版本到 0.8.13。**发版证据：** PyPI 0.8.13（wheel + sdist，120 秒）；Release 运行 38677399898 成功，v0.8.13 挂 mcpb；Registry 运行 38677536966 成功；部署运行 38677536964 绿（无主机配置，只打 notice）。
 - **关键决策：** 盲区分四类（不在种子表 / 没适配器 / 访问控制门户 / 搜索召回），A 类今天破，B 类从 Workday 开始，C 类三条绕路（雇主授权、社区清单 + 公众号一手源、本机浏览器渲染）要领导定，D 类做召回审计。
 - **下一步：** 本机跑队列（旧三条 + Workday 三条）、浏览器探测飞书 robots / 牛客 / Xbotics 许可；问 Xbotics 许可；召回审计；**10-19 新快照后兑现知乎回复里答应的「近 30 天新发」表**（给善水，按雇主分，点名银河通用、1X、Agility）。
 - **待确认：** 飞书浏览器渲染读取要不要做（`reports/081` 第三节第 3 条）。
