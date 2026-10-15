@@ -29,6 +29,8 @@ def test_public_url_prefers_explicit_then_space_host(monkeypatch):
     assert hosted.public_url() == hosted.DEFAULT_PUBLIC_URL
     monkeypatch.setenv("SPACE_HOST", "someone-openhire.hf.space")
     assert hosted.public_url() == "https://someone-openhire.hf.space"
+    monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://openhire-abcd.onrender.com/")
+    assert hosted.public_url() == "https://openhire-abcd.onrender.com"
     monkeypatch.setenv("OPENHIRE_HOSTED_PUBLIC_URL", "https://jobs.example.org/")
     assert hosted.public_url() == "https://jobs.example.org"
 
@@ -82,6 +84,11 @@ def test_healthz_says_empty_then_ready(client):
     assert r.status_code == 200
     body = r.json()
     assert body["index_ready"] is True and body["jobs"] >= 1 and body["data_as_of"]
+
+
+def test_livez_answers_before_the_index_is_loaded(client):
+    r = client.get("/livez")
+    assert r.status_code == 200 and r.json()["status"] == "alive" and r.json()["version"]
 
 
 def test_landing_page_states_the_posture_and_the_endpoint(client):

@@ -13,6 +13,13 @@
   加入入口 https://glama.ai/mcp/discord （Model Context Protocol，13,991 成员）。
   **价值判断：标识本身近乎为零收益**，真正有价值的是那个 14k 开发者社区的长期参与（慢活）和与 Frank 的关系（已通邮件，更直接）。不是关键路径。
 
+## 2026-10-15（三续）· 0.8.12：Hugging Face 要 PRO，托管端点改走 Render 免费档（`reports/079` 第八节）
+
+- **已完成：** 本机会话触发部署，HF 建 Space 回 `402 Payment Required`（官方文档：个人免费账号只能静态 Space）。不订 PRO，换 Render 免费档：`render.yaml` Blueprint、`/livez`、`RENDER_EXTERNAL_URL`、工作流按 secret 选主机、`HOSTED_URL` 变量、每日体检 + 每 10 分钟 keep-alive；README / PRIVACY 地址改 `https://openhire.onrender.com/mcp`。十二处版本到 0.8.12。
+- **关键决策：** 免费实例会睡，用公开仓库的 Actions 每 10 分钟摸 `/livez` 顶住；Render 要卡验证就停下由领导定；HF 账号和 token 保留备用。
+- **下一步：** 本机会话按任务书第二版建 Render 服务并设 `HOSTED_URL` / `RENDER_DEPLOY_HOOK`，上线后云端更新三处「已上线」并发「有事才发」那一轮。
+- **待确认：** 无（除非 Render 要卡）。
+
 ## 2026-10-15（再续）· 宣传渠道累计成果一页（`reports/080`）；本机会话接管 HF 部署与知乎日检
 
 - **已完成：** `reports/080` 把首发以来每个渠道的数字和状态放在一页（stars 10、14 天浏览 85 / 50、来源 link.zhihu.com 17 独立访客第一、快照下载 14、mcpb 累计 18、PyPI 10-08 日 14 / 周 146 / 月 1,890、知乎累计表、目录状态表、X / 即刻 / 脉脉 / LinkedIn 结果），每个数字带实查日期。领导定：能让本机会话做的事不让领导手工做。于是 HF 账号 / token / GitHub secret / 触发部署 / 核验 `/healthz` / 改文章 ChatGPT 句全部交本机会话（prompt 在私库 `local-session-prompt-2026-10-15-hosted.md`）；知乎评论与数据改为本机每日定时任务（SOP 私库 `zhihu-daily-routine.md`）。

@@ -23,3 +23,9 @@ protocol. The local install (`uvx openhire serve`) remains the recommended path:
 nothing of a search leaves your machine.
 
 Source, privacy terms and the weekly numbers: https://github.com/gzchenhao/openhire
+
+
+Note (2026-10-15): Hugging Face now requires a PRO subscription for Docker and Gradio Spaces
+on personal accounts (HTTP 402 on create). The maintainer's copy therefore runs on Render's
+free tier from the same Dockerfile (`render.yaml` at the repository root). This folder still
+deploys unchanged to a PRO Hugging Face account.

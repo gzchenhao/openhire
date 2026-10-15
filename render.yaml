@@ -1,0 +1,21 @@
+# Render Blueprint for the hosted endpoint (reports/079 §8): a free web service built from
+# hosted/Dockerfile, the same image the Hugging Face path would use. One click in Render's
+# dashboard (New → Blueprint → this repository) creates it. Deploys are triggered by
+# .github/workflows/deploy-hosted.yml through the service's deploy hook after each Release,
+# once PyPI has the version the Dockerfile pins; autoDeploy stays off so a push to main
+# cannot build before PyPI is ready.
+services:
+  - type: web
+    name: openhire
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./hosted/Dockerfile
+    dockerContext: ./hosted
+    autoDeploy: false
+    healthCheckPath: /livez
+    envVars:
+      - key: OPENHIRE_HOSTED
+        value: "1"
+      - key: OPENHIRE_HOME
+        value: /data

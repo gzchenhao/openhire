@@ -1,20 +1,25 @@
-# Deploy the hosted endpoint (a Hugging Face Space, Docker SDK) after each Release, and check
-# it daily.
+# Deploy the hosted endpoint after each Release, check it daily, and keep a free instance awake.
 #
 # What is deployed is only the `hosted/` folder: a Dockerfile that installs the RELEASED
-# package from PyPI (pinned to pyproject's version by tests/test_release.py), the restart loop
-# and the Space README. The Space builds the image itself. The index is downloaded at start
-# from the public snapshot and refreshed in place by the server's own hosted-mode worker.
+# package from PyPI (pinned to pyproject's version by tests/test_release.py) and the restart
+# loop. The host builds the image itself; the index is downloaded at start from the public
+# snapshot and refreshed in place by the server's own hosted-mode worker.
 #
-# Needs one repository secret, HF_TOKEN (a Hugging Face token with write access to Spaces),
-# set by the maintainer in Settings → Secrets → Actions. Without it the deploy job says so
-# and stops; nothing else in this repository depends on it. The Space id can be overridden
-# with a repository variable HF_SPACE (default gzchenhao/openhire); its public URL is derived
-# (https://<owner>-<name>.hf.space) unless HF_SPACE_URL is set.
+# Two hosts are supported, chosen by which secret exists (the maintainer sets them in
+# Settings → Secrets and variables → Actions; nothing here stores a token):
+#   - RENDER_DEPLOY_HOOK: the deploy hook URL of the Render web service created from
+#     render.yaml (free tier). The hook is POSTed once PyPI has the version.
+#   - HF_TOKEN: a Hugging Face write token; hosted/ is pushed to the Space named by the
+#     repository variable HF_SPACE (default gzchenhao/openhire). Needs a PRO account since
+#     2026 (Docker Spaces are no longer free), so Render is the default path.
+# Without either secret the deploy job says so and stops.
 #
-# The daily job asks /healthz and fails loudly (GitHub mails the maintainer) when the Space
-# does not answer or runs a version other than the released one. It also keeps a free Space
-# from going to sleep for lack of traffic.
+# The public URL is the repository variable HOSTED_URL (default https://openhire.onrender.com).
+# The daily job asks /healthz and fails loudly (GitHub mails the maintainer) when the host
+# does not answer or runs a version other than the released one. The ten-minute job only
+# touches /livez: a free Render instance spins down after 15 idle minutes and takes up to a
+# minute to wake, which a ChatGPT connector will not wait for. Both run only once HOSTED_URL
+# is set, so a repository without a hosted copy never produces failures or noise.
 name: Deploy hosted endpoint
 
 on:
@@ -24,51 +29,62 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * *"
+    - cron: "*/10 * * * *"
+
+env:
+  HOSTED_URL: ${{ vars.HOSTED_URL || 'https://openhire.onrender.com' }}
 
 jobs:
   deploy:
-    if: github.event_name != 'schedule' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_SPACE: ${{ vars.HF_SPACE || 'gzchenhao/openhire' }}
-      HF_SPACE_URL: ${{ vars.HF_SPACE_URL }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Is there a token to deploy with?
+      - name: Which host is configured?
         id: gate
         run: |
-          if [ -z "$HF_TOKEN" ]; then
-            echo "::notice::HF_TOKEN is not set in this repository; the hosted endpoint was not deployed."
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo "target=render" >> "$GITHUB_OUTPUT"
+          elif [ -n "$HF_TOKEN" ]; then
+            echo "target=hf" >> "$GITHUB_OUTPUT"
           else
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Neither RENDER_DEPLOY_HOOK nor HF_TOKEN is set; the hosted endpoint was not deployed."
+            echo "target=none" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: The hosted image must install the released version
-        if: steps.gate.outputs.deploy == 'true'
+      - name: The hosted image must install the released version, and PyPI must have it
+        if: steps.gate.outputs.target != 'none'
         id: v
         run: |
           v=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
           echo "version=$v" >> "$GITHUB_OUTPUT"
           grep -q "\"openhire==$v\"" hosted/Dockerfile || { echo "hosted/Dockerfile does not pin openhire==$v"; exit 1; }
-          # The release must be on PyPI before the Space builds, or pip inside the build fails.
           for i in $(seq 1 20); do
             if curl -fsS "https://pypi.org/pypi/openhire/$v/json" >/dev/null; then echo "PyPI has $v"; exit 0; fi
             sleep 30
           done
           echo "PyPI does not have openhire $v yet"; exit 1
 
+      - name: "Render: trigger the deploy hook"
+        if: steps.gate.outputs.target == 'render'
+        run: |
+          out=$(curl -fsS -X POST "$RENDER_DEPLOY_HOOK") || { echo "the deploy hook did not accept the request"; exit 1; }
+          echo "deploy requested: $out"
+
       - uses: actions/setup-python@v5
-        if: steps.gate.outputs.deploy == 'true'
+        if: steps.gate.outputs.target == 'hf'
         with:
           python-version: "3.11"
 
-      - name: Push hosted/ to the Space (created on first run)
-        if: steps.gate.outputs.deploy == 'true'
+      - name: "Hugging Face: push hosted/ to the Space (created on first run)"
+        if: steps.gate.outputs.target == 'hf'
         run: |
           python -m pip install --quiet --upgrade huggingface_hub
           python - <<'PY'
@@ -84,33 +100,34 @@ jobs:
         env:
           VERSION: ${{ steps.v.outputs.version }}
 
-      - name: Wait for the Space to answer /healthz with the released version
-        if: steps.gate.outputs.deploy == 'true'
+      - name: Wait for /healthz to answer with the released version
+        if: steps.gate.outputs.target != 'none'
         run: |
-          url="${HF_SPACE_URL:-https://$(echo "$HF_SPACE" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | tr '._' '--').hf.space}"
-          echo "endpoint: $url/mcp"
+          echo "endpoint: $HOSTED_URL/mcp"
           for i in $(seq 1 40); do
-            body=$(curl -sS --max-time 30 "$url/healthz" || true)
+            body=$(curl -sS --max-time 30 "$HOSTED_URL/healthz" || true)
             if echo "$body" | grep -q "\"version\": *\"${{ steps.v.outputs.version }}\""; then
               echo "$body"; echo "healthy on ${{ steps.v.outputs.version }}"; exit 0
             fi
             echo "attempt $i: $body"; sleep 30
           done
-          echo "the Space did not come up on ${{ steps.v.outputs.version }} within 20 minutes"; exit 1
+          echo "the host did not come up on ${{ steps.v.outputs.version }} within 20 minutes"; exit 1
 
   health:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' && github.event.schedule == '17 3 * * *' && vars.HOSTED_URL != ''
     runs-on: ubuntu-latest
-    env:
-      HF_SPACE: ${{ vars.HF_SPACE || 'gzchenhao/openhire' }}
-      HF_SPACE_URL: ${{ vars.HF_SPACE_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: /healthz answers with the released version
         run: |
-          if [ -z "${{ secrets.HF_TOKEN }}" ]; then echo "::notice::no HF_TOKEN; no hosted endpoint to check"; exit 0; fi
           v=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          url="${HF_SPACE_URL:-https://$(echo "$HF_SPACE" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | tr '._' '--').hf.space}"
-          body=$(curl -sS --max-time 60 "$url/healthz" || true)
+          body=$(curl -sS --max-time 90 "$HOSTED_URL/healthz" || true)
           echo "$body"
           echo "$body" | grep -q "\"version\": *\"$v\"" || { echo "hosted endpoint is not answering as $v"; exit 1; }
+
+  warm:
+    if: github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *' && vars.HOSTED_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Touch /livez so a free instance does not spin down
+        run: curl -s -o /dev/null -w "%{http_code}\n" --max-time 90 "$HOSTED_URL/livez" || true

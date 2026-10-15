@@ -52,14 +52,14 @@ refuses to install any snapshot whose user-state tables are non-empty.
   vendor's host) to that vendor's public endpoint, the same request the weekly crawl makes.
   Nothing about you is sent, and nothing read is stored.
 - **Hosted endpoint** (v0.8.11): the maintainer runs a copy of this server at
-  `https://gzchenhao-openhire.hf.space/mcp` (a Hugging Face Space built from `hosted/`) for
+  `https://openhire.onrender.com/mcp` (a Render web service built from `hosted/`) for
   clients that can only reach a URL, such as ChatGPT connectors. It receives exactly what the
   tools take (search filters, a company name or domain, a board URL, your anonymous
   fingerprint) and nothing else; it keeps no log of queries (access logging is off); watches
   and application records are stored in its index keyed by your fingerprint, carried over when
   the index is refreshed, and lost if the host is rebuilt; requests are rate-limited per
   address. `check_employer` and `read_board` make their outbound requests from that host
-  instead of from your machine, with private address space refused. Hugging Face, as the
+  instead of from your machine, with private address space refused. Render, as the
   platform, sees the connection as it sees any web request. If any of this matters to you,
   run OpenHire locally: there, nothing of a search leaves your machine.
 - We do not use analytics, tracking pixels, advertising SDKs or telemetry of any kind.

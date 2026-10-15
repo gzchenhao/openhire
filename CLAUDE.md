@@ -6,9 +6,12 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.11 · 2026-10-15；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.12 · 2026-10-15；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.12（2026-10-15 夜，云端会话，`reports/079` 第八节）：** **托管端点改走 Render 免费档。** Hugging Face 2026 年起个人免费账号只能建静态 Space，Docker / Gradio 要 PRO（本机会话触发部署时 `402 Payment Required`，run 38672012354；领导的 HF 账号与 `HF_TOKEN` 已建，留着备用）。
+  `render.yaml` Blueprint（free、oregon、`hosted/Dockerfile`、autoDeploy 关、健康检查 `/livez`）；`hosted.py` 认 `RENDER_EXTERNAL_URL`、加 `/livez`；`deploy-hosted.yml` 按 secret 选主机（`RENDER_DEPLOY_HOOK` 走 Render，`HF_TOKEN` 走 HF），地址用仓库变量 `HOSTED_URL`（默认 `https://openhire.onrender.com`），每日体检 03:17 UTC 和每 10 分钟 keep-alive（免费实例 15 分钟没流量会睡）都只在 `HOSTED_URL` 设了才跑。
+  本机会话负责：Render 用领导 GitHub 登录 → Blueprint 建服务 → `gh variable set HOSTED_URL` + 剪贴板 `gh secret set RENDER_DEPLOY_HOOK` → 手动跑工作流 → `/healthz` 报 0.8.12 → 改知乎 ChatGPT 句。Render 若要卡做 1 美元验证，停下报告领导。715 tests。
 - **v0.8.11（2026-10-15，云端会话，`reports/079`）：** **托管端点**，给 ChatGPT 这类只收网址的客户端（领导裁定「那我们就挂吧，你来操作」）。`src/openhire/hosted.py`，`OPENHIRE_HOSTED=1` 时随 `ohp serve --transport streamable-http` 启动：首页 `/` 与 `/healthz`、instructions 加托管披露句、每地址 300 / 全站 3,000 每分钟限流、无状态 HTTP、不记访问日志、**快照刷新线程**（每 6 小时 HEAD 公开快照，变了就下载到 `openhire.db.staged` 并 SIGTERM 自己，`hosted/entrypoint.sh` 循环拉起，`serve()` 启动时先换文件再开库）。
   **换快照不丢 watches / applications**（`snapshot.stage_snapshot / activate_staged / carry_over_user_state`，`ohp bootstrap --force` 也保留了，0.8.4 路线图项关闭）。**SSRF 防线**：`verify/checks._get` 取用户给的域名 / 页面前先解析地址，私网、回环、链路本地、云元数据、`localhost` / `.internal`、非 80 / 443 端口一律不发，重定向手动跟最多 5 跳逐跳检查。
   部署目标 **Hugging Face Space（Docker，免费）**：`hosted/Dockerfile`（装 PyPI 的 `openhire==X`，**版本号第十二处 sed**）、`hosted/README.md`（Space front matter）、`.github/workflows/deploy-hosted.yml`（Release 成功后推 `hosted/` 到 Space、等 PyPI 有版本、等 `/healthz` 报版本；每天 03:17 UTC 健康检查）。**仓库 secret `HF_TOKEN` 由领导自己放**（HF 账号 → Write token → GitHub Settings → Secrets → Actions），没有 secret 部署步骤只打 notice。

@@ -61,3 +61,13 @@ ChatGPT 不走这条路。它的自定义连接器（开发者模式，付费档
 
 - 托管端点没有真机实测：云端连不上 huggingface.co，Space 也还没建。代码靠 20 条新测试钉住（路由、限流、刷新判断、换文件搬记录、SSRF 防线），真实链路要等领导放好 token 后由工作流验证。
 - ChatGPT 开发者模式的入口位置 2026 年内挪过几次，README 写的是「Settings → Connectors → Advanced → Developer mode」，以 ChatGPT 当天界面为准。
+
+## 八、后记（2026-10-15 夜）：Hugging Face 要收费，换 Render（0.8.12）
+
+本机会话按第五节做完了前三步（领导本人建了 HF 账号 `gzchenhao` 和 Write token，token 经剪贴板进了 GitHub secret，没出现在任何地方），触发部署后在建 Space 那一步被 Hugging Face 拒绝：`402 Payment Required`，原文「Static Spaces are free for everyone, but hosting Gradio and Docker Spaces on free cpu-basic requires a PRO subscription」（run 38672012354）。查官方文档，2026 年起个人免费账号只能建静态 Space，Docker 和 Gradio 都要 PRO；第三节的选型依据过时了。
+
+领导的原则是能不花钱就不花钱、能让本机会话做就不让领导手工做，所以不订 PRO，换 **Render 免费档**：Docker、公网 https、一键从仓库根目录的 `render.yaml` 建服务，不要卡（Render 对个别账号会要一张卡做 1 美元验证后即取消，碰到就停下来报告，由领导定）。代价是免费实例 15 分钟没流量会睡、唤醒最长一分钟，ChatGPT 的连接器等不了这一分钟，所以 `deploy-hosted.yml` 加了每 10 分钟摸一次 `/livez` 的 keep-alive（公开仓库的 Actions 免费），每月 750 小时的免费额度正好够一个服务全月在线。
+
+改动（0.8.12）：`hosted.py` 认 Render 注入的 `RENDER_EXTERNAL_URL`，加 `/livez`（进程起来就 200，给平台的健康检查用；`/healthz` 仍要索引装好才 200）；`render.yaml` Blueprint（free、oregon、`hosted/Dockerfile`、autoDeploy 关、健康检查 `/livez`）；工作流改成按 secret 选主机（有 `RENDER_DEPLOY_HOOK` 走 Render，有 `HF_TOKEN` 走 HF，都没有只打 notice），地址用仓库变量 `HOSTED_URL`，每日体检和 keep-alive 都只在 `HOSTED_URL` 设了以后才跑；README、PRIVACY 的地址改成 `https://openhire.onrender.com/mcp`。HF 那条路保留，领导哪天订了 PRO 填个 token 就能用。
+
+本机会话要做的（新任务书 `local-session-prompt-2026-10-15-hosted.md` 第二版）：用领导的 GitHub 登录 Render → New → Blueprint → 选仓库 → 建出 `openhire` 服务并等第一次部署完成 → 把服务地址设成仓库变量 `HOSTED_URL`、把 Deploy Hook 经剪贴板放进 secret `RENDER_DEPLOY_HOOK` → 手动跑一次工作流验证 → 核对 `/healthz` 报 0.8.12 → 改知乎文章 ChatGPT 那句 → 有付费 ChatGPT 就实测一次。

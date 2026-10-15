@@ -8,7 +8,8 @@ any tool (tests/test_privacy.py). The local install stays the recommended path: 
 nothing of a search leaves the user's machine, and watches live on their own disk.
 
 What hosted mode adds to `ohp serve --transport streamable-http`:
-  - a landing page at `/` and a `/healthz` for monitors (version, index state);
+  - a landing page at `/`, a `/livez` for the platform's health check and a `/healthz`
+    for monitors (version, index state);
   - a sentence in the MCP `instructions` saying where a request goes;
   - a per-IP and a global rate limit (a public URL with no auth needs one);
   - stateless streamable HTTP (a restart does not strand sessions);
@@ -37,7 +38,7 @@ from . import __version__
 ENV_FLAG = "OPENHIRE_HOSTED"
 REPO_URL = "https://github.com/gzchenhao/openhire"
 PRIVACY_URL = f"{REPO_URL}/blob/main/docs/PRIVACY.md"
-DEFAULT_PUBLIC_URL = "https://gzchenhao-openhire.hf.space"
+DEFAULT_PUBLIC_URL = "https://openhire.onrender.com"
 MCP_PATH = "/mcp"
 
 # Appended to the server's MCP instructions in hosted mode, so the agent can tell the user
@@ -61,6 +62,9 @@ def public_url() -> str:
     explicit = os.environ.get("OPENHIRE_HOSTED_PUBLIC_URL")
     if explicit:
         return explicit.rstrip("/")
+    render = os.environ.get("RENDER_EXTERNAL_URL")  # set by Render
+    if render:
+        return render.rstrip("/")
     space_host = os.environ.get("SPACE_HOST")  # set by Hugging Face Spaces
     if space_host:
         return f"https://{space_host}".rstrip("/")
@@ -78,7 +82,7 @@ class RateLimit:
     """
 
     def __init__(self, app, per_ip: int = 300, total: int = 3000, window: float = 60.0,
-                 exempt: tuple[str, ...] = ("/", "/healthz"), clock: Callable[[], float] = time.monotonic):
+                 exempt: tuple[str, ...] = ("/", "/healthz", "/livez"), clock: Callable[[], float] = time.monotonic):
         self.app = app
         self.per_ip = per_ip
         self.total = total
@@ -283,6 +287,13 @@ def build_app(mcp, per_ip: int | None = None, total: int | None = None):
         async def _healthz(_: Request):
             code, body = health()
             return JSONResponse(body, status_code=code)
+
+        @mcp.custom_route("/livez", methods=["GET"], include_in_schema=False)
+        async def _livez(_: Request):
+            # 200 as soon as the process answers, before the snapshot is loaded: what a
+            # platform's own health check (Render, a load balancer) should poll. /healthz
+            # is the stricter "ready with data" answer for monitors.
+            return JSONResponse({"status": "alive", "version": __version__})
 
         @mcp.custom_route("/", methods=["GET"], include_in_schema=False)
         async def _landing(_: Request):
