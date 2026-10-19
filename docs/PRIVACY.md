@@ -1,6 +1,6 @@
 # OpenHire Privacy Policy
 
-_Last updated: 2026-10-15 · Applies to the `openhire` package (PyPI), the `ohp` CLI, the MCP
+_Last updated: 2026-10-19 · Applies to the `openhire` package (PyPI), the `ohp` CLI, the MCP
 server (stdio / sse / streamable-http), the Claude Desktop extension bundle, the public
 job snapshot published on GitHub Releases, and the hosted endpoint the maintainer runs._
 
@@ -58,6 +58,10 @@ refuses to install any snapshot whose user-state tables are non-empty.
   index is refreshed, and `remove_employer` deletes them. Workday career sites (v0.8.13) are
   read through the public JSON their own pages load; the first page view sets an ordinary
   session cookie and nothing about you is in it.
+- `list_portals` and the built-in prompts (v0.8.14) send nothing anywhere. The portal list
+  ships inside the package; its links go to each employer's own careers page, which you or
+  your assistant open like any web page. The prompts are text templates your assistant reads;
+  each one repeats that your résumé, name, email and phone go into no tool call.
 - **Hosted endpoint** (v0.8.11): the maintainer runs a copy of this server at
   `https://openhire.onrender.com/mcp` (a Render web service built from `hosted/`) for
   clients that can only reach a URL, such as ChatGPT connectors. It receives exactly what the
