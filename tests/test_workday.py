@@ -76,8 +76,9 @@ class _Jar(dict):
 class _Client:
     """Two list pages (23 postings) and a detail for each; records every call."""
 
-    def __init__(self, total=23, list_status=200, detail_ok=True, shape_ok=True):
+    def __init__(self, total=23, list_status=200, detail_ok=True, shape_ok=True, later_total=None):
         self.calls: list[tuple[str, str]] = []
+        self.later_total = later_total   # what pages after the first report as total
         self.cookies = _Jar(CALYPSO_CSRF_TOKEN="tok")
         self.total = total
         self.list_status = list_status
@@ -110,7 +111,8 @@ class _Client:
         rows = [{"title": f"Engineer {i}", "externalPath": f"/job/CN/Engineer_JR{i}",
                  "locationsText": "Shanghai, China", "postedOn": "Posted 14 Days Ago", "bulletFields": [f"JR{i}"]}
                 for i in range(off + 1, min(off + 20, self.total) + 1)]
-        return _Resp(200, {"total": self.total, "jobPostings": rows})
+        reported = self.total if off == 0 or self.later_total is None else self.later_total
+        return _Resp(200, {"total": reported, "jobPostings": rows})
 
 
 def test_fetch_pages_merges_details_and_builds_trusted_links():
@@ -129,6 +131,15 @@ def test_fetch_pages_merges_details_and_builds_trusted_links():
     assert "JR1" in first.apply_channel
     assert apply_url_is_trusted(first.apply_channel, "workday")
     assert fake.calls[0] == ("GET", "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite")
+
+
+def test_later_pages_reporting_total_zero_do_not_stop_the_read():
+    """Live Workday answers the real total on the first page and 0 on the pages after it
+    (2026-10-15 on the maintainer's machine: NVIDIA, Intel and Manulife all stopped at 40)."""
+    fake = _Client(total=45, later_total=0)
+    res = asyncio.run(WorkdayClient().fetch(fake, T))
+    assert res.ok and res.count == 45
+    assert len([c for c in fake.calls if c[0] == "POST"]) == 3   # 20 + 20 + 5, stop on the short page
 
 
 def test_missing_detail_falls_back_to_the_list_fields():

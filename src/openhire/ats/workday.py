@@ -135,8 +135,12 @@ class WorkdayClient(ATSClient):
                 return FetchResult(ok=False, status=resp.status_code, error="unexpected payload")
             batch = [j for j in payload["jobPostings"] if isinstance(j, dict)]
             rows.extend(batch)
-            if isinstance(payload.get("total"), int):
-                total = payload["total"]
+            # Workday answers the real total on the first page only and 0 on every page
+            # after it (seen live 2026-10-15: NVIDIA, Intel and Manulife all stopped at 40),
+            # so the first positive total is the one to trust.
+            reported = payload.get("total")
+            if total is None and isinstance(reported, int) and reported > 0:
+                total = reported
             if len(batch) < _PAGE or (total is not None and len(rows) >= total):
                 break
 
