@@ -6,9 +6,13 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.13 · 2026-10-15；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.14 · 2026-10-19；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.14（2026-10-19，云端会话，`reports/082`）：** 回答领导 10-15 三问。① **不用背咒语**：`add_employer` 早已封装，0.8.14 的服务器指令让助手主动提「加进索引并盯住」和门户链接；**五个内置 MCP 提示词**（`src/openhire/prompts.py`：job_radar、track_employer、vet_employer、radar_check、new_this_week，参数有中文出中文版，老 SDK 不支持 title 时照样注册）；README Quickstart 加「What to say to it」可粘贴句子，带货稿从这里取。
+  ② **门户目录**：`list_portals` 工具（第 12 个工具，验收测试钉住）、`ohp portals`、公开页 `docs/portals.html`（由 `seed/not_indexed.py` 生成，测试保证一致；登记表加 sector、last_checked、不登录能看到什么）。星动纪元在索引里（Moka）又有飞书门户：单列 `SECOND_PORTALS`，`get_company_info` 带 `also_posts_on`。**岗位级飞书链接不做**（要执行签名脚本批量读列表，越 2026-09 的访问控制线）。
+  ③ Workday 翻页修（第二页起 `total` 报 0，旧代码停在 40）；快照换文件 Windows 重试 + 报占用者 + 失败放回旧库，测试连接全关；`org-events-audit --fresh` 留旧副本作基线，`--baseline / --expect-at-least / --must-include` 按 event_id 比对。781 tests（3.13、3.11）。
+  **收录：** mcp.so 10-16 收录（#3845、#4473），Awesome-MCP-ZH #602 10-15 合并。**知乎承诺兑现：** `scripts/new_postings_window.py` 出「近 30 天新发」表（082 第三节），本机贴。Xbotics 许可 issue 交本机发。
 - **v0.8.13（2026-10-15 夜，云端会话，`reports/081`）：** **盲区扫除第一步**（领导：「我要全垒打」）。① **`add_employer(url)` / `ohp add-employer`**：任何适配器读得了的板贴网址就进**本机**索引并当场抓一次，之后 search / watch / refresh / ghost_score 全有；`companies.user_added` 标记（模型、schema.sql、migrate 都加了列），**永不进公开快照**（`build_snapshot` 跳过、`install` 拒收），每周刷新时 `carry_over_user_state` 连 companies / jobs 一起搬；`remove_employer` 移除；`read_board` 结果带 `add_to_my_index` 和预填 issue 链接 `suggest_for_public_index`。
   ② **Workday 适配器**（`ats/workday.py`，租户键 `<account>.<wdN>/<site>`，列表 POST `/wday/cxs/.../jobs` 每页 20 条 + 详情 `startDate` 为发布日，先 GET 页面拿 cookie，CSRF 头可选）；`myworkdayjobs.com` 从封闭门户清单删掉；**云端连不上，按已知形状写，本机实测通过前不进种子表**（队列里排了 NVIDIA / 宏利 / Intel 三条 read-board）。③ Windows `file://` 路径修（`url2pathname`）。743 tests。
   **飞书系怎么绕（待领导定）：** 社区清单（Xbotics 471 条公众号链接，要先问许可；Lumina CC BY-NC）当发现层、公众号文章当一手源；`read_board --browser` 本机浏览器渲染读公开页（不登录、守 robots、被拦即停）要领导裁定是否触碰 2026-09 的 CLOSED 判定。
@@ -165,7 +169,7 @@
 - **Release v0.1.0：** https://github.com/gzchenhao/openhire/releases/tag/v0.1.0 （含快照资产 `openhire-index.db.gz`，URL 稳定不变）
 - **PyPI：** https://pypi.org/project/openhire/0.5.0/ （`pipx install openhire` / `uvx openhire@latest serve`）
 - **官方 MCP Registry：** `io.github.gzchenhao/openhire`（`registry.modelcontextprotocol.io`）。**推 `v*` tag 即由 `.github/workflows/publish-mcp-registry.yml` 用 OIDC 自动发布**（v0.3.1 起每次均如此），本地 `mcp-publisher` 只作备用。
-  从 Registry 自动收录的有 mcpservers.org、mcpmarket.com、Glama；**PulseMCP 和 mcp.so 没有我们**（2026-09-28 核实，此前写「自动同步」是错的）。
+  从 Registry 自动收录的有 mcpservers.org、mcpmarket.com、Glama；**mcp.so 2026-10-16 收录**（主动提交的 #3845、#4473 由维护者关闭，页面 https://mcp.so/servers/openhire ）；**PulseMCP 没有我们**（2026-09-28 核实，此前写「自动同步」是错的）。中文清单 yzfly/Awesome-MCP-ZH PR #602 2026-10-15 合并。
 - **上架渠道全景（057，2026-09-28）：** 仓库本身已是 **Claude Code 插件市场**（`.claude-plugin/`，用户 `/plugin marketplace add gzchenhao/openhire` + `/plugin install openhire@openhire`，端到端实测过）、
   **Cursor 插件**（`.cursor-plugin/plugin.json`）和 **Agent Plugins 标准包**（根目录 `plugin.json` + `mcp.json`）。已提：火山引擎 `volcengine/mcp-server` PR #437、mcp.so 目录 `chatmcp/mcpso` issue #4473。
   README 有 TRAE 一键导入链接。**Anthropic 目录已提交（2026-10-08，`reports/058`）**：插件页 https://claude.ai/directory/manage/plugins/1a281d9a-66a9-437d-a666-5635047cc35a （领导 Max 账号登录才能看），等待安全扫描 + 人工审核（三类保留项，答复在 058 第四节）；审核邮件到领导 icloud 邮箱。
