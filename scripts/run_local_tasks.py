@@ -100,6 +100,17 @@ def summarise(outcome: dict) -> list[str]:
                      f"实有 {res.get('event_count_actual')} 条，problem_count {res.get('problem_count')}")
         for kind, ids in (res.get("problems") or {}).items():
             lines.append(f"- {kind}: {len(ids)}  {' '.join(ids[:8])}")
+        cmp_ = res.get("comparison")
+        if cmp_:
+            lines.append(f"比对基线：{cmp_.get('baseline_count')} 条（生成 {cmp_.get('baseline_generated_at')}）→ 现在 {cmp_.get('current_count')} 条；"
+                         f"基线 id 缺 {len(cmp_.get('baseline_ids_missing') or [])} 个，新增 {cmp_.get('added_since_baseline')} 个"
+                         f"（其中 backfilled {cmp_.get('added_backfilled')}）")
+            if "count_ok" in cmp_:
+                lines.append(f"- 条数 ≥ {cmp_.get('expected_at_least')}：{cmp_.get('count_ok')}")
+            if "must_include_missing" in cmp_:
+                lines.append(f"- 点名的 id 缺：{cmp_.get('must_include_missing') or '无'}")
+            if cmp_.get("baseline_ids_missing"):
+                lines.append(f"- 缺的基线 id：{' '.join(cmp_['baseline_ids_missing'][:20])}")
     else:
         lines.append(f"{res.get('vendor')}:{res.get('tenant')}  板上 {res.get('count_on_board')} 条，匹配 {res.get('total_matching')} 条")
         for p in res.get("postings", []):
