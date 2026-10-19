@@ -791,6 +791,45 @@ def read_board(
     console.note(res["note"])
 
 
+# --- portals ----------------------------------------------------------------------
+@app.command(name="portals", rich_help_panel=FIND_PANEL)
+def portals(
+    sector: str = typer.Option(None, "--sector", help="autonomous_driving / embodied_ai / ai_infra (自动驾驶 / 具身 / 大模型); all three when left out."),
+    as_json: bool = typer.Option(False, "--json", help="Print the directory as JSON."),
+    html_out: str = typer.Option(None, "--html", help="Write the directory as an HTML page to this path (docs/portals.html)."),
+) -> None:
+    """Employers OpenHire cannot read (Feishu, BOSS直聘, pages without a list), with their own careers links."""
+    import json as _json
+
+    if html_out:
+        from pathlib import Path
+
+        from .portals_page import render
+
+        Path(html_out).write_text(render(), encoding="utf-8")
+        print(html_out)
+        return
+    try:
+        res = service.list_portals(sector)
+    except OpenHireError as e:
+        if as_json:
+            print(_json.dumps(e.as_dict(), ensure_ascii=False))
+        else:
+            console.error(e.code, e.message)
+        raise typer.Exit(2)
+    if as_json:
+        print(_json.dumps(res, ensure_ascii=False, indent=2))
+        return
+    _banner()
+    console.cmd("ohp portals" + (f" --sector {sector}" if sector else ""))
+    console.out(f"{res['count']} 家公司的岗位放在 OpenHire 读不了的地方；下面是它们自己的招聘页：")
+    for p in res["portals"]:
+        console.out(f"  {p['name']}  [{p['sector_zh']}]  核对 {p['last_checked']}")
+        console.out(f"      {p['careers_url']}")
+        console.out(f"      {p['visible_without_login_zh'] or ''}")
+    console.note(res["note_zh"])
+
+
 # --- apply --------------------------------------------------------------------
 @app.command(rich_help_panel=FIND_PANEL)
 def apply(
