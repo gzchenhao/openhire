@@ -650,7 +650,10 @@ def check_company(
 @app.command(name="org-events-audit", rich_help_panel=INDEX_PANEL)
 def org_events_audit(
     file: str = typer.Option(None, "--file", help="Audit a local copy of org_events.json instead of downloading."),
-    fresh: bool = typer.Option(False, "--fresh", help="Ignore today's cache and download the file again."),
+    fresh: bool = typer.Option(False, "--fresh", help="Download the file again; the copy it replaces is kept as the baseline."),
+    baseline: str = typer.Option(None, "--baseline", help="An earlier copy of org_events.json: check every one of its event_ids is still there."),
+    expect_at_least: int = typer.Option(None, "--expect-at-least", help="The event count the producer announced (e.g. 91)."),
+    must_include: list[str] = typer.Option(None, "--must-include", help="An event_id that must be present; repeat for several."),
     as_json: bool = typer.Option(False, "--json", help="Print the audit as JSON (for scripts/run_local_tasks.py)."),
 ) -> None:
     """Maintainer: check EarlyTip's org_events export against its published spec from the reader's side. Changes nothing."""
@@ -663,7 +666,10 @@ def org_events_audit(
         data = org_events.parse(_Path(file).read_text(encoding="utf-8"))
     else:
         if fresh:
-            org_events._cache_path().unlink(missing_ok=True)
+            cache = org_events._cache_path()
+            if cache.exists():
+                # Keep what is being replaced: it is the baseline for the append-only check.
+                cache.replace(org_events.previous_cache_path())
         data = org_events.load()
     if "error" in data:
         if as_json:
@@ -673,6 +679,13 @@ def org_events_audit(
         raise typer.Exit(2)
     out = org_events.audit(data)
     out["downloaded"] = data.get("downloaded")
+    base_path = _Path(baseline) if baseline else org_events.previous_cache_path()
+    if baseline or expect_at_least is not None or must_include or (fresh and base_path.exists()):
+        base = org_events.parse(base_path.read_text(encoding="utf-8")) if base_path.exists() else {"events": []}
+        if "error" in base:
+            base = {"events": []}
+        out["comparison"] = org_events.compare(base, data, expect_at_least, tuple(must_include or ()))
+        out["comparison"]["baseline_file"] = str(base_path) if base_path.exists() else None
     if as_json:
         print(_json.dumps(out, ensure_ascii=False, indent=2))
         return
@@ -688,6 +701,13 @@ def org_events_audit(
     for kind, ids in out["problems"].items():
         console.out(f"  {kind}: {len(ids)}  {' '.join(ids[:8])}")
     console.note(f"problem_count {out['problem_count']}（不含 company_null 与 *_not_in_title：前者规格允许，后者只能对标题查）")
+    cmp_ = out.get("comparison")
+    if cmp_:
+        console.out(f"baseline {cmp_['baseline_count']}（{cmp_['baseline_generated_at']}）→ now {cmp_['current_count']}："
+                    f"missing {len(cmp_['baseline_ids_missing'])}，added {cmp_['added_since_baseline']}"
+                    f"（backfilled {cmp_['added_backfilled']}）"
+                    + (f"；count_ok {cmp_['count_ok']}（≥ {cmp_['expected_at_least']}）" if "count_ok" in cmp_ else "")
+                    + (f"；must_include_missing {cmp_['must_include_missing']}" if "must_include_missing" in cmp_ else ""))
 
 
 # --- add-employer / remove-employer (the user's own index, 0.8.13) --------------------

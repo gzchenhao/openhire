@@ -274,6 +274,42 @@ def screen(name: str | None, aliases=(), allow_network: bool = True, data: dict 
 
 
 # --- the consumer-side audit (spec 六, the parts a reader can check) ----------------------
+def previous_cache_path() -> Path:
+    """Where `ohp org-events-audit --fresh` keeps the copy it replaces, so the next audit
+    can check the producer's append-only promise against it."""
+    return _cache_path().with_name("org_events.previous.json")
+
+
+def compare(baseline: dict, current: dict, expect_at_least: int | None = None,
+            must_include: tuple[str, ...] | list[str] = ()) -> dict:
+    """The producer's promises, checked from the reader's side: every event_id of an earlier
+    copy is still in the current one (rows are appended or retracted in place, never
+    dropped), the count is at least what the producer announced, and the ids it named are
+    there. By event_id, never by date: a backfilled row can carry an old date (the
+    producer's note of 2026-10-15)."""
+    old_events = [e for e in baseline.get("events", []) if isinstance(e, dict)]
+    new_events = [e for e in current.get("events", []) if isinstance(e, dict)]
+    old = {str(e.get("event_id")) for e in old_events}
+    new = {str(e.get("event_id")) for e in new_events}
+    added = new - old
+    out = {
+        "baseline_generated_at": baseline.get("generated_at"),
+        "baseline_count": len(old_events),
+        "current_generated_at": current.get("generated_at"),
+        "current_count": len(new_events),
+        "baseline_ids_missing": sorted(old - new),
+        "all_baseline_ids_present": not (old - new),
+        "added_since_baseline": len(added),
+        "added_backfilled": sum(1 for e in new_events if str(e.get("event_id")) in added and e.get("backfilled")),
+    }
+    if expect_at_least is not None:
+        out["expected_at_least"] = expect_at_least
+        out["count_ok"] = len(new_events) >= expect_at_least
+    if must_include:
+        out["must_include_missing"] = sorted(set(must_include) - new)
+    return out
+
+
 def audit(data: dict) -> dict:
     """Check the file against the published spec from the reader's side: shape, keys,
     ids and keys recomputed, dates, the blackout, D10. Returns counts and the offending

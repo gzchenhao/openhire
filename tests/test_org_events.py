@@ -306,3 +306,38 @@ def test_cli_audit_reads_a_local_copy_and_prints_json(tmp_path, export):
     path.write_text(json.dumps({"schema_version": 2, "events": []}), encoding="utf-8")
     r = CliRunner().invoke(app, ["org-events-audit", "--file", str(path), "--json"])
     assert r.exit_code == 2 and json.loads(r.output)["error"] == "schema_version"
+
+
+def test_compare_checks_the_append_only_promise_by_event_id(export):
+    """The producer's 2026-10-15 note: the 83 original rows stay, 8 were added (3 of them
+    backfilled with older dates), compare by event_id and never by date."""
+    dropped = export["events"][1]
+    fresh_one = _ev(company="星动纪元", title="星动纪元完成融资", url="https://36kr.com/p/9", backfilled=False)
+    late_one = _ev(company="智元机器人", title="智元机器人组织调整", url="https://36kr.com/p/8", published_date="2026-10-13")
+    current = _export([e for e in export["events"] if e is not dropped] + [fresh_one, late_one])
+    out = org_events.compare(export, current, expect_at_least=8,
+                             must_include=[late_one["event_id"], "53aa43e43fa14036"])
+    assert out["baseline_count"] == 6 and out["current_count"] == 7
+    assert out["baseline_ids_missing"] == [dropped["event_id"]] and not out["all_baseline_ids_present"]
+    assert out["added_since_baseline"] == 2 and out["added_backfilled"] == 1
+    assert out["count_ok"] is False and out["expected_at_least"] == 8
+    assert out["must_include_missing"] == ["53aa43e43fa14036"]
+    clean = org_events.compare(export, _export(export["events"] + [fresh_one]), expect_at_least=7)
+    assert clean["all_baseline_ids_present"] and clean["count_ok"] and "must_include_missing" not in clean
+
+
+def test_cli_fresh_keeps_the_replaced_copy_and_compares_against_it(tmp_path, export, monkeypatch):
+    """`--fresh` used to delete the cached copy; the copy it replaces is the only record of
+    what the file said before, so it is kept and the new download is checked against it."""
+    monkeypatch.setattr(config, "CLIENT_HOME", tmp_path)
+    org_events._cache_path().write_text(json.dumps(export, ensure_ascii=False), encoding="utf-8")
+    newer = _export(export["events"] + [_ev(company="星动纪元", title="星动纪元完成融资", url="https://36kr.com/p/9")])
+    monkeypatch.setattr(org_events, "load", lambda *a, **k: newer)
+    r = CliRunner().invoke(app, ["org-events-audit", "--fresh", "--expect-at-least", "7",
+                                 "--must-include", export["events"][0]["event_id"], "--json"])
+    assert r.exit_code == 0, r.output
+    cmp_ = json.loads(r.output)["comparison"]
+    assert cmp_["baseline_count"] == 6 and cmp_["current_count"] == 7 and cmp_["all_baseline_ids_present"]
+    assert cmp_["count_ok"] and cmp_["must_include_missing"] == []
+    assert cmp_["baseline_file"].endswith("org_events.previous.json")
+    assert org_events.previous_cache_path().exists() and not org_events._cache_path().exists()
