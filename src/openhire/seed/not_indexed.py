@@ -136,6 +136,30 @@ PLATFORM_ONLY_REASON_ZH = "雇主只在 BOSS 直聘上发布岗位，官网没�
 # dated facts and offers no opt-in, because there is nobody left to opt in.
 CEASED_ATS = "none (the company has ceased operations)"
 
+# What a person sees on the portal in a browser without logging in. Only what was seen:
+# the Feishu line rests on one portal opened in a browser on 2026-10-15 (星动纪元, by the
+# maintainer's local session, no login, no API call); an entry can override it.
+PORTAL_VIEW = {
+    FEISHU_ATS: (
+        "In a browser, without logging in: the job list and each posting's full description. "
+        "The pages show no posting date. (Checked on one Feishu portal on 2026-10-15.)"
+    ),
+}
+PORTAL_VIEW_ZH = {
+    FEISHU_ATS: "浏览器打开、不登录：能看岗位列表和每条的完整职位描述；页面上没有发布日期（2026-10-15 在一家飞书门户上核过）",
+}
+
+# The three sectors this index covers, and what a seeker types for each.
+SECTORS = ("autonomous_driving", "embodied_ai", "ai_infra")
+SECTOR_ALIASES = {
+    "autonomous_driving": ("autonomous driving", "autonomous_driving", "av", "self-driving", "adas",
+                           "自动驾驶", "智驾", "智能驾驶"),
+    "embodied_ai": ("embodied ai", "embodied_ai", "embodied", "robotics", "robot", "humanoid",
+                    "具身", "具身智能", "机器人", "人形机器人"),
+    "ai_infra": ("ai infra", "ai_infra", "ai", "llm", "foundation models", "大模型", "人工智能"),
+}
+SECTOR_NAMES_ZH = {"autonomous_driving": "自动驾驶", "embodied_ai": "具身智能", "ai_infra": "AI 基础设施与大模型"}
+
 
 @dataclass(frozen=True)
 class NotIndexedEmployer:
@@ -150,6 +174,22 @@ class NotIndexedEmployer:
     reason: str = FEISHU_REASON
     reason_zh: str = FEISHU_REASON_ZH
     employer_opt_in: dict = field(default_factory=lambda: dict(FEISHU_OPT_IN))
+    sector: str = ""              # one of SECTORS
+    last_checked: str = "2026-09-23"   # the day careers_url was last confirmed
+    portal_view: str | None = None     # overrides PORTAL_VIEW[ats]
+    portal_view_zh: str | None = None
+
+    @property
+    def visible_without_login(self) -> str | None:
+        return self.portal_view or PORTAL_VIEW.get(self.ats)
+
+    @property
+    def visible_without_login_zh(self) -> str | None:
+        return self.portal_view_zh or PORTAL_VIEW_ZH.get(self.ats)
+
+    @property
+    def ceased(self) -> bool:
+        return self.ats == CEASED_ATS
 
     def as_dict(self) -> dict:
         return {
@@ -162,6 +202,10 @@ class NotIndexedEmployer:
             "reason": self.reason,
             "reason_zh": self.reason_zh,
             "employer_opt_in": dict(self.employer_opt_in),
+            "sector": self.sector,
+            "visible_without_login": self.visible_without_login,
+            "visible_without_login_zh": self.visible_without_login_zh,
+            "last_checked": self.last_checked,
         }
 
 
@@ -172,26 +216,31 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         id="momenta", name="Momenta 魔门塔",
         aliases=("momenta", "魔门塔", "初速度"),
         careers_url="https://momenta.jobs.feishu.cn/",          # reports/014: "Momenta Talent"
+        sector="autonomous_driving",
     ),
     NotIndexedEmployer(
         id="ponyai", name="小马智行 Pony.ai",
         aliases=("pony.ai", "pony ai", "ponyai", "pony", "小马智行", "小马"),
         careers_url="https://ponyai.jobs.feishu.cn/ponyai/",    # reports/014
+        sector="autonomous_driving",
     ),
     NotIndexedEmployer(
         id="agibot", name="智元机器人 AgiBot",
         aliases=("agibot", "agirobot", "智元机器人", "智元"),
         careers_url="https://agirobot.jobs.feishu.cn/",
+        sector="embodied_ai",
     ),
     NotIndexedEmployer(
         id="minimax", name="MiniMax 稀宇科技",
         aliases=("minimax", "稀宇科技", "稀宇"),
         careers_url="https://vrfi1sk8a0.jobs.feishu.cn/",       # <title>加入MiniMax</title>
+        sector="ai_infra",
     ),
     NotIndexedEmployer(
         id="zhipu", name="智谱 Zhipu AI",
         aliases=("zhipu", "zhipu ai", "zhipuai", "智谱", "智谱华章", "智谱ai"),
         careers_url="https://zhipu-ai.jobs.feishu.cn/",         # <title>加入北京智谱华章科技有限公司</title>
+        sector="ai_infra",
     ),
     NotIndexedEmployer(
         id="sensetime", name="商汤科技 SenseTime",
@@ -201,27 +250,32 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         # employer's own host, which is what puts it on this list.
         careers_url="https://hr-jobs.sensetime.com/",
         confirmed_by="feishucdn asset fingerprint on hr-jobs.sensetime.com; title not retrieved",
+        sector="ai_infra",
     ),
     NotIndexedEmployer(
         id="limx", name="逐际动力 LimX Dynamics",
         aliases=("limx", "limx dynamics", "limxdynamics", "逐际动力", "逐际"),
         careers_url="https://career.limxdynamics.com/",         # reports/014: Feishu white label
+        sector="embodied_ai",
     ),
     NotIndexedEmployer(
         id="xsquare", name="自变量机器人 X Square Robot",
         aliases=("x square", "xsquare", "x square robot", "x2 robot", "x2-robot",
                  "自变量机器人", "自变量"),
         careers_url="https://x2-robot.jobs.feishu.cn/",         # <title>加入自变量机器人 | 社会招聘</title>
+        sector="embodied_ai",
     ),
     NotIndexedEmployer(
         id="spiritai", name="千寻智能 Spirit AI",
         aliases=("spirit ai", "spiritai", "spirit-ai", "千寻智能", "千寻"),
         careers_url="https://nwd4iy9rd2s.jobs.feishu.cn/",      # <title>加入千寻智能（杭州）科技有限公司</title>
+        sector="embodied_ai",
     ),
     NotIndexedEmployer(
         id="booster", name="加速进化 Booster Robotics",
         aliases=("booster", "booster robotics", "加速进化"),
         careers_url="https://booster.jobs.feishu.cn/",          # <title>Join Booster Robotics</title>
+        sector="embodied_ai",
     ),
     # 2026-10-08 survey (reports/060). Confirmed by <title> on that day.
     NotIndexedEmployer(
@@ -230,11 +284,13 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         # Its own page (www.noematrix.ai/join-us, <title>加入我们 | 穹彻智能</title>) links to
         # this Feishu tenant, which belongs to 非夕 Flexiv: <title>加入穹彻智能</title>.
         careers_url="https://flexivrobotics.jobs.feishu.cn/971932",
+        sector="embodied_ai", last_checked="2026-10-08",
     ),
     NotIndexedEmployer(
         id="engineai", name="众擎机器人 EngineAI",
         aliases=("engineai", "engine ai", "众擎机器人", "众擎"),
         careers_url="https://dx3a2bminsq.jobs.feishu.cn/",      # <title>加入深圳市众擎机器人科技有限公司</title>
+        sector="embodied_ai", last_checked="2026-10-08",
     ),
     # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
     # 1,784-row roster inside __NEXT_DATA__, see ats/nio.py), and the same GET from this
@@ -252,6 +308,9 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         reason=NIO_REASON,
         reason_zh=NIO_REASON_ZH,
         employer_opt_in=dict(NIO_OPT_IN),
+        sector="autonomous_driving",
+        portal_view="The careers page lists every posting publicly; a browser shows it (a plain request on 2026-09-23 returned the full roster).",
+        portal_view_zh="招聘页公开列出全部岗位，浏览器就能看（2026-09-23 一次普通请求拿到了完整名单）",
     ),
     # --- 2026-10-08 survey (reports/060): no readable job list on the employer's own site ---
     NotIndexedEmployer(
@@ -266,6 +325,9 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         reason=PLATFORM_ONLY_REASON,
         reason_zh=PLATFORM_ONLY_REASON_ZH,
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-08",
+        portal_view="The link is the employer's homepage; its 加入我们 link leads to BOSS直聘, a platform that decides what it shows without a login.",
+        portal_view_zh="链接是公司官网；官网的「加入我们」指向 BOSS 直聘（平台，不登录能看到多少由 BOSS 直聘决定）",
     ),
     NotIndexedEmployer(
         id="ai2robotics", name="智平方 AI2 Robotics",
@@ -278,6 +340,9 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         ),
         reason_zh="雇主官网的招聘页没有岗位列表，只给了投递邮箱，没有可读的岗位数据",
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-08",
+        portal_view="The page lists no postings; it gives an email address for applications.",
+        portal_view_zh="页面没有岗位列表，只给了投递邮箱",
     ),
     NotIndexedEmployer(
         id="qcraft", name="轻舟智航 QCraft",
@@ -290,6 +355,9 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         ),
         reason_zh="雇主官网的招聘页只放了一个飞书收简历表单，没有岗位列表",
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="autonomous_driving", last_checked="2026-10-08",
+        portal_view="The page lists no postings; it collects résumés through a Feishu form.",
+        portal_view_zh="页面没有岗位列表，只有一个飞书收简历表单",
     ),
     NotIndexedEmployer(
         id="phigent", name="鉴智机器人 PhiGent Robotics",
@@ -303,6 +371,9 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         ),
         reason_zh="雇主官网是纯 JS 应用，普通请求拿不到岗位列表；我们不执行站点脚本",
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="autonomous_driving", last_checked="2026-10-08",
+        portal_view="A JavaScript site that a browser renders; whether it shows a job list has not been checked.",
+        portal_view_zh="纯 JS 网站，浏览器能打开；里面有没有岗位列表还没核过",
     ),
     NotIndexedEmployer(
         id="noetix", name="松延动力 Noetix Robotics",
@@ -316,6 +387,18 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         ),
         reason_zh="雇主官网的岗位列表来自它自己的接口，而站点 robots.txt 禁止抓取该接口；我们遵守 robots",
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-08",
+        portal_view="A browser shows the job list; the page loads it from the site's own API, which robots.txt closes to crawlers.",
+        portal_view_zh="浏览器打开能看到岗位列表；页面从站点自己的接口加载，robots.txt 不让爬虫读这个接口",
+    ),
+    # 2026-10-15, the maintainer's local session (reports/081): opened in a browser without
+    # logging in, robots.txt absent, "开启新的工作（19）" with full descriptions, no dates.
+    NotIndexedEmployer(
+        id="robotera", name="星动纪元 Robotera",
+        aliases=("robotera", "robot era", "星动纪元"),
+        careers_url="https://k0fqxcszc9.jobs.feishu.cn/index",
+        confirmed_by="opened in a browser without logging in on 2026-10-15: 19 postings listed under the employer's name",
+        sector="embodied_ai", last_checked="2026-10-15",
     ),
     # A former employer. Dated facts only; no opt-in because there is nobody to opt in.
     NotIndexedEmployer(
@@ -332,6 +415,7 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         ),
         reason_zh="公司已停止运营（2025-11-29 停工通知，媒体公开报道；Moka 招聘门户 2026-09-02 已关停，官网域名 2026-10 已易主）",
         employer_opt_in={},
+        sector="autonomous_driving", last_checked="2026-10-08",
     ),
 )
 
@@ -380,3 +464,24 @@ def _inside(alias: str, query: str) -> bool:
 
 def by_id(employer_id: str) -> NotIndexedEmployer | None:
     return _BY_ID.get((employer_id or "").strip().casefold())
+
+
+def parse_sector(text: str | None) -> str | None:
+    """What a seeker typed ("具身", "AV", "embodied_ai") to one of SECTORS; None for no filter.
+    Raises ValueError for words that name no sector this index covers."""
+    if text is None or not str(text).strip():
+        return None
+    t = _fold(str(text))
+    for sector, aliases in SECTOR_ALIASES.items():
+        if t == sector or t in (_fold(a) for a in aliases):
+            return sector
+    raise ValueError(text)
+
+
+def portals(sector: str | None = None) -> list[NotIndexedEmployer]:
+    """The link directory: employers in our sectors whose postings this index cannot read,
+    each with its own careers portal. A company that has ceased operations is left out (its
+    entry stays for lookups, so a seeker who names it still hears what happened), and so is
+    any entry without a confirmed URL. Sorted by sector, then name."""
+    out = [e for e in NOT_INDEXED if e.careers_url and not e.ceased and (sector is None or e.sector == sector)]
+    return sorted(out, key=lambda e: (SECTORS.index(e.sector) if e.sector in SECTORS else 99, e.name.casefold()))
