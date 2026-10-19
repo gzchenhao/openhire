@@ -6,6 +6,7 @@ from __future__ import annotations
 import datetime as dt
 import gzip
 import sqlite3
+from contextlib import contextmanager
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -18,6 +19,18 @@ from openhire.errors import OpenHireError
 
 UTC = dt.timezone.utc
 NOW = dt.datetime(2026, 10, 15, tzinfo=UTC)
+
+
+@contextmanager
+def _db(path):
+    """sqlite3's own `with` commits but never closes, and Windows will not rename or delete
+    a file that still has an open handle (WinError 32): every connection here is closed."""
+    conn = sqlite3.connect(path)
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def _board(n=2, ok=True):
@@ -131,10 +144,10 @@ def test_snapshot_build_leaves_user_added_employers_out(tmp_path):
     raw = tmp_path / "snap.db"
     with gzip.open(gz, "rb") as f_in, open(raw, "wb") as f_out:
         f_out.write(f_in.read())
-    with sqlite3.connect(raw) as c:
+    with _db(raw) as c:
         assert c.execute("SELECT count(*) FROM companies WHERE user_added = 1").fetchone()[0] == 0
     # And a snapshot that somehow carries one is refused on install:
-    with sqlite3.connect(raw) as c:
+    with _db(raw) as c:
         c.execute("UPDATE companies SET user_added = 1")
     with pytest.raises(SnapshotError):
         _validate_snapshot_db(raw)
@@ -159,7 +172,7 @@ def test_refresh_carries_the_users_employers_into_the_new_index(tmp_path):
                   apply_channel="https://boards.greenhouse.io/embed/job_app?for=acme&token=2", content_hash="h2"))
         s.commit()
     engine.dispose()
-    with sqlite3.connect(pub) as c:
+    with _db(pub) as c:
         try:
             c.execute("ALTER TABLE companies DROP COLUMN user_added")
         except sqlite3.OperationalError:
@@ -174,7 +187,7 @@ def test_refresh_carries_the_users_employers_into_the_new_index(tmp_path):
     previous = activate_staged(live)
     copied = carry_over_user_state(previous, live)
     assert copied["companies"] == 1 and copied["jobs"] == 2
-    with sqlite3.connect(live) as c:
+    with _db(live) as c:
         assert c.execute("SELECT user_added FROM companies WHERE id='uipath'").fetchone()[0] == 1
         assert c.execute("SELECT count(*) FROM jobs WHERE company_id='uipath'").fetchone()[0] == 2
         assert [r[0] for r in c.execute("SELECT id FROM jobs WHERE company_id='acme'")] == ["acme:2"]   # the new snapshot's

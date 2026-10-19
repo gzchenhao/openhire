@@ -901,7 +901,7 @@ def _activate_staged_snapshot() -> None:
     db_path = config.DATABASE_URL.split(":///", 1)[-1]
     try:
         previous = _snapshot.activate_staged(db_path)
-    except OSError as e:
+    except (OSError, _snapshot.SnapshotError) as e:
         print(f"openhire: could not activate the staged snapshot ({e}); keeping the current index",
               file=sys.stderr)
         return

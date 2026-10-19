@@ -6,7 +6,10 @@ from __future__ import annotations
 
 import datetime as dt
 import gzip
+import os
 import sqlite3
+from contextlib import contextmanager
+from pathlib import Path
 
 import pytest
 from sqlalchemy import create_engine
@@ -22,6 +25,18 @@ from openhire.pipeline.snapshot import (
 
 UTC = dt.timezone.utc
 NOW = dt.datetime(2026, 7, 12, tzinfo=UTC)
+
+
+@contextmanager
+def _db(path):
+    """sqlite3's own `with` commits but never closes, and Windows will not rename or delete
+    a file that still has an open handle (WinError 32): every connection here is closed."""
+    conn = sqlite3.connect(path)
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def _seed_source(path) -> None:
@@ -172,7 +187,7 @@ def test_stage_then_activate_carries_watches_into_the_new_index(tmp_path):
     res = stage_snapshot(gz.as_uri(), live)
     assert res.jobs == 1 and staged_path(live).exists()
     # Staging touched nothing live:
-    with sqlite3.connect(live) as c:
+    with _db(live) as c:
         assert c.execute("SELECT count(*) FROM watches").fetchone()[0] == 1
         assert c.execute("SELECT id FROM jobs").fetchone()[0] == "acme:1"
 
@@ -180,7 +195,7 @@ def test_stage_then_activate_carries_watches_into_the_new_index(tmp_path):
     assert previous is not None and previous.exists() and not staged_path(live).exists()
     copied = carry_over_user_state(previous, live)
     assert copied == {"watches": 1, "applications": 1}
-    with sqlite3.connect(live) as c:
+    with _db(live) as c:
         assert [r[0] for r in c.execute("SELECT id FROM jobs")] == ["acme:2"]  # the new snapshot
         assert c.execute("SELECT fingerprint FROM watches").fetchone()[0] == "#a3f9"
         assert c.execute("SELECT receipt_id FROM applications").fetchone()[0] == "r_1"
@@ -194,7 +209,7 @@ def test_activate_with_nothing_staged_is_a_noop(tmp_path):
     live = tmp_path / "openhire.db"
     _seed_source(live)
     assert activate_staged(live) is None
-    with sqlite3.connect(live) as c:
+    with _db(live) as c:
         assert c.execute("SELECT count(*) FROM watches").fetchone()[0] == 1
 
 
@@ -205,7 +220,7 @@ def test_install_snapshot_keeps_user_state_only_when_asked(tmp_path):
     live = tmp_path / "openhire.db"
     _seed_source(live)
     install_snapshot(gz.as_uri(), str(live))  # the old contract: a plain overwrite
-    with sqlite3.connect(live) as c:
+    with _db(live) as c:
         has_table = c.execute(
             "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='watches'"
         ).fetchone()[0]
@@ -214,7 +229,7 @@ def test_install_snapshot_keeps_user_state_only_when_asked(tmp_path):
     _seed_source(tmp_path / "again.db")
     live2 = tmp_path / "again.db"
     install_snapshot(gz.as_uri(), str(live2), preserve_user_state=True)
-    with sqlite3.connect(live2) as c:
+    with _db(live2) as c:
         assert c.execute("SELECT count(*) FROM watches").fetchone()[0] == 1
         assert [r[0] for r in c.execute("SELECT id FROM jobs")] == ["acme:2"]
     assert not (tmp_path / "again.db.previous").exists()
@@ -257,3 +272,51 @@ def test_local_file_urls_resolve_on_every_platform(tmp_path):
     assert _local_path(f.as_uri()) == f
     assert _local_path(str(f)) == f
     assert _local_path("file:///C:/Users/x/snap.db.gz").name == "snap.db.gz"
+
+
+def test_activation_rides_out_a_brief_windows_lock(tmp_path, monkeypatch):
+    """A scanner or the search indexer can hold a just-written file for a moment on
+    Windows (WinError 32): the swap retries instead of failing the refresh."""
+    from openhire.pipeline import snapshot as snap
+
+    live = tmp_path / "openhire.db"
+    _seed_source(live)
+    snap.stage_snapshot(_public_snapshot(tmp_path).as_uri(), live)
+    real, fails = os.replace, {"n": 2}
+
+    def flaky(src, dst):
+        if fails["n"]:
+            fails["n"] -= 1
+            raise PermissionError(32, "being used by another process")
+        return real(src, dst)
+
+    monkeypatch.setattr(snap.os, "replace", flaky)
+    monkeypatch.setattr(snap.time, "sleep", lambda s: None)
+    previous = snap.activate_staged(live)
+    assert previous is not None and fails["n"] == 0
+    with _db(live) as c:
+        assert [r[0] for r in c.execute("SELECT id FROM jobs")] == ["acme:2"]
+
+
+def test_activation_that_cannot_swap_puts_the_old_index_back(tmp_path, monkeypatch):
+    """A handle that stays open (Claude Desktop running openhire on the same file) does not
+    go away by waiting: the error says so, and the user keeps the index they had."""
+    from openhire.pipeline import snapshot as snap
+
+    live = tmp_path / "openhire.db"
+    _seed_source(live)
+    snap.stage_snapshot(_public_snapshot(tmp_path).as_uri(), live)
+    real = os.replace
+
+    def locked(src, dst):
+        if Path(src) == snap.staged_path(live):
+            raise PermissionError(32, "being used by another process")
+        return real(src, dst)
+
+    monkeypatch.setattr(snap.os, "replace", locked)
+    monkeypatch.setattr(snap.time, "sleep", lambda s: None)
+    with pytest.raises(snap.SnapshotError, match="open in another program"):
+        snap.activate_staged(live)
+    assert snap.staged_path(live).exists()           # still waiting for the next start
+    with _db(live) as c:                             # and the old index is live again
+        assert c.execute("SELECT id FROM jobs").fetchone()[0] == "acme:1"

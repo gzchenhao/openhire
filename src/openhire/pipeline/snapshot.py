@@ -18,6 +18,7 @@ import os
 import shutil
 import sqlite3
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -335,11 +336,36 @@ def activate_staged(db_path: str | Path) -> Path | None:
     if target.exists():
         _checkpoint(target)
         previous = target.with_name(target.name + ".previous")
-        os.replace(target, previous)
+        _replace(target, previous)
     for side in _sidecars(target):
         side.unlink(missing_ok=True)
-    os.replace(staged, target)
+    try:
+        _replace(staged, target)
+    except SnapshotError:
+        if previous is not None:  # put the old index back rather than leave none at all
+            os.replace(previous, target)
+        raise
     return previous
+
+
+def _replace(src: Path, dst: Path, attempts: int = 5, wait: float = 0.2) -> None:
+    """os.replace with a short retry. On Windows a virus scanner or the search indexer can
+    hold a file it just saw being written for a moment, and a file any program still has
+    open cannot be renamed at all (WinError 32, 2026-10-15 on the maintainer's machine). A
+    handle that is really open, such as Claude Desktop running openhire on the same index,
+    does not go away by waiting; the error then names the likely holder."""
+    for attempt in range(attempts):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError as exc:
+            if attempt == attempts - 1:
+                raise SnapshotError(
+                    f"{src.name} is open in another program, so the index cannot be swapped ({exc}). "
+                    "Stop whatever is using it, for example the openhire server inside Claude Desktop "
+                    "(Settings > Developer), then run the command again."
+                ) from exc
+            time.sleep(wait)
 
 
 def carry_over_user_state(old_db: str | Path, new_db: str | Path) -> dict[str, int]:
