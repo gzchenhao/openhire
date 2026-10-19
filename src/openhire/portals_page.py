@@ -34,7 +34,7 @@ def _e(text: str | None) -> str:
 
 def render() -> str:
     entries = not_indexed.portals()
-    as_of = max(e.last_checked for e in entries)
+    as_of = max([e.last_checked for e in entries] + [p.last_checked for p in not_indexed.second_portals()])
     parts = [
         "<!doctype html>",
         '<html lang="zh-CN">',
@@ -72,6 +72,23 @@ def render() -> str:
                 f"<td>{_e(e.visible_without_login_zh)}</td>"
                 f"<td>{_e(e.reason_zh)}</td>"
                 f"<td>{_e(e.last_checked)}</td></tr>"
+            )
+        parts.append("</tbody></table>")
+    seconds = not_indexed.second_portals()
+    if seconds:
+        parts.append(f"<h2>已收录、但另有一个读不到的门户（{len(seconds)}）</h2>")
+        parts.append("<p>索引读得到这些公司的一个招聘页，但它们在另一个门户上还挂着岗位，只在那里的岗位搜不到。</p>")
+        parts.append("<table>")
+        parts.append("<thead><tr><th>公司</th><th>读不到的门户</th><th>不登录能看到什么</th><th>说明</th><th>核对</th></tr></thead>")
+        parts.append("<tbody>")
+        for p in seconds:
+            url = _e(p.careers_url)
+            parts.append(
+                f"<tr><td>{_e(p.name)}</td>"
+                f'<td><a href="{url}" rel="nofollow noopener">{url}</a></td>'
+                f"<td>{_e(p.visible_without_login_zh)}</td>"
+                f"<td>{_e(p.note_zh)}</td>"
+                f"<td>{_e(p.last_checked)}</td></tr>"
             )
         parts.append("</tbody></table>")
     parts += [

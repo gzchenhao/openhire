@@ -292,15 +292,6 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         careers_url="https://dx3a2bminsq.jobs.feishu.cn/",      # <title>加入深圳市众擎机器人科技有限公司</title>
         sector="embodied_ai", last_checked="2026-10-08",
     ),
-    # 2026-10-15, the maintainer's local session (reports/081): opened in a browser without
-    # logging in, robots.txt absent, "开启新的工作（19）" with full descriptions, no dates.
-    NotIndexedEmployer(
-        id="robotera", name="星动纪元 Robotera",
-        aliases=("robotera", "robot era", "星动纪元"),
-        careers_url="https://k0fqxcszc9.jobs.feishu.cn/index",
-        confirmed_by="opened in a browser without logging in on 2026-10-15: 19 postings listed under the employer's name",
-        sector="embodied_ai", last_checked="2026-10-15",
-    ),
     # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
     # 1,784-row roster inside __NEXT_DATA__, see ats/nio.py), and the same GET from this
     # crawler's HTTP client answers 567 with a Tencent Cloud EdgeOne security-policy page.
@@ -418,6 +409,73 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         sector="autonomous_driving", last_checked="2026-10-08",
     ),
 )
+
+@dataclass(frozen=True)
+class SecondPortal:
+    """An employer this index DOES read, that also lists postings on a portal it cannot.
+    Kept apart from NOT_INDEXED on purpose: calling it "not indexed" would be false, and
+    its id would collide with the indexed company's. get_company_info and list_portals
+    show the second portal next to what the index holds."""
+    company_id: str               # the indexed company's id
+    name: str
+    careers_url: str
+    confirmed_by: str
+    last_checked: str
+    sector: str
+    note: str
+    note_zh: str
+    ats: str = FEISHU_ATS
+
+    @property
+    def visible_without_login(self) -> str | None:
+        return PORTAL_VIEW.get(self.ats)
+
+    @property
+    def visible_without_login_zh(self) -> str | None:
+        return PORTAL_VIEW_ZH.get(self.ats)
+
+    def as_dict(self) -> dict:
+        return {
+            "company_id": self.company_id,
+            "name": self.name,
+            "careers_url": self.careers_url,
+            "ats": self.ats,
+            "sector": self.sector,
+            "note": self.note,
+            "note_zh": self.note_zh,
+            "visible_without_login": self.visible_without_login,
+            "visible_without_login_zh": self.visible_without_login_zh,
+            "last_checked": self.last_checked,
+        }
+
+
+SECOND_PORTALS: tuple[SecondPortal, ...] = (
+    # 2026-10-15, the maintainer's local session (reports/081): opened in a browser without
+    # logging in, robots.txt absent, "开启新的工作（19）" with full descriptions, no dates.
+    SecondPortal(
+        company_id="robotera", name="星动纪元 Robot Era",
+        careers_url="https://k0fqxcszc9.jobs.feishu.cn/index",
+        confirmed_by="opened in a browser without logging in on 2026-10-15: 19 postings listed under the employer's name",
+        last_checked="2026-10-15", sector="embodied_ai",
+        note=("The index reads this employer's Moka board; it also lists postings on a Feishu "
+              "portal this index cannot read (19 on 2026-10-15). Postings that are only there are "
+              "not in search results."),
+        note_zh="索引读的是它的 Moka 招聘页；它另有一个飞书招聘门户（2026-10-15 列着 19 条），我们读不了，只在那里的岗位搜不到",
+    ),
+)
+_SECOND_BY_COMPANY: dict[str, list[SecondPortal]] = {}
+for _p in SECOND_PORTALS:
+    _SECOND_BY_COMPANY.setdefault(_p.company_id, []).append(_p)
+
+
+def second_portals_for(company_id: str) -> list[SecondPortal]:
+    return list(_SECOND_BY_COMPANY.get(company_id, ()))
+
+
+def second_portals(sector: str | None = None) -> list[SecondPortal]:
+    out = [p for p in SECOND_PORTALS if sector is None or p.sector == sector]
+    return sorted(out, key=lambda p: (SECTORS.index(p.sector) if p.sector in SECTORS else 99, p.name.casefold()))
+
 
 _BY_ID = {e.id: e for e in NOT_INDEXED}
 

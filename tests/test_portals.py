@@ -30,7 +30,10 @@ def test_directory_is_the_registry_minus_what_cannot_be_a_link():
     names = [p["name"] for p in d["portals"]]
     assert d["count"] == len(names) == len([e for e in not_indexed.NOT_INDEXED if e.careers_url and not e.ceased])
     assert not any("毫末" in n for n in names)            # ceased: named on lookup, never a link
-    assert "星动纪元 Robotera" in names
+    assert not any("星动纪元" in n for n in names)        # indexed (Moka): a second portal, below
+    seconds = d["also_on_portals_we_cannot_read"]
+    assert [p["company_id"] for p in seconds] == ["robotera"]
+    assert seconds[0]["careers_url"] == "https://k0fqxcszc9.jobs.feishu.cn/index" and "Moka" in seconds[0]["note"]
     for p in d["portals"]:
         assert p["careers_url"].startswith("https://")
         assert p["sector"] in not_indexed.SECTORS and p["sector_zh"]
@@ -75,6 +78,7 @@ def test_published_page_matches_the_registry():
     for p in service.list_portals()["portals"]:
         assert p["careers_url"] in page
     assert 'href="employers.html"' in page
+    assert "已收录、但另有一个读不到的门户" in page and "k0fqxcszc9" in page
 
 
 def test_cli_prints_json_and_writes_the_page(tmp_path):
@@ -87,3 +91,22 @@ def test_cli_prints_json_and_writes_the_page(tmp_path):
     res = runner.invoke(app, ["portals", "--html", str(out)])
     assert res.exit_code == 0 and out.read_text(encoding="utf-8") == render()
     assert runner.invoke(app, ["portals", "--sector", "banking"]).exit_code == 2
+
+
+def test_an_indexed_employer_with_a_second_portal_says_so_in_company_info(tmp_path, monkeypatch):
+    """星动纪元 is read through its Moka board and also lists postings on Feishu: its
+    company info carries the second portal, and an employer without one carries nothing."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+
+    from openhire.db.models import Base, Company
+
+    eng = create_engine(f"sqlite:///{tmp_path / 'i.db'}")
+    Base.metadata.create_all(eng)
+    with Session(eng) as s:
+        s.add(Company(id="robotera", name="星动纪元 Robot Era", ats_vendor="moka", ats_tenant="robotera/163877"))
+        s.add(Company(id="acme", name="Acme", ats_vendor="greenhouse", ats_tenant="acme"))
+        s.commit()
+        info = service.get_company_info(s, "robotera")
+        assert [p["careers_url"] for p in info["also_posts_on"]] == ["https://k0fqxcszc9.jobs.feishu.cn/index"]
+        assert "also_posts_on" not in service.get_company_info(s, "acme")

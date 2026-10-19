@@ -1060,6 +1060,9 @@ def list_portals(sector: str | None = None) -> dict:
             }
             for e in entries
         ],
+        # Employers the index does read that also list postings on a portal it cannot:
+        # their postings there are missing from search results, so the link matters too.
+        "also_on_portals_we_cannot_read": [p.as_dict() for p in not_indexed.second_portals(wanted)],
         "note": PORTALS_NOTE,
         "note_zh": PORTALS_NOTE_ZH,
         "also": (
@@ -1186,6 +1189,10 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         # Present only for an employer whose roster is self-reported (ats/self_reported.py):
         # the dates above are the employer's own typing, not an ATS's system clock.
         **({"date_source": "employer_self_reported"} if company.ats_vendor == "self_reported" else {}),
+        # Present only when this employer also lists postings on a portal the index cannot
+        # read (seed/not_indexed.py SECOND_PORTALS): those postings are not counted above.
+        **({"also_posts_on": [p.as_dict() for p in not_indexed.second_portals_for(company.id)]}
+           if not_indexed.second_portals_for(company.id) else {}),
         "postings_without_reported_date": int(dates_missing),
         "active_jobs": int(active_jobs),
         "user_added": bool(getattr(company, "user_added", False)),
