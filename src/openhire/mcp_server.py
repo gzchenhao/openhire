@@ -38,10 +38,15 @@ mcp = FastMCP(
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; authorize_application to record an "
         "authorized, employer-direct application; read_board to read any employer's public "
-        "board live (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters, any sector) when the employer is not "
+        "board live (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters, Workday, any sector) when the employer is not "
         "in the index, with nothing stored; add_employer to put such a board into the user's own "
         "index on this machine (kept across refreshes, never published), remove_employer to "
-        "take it out. Never pass a résumé, file, name, email or "
+        "take it out. The user never has to know these tool names: when they name an employer "
+        "the index does not carry, find its careers page, read it with read_board, then offer in "
+        "one sentence to add it to their own index and watch it (add_employer, then watch_intent "
+        "with company); when a result says the employer's postings sit on a portal OpenHire cannot "
+        "read (Feishu, BOSS直聘), give the user that portal link and, if you have a browser, offer "
+        "to open it for them. Never pass a résumé, file, name, email or "
         "phone to any tool. ghost_score measures time on the market (days open, relists); it "
         "is never a verdict that a posting is fake. Tell the user what was measured (open N "
         "days, last touched M days ago, or that the ATS reports no such date) and do not call "
@@ -57,6 +62,12 @@ mcp = FastMCP(
 # external tester (report 026, S2-01). The lowlevel Server it wraps does take a version,
 # so set it there. Locked by tests/test_mcp_acceptance.py::test_server_reports_own_version.
 mcp._mcp_server.version = __version__
+
+# One-click templates for the questions seekers actually ask (prompts.py): clients that
+# show MCP prompts list them; the instructions above cover clients that only use tools.
+from . import prompts as _prompts  # noqa: E402
+
+_prompts.register(mcp)
 
 
 @mcp.tool(
