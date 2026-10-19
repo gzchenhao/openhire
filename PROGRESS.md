@@ -15,7 +15,7 @@
 
 ## 2026-10-19 · 0.8.14：内置提示词、读不到的门户目录、Workday 与 Windows 修复（`reports/082`）
 
-- **已完成：** 五个内置提示词（找工作雷达、盯一家公司、查公司、看雷达、本周新岗，中英按输入切换）；服务器指令让助手主动提 `add_employer` 和门户链接；`list_portals` 工具、`ohp portals`、公开页 `docs/portals.html`（18 家读不到 + 星动纪元一家「已收录但另有飞书门户」，`get_company_info` 带 `also_posts_on`）；Workday 翻页修（第二页起 total 报 0，旧代码停在 40）；快照换文件在 Windows 上重试、报占用者、失败放回旧库，测试连接全部关闭；`org-events-audit` 加基线比对（`--fresh` 留旧副本，`--expect-at-least`、`--must-include`）；README 加「对它说什么」。781 tests（3.13 与 3.11），十二处版本到 0.8.14。
+- **已完成：** 五个内置提示词（找工作雷达、盯一家公司、查公司、看雷达、本周新岗，中英按输入切换）；服务器指令让助手主动提 `add_employer` 和门户链接；`list_portals` 工具、`ohp portals`、公开页 `docs/portals.html`（18 家读不到 + 星动纪元一家「已收录但另有飞书门户」，`get_company_info` 带 `also_posts_on`）；Workday 翻页修（第二页起 total 报 0，旧代码停在 40）；快照换文件在 Windows 上重试、报占用者、失败放回旧库，测试连接全部关闭；`org-events-audit` 加基线比对（`--fresh` 留旧副本，`--expect-at-least`、`--must-include`）；README 加「对它说什么」。781 tests（3.13 与 3.11），十二处版本到 0.8.14。**发版证据：** PyPI 0.8.14（wheel + sdist）；Release 运行 39274483975 成功，v0.8.14 挂 `openhire-0.8.14.mcpb`（128,977 字节）；Registry 运行 39274723527 成功；部署运行 39274723290 绿（无主机配置，只打 notice）；Pages 运行 39274483831 成功，`docs/portals.html` 已上线（云端打不开 github.io，本机贴知乎前在浏览器里确认）。
 - **兑现知乎承诺：** 10-19 快照的「近 30 天新发」表（`scripts/new_postings_window.py`）：具身 37 家，国内在架 1,109 条、近 30 天新发 92 条，海外 756 条、181 条；回复稿在 082 第三节，交本机贴。
 - **邮箱（补 10-16 到 10-19）：** mcp.so 收录（#3845、#4473 同日关闭）、Awesome-MCP-ZH #602 合并、Glama 0.8.13；无 Render 邮件。
 - **关键决策：** 门户级链接做、岗位级不做（要执行飞书签名脚本批量读列表，越 2026-09 的访问控制线）；星动纪元不算「未收录」，单列「另有门户」；Xbotics 先发 issue，一周无回复再发邮件。
