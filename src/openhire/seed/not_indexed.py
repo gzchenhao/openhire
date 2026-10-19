@@ -292,6 +292,15 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         careers_url="https://dx3a2bminsq.jobs.feishu.cn/",      # <title>加入深圳市众擎机器人科技有限公司</title>
         sector="embodied_ai", last_checked="2026-10-08",
     ),
+    # 2026-10-15, the maintainer's local session (reports/081): opened in a browser without
+    # logging in, robots.txt absent, "开启新的工作（19）" with full descriptions, no dates.
+    NotIndexedEmployer(
+        id="robotera", name="星动纪元 Robotera",
+        aliases=("robotera", "robot era", "星动纪元"),
+        careers_url="https://k0fqxcszc9.jobs.feishu.cn/index",
+        confirmed_by="opened in a browser without logging in on 2026-10-15: 19 postings listed under the employer's name",
+        sector="embodied_ai", last_checked="2026-10-15",
+    ),
     # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
     # 1,784-row roster inside __NEXT_DATA__, see ats/nio.py), and the same GET from this
     # crawler's HTTP client answers 567 with a Tencent Cloud EdgeOne security-policy page.
@@ -390,15 +399,6 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         sector="embodied_ai", last_checked="2026-10-08",
         portal_view="A browser shows the job list; the page loads it from the site's own API, which robots.txt closes to crawlers.",
         portal_view_zh="浏览器打开能看到岗位列表；页面从站点自己的接口加载，robots.txt 不让爬虫读这个接口",
-    ),
-    # 2026-10-15, the maintainer's local session (reports/081): opened in a browser without
-    # logging in, robots.txt absent, "开启新的工作（19）" with full descriptions, no dates.
-    NotIndexedEmployer(
-        id="robotera", name="星动纪元 Robotera",
-        aliases=("robotera", "robot era", "星动纪元"),
-        careers_url="https://k0fqxcszc9.jobs.feishu.cn/index",
-        confirmed_by="opened in a browser without logging in on 2026-10-15: 19 postings listed under the employer's name",
-        sector="embodied_ai", last_checked="2026-10-15",
     ),
     # A former employer. Dated facts only; no opt-in because there is nobody to opt in.
     NotIndexedEmployer(

@@ -51,7 +51,7 @@ def session():
 
 # --- the registry itself ------------------------------------------------------------------
 FEISHU_IDS = ["momenta", "ponyai", "agibot", "minimax", "zhipu", "sensetime", "limx",
-              "xsquare", "spiritai", "booster", "noematrix", "engineai"]
+              "xsquare", "spiritai", "booster", "noematrix", "engineai", "robotera"]
 # 2026-10-08 survey (reports/060): no readable job list on the employer's own site.
 OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix"]
 CEASED_IDS = ["haomo"]
@@ -165,8 +165,11 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
     assert urls["phigent"] == "https://www.phigent.ai/"
     assert urls["noetix"] == "https://www.noetixrobotics.com/recruitment/jobs"
     assert urls["haomo"] is None
+    # 2026-10-15: opened in a browser without logging in by the maintainer's local session.
+    assert urls["robotera"] == "https://k0fqxcszc9.jobs.feishu.cn/index"
+    assert "browser without logging in" in not_indexed.by_id("robotera").confirmed_by
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
-    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"}
+    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo", "robotera"}
     assert "zhipin.com" in not_indexed.by_id("deeprobotics").confirmed_by
     sensetime = not_indexed.by_id("sensetime")
     assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by
