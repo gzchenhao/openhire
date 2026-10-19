@@ -1,0 +1,277 @@
+{
+  "snapshot_verified_at": "2026-10-19 13:16:30.922284",
+  "window_days": 30,
+  "window": [
+    "2026-09-19",
+    "2026-10-19"
+  ],
+  "definition": "live postings whose employer-reported posting date falls in (start, end]; rows without a reported date are counted as undated, never as new",
+  "cn": {
+    "employers_with_live_postings": 17,
+    "live": 1109,
+    "new_in_window": 92,
+    "undated": 0,
+    "by_employer": [
+      {
+        "company_id": "pudutech",
+        "name": "普渡科技 Pudu Robotics",
+        "live": 185,
+        "new_in_window": 20,
+        "undated": 0
+      },
+      {
+        "company_id": "jaka",
+        "name": "节卡机器人 JAKA",
+        "live": 39,
+        "new_in_window": 17,
+        "undated": 0
+      },
+      {
+        "company_id": "megarobo",
+        "name": "镁伽 MegaRobo",
+        "live": 70,
+        "new_in_window": 13,
+        "undated": 0
+      },
+      {
+        "company_id": "hairobotics",
+        "name": "海柔创新 Hai Robotics",
+        "live": 76,
+        "new_in_window": 12,
+        "undated": 0
+      },
+      {
+        "company_id": "galbot",
+        "name": "银河通用 Galbot",
+        "live": 114,
+        "new_in_window": 11,
+        "undated": 0
+      },
+      {
+        "company_id": "paxini",
+        "name": "帕西尼 PaXini",
+        "live": 131,
+        "new_in_window": 10,
+        "undated": 0
+      },
+      {
+        "company_id": "geekplus",
+        "name": "极智嘉 Geek+",
+        "live": 59,
+        "new_in_window": 5,
+        "undated": 0
+      },
+      {
+        "company_id": "mechmind",
+        "name": "梅卡曼德 Mech-Mind",
+        "live": 50,
+        "new_in_window": 2,
+        "undated": 0
+      },
+      {
+        "company_id": "unitree",
+        "name": "宇树科技 Unitree",
+        "live": 38,
+        "new_in_window": 1,
+        "undated": 0
+      },
+      {
+        "company_id": "galaxea",
+        "name": "星海图 Galaxea",
+        "live": 24,
+        "new_in_window": 1,
+        "undated": 0
+      },
+      {
+        "company_id": "yijiahe",
+        "name": "亿嘉和 YIJIAHE",
+        "live": 134,
+        "new_in_window": 0,
+        "undated": 0
+      },
+      {
+        "company_id": "ubtrobot",
+        "name": "优必选 UBTECH",
+        "live": 32,
+        "new_in_window": 0,
+        "undated": 0
+      },
+      {
+        "company_id": "fftai",
+        "name": "傅利叶 Fourier",
+        "live": 17,
+        "new_in_window": 0,
+        "undated": 0
+      },
+      {
+        "company_id": "keenon",
+        "name": "擎朗智能 Keenon",
+        "live": 7,
+        "new_in_window": 0,
+        "undated": 0
+      },
+      {
+        "company_id": "siasun",
+        "name": "新松机器人 SIASUN",
+        "live": 15,
+        "new_in_window": 0,
+        "undated": 0
+      },
+      {
+        "company_id": "robotera",
+        "name": "星动纪元 Robot Era",
+        "live": 22,
+        "new_in_window": 0,
+        "undated": 0
+      },
+      {
+        "company_id": "dobot",
+        "name": "越疆 Dobot",
+        "live": 96,
+        "new_in_window": 0,
+        "undated": 0
+      }
+    ]
+  },
+  "overseas": {
+    "employers_with_live_postings": 19,
+    "live": 756,
+    "new_in_window": 181,
+    "undated": 0,
+    "by_employer": [
+      {
+        "company_id": "1x",
+        "name": "1X Technologies",
+        "live": 99,
+        "new_in_window": 30,
+        "undated": 0
+      },
+      {
+        "company_id": "agilityrobotics",
+        "name": "Agility Robotics",
+        "live": 77,
+        "new_in_window": 28,
+        "undated": 0
+      },
+      {
+        "company_id": "apptronik",
+        "name": "Apptronik",
+        "live": 81,
+        "new_in_window": 18,
+        "undated": 0
+      },
+      {
+        "company_id": "fieldai",
+        "name": "Field AI",
+        "live": 104,
+        "new_in_window": 17,
+        "undated": 0
+      },
+      {
+        "company_id": "figureai",
+        "name": "Figure",
+        "live": 100,
+        "new_in_window": 17,
+        "undated": 0
+      },
+      {
+        "company_id": "pathrobotics",
+        "name": "Path Robotics",
+        "live": 45,
+        "new_in_window": 15,
+        "undated": 0
+      },
+      {
+        "company_id": "standardbots",
+        "name": "Standard Bots",
+        "live": 39,
+        "new_in_window": 12,
+        "undated": 0
+      },
+      {
+        "company_id": "physicalintelligence",
+        "name": "Physical Intelligence",
+        "live": 41,
+        "new_in_window": 9,
+        "undated": 0
+      },
+      {
+        "company_id": "skildai",
+        "name": "Skild AI",
+        "live": 50,
+        "new_in_window": 9,
+        "undated": 0
+      },
+      {
+        "company_id": "flexion-robotics",
+        "name": "Flexion Robotics",
+        "live": 10,
+        "new_in_window": 8,
+        "undated": 0
+      },
+      {
+        "company_id": "cobot",
+        "name": "Collaborative Robotics",
+        "live": 14,
+        "new_in_window": 7,
+        "undated": 0
+      },
+      {
+        "company_id": "dynarobotics",
+        "name": "Dyna Robotics",
+        "live": 24,
+        "new_in_window": 3,
+        "undated": 0
+      },
+      {
+        "company_id": "agile-robots",
+        "name": "Agile Robots",
+        "live": 4,
+        "new_in_window": 2,
+        "undated": 0
+      },
+      {
+        "company_id": "generalist",
+        "name": "Generalist AI",
+        "live": 21,
+        "new_in_window": 2,
+        "undated": 0
+      },
+      {
+        "company_id": "ambirobotics",
+        "name": "Ambi Robotics",
+        "live": 5,
+        "new_in_window": 1,
+        "undated": 0
+      },
+      {
+        "company_id": "andromeda-robotics",
+        "name": "Andromeda Robotics",
+        "live": 11,
+        "new_in_window": 1,
+        "undated": 0
+      },
+      {
+        "company_id": "dexterity",
+        "name": "Dexterity",
+        "live": 22,
+        "new_in_window": 1,
+        "undated": 0
+      },
+      {
+        "company_id": "robotec-ai",
+        "name": "Robotec.ai",
+        "live": 6,
+        "new_in_window": 1,
+        "undated": 0
+      },
+      {
+        "company_id": "palrobotics",
+        "name": "PAL Robotics",
+        "live": 3,
+        "new_in_window": 0,
+        "undated": 0
+      }
+    ]
+  }
+}

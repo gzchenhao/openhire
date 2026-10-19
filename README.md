@@ -104,6 +104,25 @@ Then ask your assistant for a job. That is the whole setup. The server downloads
 public index by itself in the background on first start, so searches fill in within a couple
 of minutes while you are already talking to it. No account, no signup, no résumé upload.
 
+**What to say to it.** No tool names needed; plain sentences work. Paste any of these:
+
+```text
+帮我找上海的感知算法岗，列出原始发布日期和在架天数
+盯住 OKX 的招聘页，有新岗告诉我
+把 https://jobs.lever.co/<公司> 加进我的索引，以后每周帮我刷新
+哪些具身公司的岗位在飞书上？把它们的招聘页给我
+查一下这家公司靠不靠谱：<公司名>
+
+Find perception roles in Shanghai with their original posting dates
+Watch OKX's careers page and tell me when something new appears
+Which embodied-AI employers post on Feishu? Give me their careers pages
+```
+
+Clients that show MCP prompts (Claude Desktop's "+" menu, a slash command in Claude Code or
+VS Code) also list five ready-made ones: 找工作雷达 · Job radar, 盯一家公司 · Track one employer,
+查这家公司靠不靠谱 · Check an employer, 看看我的雷达 · What's new on my radar, and 本周新岗 · New
+this week. Each one renders in Chinese when you type Chinese into it.
+
 The one prerequisite is [uv](https://docs.astral.sh/uv/) (it provides `uvx`). Without it the
 config above fails with nothing but "server failed to start", so install it first:
 
@@ -113,7 +132,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.13.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.14.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -149,7 +168,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.13.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.14.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — or paste this to your agent: *"Install the MCP server at
@@ -198,7 +217,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.13", "serve"]`.
+matters: `"args": ["openhire==0.8.14", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -454,6 +473,16 @@ propose the employer for the public index, which sends nothing unless you open i
 A board can also be watched: `watch_intent` with `board_url` (plus `location` / `title`)
 makes `check_watches` read it live on every pull and report what appeared and what
 disappeared since the last pull.
+
+**Employers OpenHire cannot read (0.8.14).** Some employers in these sectors post where no
+adapter can read: Feishu Recruitment (飞书招聘, a signed list API), BOSS直聘 only, or a careers
+page without a list. `list_portals` (CLI `ohp portals`) lists them with a link to each one's
+own careers portal, what a browser shows there without logging in, and the day it was last
+checked. The same list is a page you can click through:
+[gzchenhao.github.io/openhire/portals.html](https://gzchenhao.github.io/openhire/portals.html).
+An employer the index does read that also posts on such a portal (星动纪元 reads through
+Moka and also lists roles on Feishu) carries `also_posts_on` in `get_company_info`, because
+the roles that are only there are missing from search results.
 
 ### Asking about one employer
 

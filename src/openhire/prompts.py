@@ -192,4 +192,10 @@ PROMPTS = (
 
 def register(mcp) -> None:
     for name, title, fn in PROMPTS:
-        mcp.prompt(name=name, title=title, description=fn.__doc__)(fn)
+        try:
+            decorate = mcp.prompt(name=name, title=title, description=fn.__doc__)
+        except TypeError:
+            # An mcp SDK older than prompt titles (the 2025-06 spec) is still >= our floor
+            # of 1.2: the prompt is listed under its name instead of failing the server.
+            decorate = mcp.prompt(name=name, description=fn.__doc__)
+        decorate(fn)

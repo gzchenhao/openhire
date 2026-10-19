@@ -99,3 +99,17 @@ def test_instructions_tell_the_assistant_to_offer_the_next_step_itself():
     assert "add_employer, then watch_intent" in text
     assert "give the user that portal link" in text
     assert "Workday" in text
+
+
+def test_an_sdk_without_prompt_titles_still_registers_every_prompt():
+    """mcp>=1.2 is the declared floor and prompt titles are newer: an old SDK in a shared
+    environment must list the prompts by name, not crash the server at import."""
+    calls = []
+
+    class OldSDK:
+        def prompt(self, name=None, description=None):
+            calls.append(name)
+            return lambda fn: fn
+
+    prompts.register(OldSDK())
+    assert calls == NAMES
