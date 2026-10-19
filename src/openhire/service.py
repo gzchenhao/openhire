@@ -1015,6 +1015,61 @@ def known_not_indexed_info(entry: "not_indexed.NotIndexedEmployer") -> dict:
     return out
 
 
+PORTALS_NOTE = (
+    "OpenHire does not read, store, date or watch these portals. Each link goes to the "
+    "employer's own careers page, the same page a person opens: open it yourself, or let an "
+    "assistant with a browser open it. An employer can make its postings readable here; "
+    "get_company_info(<name>) says how (employer_opt_in)."
+)
+PORTALS_NOTE_ZH = (
+    "OpenHire 不读、不存、不标日期、不盯这些门户。每个链接都通向雇主自己的招聘页，和人打开的是同一页："
+    "自己点开看，或者让带浏览器的助手替你打开。雇主可以让自己的岗位在这里可读，办法见 get_company_info。"
+)
+
+
+def list_portals(sector: str | None = None) -> dict:
+    """The link directory for blind spots: employers in this index's sectors whose postings
+    sit where OpenHire cannot read them (Feishu Recruitment, BOSS直聘, own pages without a
+    readable list), each with its own careers portal and what a browser shows there without
+    logging in. Declarative (seed/not_indexed.py): no network, nothing stored."""
+    try:
+        wanted = not_indexed.parse_sector(sector)
+    except ValueError:
+        raise OpenHireError(
+            "ERR_BAD_SECTOR",
+            f"unknown sector {sector!r}; use one of {', '.join(not_indexed.SECTORS)} "
+            "(or 自动驾驶 / 具身 / 大模型), or leave it out for all three",
+        ) from None
+    entries = not_indexed.portals(wanted)
+    return {
+        "@type": "PortalDirectory",
+        "sector": wanted or "all",
+        "count": len(entries),
+        "portals": [
+            {
+                "name": e.name,
+                "sector": e.sector,
+                "sector_zh": not_indexed.SECTOR_NAMES_ZH.get(e.sector),
+                "careers_url": e.careers_url,
+                "ats": e.ats,
+                "visible_without_login": e.visible_without_login,
+                "visible_without_login_zh": e.visible_without_login_zh,
+                "why_not_indexed": e.reason,
+                "why_not_indexed_zh": e.reason_zh,
+                "last_checked": e.last_checked,
+            }
+            for e in entries
+        ],
+        "note": PORTALS_NOTE,
+        "note_zh": PORTALS_NOTE_ZH,
+        "also": (
+            "Not on this list and not in the index? read_board reads any Greenhouse, Lever, "
+            "Ashby, Moka, 北森, Workable, SmartRecruiters or Workday board live; add_employer "
+            "keeps one in the user's own index."
+        ),
+    }
+
+
 # --- company trust signals (aggregate only) ----------------------------------
 def get_company_info(session: Session, company_id: str, now: dt.datetime | None = None) -> dict:
     company = session.get(Company, company_id)

@@ -80,7 +80,17 @@ async def test_all_five_acceptance_scripts(seeded):
             "search_jobs", "get_company_info", "watch_intent", "check_watches",
             "authorize_application", "refresh_index", "check_employer", "read_board",
             "add_employer", "remove_employer",
+            # 0.8.14: the blind spots as a link directory (Howard, 2026-10-15).
+            "list_portals",
         }
+        portals = _payload(await client.call_tool("list_portals", {"sector": "具身"}))
+        assert portals["@type"] == "PortalDirectory" and portals["sector"] == "embodied_ai"
+        assert portals["count"] == len(portals["portals"]) >= 10
+        assert all(p["careers_url"].startswith("https://") for p in portals["portals"])
+        assert "does not read, store, date or watch" in portals["note"]
+        # 0.8.14: one-click templates for clients that show MCP prompts.
+        prompts = {p.name for p in (await client.list_prompts()).prompts}
+        assert prompts == {"job_radar", "track_employer", "vet_employer", "radar_check", "new_this_week"}
 
         # --- Script 1: search remote Rust/K8s infra jobs ----------------------
         r = _payload(await client.call_tool(

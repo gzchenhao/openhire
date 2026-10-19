@@ -46,7 +46,9 @@ mcp = FastMCP(
         "one sentence to add it to their own index and watch it (add_employer, then watch_intent "
         "with company); when a result says the employer's postings sit on a portal OpenHire cannot "
         "read (Feishu, BOSS直聘), give the user that portal link and, if you have a browser, offer "
-        "to open it for them. Never pass a résumé, file, name, email or "
+        "to open it for them. list_portals lists every such employer in these sectors with its "
+        "portal link: after a broad search in these sectors, mention it so the blind spots are "
+        "one click away. Never pass a résumé, file, name, email or "
         "phone to any tool. ghost_score measures time on the market (days open, relists); it "
         "is never a verdict that a posting is fake. Tell the user what was measured (open N "
         "days, last touched M days ago, or that the ATS reports no such date) and do not call "
@@ -558,6 +560,39 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
 
 
 @mcp.tool(
+    title="Careers portals OpenHire cannot read",
+    annotations=ToolAnnotations(title="Careers portals OpenHire cannot read", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False),
+)
+def list_portals(sector: str | None = None) -> dict:
+    """The blind spots as a link directory: employers in AI infra, autonomous driving and
+    embodied AI whose postings this index cannot read, each with its own careers portal.
+
+    Most are Chinese employers on Feishu Recruitment (飞书招聘), whose job-list API needs a
+    request signature this index treats as access control; a few publish only on BOSS直聘 or
+    keep a careers page without a readable list. Their postings are public to a person in a
+    browser; OpenHire cannot index, date or watch them.
+
+    Use it when the user asks about these sectors broadly (具身智能有哪些公司在招, autonomous
+    driving roles in Shanghai), after the search_jobs results: say which employers post
+    elsewhere and give the links, so a blind spot is one click away instead of invisible. If
+    you have a browser tool, offer to open a portal. Never present these links as OpenHire
+    postings and never invent posting dates for them.
+
+    Args:
+        sector: autonomous_driving, embodied_ai or ai_infra (自动驾驶, 具身, 大模型 work
+            too); leave it out for all three.
+
+    Returns: PortalDirectory with portals[] (name, careers_url, what a browser shows without
+    logging in, why the employer is not indexed, last_checked) and a note on what OpenHire
+    does not do with them.
+    """
+    try:
+        return service.list_portals(sector)
+    except OpenHireError as e:
+        return e.as_dict()
+
+
+@mcp.tool(
     title="Read an employer's board",
     annotations=ToolAnnotations(title="Read an employer's board", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=True),
 )
@@ -788,7 +823,7 @@ def _refuse_undeclared_arguments(tool_name: str) -> None:
     )
 
 
-for _name in ("authorize_application", "watch_intent", "add_employer"):
+for _name in ("authorize_application", "watch_intent", "add_employer", "list_portals"):
     _refuse_undeclared_arguments(_name)
 
 
