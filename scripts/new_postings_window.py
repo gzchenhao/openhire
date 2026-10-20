@@ -10,7 +10,7 @@ is the day the index first saw it, date_signal not_reported_by_ats) is reported 
 and never counted as new. Rows published and already closed inside the window are not
 counted either: this is "live now and first published in the window".
 
-    python scripts/new_postings_window.py --db openhire-index.db --days 30 [--json]
+    python scripts/new_postings_window.py --db openhire-index.db --days 30 [--json] [--list]
 """
 
 from __future__ import annotations
@@ -27,25 +27,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from jd_signal_scan import EMBODIED, EMBODIED_CN, EMBODIED_OVERSEAS  # noqa: E402
 
 
-def count(db_path: str, days: int = 30) -> dict:
+def count(db_path: str, days: int = 30, with_list: bool = False) -> dict:
     con = sqlite3.connect(db_path)
     try:
         snap = con.execute("select max(verified_at) from jobs").fetchone()[0]
         end = dt.date.fromisoformat(str(snap)[:10])
         start = end - dt.timedelta(days=days)
-        q = ("select j.company_id, c.name, j.posted_at from jobs j join companies c on c.id = j.company_id "
+        q = ("select j.company_id, c.name, j.posted_at, j.title, j.location, j.apply_channel "
+             "from jobs j join companies c on c.id = j.company_id "
              "where j.delisted_at is null and j.company_id in (%s)" % ",".join("?" * len(EMBODIED)))
         live: dict[str, int] = defaultdict(int)
         new: dict[str, int] = defaultdict(int)
         undated: dict[str, int] = defaultdict(int)
         names: dict[str, str] = {}
-        for cid, name, posted in con.execute(q, EMBODIED):
+        postings: dict[str, list[dict]] = defaultdict(list)
+        for cid, name, posted, title, location, apply in con.execute(q, EMBODIED):
             names[cid] = name
             live[cid] += 1
             if posted is None:
                 undated[cid] += 1
             elif start < dt.date.fromisoformat(str(posted)[:10]) <= end:
                 new[cid] += 1
+                if with_list:
+                    postings[cid].append({"datePosted": str(posted)[:10], "title": title,
+                                          "location": location, "apply": apply})
     finally:
         con.close()
 
@@ -57,7 +62,9 @@ def count(db_path: str, days: int = 30) -> dict:
             "new_in_window": sum(new[c] for c in rows),
             "undated": sum(undated[c] for c in rows),
             "by_employer": [{"company_id": c, "name": names[c], "live": live[c], "new_in_window": new[c],
-                             "undated": undated[c]} for c in rows],
+                             "undated": undated[c],
+                             **({"new_postings": sorted(postings[c], key=lambda p: p["datePosted"], reverse=True)}
+                                if with_list else {})} for c in rows],
         }
 
     return {
@@ -76,8 +83,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--db", required=True)
     ap.add_argument("--days", type=int, default=30)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--list", action="store_true", help="also list each new posting (title, place, date, apply link)")
     a = ap.parse_args(argv)
-    out = count(a.db, a.days)
+    out = count(a.db, a.days, with_list=a.list)
     if a.json:
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0
@@ -88,6 +96,8 @@ def main(argv: list[str] | None = None) -> int:
               f"new in {a.days} days {r['new_in_window']}, undated {r['undated']}")
         for e in r["by_employer"]:
             print(f"  {e['name']:<28} live {e['live']:>4}  new {e['new_in_window']:>3}  undated {e['undated']}")
+            for p in e.get("new_postings", []):
+                print(f"      {p['datePosted']}  {p['title']}  [{p['location'] or ''}]  {p['apply']}")
     return 0
 
 
