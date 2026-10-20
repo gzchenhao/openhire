@@ -136,6 +136,22 @@ PLATFORM_ONLY_REASON_ZH = "雇主只在 BOSS 直聘上发布岗位，官网没�
 # dated facts and offers no opt-in, because there is nobody left to opt in.
 CEASED_ATS = "none (the company has ceased operations)"
 
+# Systems this index has not assessed or does not read yet (2026-10-20 survey, reports/084).
+DINGTALK_ATS = "DingTalk recruiting 钉钉招聘 (not yet assessed)"
+DINGTALK_REASON = (
+    "this employer's careers site runs on DingTalk recruiting (钉钉招聘), a system this index "
+    "has not assessed yet; until it is checked that its public pages answer without a "
+    "signature, a login or a captcha, none of its postings are read"
+)
+DINGTALK_REASON_ZH = "雇主的招聘站用钉钉招聘，这个系统我们还没评估过；确认它的公开页不要签名、登录或验证码之前，我们不读"
+MOKA_CAMPUS_ATS = "Moka campus portal (campus portals not read yet)"
+FEISHU_VIA_OWN_PAGE_VIEW = (
+    "The employer's page links to its Feishu Recruitment portal; there, in a browser without "
+    "logging in, the job list and full descriptions are visible, with no posting date "
+    "(checked on one Feishu portal on 2026-10-15)."
+)
+FEISHU_VIA_OWN_PAGE_VIEW_ZH = "雇主自己的页面链到它的飞书招聘门户；在那边浏览器打开、不登录，能看岗位列表和完整职位描述，没有发布日期（2026-10-15 在一家飞书门户上核过）"
+
 # What a person sees on the portal in a browser without logging in. Only what was seen:
 # the Feishu line rests on one portal opened in a browser on 2026-10-15 (星动纪元, by the
 # maintainer's local session, no login, no API call); an entry can override it.
@@ -292,6 +308,26 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         careers_url="https://dx3a2bminsq.jobs.feishu.cn/",      # <title>加入深圳市众擎机器人科技有限公司</title>
         sector="embodied_ai", last_checked="2026-10-08",
     ),
+    # 2026-10-20 survey by the maintainer's local session (reports/084): found from the
+    # employers' own careers pages, opened in a browser without logging in.
+    NotIndexedEmployer(
+        id="flexiv", name="非夕科技 Flexiv",
+        aliases=("flexiv", "flexiv robotics", "非夕科技", "非夕"),
+        careers_url="https://www.flexiv.cn/join",
+        confirmed_by=("opened in a browser on 2026-10-20: the employer's join page links to its "
+                      "Feishu Recruitment tenant flexivrobotics.jobs.feishu.cn"),
+        sector="embodied_ai", last_checked="2026-10-20",
+        portal_view=FEISHU_VIA_OWN_PAGE_VIEW, portal_view_zh=FEISHU_VIA_OWN_PAGE_VIEW_ZH,
+    ),
+    NotIndexedEmployer(
+        id="baichuan", name="百川智能 Baichuan AI",
+        aliases=("baichuan", "baichuan ai", "百川智能", "百川"),
+        careers_url="https://careers.baichuan-inc.com/",
+        confirmed_by=("opened in a browser on 2026-10-20: the employer's careers site links to its "
+                      "Feishu Recruitment tenant cq6qe6bvfr6.jobs.feishu.cn"),
+        sector="ai_infra", last_checked="2026-10-20",
+        portal_view=FEISHU_VIA_OWN_PAGE_VIEW, portal_view_zh=FEISHU_VIA_OWN_PAGE_VIEW_ZH,
+    ),
     # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
     # 1,784-row roster inside __NEXT_DATA__, see ats/nio.py), and the same GET from this
     # crawler's HTTP client answers 567 with a Tencent Cloud EdgeOne security-policy page.
@@ -390,6 +426,122 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         sector="embodied_ai", last_checked="2026-10-08",
         portal_view="A browser shows the job list; the page loads it from the site's own API, which robots.txt closes to crawlers.",
         portal_view_zh="浏览器打开能看到岗位列表；页面从站点自己的接口加载，robots.txt 不让爬虫读这个接口",
+    ),
+    # --- 2026-10-20 survey (reports/084): own pages without a readable, dated list ---
+    NotIndexedEmployer(
+        id="psibot", name="灵初智能 PsiBot",
+        aliases=("psibot", "psi bot", "灵初智能", "灵初"),
+        careers_url="https://www.psibot.ai/careers_zh/",
+        confirmed_by=("opened in a browser on 2026-10-20: the careers page has no job list and "
+                      "links to zhipin.com (BOSS直聘) for its roles"),
+        ats=PLATFORM_ONLY_ATS,
+        reason=(
+            "this employer's careers page links only to the BOSS直聘 platform for its postings; "
+            "this index reads employers' own systems and never platforms, so none of its "
+            "postings are here"
+        ),
+        reason_zh="雇主官网的招聘页只链到 BOSS 直聘；我们只读雇主自己的系统，不读平台",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-20",
+        portal_view="The careers page introduces the company and sends you to BOSS直聘 for the roles.",
+        portal_view_zh="招聘页是公司介绍，岗位要到 BOSS 直聘上看",
+    ),
+    NotIndexedEmployer(
+        id="inspire", name="因时机器人 Inspire Robots",
+        aliases=("inspire robots", "inspire-robots", "因时机器人", "因时"),
+        careers_url="https://www.inspire-robots.com/about%20us/joinus/",
+        confirmed_by="opened in a browser on 2026-10-20: the employer's own page lists 7 job titles, with no dates",
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's own careers page lists job titles as plain text, with no posting "
+            "dates and no machine-readable data, so there is nothing this index can date or keep current"
+        ),
+        reason_zh="雇主官网的招聘页只用文字列了岗位名，没有发布日期，也没有可读的岗位数据",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-20",
+        portal_view="A browser shows 7 job titles (mechanical, embedded, sales and assembly roles); no dates.",
+        portal_view_zh="浏览器能看到 7 个岗位名（机械、嵌入式、销售、装配等），没有日期",
+    ),
+    NotIndexedEmployer(
+        id="linkerbot", name="灵心巧手 Linkerbot",
+        aliases=("linkerbot", "灵心巧手"),
+        careers_url="https://www.linkerbot.cn/about/join",
+        confirmed_by=("opened in a browser on 2026-10-20: the employer's own page lists its roles "
+                      "and duties and takes applications by email; no dates"),
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's own careers page lists its roles as page text and takes applications "
+            "by email, with no posting dates and no machine-readable data"
+        ),
+        reason_zh="雇主官网的招聘页把岗位写成页面文字、邮箱投递，没有发布日期，也没有可读的岗位数据",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-20",
+        portal_view="A browser shows the full list of roles with their duties; applications go by email.",
+        portal_view_zh="浏览器能看到完整的岗位和职责，邮箱投递",
+    ),
+    NotIndexedEmployer(
+        id="lightwheel", name="光轮智能 Lightwheel",
+        aliases=("lightwheel", "lightwheel ai", "光轮智能", "光轮"),
+        careers_url="https://lightwheel.ai/careers",
+        confirmed_by="opened in a browser on 2026-10-20: 2 open positions (Palo Alto), applications by email, no dates",
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's own careers page lists a few roles as page text and takes "
+            "applications by email, with no posting dates and no machine-readable data"
+        ),
+        reason_zh="雇主官网的招聘页只用文字列了几个岗位、邮箱投递，没有发布日期，也没有可读的岗位数据",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-20",
+        portal_view="A browser shows 2 open positions in Palo Alto; applications go by email.",
+        portal_view_zh="浏览器能看到 2 个岗位（美国 Palo Alto），邮箱投递",
+    ),
+    NotIndexedEmployer(
+        id="infinigence", name="无问芯穹 Infinigence",
+        aliases=("infinigence", "infinigence ai", "infini-ai", "无问芯穹"),
+        careers_url="https://www.infinigence-ai.com/join-usnow.html",
+        confirmed_by=("opened in a browser on 2026-10-20: the join page is an empty shell (about "
+                      "5 KB of HTML, no text, no iframe, no recruiting-system link)"),
+        ats=OWN_PAGE_ATS,
+        reason=(
+            "the employer's join page carries no job list at all (an empty page shell with no "
+            "recruiting-system link), so there is nothing for this index to read"
+        ),
+        reason_zh="雇主官网的招聘页是空壳，没有岗位列表，也没有招聘系统链接",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="ai_infra", last_checked="2026-10-20",
+        portal_view="The page loads empty in a browser: no roles and no link to a recruiting system.",
+        portal_view_zh="浏览器打开是空白页：没有岗位，也没有招聘系统链接",
+    ),
+    # --- Systems not assessed or not read yet (reports/084) ---
+    NotIndexedEmployer(
+        id="rokae", name="珞石机器人 Rokae",
+        aliases=("rokae", "珞石机器人", "珞石"),
+        careers_url="https://www.rokae.com/cn/about/107/Careers.html",
+        confirmed_by=("opened in a browser on 2026-10-20: the employer's careers page links to a "
+                      "DingTalk recruiting portal (app135149.eapps.dingtalkcloud.com/campus-recruitment/luoshi/100004651)"),
+        ats=DINGTALK_ATS, reason=DINGTALK_REASON, reason_zh=DINGTALK_REASON_ZH,
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-20",
+        portal_view="The employer's page links to its DingTalk recruiting portal; what that portal shows without a login has not been checked.",
+        portal_view_zh="雇主页面链到它的钉钉招聘门户；那边不登录能看到什么还没核过",
+    ),
+    NotIndexedEmployer(
+        id="baai", name="北京智源人工智能研究院 BAAI",
+        aliases=("baai", "beijing academy of artificial intelligence", "智源研究院", "智源"),
+        careers_url="https://app.mokahr.com/campus-recruitment/baai/42174",
+        confirmed_by=("found on the employer's site on 2026-10-20; the portal is Moka's campus "
+                      "build, which this index's Moka reader does not open (HTTP 404 on the social path)"),
+        ats=MOKA_CAMPUS_ATS,
+        reason=(
+            "the employer publishes a Moka campus-recruiting portal only; this index reads Moka's "
+            "social-hiring portals and has not added campus portals yet, so none of its postings "
+            "are here (the gap is on our side, not the employer's)"
+        ),
+        reason_zh="雇主只开了 Moka 校招门户；我们目前只读 Moka 社招门户，校招门户还没接上（缺口在我们这边，不在雇主）",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="ai_infra", last_checked="2026-10-20",
+        portal_view="A browser opens the campus-recruiting portal; this index has not read it yet.",
+        portal_view_zh="浏览器能打开它的校招门户；我们还没读",
     ),
     # A former employer. Dated facts only; no opt-in because there is nobody to opt in.
     NotIndexedEmployer(

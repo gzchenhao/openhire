@@ -51,15 +51,18 @@ def session():
 
 # --- the registry itself ------------------------------------------------------------------
 FEISHU_IDS = ["momenta", "ponyai", "agibot", "minimax", "zhipu", "sensetime", "limx",
-              "xsquare", "spiritai", "booster", "noematrix", "engineai"]
+              "xsquare", "spiritai", "booster", "noematrix", "engineai", "flexiv", "baichuan"]
 # 2026-10-08 survey (reports/060): no readable job list on the employer's own site.
-OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix"]
+OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix",
+                "psibot", "inspire", "linkerbot", "lightwheel", "infinigence"]
+# 2026-10-20 survey (reports/084): systems not assessed (DingTalk) or not read yet (Moka campus).
+OTHER_IDS = ["rokae", "baai"]
 CEASED_IDS = ["haomo"]
 
 
 def test_registry_holds_the_feishu_employers_nio_the_own_page_ones_and_haomo():
     ids = [e.id for e in not_indexed.NOT_INDEXED]
-    assert ids == [*FEISHU_IDS, "nio", *OWN_PAGE_IDS, *CEASED_IDS]
+    assert ids == [*FEISHU_IDS, "nio", *OWN_PAGE_IDS, *OTHER_IDS, *CEASED_IDS]
     assert len(set(ids)) == len(ids)
     for e in not_indexed.NOT_INDEXED:
         assert e.aliases, e.id
@@ -83,6 +86,9 @@ def test_registry_holds_the_feishu_employers_nio_the_own_page_ones_and_haomo():
         if e.id in OWN_PAGE_IDS:
             assert e.ats in (not_indexed.OWN_PAGE_ATS, not_indexed.PLATFORM_ONLY_ATS)
             assert "machine-readable careers page" in e.employer_opt_in["summary"]
+        if e.id in OTHER_IDS:
+            assert e.ats in (not_indexed.DINGTALK_ATS, not_indexed.MOKA_CAMPUS_ATS)
+            assert "not" in e.reason and e.last_checked == "2026-10-20"
 
 
 def test_a_ceased_employer_gets_a_hint_that_sends_the_seeker_nowhere():
@@ -165,8 +171,21 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
     assert urls["phigent"] == "https://www.phigent.ai/"
     assert urls["noetix"] == "https://www.noetixrobotics.com/recruitment/jobs"
     assert urls["haomo"] is None
+    # 2026-10-20 survey by the maintainer's local session, each opened in a browser.
+    assert urls["flexiv"] == "https://www.flexiv.cn/join"
+    assert urls["baichuan"] == "https://careers.baichuan-inc.com/"
+    assert urls["psibot"] == "https://www.psibot.ai/careers_zh/"
+    assert urls["inspire"] == "https://www.inspire-robots.com/about%20us/joinus/"
+    assert urls["linkerbot"] == "https://www.linkerbot.cn/about/join"
+    assert urls["lightwheel"] == "https://lightwheel.ai/careers"
+    assert urls["infinigence"] == "https://www.infinigence-ai.com/join-usnow.html"
+    assert urls["rokae"] == "https://www.rokae.com/cn/about/107/Careers.html"
+    assert urls["baai"] == "https://app.mokahr.com/campus-recruitment/baai/42174"
+    survey_1020 = {"flexiv", "baichuan", "psibot", "inspire", "linkerbot", "lightwheel", "infinigence", "rokae", "baai"}
+    for eid in survey_1020:
+        assert "2026-10-20" in not_indexed.by_id(eid).confirmed_by
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
-    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"}
+    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"} - survey_1020
     assert "zhipin.com" in not_indexed.by_id("deeprobotics").confirmed_by
     sensetime = not_indexed.by_id("sensetime")
     assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by
