@@ -231,6 +231,7 @@
    - 文件名 = 递增编号 + 主题，如 `001-真机验收三件套.md`、`002-M4打包.md`。
    - Markdown 格式，**自足完整**：不依赖终端上下文，单独打开也能看懂（含背景、做了什么、证据、结论、下一步）。
    - 每次干完活的**最后一行**告诉用户：「汇报已写入 C:\openhire\reports\xxx.md」。
+   - **云端会话写的汇报先到 GitHub**（推到公开仓库 `reports/`），本机在 `C:\openhire` 跑 `git pull` 后才出现在领导电脑上（2026-10-20 领导没看到 084 才发现）；本机每晚定时任务第一步会 `git pull`，云端汇报行之前另附一行 GitHub 链接 https://github.com/gzchenhao/openhire/tree/main/reports 。
    - 编号取 `reports\` 里现有最大编号 +1（补零三位）。
 6. **每周快照刷新：已自动化（017）。** `.github/workflows/refresh-snapshot.yml` 每周一 06:10 UTC 自动跑（也可在 Actions 手动 Run workflow）：下载已发布快照 → 重新 seed → 免费启发式全量刷新 → `ohp snapshot-build` → 覆盖上传同名资产。**工作流零密钥**（只用 GitHub 自动下发的 per-run token，权限仅 `contents: write`），失败靠 GitHub 默认邮件通知仓库主。
    人工只剩**月度一条命令**的 LLM 精抽（CI 无 key，只能跑启发式）：
