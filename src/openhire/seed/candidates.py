@@ -201,6 +201,10 @@ _BEISEN = [
     # Added 2026-09-06: tactile-sensor + dexterous-hand maker, core embodied-AI supply
     # chain (probe hit: 122 social postings on paxini.zhiye.com).
     ("paxini", "帕西尼 PaXini"),
+    # 2026-10-20: found from the employers' own careers pages by the maintainer's local
+    # session (reports/084) and read live with this adapter the same day.
+    ("magiclab", "魔法原子 MagicLab"),        # 73 live, humanoid robots
+    ("mthreads", "摩尔线程 Moore Threads"),   # 206 live, GPU / AI compute (AI infra)
 ]
 
 
@@ -232,6 +236,15 @@ _MOKA = [
     # in-house AD/embodied-AI investment", not the primary-business label — XPeng qualifies
     # (XNGP + humanoid Iron); Dreame (appliances) and Inovance (components) still do not.
     ("xiaopeng/67918", "小鹏汇天 XPeng AeroHT", "xiaopeng"),
+    # 2026-10-20: found from the employers' own careers pages (reports/084); each read live
+    # with this adapter the same day, posting dates present. The portals link as
+    # /social-recruitment/<org>/<siteId>; the same pair answers on /apply/.
+    ("astribot/144861", "星尘智能 Astribot", "astribot"),          # 43 live, humanoid robots
+    ("motovis/38410", "魔视智能 Motovis", "motovis"),               # 9 live, ADAS / autonomous driving
+    ("inceptio-ai/150619", "嬴彻科技 Inceptio", "inceptio"),         # 97 live, autonomous trucking
+    # DeepSeek's own careers page (talent.deepseek.com) links every role to this tenant,
+    # which is named after its parent 幻方 (High-Flyer); the roles are DeepSeek's.
+    ("high-flyer/140576", "深度求索 DeepSeek", "deepseek"),          # 36 live, AI lab
 ]
 
 # --- NIO 蔚来 (`www.nio.cn/careers/jobs`): a first-party employer mirror, not an ATS ---

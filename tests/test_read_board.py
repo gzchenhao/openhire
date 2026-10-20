@@ -39,6 +39,10 @@ NOW = dt.datetime(2026, 10, 11, tzinfo=UTC)
     ("https://jobs.ashbyhq.com/uipath/61732b36-c81e", ("ashby", "uipath")),
     ("https://api.ashbyhq.com/posting-api/job-board/airwallex", ("ashby", "airwallex")),
     ("https://app.mokahr.com/apply/yushi/3774#/job/x", ("moka", "yushi/3774")),
+    # Newer Moka paths seen on employers' own careers pages (2026-10-20):
+    ("https://app.mokahr.com/social-recruitment/inceptio-ai/150619", ("moka", "inceptio-ai/150619")),
+    ("https://app.mokahr.com/social-recruitment/high-flyer/140576#/jobs", ("moka", "high-flyer/140576")),
+    ("https://app.mokahr.com/campus-recruitment/baai/42174", ("moka", "baai/42174")),
     ("https://unitree.zhiye.com/social/jobs", ("beisen", "unitree")),
     ("https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite", ("workday", "nvidia.wd5/NVIDIAExternalCareerSite")),
     ("https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA/Engineer_JR1", ("workday", "nvidia.wd5/NVIDIAExternalCareerSite")),

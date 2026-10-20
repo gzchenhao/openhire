@@ -28,6 +28,7 @@ import sys
 EMBODIED_CN = [
     "unitree", "galaxea", "ubtrobot", "dobot", "jaka", "mechmind", "megarobo", "pudutech", "hairobotics",
     "siasun", "yijiahe", "paxini", "galbot", "robotera", "fftai", "geekplus", "keenon",
+    "astribot", "magiclab",  # added 2026-10-20 (reports/084); absent from earlier snapshots
 ]
 EMBODIED_OVERSEAS = [
     "figureai", "agilityrobotics", "skildai", "apptronik", "carbonrobotics", "pathrobotics", "dexterity",

@@ -1,0 +1,61 @@
+name: Probe boards
+
+# Read employer boards live from GitHub's runners, the same public requests the weekly
+# crawl makes, to check a board before its employer enters the seed list. Nothing is
+# stored and no secret is used. The cloud session cannot reach most vendors directly,
+# so it triggers this by hand (workflow_dispatch) and reads the log (reports/084).
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Board URLs, separated by spaces or new lines"
+        required: true
+      limit:
+        description: "Postings to print per board"
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -q -e .
+      - name: Read each board (nothing stored)
+        env:
+          URLS: ${{ inputs.urls }}
+          LIMIT: ${{ inputs.limit }}
+          OPENHIRE_HOME: ${{ runner.temp }}/openhire
+        run: |
+          mkdir -p "$OPENHIRE_HOME"
+          for u in $URLS; do
+            echo "::group::$u"
+            ohp read-board "$u" --limit "${LIMIT:-5}" --json > out.json 2> err.txt || true
+            python - "$u" <<'PY'
+          import json, sys
+          url = sys.argv[1]
+          try:
+              d = json.load(open("out.json", encoding="utf-8"))
+          except Exception:
+              print(f"PROBE {url} | no JSON | {open('err.txt', encoding='utf-8', errors='replace').read()[-400:]}")
+              raise SystemExit(0)
+          if "error" in d and "vendor" not in d:
+              print(f"PROBE {url} | error {d.get('error')} | {d.get('message', '')[:300]}")
+              raise SystemExit(0)
+          posts = d.get("postings") or []
+          dates = sorted((p.get("datePosted") or "" for p in posts), reverse=True)
+          print(f"PROBE {url} | {d.get('vendor')}:{d.get('tenant')} | ok={d.get('ok')} status={d.get('status')} "
+                f"error={d.get('error')} | on_board={d.get('count_on_board')} | newest_shown={dates[0] if dates else None}")
+          for p in posts:
+              print(f"  - {p.get('datePosted') or '----------'} | {p.get('title')} | {p.get('location') or ''} | {p.get('date_signal')}")
+          PY
+            echo "::endgroup::"
+          done

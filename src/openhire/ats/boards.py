@@ -111,7 +111,10 @@ def detect_board(url: str) -> tuple[str, str]:
         return _checked("ashby", tenant, "jobs.ashbyhq.com/<board>")
 
     if host in _MOKA_HOSTS:
-        m = re.match(r"^/apply/([^/]+)/(\d+)", path)
+        # The same portal goes by several paths: the classic /apply/, and the newer
+        # /social-recruitment/ and /campus-recruitment/ (seen on employers' own careers
+        # pages, 2026-10-20). The org slug and site id are what address it in every case.
+        m = re.match(r"^/(?:apply|social-recruitment|campus-recruitment|campus_apply)/([^/]+)/(\d+)", path)
         if not m:
             raise BoardNotSupported("bad_url", "A Moka portal URL looks like app.mokahr.com/apply/<org>/<siteId>.")
         return "moka", f"{m.group(1)}/{m.group(2)}"
