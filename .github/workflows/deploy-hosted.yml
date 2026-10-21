@@ -81,33 +81,56 @@ jobs:
           done
           echo "PyPI does not have openhire $v yet"; exit 1
 
-      - name: "Render: deploy this commit through the deploy hook"
+      - name: "Render: deploy this commit through the deploy hook, and wait for /healthz"
         if: steps.gate.outputs.target == 'render'
         env:
           SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          VERSION: ${{ steps.v.outputs.version }}
         run: |
           # Without a commit the hook deploys whatever Render last fetched of the public
-          # repository, which can trail a push by many minutes: 0.8.16 and 0.8.17 both stayed
-          # on the previous version for the whole wait (runs 39525820978, 39529449618), while
-          # a retry half an hour later came up in a minute. With ref=<sha> (render.com/docs/
-          # deploy-a-commit) the hook answers 404 until Render knows the commit, so ask again.
-          for i in $(seq 1 20); do
-            code=$(curl -sS -o hook.out -w '%{http_code}' -X POST "${RENDER_DEPLOY_HOOK}&ref=${SHA}" || true)
-            case "$code" in
-              200|201|202) echo "deploy of $SHA requested: $(cat hook.out)"; exit 0 ;;
-            esac
-            echo "attempt $i: HTTP $code, Render does not know $SHA yet"; sleep 30
+          # repository, which can trail a push by many minutes (0.8.16 and 0.8.17 stayed on
+          # the previous version for the whole wait). With ref=<sha> (render.com/docs/
+          # deploy-a-commit) the hook answers 404 until Render knows the commit. And a build
+          # started seconds after a PyPI release can still install the previous version from
+          # a CDN edge that has not caught up (0.8.18: the hook was accepted, the host stayed
+          # on 0.8.17 for 20 minutes), so a deploy that does not come up is asked for once
+          # more before this fails.
+          request() {
+            for i in $(seq 1 20); do
+              code=$(curl -sS -o hook.out -w '%{http_code}' -X POST "${RENDER_DEPLOY_HOOK}&ref=${SHA}" || true)
+              case "$code" in
+                200|201|202) echo "deploy of $SHA requested: $(cat hook.out)"; return 0 ;;
+              esac
+              echo "attempt $i: HTTP $code, Render does not know $SHA yet"; sleep 30
+            done
+            echo "Render never accepted $SHA; asking for its latest commit instead"
+            out=$(curl -fsS -X POST "$RENDER_DEPLOY_HOOK") || { echo "the deploy hook did not accept the request"; return 1; }
+            echo "deploy requested: $out"
+          }
+          wait_up() {
+            echo "endpoint: $HOSTED_URL/mcp"
+            for i in $(seq 1 30); do
+              body=$(curl -sS --max-time 30 "$HOSTED_URL/healthz" || true)
+              if echo "$body" | grep -q "\"version\": *\"${VERSION}\""; then
+                echo "$body"; echo "healthy on ${VERSION}"; return 0
+              fi
+              echo "attempt $i: $body"; sleep 30
+            done
+            return 1
+          }
+          for round in 1 2; do
+            request || exit 1
+            wait_up && exit 0
+            echo "round $round: the host did not come up on ${VERSION} within 15 minutes"
           done
-          echo "Render never accepted $SHA; asking for its latest commit instead"
-          out=$(curl -fsS -X POST "$RENDER_DEPLOY_HOOK") || { echo "the deploy hook did not accept the request"; exit 1; }
-          echo "deploy requested: $out"
+          echo "the host did not come up on ${VERSION} after two deploys"; exit 1
 
       - uses: actions/setup-python@v5
         if: steps.gate.outputs.target == 'hf'
         with:
           python-version: "3.11"
 
-      - name: "Hugging Face: push hosted/ to the Space (created on first run)"
+      - name: "Hugging Face: push hosted/ to the Space (created on first run), then wait for /healthz"
         if: steps.gate.outputs.target == 'hf'
         run: |
           python -m pip install --quiet --upgrade huggingface_hub
@@ -121,21 +144,14 @@ jobs:
                             commit_message=f"openhire {os.environ.get('VERSION', '')}".strip())
           print("pushed hosted/ to", space)
           PY
-        env:
-          VERSION: ${{ steps.v.outputs.version }}
-
-      - name: Wait for /healthz to answer with the released version
-        if: steps.gate.outputs.target != 'none'
-        run: |
-          echo "endpoint: $HOSTED_URL/mcp"
           for i in $(seq 1 40); do
             body=$(curl -sS --max-time 30 "$HOSTED_URL/healthz" || true)
-            if echo "$body" | grep -q "\"version\": *\"${{ steps.v.outputs.version }}\""; then
-              echo "$body"; echo "healthy on ${{ steps.v.outputs.version }}"; exit 0
-            fi
+            if echo "$body" | grep -q "\"version\": *\"${VERSION}\""; then echo "$body"; echo "healthy on ${VERSION}"; exit 0; fi
             echo "attempt $i: $body"; sleep 30
           done
-          echo "the host did not come up on ${{ steps.v.outputs.version }} within 20 minutes"; exit 1
+          echo "the host did not come up on ${VERSION} within 20 minutes"; exit 1
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
 
       - name: /mcp answers initialize and tools/list like a client sees it
         if: steps.gate.outputs.target != 'none'
