@@ -41,6 +41,13 @@ jobs:
   deploy:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
+    # Two releases minutes apart (0.8.24 and 0.8.25 on 2026-10-21) each started a deploy run;
+    # both asked Render for their own commit and each waited for its own version, so the
+    # older run could ask for the older commit again after the newer one was live. The
+    # newest deploy cancels the older one; the daily and keep-alive jobs are not in the group.
+    concurrency:
+      group: deploy-hosted
+      cancel-in-progress: true
     permissions:
       contents: read
     env:
@@ -118,11 +125,24 @@ jobs:
             done
             return 1
           }
+          superseded() {
+            # PyPI's latest is at least VERSION here (the previous step saw it). A newer one
+            # means a newer release's own run deploys; asking Render for this commit again
+            # would roll the host back to it.
+            latest=$(curl -fsS https://pypi.org/pypi/openhire/json | python3 -c "import json,sys;print(json.load(sys.stdin)['info']['version'])" 2>/dev/null || true)
+            if [ -n "$latest" ] && [ "$latest" != "$VERSION" ]; then
+              echo "::notice::PyPI's latest is $latest, not $VERSION: that release's own deploy run takes over, so this one stops here."
+              return 0
+            fi
+            return 1
+          }
           for round in 1 2; do
+            superseded && exit 0
             request || exit 1
             wait_up && exit 0
             echo "round $round: the host did not come up on ${VERSION} within 15 minutes"
           done
+          superseded && exit 0
           echo "the host did not come up on ${VERSION} after two deploys"; exit 1
 
       - uses: actions/setup-python@v5
