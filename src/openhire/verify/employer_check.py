@@ -33,6 +33,7 @@ MIIT_ICP = "https://beian.miit.gov.cn/"
 HK_CR_ESERVICES = "https://www.e-services.cr.gov.hk/"
 HK_SCAMETER = "https://cyberdefender.hk/scameter/"
 OPENCORPORATES = "https://opencorporates.com/companies?q={name}"
+CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
 
 
 def _now() -> str:
@@ -207,6 +208,9 @@ def build_checklist(
             "pending_user": sum(1 for i in items if i["status"] == "pending_user"),
         },
         "not_a_verdict": NOT_A_VERDICT,
+        "checklist_url": CHECKLIST_URL,
+        "checklist_note": "求职清单（找工作每一步该做什么、OpenHire 替你做哪些、其余去哪里做，含反诈骗步骤）："
+                          "找工作的人第一次用，先把这页给他。The job-search checklist, with the anti-scam steps.",
         "privacy": "This check sent the company's name or domain to RDAP, the Internet Archive and the company's own site, "
                    "and to 天眼查 only if you set your own key. The OFAC lists and the EarlyTip events file were downloaded "
                    "whole and matched on this machine, so neither learned the name. Nothing about you was sent anywhere.",

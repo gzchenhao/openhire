@@ -31,7 +31,8 @@ mcp = FastMCP(
         "in docs/numbers.json), every "
         "posting with the employer's own posting date where its ATS reports one, otherwise "
         "the day this index first saw it (flagged date_signal), plus days_open, a "
-        "ghost_score and a direct apply link. A résumé or any "
+        "ghost_score and a direct apply link; role_family \"hr\" holds recruiting, HRBP and people "
+        "roles, so a recruiter can search their own market. A résumé or any "
         "PII NEVER transits this server — only an anonymous, client-generated fingerprint "
         "(e.g. '#a3f9-k2p7-x8q1'; 12+ random characters, short tags collide). Matching happens on the client. Use search_jobs to hard-filter "
         "the live index (results carry verified_at, ghost_score and apply_channel); "
@@ -48,7 +49,10 @@ mcp = FastMCP(
         "read (Feishu, BOSS直聘), give the user that portal link and, if you have a browser, offer "
         "to open it for them. list_portals lists every such employer in these sectors with its "
         "portal link: after a broad search in these sectors, mention it so the blind spots are "
-        "one click away. Never pass a résumé, file, name, email or "
+        "one click away. The free job-search checklist (what to do, what OpenHire does for the user, "
+        "where to do the rest, with the anti-scam steps) is the job_checklist prompt and "
+        "https://gzchenhao.github.io/openhire/checklist.html; offer it to a first-time job seeker. "
+        "Never pass a résumé, file, name, email or "
         "phone to any tool. ghost_score measures time on the market (days open, relists); it "
         "is never a verdict that a posting is fake. Tell the user what was measured (open N "
         "days, last touched M days ago, or that the ATS reports no such date) and do not call "
@@ -751,10 +755,13 @@ def check_watches(fingerprint: str) -> dict:
 
 @mcp.tool(
     title="Authorize application",
-    annotations=ToolAnnotations(title="Authorize application", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
+    annotations=ToolAnnotations(title="Authorize application", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False),
 )
 def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> dict:
     """Record an authorized, employer-direct application. REFUSES résumés.
+
+    Idempotent: the same fingerprint authorizing the same job again gets the original
+    receipt back (`already_authorized: true`); no second record is written.
 
     (Formerly `apply` — renamed to make explicit that this only records the user's
     authorization to apply as themselves; it never submits anything on their behalf.)

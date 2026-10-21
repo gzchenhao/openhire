@@ -181,7 +181,47 @@ def new_this_week(
     ])
 
 
+CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
+
+
+def job_checklist(
+    stage: Annotated[str, Field(description="Where you are: 刚开始 / 在投 / 收到 offer, or starting / applying / got an offer (optional)")] = "",
+) -> str:
+    """The free job-search checklist: each step, what OpenHire does for you, where to do the rest, and the anti-scam steps."""
+    if _zh(stage) or not stage:
+        return "\n".join([
+            f"我在找工作，阶段：{stage or '刚开始'}。请按 OpenHire 的求职清单带我走（完整版 {CHECKLIST_URL} ，每条都说清是你替我做，还是我去哪里做）：",
+            "",
+            "1. 定方向：问我目标城市、岗位方向、年限、三到五个技能、不考虑的方向。",
+            "2. 搜岗位：用 search_jobs 搜在架岗位，每条带公司、地点、原始发布日期、在架天数、投递链接；搜不到的公司用 list_portals 给我它们自己的招聘页。" + LENGTH_ZH,
+            "3. 查公司：我挑中哪家，用 check_employer 查一遍；结果里 pending_user 的项，把官方网址原样给我，我自己去查（工商登记：国家企业信用信息公示系统、爱企查、天眼查自己的免费服务；香港公司：公司註冊處）。",
+            "4. 反诈骗三步：① 要我先交钱、先出境面试、先交护照、包机票高薪的，先停下来查；② 投递链接必须在雇主自己的域名或招聘系统上，别的一律不点；③ 拿不准的电话、网址、收款账户，大陆用国家反诈中心 App 或 12321 举报平台，香港用防騙視伏器。",
+            "5. 投递：我自己点投递链接去投，你不替我投，也不碰我的简历。要记录就用 authorize_application 记一条授权。",
+            "6. 盯岗：用 watch_intent 把这个意向设成雷达。" + FINGERPRINT_ZH,
+            "7. 面试与 offer：合同、社保、试用期按人社部 12333 热线的口径核对；公司有法院记录可在中国裁判文书网查。",
+            PRIVACY_ZH,
+        ])
+    return "\n".join([
+        f"I am looking for a job, stage: {stage or 'starting'}. Walk me through OpenHire's job-search checklist (full page {CHECKLIST_URL}); for every step say whether you do it for me or where I do it myself:",
+        "",
+        "1. Target: ask me for city, role, years, three to five skills, what to exclude.",
+        "2. Search: search_jobs for live postings with company, location, original posting date, days open and apply link; "
+        "for employers it cannot read, list_portals gives me their own careers pages. " + LENGTH_EN,
+        "3. Check the employer: check_employer on the one I pick; for every pending_user item give me the official URL "
+        "verbatim and I look it up myself (company registers, Hong Kong Companies Registry, OpenCorporates).",
+        "4. Anti-scam, three steps: stop and check if I am asked to pay first, travel abroad for an interview or hand over "
+        "a passport; apply only through the employer's own domain or ATS; report doubtful phone numbers, sites or "
+        "accounts to the local anti-fraud service (Hong Kong: Scameter).",
+        "5. Apply: I click the apply link myself; you never submit for me and never touch my résumé. "
+        "authorize_application only records my authorization.",
+        "6. Radar: watch_intent on the same filters. " + FINGERPRINT_EN,
+        "7. Offer: check the contract, social insurance and probation terms against the local labour authority's guidance.",
+        PRIVACY_EN,
+    ])
+
+
 PROMPTS = (
+    ("job_checklist", "求职清单 · Job-search checklist", job_checklist),
     ("job_radar", "找工作雷达 · Job radar", job_radar),
     ("track_employer", "盯一家公司 · Track one employer", track_employer),
     ("vet_employer", "查这家公司靠不靠谱 · Check an employer", vet_employer),

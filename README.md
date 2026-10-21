@@ -104,6 +104,44 @@ Then ask your assistant for a job. That is the whole setup. The server downloads
 public index by itself in the background on first start, so searches fill in within a couple
 of minutes while you are already talking to it. No account, no signup, no résumé upload.
 
+**Or paste this one block and let the assistant do the install and the first search** (the
+check in the middle matters: an assistant that has just added a server usually cannot use it
+until it restarts, and left alone it will fake the result with a web search):
+
+```text
+帮我装一个 MCP 服务：名字 openhire，启动命令 uvx openhire@latest serve。如果电脑上没有 uv，先帮我装 uv。
+
+装好后检查：你现在能不能调用 openhire 的工具（比如 search_jobs）？
+- 如果能，直接接着做下面的找工作任务。
+- 如果不能（需要重启或开新对话才能加载），就停下来，告诉我该怎么重启，不要用网页搜索或别的办法代替。我重启后会把这整段再贴一次。
+
+找工作任务：我的情况：[目标城市]，想做[岗位方向，例如 AI 产品经理 / 感知算法 / 机器人运营]，[几年]经验，会[3 到 5 个技能]，不考虑[不要的方向]。
+1. 用 OpenHire 搜索匹配的在架岗位，每条带公司、地点、原始发布日期、在架天数和投递链接，最近发布的排前面。
+2. 在架时间特别长的岗位单独列出来提醒我，但不要替我下结论说它不招了。
+3. 搜不到的公司，用门户目录告诉我它们的招聘页在哪里。
+4. 帮我把这个求职意向设成盯岗，以后我说「检查一下」，就告诉我新出现了哪些岗位。
+5. 我挑中哪家，就用企业背景查证帮我把这家公司查一遍。
+
+我的简历只留在我电脑上，不要发给任何服务器。投递由我自己点链接去做。
+```
+
+```text
+Install an MCP server for me: name openhire, command uvx openhire@latest serve. If uv is missing on this machine, install uv first.
+
+Then check: can you call openhire's tools right now (search_jobs, for example)?
+- If yes, go straight on to the job-search task below.
+- If not (a restart or a new chat is needed to load it), stop and tell me how to restart. Do not substitute a web search or anything else. I will paste this whole block again after restarting.
+
+Job-search task. About me: [city], looking for [role, e.g. AI product manager / perception / robotics operations], [N] years, skills [3 to 5], not interested in [what to exclude].
+1. Search OpenHire for matching live postings: company, location, original posting date, days open and apply link, newest first.
+2. List the postings that have been open unusually long separately, without concluding they are no longer hiring.
+3. For employers it cannot find, use the portal directory to tell me where their careers pages are.
+4. Register this intent as a watch; when I say "check", tell me what is new.
+5. When I pick one, run the employer check on it.
+
+My résumé stays on my machine; never send it to any server. I apply by clicking the links myself.
+```
+
 **What to say to it.** No tool names needed; plain sentences work. Paste any of these:
 
 ```text
@@ -120,9 +158,21 @@ Which embodied-AI employers post on Feishu? Give me their careers pages
 ```
 
 Clients that show MCP prompts (Claude Desktop's "+" menu, a slash command in Claude Code or
-VS Code) also list five ready-made ones: 找工作雷达 · Job radar, 盯一家公司 · Track one employer,
-查这家公司靠不靠谱 · Check an employer, 看看我的雷达 · What's new on my radar, and 本周新岗 · New
-this week. Each one renders in Chinese when you type Chinese into it.
+VS Code) also list six ready-made ones: 求职清单 · Job-search checklist, 找工作雷达 · Job radar,
+盯一家公司 · Track one employer, 查这家公司靠不靠谱 · Check an employer, 看看我的雷达 · What's new
+on my radar, and 本周新岗 · New this week. Each one renders in Chinese when you type Chinese into it.
+
+**Three things a first-time user gets without asking:**
+- **A free job-search checklist**, [checklist.html](https://gzchenhao.github.io/openhire/checklist.html):
+  every step from target to offer, what OpenHire does for you, where you do the rest (official
+  registers and anti-scam hotlines, addresses given in full), and the three anti-scam steps.
+  求职清单：找工作每一步该做什么、OpenHire 替你做哪些、其余去哪里做，反诈骗三步，官方网址给全。
+- **HR and recruiting roles have their own family** (`role_family: hr`): a recruiter, HRBP or
+  people-ops person can search their own market instead of digging through "ops".
+  HR、招聘岗单独成类，做 HR 的人也能直接搜自己的岗。
+- **Works from mainland China without a proxy:** when GitHub is unreachable the index
+  downloads from a mirror on CNB (Tencent) by itself, same file, same checks.
+  国内网络不用代理：GitHub 不通时自动从腾讯 CNB 镜像拿索引，同一份数据。
 
 The one prerequisite is [uv](https://docs.astral.sh/uv/) (it provides `uvx`). Without it the
 config above fails with nothing but "server failed to start", so install it first:
@@ -133,7 +183,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.17.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.18.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -169,12 +219,14 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.17.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.18.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
-> **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — or paste this to your agent: *"Install the MCP server at
-> github.com/gzchenhao/openhire. Install `uv` first if it is missing, then add
-> `uvx openhire@latest serve` to my MCP config and tell me which file you changed."*
+> **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — paste the one-block prompt from the Quickstart
+> above: it installs, checks the tools are callable, and does the first search.
+> **ChatGPT** (paid plans) — Settings → Connectors → Advanced → Developer mode → Create, name
+> `OpenHire`, URL `https://openhire-vlny.onrender.com/mcp`, no authentication. Nothing to install;
+> that host sees only tool arguments, never a résumé (see `docs/PRIVACY.md` §3).
 > **豆包（豆包工作）** — its custom connectors take an HTTP address, not a command: run
 > `ohp serve --transport streamable-http --port 8000` on your machine, then add
 > `http://127.0.0.1:8000/mcp` as a 自定义连接器 (see the 豆包 entry under Works with).
@@ -218,7 +270,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.17", "serve"]`.
+matters: `"args": ["openhire==0.8.18", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -279,7 +331,7 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 > the Microsoft Store, the config is under `…\Packages\<Claude package>\LocalCache\Roaming\Claude\`.
 >
 > **Hosted endpoint, for ChatGPT and any client that only takes a URL (since 0.8.11):**
-> the maintainer runs a copy of this server at `https://openhire.onrender.com/mcp`
+> the maintainer runs a copy of this server at `https://openhire-vlny.onrender.com/mcp`
 > (streamable HTTP, no authentication; a Render web service built from `hosted/` via
 > `render.yaml`, same package, same public index; `/healthz` tells you it is up and which
 > version. It is a free instance: the first request after a quiet spell can take up to a

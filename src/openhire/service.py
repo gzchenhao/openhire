@@ -1558,6 +1558,27 @@ def apply(
     if job is None:
         raise OpenHireError("ERR_JOB_NOT_FOUND", f"No job with id '{job_id}'.")
 
+    # Idempotent since 0.8.18 (the maintainer, 2026-10-21, closing the 09-11 tester's
+    # item): the same fingerprint authorizing the same posting again gets its first receipt
+    # back, not a second record. A client retry or a doubled click cannot inflate the count
+    # of authorized applications, which is the only thing an employer may ever pay for.
+    existing = session.execute(
+        select(Application).where(Application.job_id == job.id, Application.fingerprint == fingerprint,
+                                  Application.authorized.is_(True))
+        .order_by(Application.created_at).limit(1)
+    ).scalar_one_or_none()
+    if existing is not None:
+        return {
+            "delivered_via": existing.delivered_via,
+            "receipt_id": existing.receipt_id,
+            "resume_transmitted": False,
+            "apply_channel": job.apply_channel,
+            "already_authorized": True,
+            "first_authorized_at": existing.created_at.isoformat() if existing.created_at else None,
+            "message": "Already authorized earlier; this is the original receipt, nothing new was recorded. "
+                       "Open apply_channel to apply as yourself.",
+        }
+
     receipt_id = _new_id(session, Application, "receipt_id", "r_")
     session.add(
         Application(

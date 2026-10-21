@@ -234,6 +234,22 @@ def test_apply_authorized_records_receipt_no_resume(session):
     assert app.authorized is True and app.fingerprint == "#a3f9"
 
 
+def test_apply_twice_returns_the_first_receipt_and_writes_nothing_new(session):
+    """0.8.18: the 09-11 tester's open item. A retry or a doubled click must not inflate
+    the count of authorized applications, the one thing an employer may ever pay for."""
+    from sqlalchemy import func, select
+
+    first = service.apply(session, "acme:1", "#a3f9", True, now=NOW)
+    again = service.apply(session, "acme:1", "#a3f9", True, now=NOW + dt.timedelta(days=1))
+    assert again["receipt_id"] == first["receipt_id"] and again["already_authorized"] is True
+    assert again["first_authorized_at"] and again["resume_transmitted"] is False
+    assert session.scalar(select(func.count()).select_from(Application)
+                          .where(Application.job_id == "acme:1", Application.fingerprint == "#a3f9")) == 1
+    # Another person, or another posting, is a new record.
+    other = service.apply(session, "acme:1", "#k2p7", True, now=NOW)
+    assert other["receipt_id"] != first["receipt_id"] and "already_authorized" not in other
+
+
 def test_apply_requires_authorization(session):
     with pytest.raises(OpenHireError) as e:
         service.apply(session, "acme:1", "#a3f9", False, now=NOW)

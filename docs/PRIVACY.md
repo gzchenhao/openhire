@@ -63,7 +63,7 @@ refuses to install any snapshot whose user-state tables are non-empty.
   your assistant open like any web page. The prompts are text templates your assistant reads;
   each one repeats that your résumé, name, email and phone go into no tool call.
 - **Hosted endpoint** (v0.8.11): the maintainer runs a copy of this server at
-  `https://openhire.onrender.com/mcp` (a Render web service built from `hosted/`) for
+  `https://openhire-vlny.onrender.com/mcp` (a Render web service built from `hosted/`) for
   clients that can only reach a URL, such as ChatGPT connectors. It receives exactly what the
   tools take (search filters, a company name or domain, a board URL, your anonymous
   fingerprint) and nothing else; it keeps no log of queries (access logging is off); watches

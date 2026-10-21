@@ -16,7 +16,7 @@ import pytest
 from openhire import prompts
 from openhire.mcp_server import mcp
 
-NAMES = ["job_radar", "track_employer", "vet_employer", "radar_check", "new_this_week"]
+NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "radar_check", "new_this_week"]
 
 # Identifiers a template may mention that are argument names or field values, not tools.
 NOT_TOOLS = {"job_id", "posting_text", "board_url", "date_signal", "not_reported_by_ats", "pending_user"}
@@ -27,6 +27,7 @@ ZH_ARGS = {
     "vet_employer": {"employer": "某某科技", "posting": "高薪打字员，包机票"},
     "radar_check": {"fingerprint": "#a3f9-k2p7-x8q1"},
     "new_this_week": {"role": "规控", "location": "深圳"},
+    "job_checklist": {"stage": "刚开始"},
 }
 EN_ARGS = {
     "job_radar": {"role": "robotics software engineer", "location": "remote"},
@@ -34,6 +35,7 @@ EN_ARGS = {
     "vet_employer": {"employer": "Acme Robotics", "posting": "acme:123"},
     "radar_check": {},
     "new_this_week": {},
+    "job_checklist": {"stage": "starting"},
 }
 
 
@@ -46,7 +48,7 @@ def _tools() -> set[str]:
     return {t.name for t in asyncio.run(mcp.list_tools())}
 
 
-def test_the_five_templates_are_listed_with_titles_and_argument_help():
+def test_the_six_templates_are_listed_with_titles_and_argument_help():
     listed = {p.name: p for p in asyncio.run(mcp.list_prompts())}
     assert list(listed) == NAMES
     for p in listed.values():
@@ -113,3 +115,13 @@ def test_an_sdk_without_prompt_titles_still_registers_every_prompt():
 
     prompts.register(OldSDK())
     assert calls == NAMES
+
+
+def test_the_checklist_names_the_official_lookups_and_the_anti_scam_steps():
+    """0.8.18, the maintainer: a free checklist that says what OpenHire does and where the
+    seeker does the rest, with official addresses given freely."""
+    zh = _render("job_checklist", {"stage": "刚开始"})
+    assert "checklist.html" in zh and "反诈骗" in zh and "国家企业信用信息公示系统" in zh and "防騙視伏器" in zh
+    assert "你不替我投" in zh and prompts.PRIVACY_ZH in zh
+    en = _render("job_checklist", {"stage": "starting"})
+    assert "Anti-scam" in en and "Scameter" in en and "never submit for me" in en

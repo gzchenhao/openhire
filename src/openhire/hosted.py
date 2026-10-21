@@ -38,7 +38,7 @@ from . import __version__
 ENV_FLAG = "OPENHIRE_HOSTED"
 REPO_URL = "https://github.com/gzchenhao/openhire"
 PRIVACY_URL = f"{REPO_URL}/blob/main/docs/PRIVACY.md"
-DEFAULT_PUBLIC_URL = "https://openhire.onrender.com"
+DEFAULT_PUBLIC_URL = "https://openhire-vlny.onrender.com"
 MCP_PATH = "/mcp"
 
 # Appended to the server's MCP instructions in hosted mode, so the agent can tell the user

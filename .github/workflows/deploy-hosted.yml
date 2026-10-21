@@ -15,7 +15,7 @@
 #     does nothing.
 # Without a configured host the deploy job says so and stops, green.
 #
-# The public URL is the repository variable HOSTED_URL (default https://openhire.onrender.com).
+# The public URL is the repository variable HOSTED_URL (default https://openhire-vlny.onrender.com).
 # The daily job asks /healthz and fails loudly (GitHub mails the maintainer) when the host
 # does not answer or runs a version other than the released one; both the deploy and the
 # daily job then send /mcp an initialize and a tools/list (scripts/hosted_mcp_check.py),
@@ -35,7 +35,7 @@ on:
     - cron: "*/10 * * * *"
 
 env:
-  HOSTED_URL: ${{ vars.HOSTED_URL || 'https://openhire.onrender.com' }}
+  HOSTED_URL: ${{ vars.HOSTED_URL || 'https://openhire-vlny.onrender.com' }}
 
 jobs:
   deploy:
