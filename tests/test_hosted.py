@@ -96,6 +96,16 @@ def test_landing_page_states_the_posture_and_the_endpoint(client):
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     page = r.text
     assert "/mcp" in page
+    # 0.8.23: the hosted home lists the same pages as the docs home and carries the same
+    # employer-claim line (the maintainer saw the two homes differ, 2026-10-21).
+    for link in ("/checklist", "/check-company", "/portals", "employer_claim.yml", "cnb.cool/gzchenhao/openhire"):
+        assert link in page, link
+    assert "雇主认领入口" in page
+    portals = client.get("/portals")
+    assert portals.status_code == 200 and "读不到的招聘门户" in portals.text
+    from pathlib import Path
+    docs = Path(__file__).resolve().parents[1] / "docs" / "portals.html"
+    assert docs.read_text(encoding="utf-8") == portals.text
     assert hosted.PRIVACY_URL in page and hosted.REPO_URL in page
     assert "简历不出你的电脑" in page
     assert "No résumé, name, email or phone" in page

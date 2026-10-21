@@ -16,7 +16,7 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=7860
 
 RUN useradd -m -u 1000 user && mkdir -p /data && chown user:user /data
-RUN pip install --no-cache-dir "openhire==0.8.22"
+RUN pip install --no-cache-dir "openhire==0.8.23"
 
 COPY --chown=user:user entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh

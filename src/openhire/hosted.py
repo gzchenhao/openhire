@@ -207,8 +207,14 @@ index: {stats.get('companies', 0)} employers, {stats.get('jobs', 0):,} postings,
 URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new chat with the connector enabled, for example:
 <i>which embodied-AI companies are hiring perception engineers, with the employer's own posting date and days open?</i></li>
 <li><b>Any MCP client that takes a URL</b> (豆包 custom connector, Cherry Studio, Cline, Cursor…): add <code>{e(url)}{MCP_PATH}</code> as a streamable-HTTP server.</li>
-<li><b>求职清单 · Job-search checklist</b>: <a href="{e(url)}/checklist">{e(url)}/checklist</a> (每一步该做什么、OpenHire 替你做哪些、其余去哪里做，含反诈骗三步).</li>
 <li><b>Prefer it on your own machine</b> (recommended): <code>uvx openhire serve</code>, one line of config in Claude, 豆包, DeepSeek (via Cherry Studio / Chatbox), Cursor or 腾讯 WorkBuddy. Then nothing of a search leaves your computer.</li>
+</ul>
+<h2>Pages · 页面</h2>
+<ul>
+<li><a href="{e(url)}/checklist">求职清单</a>：找工作每一步该做什么、哪步能让 AI 替你做、查公司和防骗去哪个官网，一页写全，免费，不用注册。</li>
+<li><a href="{e(url)}/check-company">查公司</a>：入职前核一家公司去哪些官方网站，怎么识别冒充用人方的骗局。</li>
+<li><a href="{e(url)}/portals">读不到的招聘门户</a>：岗位放在飞书、BOSS 直聘或没有可读列表的官网上的公司，它们自己的招聘页链接。</li>
+<li><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a> · <a href="{e(PRIVACY_URL)}">隐私说明</a> · <a href="{e(REPO_URL)}">源码</a>（GitHub 不通时：<a href="https://cnb.cool/gzchenhao/openhire">cnb.cool 镜像</a>）</li>
 </ul>
 <h2>What this host sees</h2>
 <ul>
@@ -217,6 +223,8 @@ URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new cha
 <li>Rate limit per address; the index is the public weekly snapshot, refreshed in place.</li>
 <li>Full terms: <a href="{e(PRIVACY_URL)}">privacy policy</a> · source and numbers: <a href="{e(REPO_URL)}">{e(REPO_URL)}</a></li>
 </ul>
+<hr>
+<p>数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
 </body></html>
 """
 
@@ -327,6 +335,14 @@ def build_app(mcp, per_ip: int | None = None, total: int | None = None):
         @mcp.custom_route("/check-company.html", methods=["GET"], include_in_schema=False)
         async def _check_company(_: Request):
             return HTMLResponse(page_html("check-company.html"))
+
+        # The portal directory, rendered from the registry (the same page as docs/portals.html).
+        @mcp.custom_route("/portals", methods=["GET"], include_in_schema=False)
+        @mcp.custom_route("/portals.html", methods=["GET"], include_in_schema=False)
+        async def _portals(_: Request):
+            from .portals_page import render
+
+            return HTMLResponse(render())
 
         _ROUTES_REGISTERED = True
 
