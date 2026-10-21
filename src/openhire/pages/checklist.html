@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenHire · 求职清单</title>
+<meta name="description" content="找工作每一步该做什么：OpenHire 替你做哪些，其余去哪里做，附官方网址和反诈骗三步。免费，不用注册。">
+<style>
+:root{--bg:#fff;--fg:#1a1d1a;--dim:#5e6b62;--line:#e3e7e3;--accent:#1f7a4d;--box:#f3f6f4}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1211;--fg:#e9eee9;--dim:#9aa69d;--line:#252b27;--accent:#4ade87;--box:#171c19}}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,"Segoe UI",system-ui,sans-serif;
+     margin:0 auto;max-width:52rem;padding:16px;padding-block:3rem}
+a{color:var(--accent);overflow-wrap:anywhere}
+h1{font-size:1.5rem;margin:0 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem}
+.dim{color:var(--dim)}
+table{border-collapse:collapse;width:100%;font-size:.93em}
+td,th{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left;vertical-align:top}
+th{font-weight:600}
+pre{background:var(--box);padding:.8rem;overflow:auto;border-radius:6px;white-space:pre-wrap}
+code{font-size:.92em}
+.tag{display:inline-block;font-size:.8em;padding:0 .4em;border:1px solid var(--line);border-radius:4px;color:var(--dim);margin-right:.3em}
+@media(max-width:640px){thead{display:none}tr{display:block;border-bottom:1px solid var(--line);padding:.4rem 0}
+  td{display:block;border:0;padding:.15rem 0}td:first-child{font-weight:600}}
+</style>
+</head>
+<body>
+<h1>求职清单：每一步该做什么，谁来做，去哪里做</h1>
+<p class="dim">这页打不开或很慢（国内网络常见），用国内能开的同一页：<a href="https://openhire-vlny.onrender.com/checklist">openhire-vlny.onrender.com/checklist</a>。免费，不用注册。<span class="tag">OpenHire 做</span>的项让 AI 助手直接做；<span class="tag">你自己做</span>的项给你官方网址。最后更新 2026-10-21。</p>
+<p>OpenHire 让 AI 助手直接从雇主自己的招聘系统里替你找工作，简历不出你的电脑。它不是全部：查公司、防骗、投递、谈 offer 有几步要你自己做。这页把整条路列出来，不藏着。</p>
+
+<h2>第 1 步 · 定方向</h2>
+<table>
+<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
+<tr><td>写清目标城市、岗位方向、年限、三到五个技能、不考虑的方向</td><td><span class="tag">你自己做</span></td><td>一句话就行，贴给助手。装好 OpenHire 后在助手里选「求职清单」提示词，它会按这页带你走。</td></tr>
+</table>
+
+<h2>第 2 步 · 搜岗位</h2>
+<table>
+<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
+<tr><td>在架岗位，每条带公司、地点、雇主系统里的原始发布日期、在架天数、投递链接</td><td><span class="tag">OpenHire 做</span></td><td>助手调 <code>search_jobs</code>。HR、招聘岗有单独的分类（<code>hr</code>）。在架时间长的岗位只说量到的事实，不替你判断它是不是不招了。</td></tr>
+<tr><td>岗位放在飞书、BOSS 直聘或没有可读列表的官网上的公司</td><td><span class="tag">OpenHire 给链接</span></td><td><a href="portals.html">读不到的招聘门户</a>：它们自己的招聘页，点开直接看；助手里用 <code>list_portals</code>。</td></tr>
+<tr><td>某家公司不在索引里</td><td><span class="tag">OpenHire 做</span></td><td>把它的招聘页网址给助手，<code>read_board</code> 现读，<code>add_employer</code> 加进你这台电脑的索引。</td></tr>
+</table>
+
+<h2>第 3 步 · 查公司</h2>
+<table>
+<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
+<tr><td>索引里的在架数、在架中位天数、发布日来源、是否认领过；官网域名注册日期、档案馆首次抓取、首页备案号；招聘文案里的骗局特征词；OFAC 制裁名单比对；近期公司事件</td><td><span class="tag">OpenHire 做</span></td><td>助手调 <code>check_employer</code>，拿到一张查证清单，每项写明来源和时间，不打分、不下结论。</td></tr>
+<tr><td>工商登记：成立日期、经营状态、注册资本、法定代表人</td><td><span class="tag">你自己做</span></td><td>国家企业信用信息公示系统 <a href="https://www.gsxt.gov.cn/">gsxt.gov.cn</a>（官方，免费，有验证码，按全称查）；爱企查 <a href="https://aiqicha.baidu.com/">aiqicha.baidu.com</a>（免费）；天眼查自己的免费服务，入口 <a href="https://ai.tianyancha.com/">ai.tianyancha.com</a>（个人账号可查，境外 IP 不支持）。你把结果告诉助手就行，OpenHire 不代查、不存你查了谁。</td></tr>
+<tr><td>网站备案主办单位是不是这家公司</td><td><span class="tag">你自己做</span></td><td>工信部 ICP 备案查询 <a href="https://beian.miit.gov.cn/">beian.miit.gov.cn</a>，用官网域名查，主办单位要和招聘方一致。</td></tr>
+<tr><td>法院记录、失信信息</td><td><span class="tag">你自己做</span></td><td>中国裁判文书网 <a href="https://wenshu.court.gov.cn/">wenshu.court.gov.cn</a>；信用中国 <a href="https://www.creditchina.gov.cn/">creditchina.gov.cn</a>。</td></tr>
+<tr><td>香港公司</td><td><span class="tag">你自己做</span></td><td>公司註冊處電子服務 <a href="https://www.e-services.cr.gov.hk/">e-services.cr.gov.hk</a>（免费查公司名称，无需账户）。</td></tr>
+<tr><td>其他境外公司</td><td><span class="tag">你自己做</span></td><td>OpenCorporates <a href="https://opencorporates.com/">opencorporates.com</a>。</td></tr>
+</table>
+
+<h2>第 4 步 · 反诈骗三步</h2>
+<p>骗子招聘的套路很固定。三步，每一步都不用花钱。</p>
+<table>
+<tr><th>步骤</th><th>谁做</th><th>怎么做</th></tr>
+<tr><td>① 看见这些先停下来：要你先交钱（培训费、保证金、设备费）、先出境面试、先交护照、包机票的境外高薪、不限经验的高薪、打字员和刷单</td><td><span class="tag">OpenHire 提醒</span></td><td><code>check_employer</code> 会标出招聘文案里的这些特征词（含繁体和香港警方总结的骗局特征）。标出来只是提醒，决定是你的。</td></tr>
+<tr><td>② 只从雇主自己的域名或招聘系统投递</td><td><span class="tag">OpenHire 做</span></td><td>索引里的投递链接只信 https、只信雇主自己的租户或域名；别的来源发来的链接、二维码、群聊里的表格一律不点。</td></tr>
+<tr><td>③ 拿不准的电话、网址、收款账户，先查再回</td><td><span class="tag">你自己做</span></td><td>大陆：国家反诈中心 App（各应用商店搜「国家反诈中心」），或 12321 网络不良与垃圾信息举报 <a href="https://www.12321.cn/">12321.cn</a>，报警 110；香港：警务处防騙視伏器 <a href="https://cyberdefender.hk/scameter/">cyberdefender.hk/scameter</a>，防騙易热线 18222。</td></tr>
+</table>
+
+<h2>第 5 步 · 投递</h2>
+<table>
+<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
+<tr><td>打开投递链接，自己投</td><td><span class="tag">你自己做</span></td><td>OpenHire 不替你投，也不碰你的简历：协议里没有简历字段，助手把简历和岗位放一起比对也只在你电脑上。</td></tr>
+<tr><td>记一条「我授权投这家」</td><td><span class="tag">OpenHire 做</span></td><td><code>authorize_application</code> 只记你的授权和一个匿名指纹，同一岗位记一次；什么都不发给雇主。</td></tr>
+</table>
+
+<h2>第 6 步 · 盯岗</h2>
+<table>
+<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
+<tr><td>把这个求职意向设成雷达，以后一句「看看我的雷达」就知道新出了什么、哪些关了</td><td><span class="tag">OpenHire 做</span></td><td><code>watch_intent</code> 登记，<code>check_watches</code> 查。雷达记在你自己电脑的索引里，按一个你自己生成的随机指纹存。</td></tr>
+</table>
+
+<h2>第 7 步 · 面试与 offer</h2>
+<table>
+<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
+<tr><td>劳动合同、社保、试用期、工资支付的规矩</td><td><span class="tag">你自己做</span></td><td>人社部 12333 热线与 <a href="https://www.12333.gov.cn/">12333.gov.cn</a>；香港：劳工处 <a href="https://www.labour.gov.hk/">labour.gov.hk</a>。</td></tr>
+<tr><td>入职前再核一次公司名、合同主体、收款方是不是同一家</td><td><span class="tag">你自己做</span></td><td>第 3 步的网址再查一遍合同上的主体全称。</td></tr>
+</table>
+
+<h2>把这页装进你的助手</h2>
+<p>ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy 都能接。能动手的助手，把下面整段贴给它；只能聊天的，看 <a href="https://github.com/gzchenhao/openhire#quickstart--under-a-minute">README 的一行配置</a>。ChatGPT 在 设置 → 连接器 → 高级 → 开发者模式 里新建连接器，地址填 <code>https://openhire-vlny.onrender.com/mcp</code>，不用装任何东西。</p>
+<pre>帮我装一个 MCP 服务：名字 openhire，启动命令 uvx openhire@latest serve。如果电脑上没有 uv，先帮我装 uv。
+
+装好后检查：你现在能不能调用 openhire 的工具（比如 search_jobs）？
+- 如果能，直接接着做下面的找工作任务。
+- 如果不能（需要重启或开新对话才能加载），就停下来，告诉我该怎么重启，不要用网页搜索或别的办法代替。我重启后会把这整段再贴一次。
+
+找工作任务：按 https://gzchenhao.github.io/openhire/checklist.html 的求职清单带我走。我的情况：[目标城市]，想做[岗位方向]，[几年]经验，会[3 到 5 个技能]，不考虑[不要的方向]。每一步说清是你替我做，还是我去哪里做。
+
+我的简历只留在我电脑上，不要发给任何服务器。投递由我自己点链接去做。</pre>
+
+<hr>
+<p class="dim">这页说的「OpenHire 做」都是本机免费做的，不收费、不记录你查了谁。觉得缺了哪一步、哪个网址不对，<a href="https://github.com/gzchenhao/openhire/issues">提个 issue</a>。<a href="index.html">返回首页</a></p>
+</body>
+</html>

@@ -51,7 +51,7 @@ mcp = FastMCP(
         "portal link: after a broad search in these sectors, mention it so the blind spots are "
         "one click away. The free job-search checklist (what to do, what OpenHire does for the user, "
         "where to do the rest, with the anti-scam steps) is the job_checklist prompt and "
-        "https://gzchenhao.github.io/openhire/checklist.html; offer it to a first-time job seeker. "
+        "https://gzchenhao.github.io/openhire/checklist.html (from mainland China: https://openhire-vlny.onrender.com/checklist); offer it to a first-time job seeker. "
         "Never pass a résumé, file, name, email or "
         "phone to any tool. ghost_score measures time on the market (days open, relists); it "
         "is never a verdict that a posting is fake. Tell the user what was measured (open N "

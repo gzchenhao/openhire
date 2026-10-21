@@ -316,3 +316,17 @@ def test_bootstrap_reopens_the_index_after_installing(tmp_path, monkeypatch):
             assert s.scalar(select(func.count()).select_from(Company)) == 1
     finally:
         dispose_engine()
+
+
+def test_checklist_is_served_and_is_the_published_page(client):
+    """0.8.19: github.io is often unreachable from mainland China, so the hosted endpoint
+    serves the same checklist; the two copies must not drift."""
+    from pathlib import Path
+
+    r = client.get("/checklist")
+    assert r.status_code == 200 and "text/html" in r.headers["content-type"]
+    assert "求职清单" in r.text and "反诈骗" in r.text and "openhire-vlny.onrender.com/checklist" in r.text
+    assert client.get("/checklist.html").text == r.text
+    docs = Path(__file__).resolve().parents[1] / "docs" / "checklist.html"
+    assert docs.read_text(encoding="utf-8") == r.text, "docs/checklist.html and src/openhire/pages/checklist.html differ: copy one over the other"
+    assert "/checklist" in client.get("/").text

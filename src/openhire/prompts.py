@@ -182,6 +182,7 @@ def new_this_week(
 
 
 CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
+CHECKLIST_URL_CN = "https://openhire-vlny.onrender.com/checklist"
 
 
 def job_checklist(
@@ -190,7 +191,7 @@ def job_checklist(
     """The free job-search checklist: each step, what OpenHire does for you, where to do the rest, and the anti-scam steps."""
     if _zh(stage) or not stage:
         return "\n".join([
-            f"我在找工作，阶段：{stage or '刚开始'}。请按 OpenHire 的求职清单带我走（完整版 {CHECKLIST_URL} ，每条都说清是你替我做，还是我去哪里做）：",
+            f"我在找工作，阶段：{stage or '刚开始'}。请按 OpenHire 的求职清单带我走（完整版 {CHECKLIST_URL} ，国内打不开就用 {CHECKLIST_URL_CN} ；每条都说清是你替我做，还是我去哪里做）：",
             "",
             "1. 定方向：问我目标城市、岗位方向、年限、三到五个技能、不考虑的方向。",
             "2. 搜岗位：用 search_jobs 搜在架岗位，每条带公司、地点、原始发布日期、在架天数、投递链接；搜不到的公司用 list_portals 给我它们自己的招聘页。" + LENGTH_ZH,

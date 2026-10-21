@@ -174,6 +174,12 @@ def health() -> tuple[int, dict[str, Any]]:
     return (200 if ready else 503), body
 
 
+def checklist_html() -> str:
+    from importlib import resources
+
+    return resources.files("openhire.pages").joinpath("checklist.html").read_text(encoding="utf-8")
+
+
 def landing_html() -> str:
     stats = index_stats()
     url = public_url()
@@ -196,6 +202,7 @@ index: {stats.get('companies', 0)} employers, {stats.get('jobs', 0):,} postings,
 URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new chat with the connector enabled, for example:
 <i>which embodied-AI companies are hiring perception engineers, with the employer's own posting date and days open?</i></li>
 <li><b>Any MCP client that takes a URL</b> (豆包 custom connector, Cherry Studio, Cline, Cursor…): add <code>{e(url)}{MCP_PATH}</code> as a streamable-HTTP server.</li>
+<li><b>求职清单 · Job-search checklist</b>: <a href="{e(url)}/checklist">{e(url)}/checklist</a> (每一步该做什么、OpenHire 替你做哪些、其余去哪里做，含反诈骗三步).</li>
 <li><b>Prefer it on your own machine</b> (recommended): <code>uvx openhire serve</code>, one line of config in Claude, 豆包, DeepSeek (via Cherry Studio / Chatbox), Cursor or 腾讯 WorkBuddy. Then nothing of a search leaves your computer.</li>
 </ul>
 <h2>What this host sees</h2>
@@ -298,6 +305,13 @@ def build_app(mcp, per_ip: int | None = None, total: int | None = None):
         @mcp.custom_route("/", methods=["GET"], include_in_schema=False)
         async def _landing(_: Request):
             return HTMLResponse(landing_html())
+
+        # The job-search checklist, served here too because github.io is often unreachable
+        # from mainland China (the maintainer, 2026-10-21). Same file as docs/checklist.html.
+        @mcp.custom_route("/checklist", methods=["GET"], include_in_schema=False)
+        @mcp.custom_route("/checklist.html", methods=["GET"], include_in_schema=False)
+        async def _checklist(_: Request):
+            return HTMLResponse(checklist_html())
 
         _ROUTES_REGISTERED = True
 

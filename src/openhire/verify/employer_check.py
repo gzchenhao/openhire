@@ -34,6 +34,7 @@ HK_CR_ESERVICES = "https://www.e-services.cr.gov.hk/"
 HK_SCAMETER = "https://cyberdefender.hk/scameter/"
 OPENCORPORATES = "https://opencorporates.com/companies?q={name}"
 CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
+CHECKLIST_URL_CN = "https://openhire-vlny.onrender.com/checklist"  # the same page, for mainland China
 
 
 def _now() -> str:
@@ -209,6 +210,7 @@ def build_checklist(
         },
         "not_a_verdict": NOT_A_VERDICT,
         "checklist_url": CHECKLIST_URL,
+        "checklist_url_cn": CHECKLIST_URL_CN,
         "checklist_note": "求职清单（找工作每一步该做什么、OpenHire 替你做哪些、其余去哪里做，含反诈骗步骤）："
                           "找工作的人第一次用，先把这页给他。The job-search checklist, with the anti-scam steps.",
         "privacy": "This check sent the company's name or domain to RDAP, the Internet Archive and the company's own site, "
