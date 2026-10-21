@@ -224,3 +224,95 @@ def test_check_once_keeps_the_old_index_when_staging_fails(tmp_path, monkeypatch
     assert hosted.check_once("https://x/snap.gz", tmp_path / "db", marker, logs.append) is False
     assert marker.read_text() == "etag-1"  # will be retried next round
     assert any("failed" in m for m in logs)
+
+
+# --- reachable at its public name (0.8.16) --------------------------------------------------
+def _validate(host_header: str):
+    """What the SDK's transport does first with every POST to /mcp: check Host and Origin."""
+    from mcp.server.transport_security import TransportSecurityMiddleware
+    from starlette.requests import Request
+
+    from openhire.mcp_server import mcp
+
+    scope = {"type": "http", "method": "POST", "path": "/mcp", "headers": [
+        (b"host", host_header.encode()), (b"content-type", b"application/json")]}
+    guard = TransportSecurityMiddleware(mcp.settings.transport_security)
+    return asyncio.run(guard.validate_request(Request(scope), is_post=True))
+
+
+@pytest.fixture()
+def restore_http_settings():
+    from openhire.mcp_server import mcp
+
+    saved = (mcp.settings.host, mcp.settings.port, mcp.settings.transport_security)
+    yield
+    mcp.settings.host, mcp.settings.port, mcp.settings.transport_security = saved
+
+
+def test_public_bind_answers_requests_addressed_to_the_public_name(restore_http_settings):
+    """Bound to 0.0.0.0 behind Render, every request arrives with Host: <service>.onrender.com.
+    The localhost-only check FastMCP picked at construction answered all of them with 421."""
+    from openhire.mcp_server import configure_http
+
+    configure_http("0.0.0.0", 10000)
+    assert _validate("openhire-vlny.onrender.com") is None
+    assert _validate("jobs.example.org") is None
+
+
+def test_loopback_bind_keeps_the_rebinding_guard(restore_http_settings):
+    """Local streamable HTTP (豆包 at 127.0.0.1:8000) still refuses a page that reaches it
+    through a rebound DNS name, and still answers the user's own client."""
+    from openhire.mcp_server import configure_http
+
+    configure_http("127.0.0.1", 8000)
+    assert _validate("127.0.0.1:8000") is None
+    assert _validate("localhost:8000") is None
+    refused = _validate("attacker.example:8000")
+    assert refused is not None and refused.status_code == 421
+
+
+def test_bootstrap_reopens_the_index_after_installing(tmp_path, monkeypatch):
+    """A reader during the download pooled a connection to the empty file; on Linux it kept
+    seeing that file after the swap, so the hosted /healthz said index_empty until a
+    restart (2026-10-20). After the install the pool must be dropped."""
+    import os
+    import shutil
+    import sqlite3
+    import types
+
+    from sqlalchemy import func, select
+
+    from openhire import config, mcp_server
+    from openhire.db import init_db, session_scope
+    from openhire.db.models import Company
+    from openhire.db.session import dispose_engine
+    from openhire.pipeline import snapshot as snap
+
+    db = tmp_path / "index.db"
+    monkeypatch.setattr(config, "DATABASE_URL", f"sqlite:///{db}")
+    dispose_engine()
+    try:
+        init_db()  # the empty index a fresh host starts with
+        dispose_engine()
+        built = tmp_path / "built.db"
+        shutil.copy(db, built)
+        conn = sqlite3.connect(built)
+        conn.execute("INSERT INTO companies (id, name, ats_vendor, ats_tenant, careers_url, verified, "
+                     "user_added) VALUES ('snap-co', 'Snapshot Co', 'greenhouse', 'snap-co', 'x', 0, 0)")
+        conn.commit()
+        conn.close()
+
+        def fake_install(url, db_path, preserve_user_state=False):
+            with session_scope() as s:  # a monitor polling /healthz mid-download
+                assert s.scalar(select(func.count()).select_from(Company)) == 0
+            for side in (db.with_name(db.name + "-wal"), db.with_name(db.name + "-shm")):
+                side.unlink(missing_ok=True)
+            os.replace(built, db_path)
+            return types.SimpleNamespace(companies=1, jobs=0, data_as_of=None)
+
+        monkeypatch.setattr(snap, "install_snapshot", fake_install)
+        mcp_server._do_bootstrap()
+        with session_scope() as s:
+            assert s.scalar(select(func.count()).select_from(Company)) == 1
+    finally:
+        dispose_engine()

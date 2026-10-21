@@ -848,6 +848,11 @@ def _do_bootstrap() -> None:
     try:
         dispose_engine()  # release the SQLite handle before the file is overwritten
         res = install_snapshot(config.SNAPSHOT_URL, db_path)
+        # Anything that read the index during the download (a monitor polling /healthz, an
+        # early tool call) pooled a connection to the old empty file, and on Linux that handle
+        # outlives the replacement: the hosted endpoint kept answering "index_empty" until a
+        # restart (2026-10-20). Drop the pool again so the next session opens the new file.
+        dispose_engine()
         _BOOTSTRAP_ERROR = None
         print(f"openhire: snapshot ready · {res.companies} employers · {res.jobs:,} jobs · "
               f"data as of {res.data_as_of}", file=sys.stderr)
@@ -961,6 +966,39 @@ def _activate_staged_snapshot() -> None:
         previous.unlink(missing_ok=True)
 
 
+_LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+
+def configure_http(host: str, port: int) -> None:
+    """Bind address for the HTTP transports, and the Host-header check that goes with it.
+
+    FastMCP decides its DNS-rebinding protection once, in the constructor, from the host it
+    is given: on a loopback host it accepts only requests addressed to localhost, on any
+    other host it checks nothing. `mcp` above is built with the default 127.0.0.1, so a
+    server later bound to 0.0.0.0 behind a public hostname kept the localhost-only list and
+    answered every request with 421 Misdirected Request (the hosted endpoint on Render,
+    2026-10-20). Decide again here, from the host actually bound: loopback keeps the
+    protection (a page in the user's browser must not reach a local server through a rebound
+    DNS name); a public or LAN bind turns it off, as FastMCP itself does, because such a
+    server answers anyone by design and holds no ambient credential a rebinding page could
+    borrow.
+    """
+    mcp.settings.host = host
+    mcp.settings.port = port
+    try:
+        from mcp.server.transport_security import TransportSecuritySettings
+    except ImportError:  # SDKs before Host/Origin checks existed: nothing to configure
+        return
+    if host in _LOOPBACK_HOSTS:
+        mcp.settings.transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=["127.0.0.1:*", "localhost:*", "[::1]:*"],
+            allowed_origins=["http://127.0.0.1:*", "http://localhost:*", "http://[::1]:*"],
+        )
+    else:
+        mcp.settings.transport_security = TransportSecuritySettings(enable_dns_rebinding_protection=False)
+
+
 def serve(transport: str = "stdio", host: str = "127.0.0.1", port: int = 8000) -> None:
     """Start the MCP server. transport: "stdio" (default) | "sse" | "streamable-http".
 
@@ -972,8 +1010,7 @@ def serve(transport: str = "stdio", host: str = "127.0.0.1", port: int = 8000) -
     init_db()
     _start_bootstrap()  # background: startup must stay instant for marketplace probes
     if transport != "stdio":
-        mcp.settings.host = host
-        mcp.settings.port = port
+        configure_http(host, port)
     if hosted.is_hosted() and transport == "streamable-http":
         from . import config
 
