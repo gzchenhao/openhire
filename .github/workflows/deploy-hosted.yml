@@ -157,6 +157,13 @@ jobs:
         if: steps.gate.outputs.target != 'none'
         run: python3 scripts/hosted_mcp_check.py "$HOSTED_URL" "${{ steps.v.outputs.version }}"
 
+      - name: The two public pages answer (a third-party site links to /check-company)
+        if: steps.gate.outputs.target != 'none'
+        run: |
+          curl -fsS --max-time 60 "$HOSTED_URL/check-company?from=earlytip" | grep -q "<title>查公司</title>"
+          curl -fsS --max-time 60 "$HOSTED_URL/checklist" | grep -q "求职清单"
+          echo "pages ok"
+
   health:
     if: github.event_name == 'schedule' && github.event.schedule == '17 3 * * *' && vars.HOSTED_URL != ''
     runs-on: ubuntu-latest
@@ -170,6 +177,10 @@ jobs:
           echo "$body" | grep -q "\"version\": *\"$v\"" || { echo "hosted endpoint is not answering as $v"; exit 1; }
       - name: /mcp answers initialize and tools/list
         run: python3 scripts/hosted_mcp_check.py "$HOSTED_URL"
+      - name: The two public pages answer
+        run: |
+          curl -fsS --max-time 90 "$HOSTED_URL/check-company" | grep -q "<title>查公司</title>"
+          curl -fsS --max-time 90 "$HOSTED_URL/checklist" | grep -q "求职清单"
 
   warm:
     if: github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *' && vars.HOSTED_URL != ''
