@@ -174,10 +174,15 @@ def health() -> tuple[int, dict[str, Any]]:
     return (200 if ready else 503), body
 
 
-def checklist_html() -> str:
+def page_html(name: str) -> str:
+    """A static page shipped in the package (src/openhire/pages), the same bytes as docs/."""
     from importlib import resources
 
-    return resources.files("openhire.pages").joinpath("checklist.html").read_text(encoding="utf-8")
+    return resources.files("openhire.pages").joinpath(name).read_text(encoding="utf-8")
+
+
+def checklist_html() -> str:
+    return page_html("checklist.html")
 
 
 def landing_html() -> str:
@@ -312,6 +317,16 @@ def build_app(mcp, per_ip: int | None = None, total: int | None = None):
         @mcp.custom_route("/checklist.html", methods=["GET"], include_in_schema=False)
         async def _checklist(_: Request):
             return HTMLResponse(checklist_html())
+
+        # 查公司: the official places to verify a company and the anti-scam steps, and nothing
+        # else. A third-party site (EarlyTip, a personal-ICP-filed news site) links here, on
+        # the condition that this page never carries job listings, an install guide, the
+        # product's name or any 求职 / 招聘 / 岗位 wording (reports/088); tests/test_hosted.py
+        # pins that. `?from=<site>` is accepted and ignored: this host keeps no log.
+        @mcp.custom_route("/check-company", methods=["GET"], include_in_schema=False)
+        @mcp.custom_route("/check-company.html", methods=["GET"], include_in_schema=False)
+        async def _check_company(_: Request):
+            return HTMLResponse(page_html("check-company.html"))
 
         _ROUTES_REGISTERED = True
 

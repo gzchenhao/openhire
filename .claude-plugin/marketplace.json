@@ -10,7 +10,7 @@
       "name": "openhire",
       "source": "./",
       "description": "OpenHire: let your AI assistant find jobs straight from employers' own systems, résumé never leaving your machine. HR roles have their own family; mainland-China mirror; free job-search checklist.",
-      "version": "0.8.21",
+      "version": "0.8.22",
       "author": {
         "name": "gzchenhao",
         "url": "https://github.com/gzchenhao"

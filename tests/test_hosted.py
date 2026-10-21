@@ -330,3 +330,24 @@ def test_checklist_is_served_and_is_the_published_page(client):
     docs = Path(__file__).resolve().parents[1] / "docs" / "checklist.html"
     assert docs.read_text(encoding="utf-8") == r.text, "docs/checklist.html and src/openhire/pages/checklist.html differ: copy one over the other"
     assert "/checklist" in client.get("/").text
+
+
+def test_check_company_page_is_served_pure_and_identical_to_docs(client):
+    """0.8.22 (reports/088): EarlyTip, a personal-ICP-filed news site, links to this page on
+    the condition that it stays a plain list of official places to verify a company plus the
+    anti-scam steps: no job listings, no install guide, no product name, no 求职 / 招聘 / 岗位
+    wording, title 查公司 with no product prefix, a feedback link and nothing else in the
+    footer. Breaking any of that breaks their entry, so it is pinned here."""
+    from pathlib import Path
+
+    r = client.get("/check-company?from=earlytip")
+    assert r.status_code == 200 and "text/html" in r.headers["content-type"]
+    page = r.text
+    assert client.get("/check-company.html").text == page
+    docs = Path(__file__).resolve().parents[1] / "docs" / "check-company.html"
+    assert docs.read_text(encoding="utf-8") == page, "docs/check-company.html and the package copy differ"
+    assert "<title>查公司</title>" in page
+    for banned in ("求职", "招聘", "岗位", "OpenHire", "uvx", "/mcp", "安装", "checklist"):
+        assert banned not in page, banned
+    assert "gsxt.gov.cn" in page and "beian.miit.gov.cn" in page and "cyberdefender.hk" in page
+    assert page.count("github.com/gzchenhao/openhire/issues") == 1, "the footer carries the feedback link only"
