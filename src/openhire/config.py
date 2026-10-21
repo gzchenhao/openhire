@@ -41,9 +41,17 @@ USER_AGENT = os.environ.get(
 
 # Bootstrap snapshot (public jobs/companies only) — a GitHub Release asset, NOT in the
 # wheel. `ohp bootstrap` downloads this then refreshes it live. Override for testing.
-SNAPSHOT_URL = os.environ.get(
-    "OPENHIRE_SNAPSHOT_URL",
-    "https://github.com/gzchenhao/openhire/releases/download/v0.1.0/openhire-index.db.gz",
+DEFAULT_SNAPSHOT_URL = "https://github.com/gzchenhao/openhire/releases/download/v0.1.0/openhire-index.db.gz"
+SNAPSHOT_URL = os.environ.get("OPENHIRE_SNAPSHOT_URL", DEFAULT_SNAPSHOT_URL)
+# The same file on CNB (Tencent's code hosting, reachable from mainland China where GitHub
+# often is not), copied from GitHub every 6 hours by the repository's .cnb.yml. Tried only
+# when the default GitHub source fails, and held to the same checks; a URL the user set in
+# OPENHIRE_SNAPSHOT_URL is used alone. Comma-separated to override; empty to turn it off.
+SNAPSHOT_MIRRORS = tuple(
+    u.strip() for u in os.environ.get(
+        "OPENHIRE_SNAPSHOT_MIRRORS",
+        "https://cnb.cool/gzchenhao/openhire/-/releases/download/snapshot/openhire-index.db.gz",
+    ).split(",") if u.strip()
 )
 
 # --- Freshness tiers ----------------------------------------------------------

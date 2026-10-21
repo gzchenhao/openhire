@@ -3,6 +3,147 @@
 # 镜像只从 GitHub 拉取，从不反向推送：每 6 小时一次，也可在 CNB 分支页用「从 GitHub 同步」按钮手动触发（.cnb/web_trigger.yml）。
 # GitHub 侧不需要任何密钥（公开仓库匿名拉取）；写入镜像用的是 CNB 流水线自带的临时令牌。
 # 这个文件放在 GitHub 主仓库里，是为了镜像同步后它自己不会消失。GitHub Actions 不读它。
+
+# 快照国内镜像：把 GitHub Release 上的 openhire-index.db.gz 搬到本仓库 tag 为 snapshot 的 Release 附件。
+# 公开下载地址：https://cnb.cool/gzchenhao/openhire/-/releases/download/snapshot/openhire-index.db.gz
+# 只用流水线内置的 CNB_TOKEN（crontab / web_trigger 属可信事件），GitHub 侧仍然零密钥。
+# 接口出自 api.cnb.cool/swagger.json（官方 SDK node-cnb、go-cnb 由它生成）：
+#   GET  /{repo}/-/releases/tags/{tag}                 查 Release（404 = 没有）
+#   POST /{repo}/-/releases                            建 Release（tag 不存在时按 target_commitish 自动建 tag）
+#   POST /{repo}/-/releases/{id}/asset-upload-url      取预签名上传地址（overwrite 覆盖同名附件）
+#   PUT  <upload_url>                                  上传文件本体（不带令牌）
+#   POST <verify_url>?ttl=0                            确认上传，必须带令牌，否则附件不落库；ttl=0 永久保留
+#   PATCH /{repo}/-/releases/{id}                      改描述（记 sha256，下次比对用）
+.snapshot-mirror: &snapshot-mirror
+  name: mirror-snapshot-from-github
+  runner:
+    cpus: 1
+  git:
+    enable: false   # 这条流水线用不到仓库代码，不拉
+  lock:
+    key: openhire-snapshot-mirror
+    wait: true
+  env:
+    SNAPSHOT_SRC: https://github.com/gzchenhao/openhire/releases/download/v0.1.0/openhire-index.db.gz
+    SNAPSHOT_TAG: snapshot
+    SNAPSHOT_NAME: openhire-index.db.gz
+    SNAPSHOT_MIN_BYTES: "5000000"
+  stages:
+    - name: mirror-snapshot
+      timeout: 40m
+      script: |
+        set -eu
+        case "$(printf '%s' "${CNB_REPO_SLUG:?}" | tr 'A-Z' 'a-z')" in
+          gzchenhao/openhire) ;;
+          *) echo "跳过：快照镜像只在 gzchenhao/openhire 上运行"; exit 0 ;;
+        esac
+        : "${CNB_TOKEN:?缺少内置环境变量 CNB_TOKEN}"
+        command -v jq >/dev/null 2>&1 || { echo "错误：构建镜像里没有 jq"; exit 1; }
+        API="${CNB_API_ENDPOINT:-https://api.cnb.cool}"; API="${API%/}"
+        WEB="${CNB_WEB_ENDPOINT:-https://cnb.cool}"; WEB="${WEB%/}"
+        REPO="$CNB_REPO_SLUG"; SRC="$SNAPSHOT_SRC"; TAG="$SNAPSHOT_TAG"; NAME="$SNAPSHOT_NAME"
+        MIN="${SNAPSHOT_MIN_BYTES:-5000000}"
+        W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
+        F="$W/$NAME"
+
+        # cnb 方法 地址 输出文件 [curl 参数…]：带令牌调 CNB OpenAPI，打印 HTTP 状态码
+        cnb() {
+          m="$1"; u="$2"; o="$3"; shift 3
+          curl -sS -X "$m" -o "$o" -w '%{http_code}' \
+            -H "Accept: application/vnd.cnb.api+json" \
+            -H "Authorization: Bearer $CNB_TOKEN" "$@" "$u"
+        }
+
+        # 1) 找 tag=snapshot 的 Release，没有就建
+        code="$(cnb GET "$API/$REPO/-/releases/tags/$TAG" "$W/rel.json")"
+        if [ "$code" = 404 ]; then
+          jq -n --arg t "$TAG" --arg src "$SRC" '{tag_name: $t, target_commitish: "main",
+            name: "OpenHire 索引快照（国内镜像）", body: ("由 CNB 流水线从 " + $src + " 同步。"),
+            draft: false, prerelease: false, make_latest: "false"}' > "$W/new.json"
+          code="$(cnb POST "$API/$REPO/-/releases" "$W/rel.json" \
+            -H 'Content-Type: application/json' --data-binary @"$W/new.json")"
+          case "$code" in
+            200|201) echo "已创建 Release $TAG" ;;
+            *) echo "错误：创建 Release 返回 HTTP $code"; cat "$W/rel.json"; exit 1 ;;
+          esac
+        elif [ "$code" != 200 ]; then
+          echo "错误：查询 Release 返回 HTTP $code"; cat "$W/rel.json"; exit 1
+        fi
+        RID="$(jq -r '.id // empty' "$W/rel.json")"
+        [ -n "$RID" ] || { echo "错误：响应里没有 Release id"; exit 1; }
+
+        # 2) 先看 GitHub 那份的 ETag（GET 第 1 个字节，预签名地址也认 GET）；和上次记下的一样、附件也还在，就不下载
+        ETAG="$(curl -fsSL --connect-timeout 30 --max-time 120 -r 0-0 -D - -o /dev/null "$SRC" 2>/dev/null \
+          | tr -d '\r' | awk 'tolower($1) == "etag:" { e = $2 } END { print e }' || true)"
+        HAS="$(jq -r --arg n "$NAME" '[.assets[]? | select(.name == $n)] | length' "$W/rel.json")"
+        if [ -n "$ETAG" ] && [ "$HAS" -gt 0 ] && jq -r '.body // ""' "$W/rel.json" | grep -qF -- "- etag: $ETAG"; then
+          echo "GitHub 上的快照没变（ETag $ETAG），不用下载"; exit 0
+        fi
+
+        # 3) 从 GitHub 下载（断点续传，最多 4 次）；直链不走 api.github.com，不吃匿名 60 次/小时的配额
+        n=0
+        until curl -fsSL --connect-timeout 30 --max-time 1200 -C - -o "$F" "$SRC"; do
+          n=$((n+1)); [ "$n" -lt 4 ] || { echo "错误：从 GitHub 下载失败"; exit 1; }
+          echo "下载失败，$((n*20)) 秒后重试（第 $n 次）"; sleep $((n*20))
+        done
+
+        # 4) 校验：完整 gzip（CRC 覆盖全部内容）+ 解压后是 SQLite + 大小不离谱
+        gzip -t "$F" || { echo "错误：不是完整的 gzip 文件"; exit 1; }
+        MAGIC="$(gzip -dc "$F" 2>/dev/null | head -c 15 || true)"
+        [ "$MAGIC" = "SQLite format 3" ] || { echo "错误：解压后不是 SQLite 数据库"; exit 1; }
+        SIZE="$(wc -c < "$F" | tr -d ' ')"
+        [ "$SIZE" -ge "$MIN" ] || { echo "错误：只有 $SIZE 字节，低于下限 $MIN"; exit 1; }
+        SHA="$(sha256sum "$F" | cut -d ' ' -f 1)"
+        echo "GitHub 快照：$SIZE 字节，sha256 $SHA"
+
+        # 5) 和上次同步的是同一份就不传（sha256 记在 Release 描述里）
+        OLD="$(jq -r --arg n "$NAME" '[.assets[]? | select(.name == $n) | .size][0] // empty' "$W/rel.json")"
+        if [ "$OLD" = "$SIZE" ] && jq -r '.body // ""' "$W/rel.json" | grep -q "sha256: $SHA"; then
+          echo "CNB 上已是这一份，不用上传"; exit 0
+        fi
+
+        # 6) 上传：取预签名地址 -> PUT 本体 -> 带令牌确认（overwrite 覆盖同名附件，ttl=0 永久）
+        upload() {
+          f="$1"; a="$2"; s="$(wc -c < "$f" | tr -d ' ')"
+          jq -n --arg a "$a" --argjson s "$s" '{asset_name: $a, size: $s, overwrite: true, ttl: 0}' > "$W/req.json"
+          code="$(cnb POST "$API/$REPO/-/releases/$RID/asset-upload-url" "$W/up.json" \
+            -H 'Content-Type: application/json' --data-binary @"$W/req.json")"
+          case "$code" in 200|201) ;; *) echo "错误：asset-upload-url 返回 HTTP $code"; cat "$W/up.json"; return 1 ;; esac
+          up="$(jq -r '.upload_url // empty' "$W/up.json")"
+          ver="$(jq -r '.verify_url // empty' "$W/up.json")"
+          [ -n "$up" ] && [ -n "$ver" ] || { echo "错误：响应里没有 upload_url / verify_url"; return 1; }
+          code="$(curl -sS -X PUT -o /dev/null -w '%{http_code}' --max-time 1200 \
+            -H 'Content-Type: application/octet-stream' --upload-file "$f" "$up")"
+          case "$code" in 200|201|204) ;; *) echo "错误：PUT 上传返回 HTTP $code"; return 1 ;; esac
+          case "$ver" in /*) ver="$API$ver" ;; esac
+          case "$ver" in "$API"/*) ;; *) echo "错误：verify_url 不在 $API 下，不带令牌去别处"; return 1 ;; esac
+          case "$ver" in *\?*) ver="$ver&ttl=0" ;; *) ver="$ver?ttl=0" ;; esac
+          code="$(cnb POST "$ver" "$W/ver.json")"
+          case "$code" in
+            200|201|204) echo "已上传 $a（$s 字节）" ;;
+            *) echo "错误：确认上传返回 HTTP $code"; cat "$W/ver.json"; return 1 ;;
+          esac
+        }
+        printf '%s  %s\n' "$SHA" "$NAME" > "$W/$NAME.sha256"
+        upload "$F" "$NAME" || exit 1
+        upload "$W/$NAME.sha256" "$NAME.sha256" || exit 1
+
+        # 7) 把 sha256 和 ETag 写进 Release 描述：下次比对用，也给人看
+        PUB="$WEB/$REPO/-/releases/download/$TAG/$NAME"
+        jq -n --arg pub "$PUB" --arg src "$SRC" --arg sha "$SHA" --arg size "$SIZE" --arg etag "$ETAG" \
+          --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{body: ("OpenHire 公开索引快照的国内镜像，CNB 流水线每 6 小时与 GitHub 比对一次。\n\n- 下载：" + $pub + "\n- 来源：" + $src + "\n- sha256: " + $sha + "\n- 大小：" + $size + " 字节" + (if $etag == "" then "" else "\n- etag: " + $etag end) + "\n- 同步时间：" + $now)}' > "$W/patch.json"
+        code="$(cnb PATCH "$API/$REPO/-/releases/$RID" "$W/patch.out" \
+          -H 'Content-Type: application/json' --data-binary @"$W/patch.json")"
+        case "$code" in 200|204) ;; *) echo "错误：更新 Release 描述返回 HTTP $code"; cat "$W/patch.out"; exit 1 ;; esac
+
+        # 8) 不带令牌从公开地址下一遍，确认匿名拿到的就是刚传的这份（确认与可下载之间可能有几秒延迟）
+        k=0
+        until curl -fsSL --max-time 1200 -o "$W/check" "$PUB" && [ "$(sha256sum "$W/check" | cut -d ' ' -f 1)" = "$SHA" ]; do
+          k=$((k+1)); [ "$k" -lt 5 ] || { echo "错误：匿名下载 $PUB 拿到的不是刚上传的文件"; exit 1; }
+          sleep $((k*15))
+        done
+        echo "完成：$PUB"
+
 main:
   "crontab: 0 */6 * * *":
     - name: mirror-from-github
@@ -14,6 +155,7 @@ main:
               "+refs/heads/*:refs/remotes/github/*" "+refs/tags/*:refs/tags/*"
             git push --force "https://${CNB_TOKEN_USER_NAME}:${CNB_TOKEN}@cnb.cool/gzchenhao/openhire.git" \
               "refs/remotes/github/main:refs/heads/main" "refs/tags/*:refs/tags/*"
+    - *snapshot-mirror
   web_trigger_sync:
     - name: mirror-from-github
       stages:
@@ -24,3 +166,5 @@ main:
               "+refs/heads/*:refs/remotes/github/*" "+refs/tags/*:refs/tags/*"
             git push --force "https://${CNB_TOKEN_USER_NAME}:${CNB_TOKEN}@cnb.cool/gzchenhao/openhire.git" \
               "refs/remotes/github/main:refs/heads/main" "refs/tags/*:refs/tags/*"
+  web_trigger_snapshot:
+    - *snapshot-mirror

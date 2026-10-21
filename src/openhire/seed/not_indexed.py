@@ -145,6 +145,13 @@ DINGTALK_REASON = (
 )
 DINGTALK_REASON_ZH = "雇主的招聘站用钉钉招聘，这个系统我们还没评估过；确认它的公开页不要签名、登录或验证码之前，我们不读"
 MOKA_CAMPUS_ATS = "Moka campus portal (campus portals not read yet)"
+WINTALENT_ATS = "Wintalent / Hotjob 汇通 (not yet assessed)"
+WINTALENT_REASON = (
+    "this employer's careers site runs on Wintalent (Hotjob), a system this index has not "
+    "assessed yet; until it is checked that its public pages answer without a signature, a "
+    "login or a captcha, none of its postings are read"
+)
+WINTALENT_REASON_ZH = "雇主的招聘站用 Wintalent（汇通 Hotjob），这个系统我们还没评估过；确认它的公开页不要签名、登录或验证码之前，我们不读"
 FEISHU_VIA_OWN_PAGE_VIEW = (
     "The employer's page links to its Feishu Recruitment portal; there, in a browser without "
     "logging in, the job list and full descriptions are visible, with no posting date "
@@ -326,6 +333,16 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         confirmed_by=("opened in a browser on 2026-10-20: the employer's careers site links to its "
                       "Feishu Recruitment tenant cq6qe6bvfr6.jobs.feishu.cn"),
         sector="ai_infra", last_checked="2026-10-20",
+        portal_view=FEISHU_VIA_OWN_PAGE_VIEW, portal_view_zh=FEISHU_VIA_OWN_PAGE_VIEW_ZH,
+    ),
+    # 2026-10-21, the Hong Kong survey (reports/086): Hong Kong-listed, careers on Feishu.
+    NotIndexedEmployer(
+        id="hesai", name="禾赛科技 Hesai",
+        aliases=("hesai", "hesai technology", "禾赛科技", "禾赛"),
+        careers_url="https://www.hesaitech.com/cn/careers",
+        confirmed_by=("search results on 2026-10-21 show the employer's careers page and its Feishu "
+                      "Recruitment tenant kwh0jtf778.jobs.feishu.cn; not yet opened in a browser"),
+        sector="autonomous_driving", last_checked="2026-10-21",
         portal_view=FEISHU_VIA_OWN_PAGE_VIEW, portal_view_zh=FEISHU_VIA_OWN_PAGE_VIEW_ZH,
     ),
     # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
@@ -524,6 +541,19 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         sector="embodied_ai", last_checked="2026-10-20",
         portal_view="The employer's page links to its DingTalk recruiting portal; what that portal shows without a login has not been checked.",
         portal_view_zh="雇主页面链到它的钉钉招聘门户；那边不登录能看到什么还没核过",
+    ),
+    NotIndexedEmployer(
+        id="horizon", name="地平线 Horizon Robotics",
+        aliases=("horizon robotics", "horizon", "地平线机器人", "地平线"),
+        careers_url="https://www.hotjob.cn/wt/Horizon/mobweb/v8/position/list",
+        confirmed_by=("search results on 2026-10-21 (the Hong Kong survey, reports/086) show the "
+                      "employer's social-hiring list on Wintalent / Hotjob and its campus site "
+                      "sp.wintalent.cn/Horizon; not yet opened in a browser"),
+        ats=WINTALENT_ATS, reason=WINTALENT_REASON, reason_zh=WINTALENT_REASON_ZH,
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="autonomous_driving", last_checked="2026-10-21",
+        portal_view="Search results show the employer's Wintalent job list; what it shows in a browser without a login has not been checked.",
+        portal_view_zh="搜索结果显示雇主在 Wintalent 上的岗位列表；浏览器不登录能看到什么还没核过",
     ),
     NotIndexedEmployer(
         id="baai", name="北京智源人工智能研究院 BAAI",

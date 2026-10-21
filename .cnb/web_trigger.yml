@@ -1,6 +1,9 @@
-# CNB 镜像仓库分支页上的手动按钮：立即从 GitHub 主仓库同步。事件定义在根目录 .cnb.yml。
+# CNB 镜像仓库分支页上的手动按钮。事件定义在根目录 .cnb.yml。
 branch:
   - buttons:
       - name: 从 GitHub 同步
         description: 立即从 https://github.com/gzchenhao/openhire 拉取 main 和全部 tag 到这个镜像
         event: web_trigger_sync
+      - name: 同步快照到 CNB Release
+        description: 立即把 GitHub 上的 openhire-index.db.gz 搬到本仓库 Release「snapshot」（内容没变就跳过）
+        event: web_trigger_snapshot

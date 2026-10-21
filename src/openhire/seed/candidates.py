@@ -107,6 +107,11 @@ _GREENHOUSE = [
     ("assemblyai", "AssemblyAI"),
     ("netlify", "Netlify"),
     ("stabilityai", "Stability AI"),
+    # 2026-10-21, the maintainer: Hong Kong employers in, plus every Hong Kong employer in our
+    # sectors with a readable board (reports/086). Each read live that day, dates on every row.
+    ("aift", "AIFT"),                       # Hong Kong insurtech AI: 27 postings, 10 in Hong Kong
+    ("lynxanalytics", "Lynx Analytics"),    # AI / graph analytics: 7 postings
+    ("cssmerge", "Atoms", "atoms"),         # the board is named "ATOMS Careers page": robotics (Lab37), autonomous haulage (Pronto) and food-tech brands; 333 postings, Sheung Wan office
 ]
 
 # --- Lever --------------------------------------------------------------------
@@ -122,6 +127,7 @@ _LEVER = [
     ("dexterity", "Dexterity"),
     ("field-ai", "Field AI", "fieldai"),  # 2026-10-08, see reports/060
     ("ambirobotics", "Ambi Robotics"),
+    ("outsight", "Outsight"),  # 2026-10-21 (reports/086): lidar perception software, France; 11 postings
 ]
 
 # --- Ashby --------------------------------------------------------------------
@@ -175,6 +181,10 @@ _ASHBY = [
     ("lancedb", "LanceDB"),
     ("runway", "Runway"),
     ("weaviate", "Weaviate"),
+    # 2026-10-21 (reports/086), each read live that day.
+    ("uipath", "UiPath"),                    # agentic automation: 107 postings, 3 in Hong Kong
+    ("ekarobotics", "Eka"),                  # robotics, Boston: 11 postings
+    ("generalrobotics", "General Robotics"), # robot intelligence platform, Redmond + Singapore: 14 postings
 ]
 
 # --- Beisen 北森 (`<tenant>.zhiye.com`) — domestic CN autonomous-driving / embodied AI ---
@@ -205,6 +215,11 @@ _BEISEN = [
     # session (reports/084) and read live with this adapter the same day.
     ("magiclab", "魔法原子 MagicLab"),        # 73 live, humanoid robots
     ("mthreads", "摩尔线程 Moore Threads"),   # 206 live, GPU / AI compute (AI infra)
+    # 2026-10-21, the Hong Kong survey (reports/086): read live that day, dates on every row.
+    ("iflytek", "科大讯飞 iFLYTEK"),                  # 719 live, Spark LLM / speech AI; 4 in Hong Kong (Cyberport international HQ)
+    ("bsthr", "黑芝麻智能 Black Sesame", "blacksesame"),  # 100 live, ADAS / autonomous-driving chips, HK-listed
+    ("kunlunxin1", "昆仑芯 Kunlunxin", "kunlunxin"),      # 32 live, AI chips
+    ("estun1", "埃斯顿 Estun", "estun"),                  # 43 live, industrial robots
 ]
 
 
@@ -245,6 +260,11 @@ _MOKA = [
     # DeepSeek's own careers page (talent.deepseek.com) links every role to this tenant,
     # which is named after its parent 幻方 (High-Flyer); the roles are DeepSeek's.
     ("high-flyer/140576", "深度求索 DeepSeek", "deepseek"),          # 36 live, AI lab
+    # 2026-10-21, the Hong Kong survey (reports/086): read live that day, dates on every row.
+    ("biren/44726", "壁仞科技 Biren", "biren"),                # 51 live, GPU; Hong Kong regional HQ at Cyberport
+    ("iluvatar/98705", "天数智芯 Iluvatar CoreX", "iluvatar"),  # 62 live, GPU
+    ("smartmore/40505", "思谋科技 SmartMore", "smartmore"),     # 24 live, industrial vision AI
+    ("4paradigm/5072", "第四范式 4Paradigm", "4paradigm"),      # 2 live, AI platform, HK-listed
 ]
 
 # --- NIO 蔚来 (`www.nio.cn/careers/jobs`): a first-party employer mirror, not an ATS ---

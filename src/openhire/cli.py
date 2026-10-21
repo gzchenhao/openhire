@@ -1401,13 +1401,15 @@ def bootstrap(
     except Exception as e:  # network etc.
         console.error(
             "ERR_SNAPSHOT_UNREACHABLE",
-            f"下载失败（{type(e).__name__}: {e}），已自动续传重试 4 次。GitHub 在本网络不通时："
-            "经你信任的镜像（或另一台机器）拿到 openhire-index.db.gz，再 "
+            f"下载失败（{type(e).__name__}: {e}），已自动续传重试。用默认地址时 GitHub 不通会自动换国内镜像 "
+            "CNB；都不通时：换个网络或经别的途径拿到 openhire-index.db.gz，再 "
             "`ohp bootstrap --snapshot-url <镜像地址或本地文件路径>`；"
             "或 `ohp bootstrap --fresh` 直接抓雇主自己的 ATS（20 分钟以上，不经 GitHub）。",
         )
         raise typer.Exit(1)
     age = f"{res.age_days} 天前" if res.age_days is not None else "未知"
+    if res.source and res.source != url:
+        console.out(f"GitHub 没下载成功，用的是国内镜像：{res.source}")
     console.ok(f"快照就绪 · 公司 {res.companies} · 职位 {res.jobs} · 数据截至 {res.data_as_of}（龄 {age}）")
     console.out("② 增量刷新（现抓一次，更新 verified_at / 下线）…每家一行，20 分钟以上属正常")
     stats = run_ingest(respect_interval=False, on_progress=_crawl_progress)

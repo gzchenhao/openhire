@@ -71,6 +71,7 @@ class SnapshotInstallResult:
     jobs: int
     data_as_of: str | None
     age_days: int | None
+    source: str | None = None  # the URL or path the file actually came from
 
 
 def _shared_columns(dest: sqlite3.Connection, src: sqlite3.Connection, table: str) -> list[str]:
@@ -264,22 +265,53 @@ def _validate_snapshot_db(db: Path) -> SnapshotInstallResult:
     )
 
 
-def download_snapshot(url: str, dest_db: Path) -> SnapshotInstallResult:
-    """Download, decompress and validate a snapshot into dest_db (never the live index path).
+def mirrors_for(url: str) -> tuple[str, ...]:
+    """Mirrors stand in only for the default source; a URL the user chose is theirs alone."""
+    from .. import config
 
-    dest_db is removed again if the file turns out not to be a valid public-only snapshot."""
+    return tuple(m for m in config.SNAPSHOT_MIRRORS if m != url) if url == config.DEFAULT_SNAPSHOT_URL else ()
+
+
+def _download_one(url: str, dest_db: Path, attempts: int) -> SnapshotInstallResult:
     tmp_gz = _tempfile(".db.gz")
     try:
-        _fetch_to(url, tmp_gz)
+        _fetch_to(url, tmp_gz, attempts)
         with gzip.open(tmp_gz, "rb") as f_in, open(dest_db, "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
         try:
-            return _validate_snapshot_db(dest_db)
+            res = _validate_snapshot_db(dest_db)
         except Exception:
             dest_db.unlink(missing_ok=True)
             raise
+        res.source = url
+        return res
     finally:
         tmp_gz.unlink(missing_ok=True)
+
+
+def download_snapshot(url: str, dest_db: Path, mirrors: tuple[str, ...] | None = None) -> SnapshotInstallResult:
+    """Download, decompress and validate a snapshot into dest_db (never the live index path).
+
+    dest_db is removed again if the file turns out not to be a valid public-only snapshot.
+    When `url` is the default GitHub asset and it fails, each mirror is tried in turn under
+    the same checks (config.SNAPSHOT_MIRRORS: the CNB copy, for mainland China, where GitHub
+    is often unreachable or gives up halfway). With a mirror to fall back to, GitHub gets two
+    attempts instead of four, so a stalled route hands over in about a minute."""
+    mirrors = mirrors_for(url) if mirrors is None else mirrors
+    sources = [url, *[m for m in mirrors if m != url]]
+    if len(sources) == 1:
+        return _download_one(url, dest_db, FETCH_ATTEMPTS)
+    errors: list[str] = []
+    for i, src in enumerate(sources):
+        last = i == len(sources) - 1
+        try:
+            return _download_one(src, dest_db, FETCH_ATTEMPTS if last else 2)
+        except Exception as exc:
+            errors.append(f"{src} ({type(exc).__name__}: {exc})")
+            if last:
+                raise SnapshotError("the snapshot could not be downloaded from any source: "
+                                    + "; ".join(errors)) from exc
+    raise AssertionError("unreachable")
 
 
 def staged_path(db_path: str | Path) -> Path:

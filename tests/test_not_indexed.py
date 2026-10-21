@@ -51,12 +51,14 @@ def session():
 
 # --- the registry itself ------------------------------------------------------------------
 FEISHU_IDS = ["momenta", "ponyai", "agibot", "minimax", "zhipu", "sensetime", "limx",
-              "xsquare", "spiritai", "booster", "noematrix", "engineai", "flexiv", "baichuan"]
+              "xsquare", "spiritai", "booster", "noematrix", "engineai", "flexiv", "baichuan",
+              "hesai"]
 # 2026-10-08 survey (reports/060): no readable job list on the employer's own site.
 OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix",
                 "psibot", "inspire", "linkerbot", "lightwheel", "infinigence"]
-# 2026-10-20 survey (reports/084): systems not assessed (DingTalk) or not read yet (Moka campus).
-OTHER_IDS = ["rokae", "baai"]
+# 2026-10-20 survey (reports/084): systems not assessed (DingTalk) or not read yet (Moka campus);
+# 2026-10-21 Hong Kong survey (reports/086): Wintalent, not assessed.
+OTHER_IDS = ["rokae", "horizon", "baai"]
 CEASED_IDS = ["haomo"]
 
 
@@ -87,8 +89,8 @@ def test_registry_holds_the_feishu_employers_nio_the_own_page_ones_and_haomo():
             assert e.ats in (not_indexed.OWN_PAGE_ATS, not_indexed.PLATFORM_ONLY_ATS)
             assert "machine-readable careers page" in e.employer_opt_in["summary"]
         if e.id in OTHER_IDS:
-            assert e.ats in (not_indexed.DINGTALK_ATS, not_indexed.MOKA_CAMPUS_ATS)
-            assert "not" in e.reason and e.last_checked == "2026-10-20"
+            assert e.ats in (not_indexed.DINGTALK_ATS, not_indexed.MOKA_CAMPUS_ATS, not_indexed.WINTALENT_ATS)
+            assert "not" in e.reason and e.last_checked in ("2026-10-20", "2026-10-21")
 
 
 def test_a_ceased_employer_gets_a_hint_that_sends_the_seeker_nowhere():
@@ -184,8 +186,15 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
     survey_1020 = {"flexiv", "baichuan", "psibot", "inspire", "linkerbot", "lightwheel", "infinigence", "rokae", "baai"}
     for eid in survey_1020:
         assert "2026-10-20" in not_indexed.by_id(eid).confirmed_by
+    # 2026-10-21 Hong Kong survey: found in search results, and the entries say so.
+    assert urls["hesai"] == "https://www.hesaitech.com/cn/careers"
+    assert urls["horizon"] == "https://www.hotjob.cn/wt/Horizon/mobweb/v8/position/list"
+    survey_1021 = {"hesai", "horizon"}
+    for eid in survey_1021:
+        assert "2026-10-21" in not_indexed.by_id(eid).confirmed_by
+        assert "not yet opened in a browser" in not_indexed.by_id(eid).confirmed_by
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
-    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"} - survey_1020
+    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"} - survey_1020 - survey_1021
     assert "zhipin.com" in not_indexed.by_id("deeprobotics").confirmed_by
     sensetime = not_indexed.by_id("sensetime")
     assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by

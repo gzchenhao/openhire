@@ -156,6 +156,16 @@ def test_hong_kong_in_either_language_reaches_both_spellings(session):
     assert "hk" not in service.location_aliases("hk"), "but is never itself a match pattern"
 
 
+def test_hong_kong_reaches_a_district_or_the_airport_code(session):
+    """Atoms writes "Sheung Wan, HKG" (2026-10-21); the simplified 九龙 is also Chongqing's 九龙坡."""
+    session.add(mkjob("sw", "mongodb", "Business Development Manager", [], location="Sheung Wan, HKG"))
+    session.add(mkjob("kln", "mongodb", "Field Engineer", [], location="Kowloon Bay"))
+    session.add(mkjob("cq", "dobot", "装配工程师", [], location="重庆市·九龙坡区"))
+    session.commit()
+    ids = {r["job_id"] for r in service.search_jobs(session, location="Hong Kong", now=NOW)}
+    assert {"mongodb:sw", "mongodb:kln"} <= ids and "dobot:cq" not in ids
+
+
 def test_the_other_single_spelling_cities_reach_their_pinyin(session):
     session.add(mkjob("cz", "dobot", "结构工程师", [], location="江苏省·常州市"))
     session.add(mkjob("hf", "dobot", "测试工程师", [], location="安徽·包河区"))

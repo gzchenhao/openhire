@@ -24,17 +24,19 @@ code{font-size:.92em}
 </head>
 <body>
 <h1>读不到的招聘门户</h1>
-<p class="dim">27 家公司 · 最近核对 2026-10-20 · 由 <a href="https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py">登记表</a> 生成</p>
+<p class="dim">29 家公司 · 最近核对 2026-10-21 · 由 <a href="https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py">登记表</a> 生成</p>
 <p>这些公司在自动驾驶、具身智能、大模型方向招人，岗位却放在 OpenHire 读不了的地方：飞书招聘的列表接口要请求签名（我们视为访问控制，不绕过），有的只在 BOSS 直聘上发，有的官网没有可读的岗位列表。岗位是真的，人用浏览器就能看。下面是它们自己的招聘页，点开直接看。</p>
 <p>OpenHire 不读、不存、不标日期、不盯这些页面。在 AI 助手里，<code>list_portals</code> 工具给的是同一份清单；带浏览器的助手可以替你打开。</p>
 <p>想让 AI 助手替你看，把下面这句连同招聘页链接发给它。飞书这类页面要浏览器执行脚本才显示岗位，只会抓网页文字的助手可能看不到，那就自己点开看。</p>
 <pre>用浏览器打开这个招聘页，把在招岗位的名称、城市和链接列给我；不用登录，打不开就告诉我：（贴上招聘页链接）</pre>
-<h2>自动驾驶（5）</h2>
+<h2>自动驾驶（7）</h2>
 <table>
 <thead><tr><th>公司</th><th>招聘页</th><th>不登录能看到什么</th><th>为什么不在索引里</th><th>核对</th></tr></thead>
 <tbody>
 <tr><td>Momenta 魔门塔</td><td><a href="https://momenta.jobs.feishu.cn/" rel="nofollow noopener">https://momenta.jobs.feishu.cn/</a></td><td>浏览器打开、不登录：能看岗位列表和每条的完整职位描述；页面上没有发布日期（2026-10-15 在一家飞书门户上核过）</td><td>招聘站要求请求签名，我们视为访问控制、不绕过</td><td>2026-09-23</td></tr>
+<tr><td>地平线 Horizon Robotics</td><td><a href="https://www.hotjob.cn/wt/Horizon/mobweb/v8/position/list" rel="nofollow noopener">https://www.hotjob.cn/wt/Horizon/mobweb/v8/position/list</a></td><td>搜索结果显示雇主在 Wintalent 上的岗位列表；浏览器不登录能看到什么还没核过</td><td>雇主的招聘站用 Wintalent（汇通 Hotjob），这个系统我们还没评估过；确认它的公开页不要签名、登录或验证码之前，我们不读</td><td>2026-10-21</td></tr>
 <tr><td>小马智行 Pony.ai</td><td><a href="https://ponyai.jobs.feishu.cn/ponyai/" rel="nofollow noopener">https://ponyai.jobs.feishu.cn/ponyai/</a></td><td>浏览器打开、不登录：能看岗位列表和每条的完整职位描述；页面上没有发布日期（2026-10-15 在一家飞书门户上核过）</td><td>招聘站要求请求签名，我们视为访问控制、不绕过</td><td>2026-09-23</td></tr>
+<tr><td>禾赛科技 Hesai</td><td><a href="https://www.hesaitech.com/cn/careers" rel="nofollow noopener">https://www.hesaitech.com/cn/careers</a></td><td>雇主自己的页面链到它的飞书招聘门户；在那边浏览器打开、不登录，能看岗位列表和完整职位描述，没有发布日期（2026-10-15 在一家飞书门户上核过）</td><td>招聘站要求请求签名，我们视为访问控制、不绕过</td><td>2026-10-21</td></tr>
 <tr><td>蔚来 NIO</td><td><a href="https://www.nio.cn/careers/jobs" rel="nofollow noopener">https://www.nio.cn/careers/jobs</a></td><td>招聘页公开列出全部岗位，浏览器就能看（2026-09-23 一次普通请求拿到了完整名单）</td><td>雇主自己的招聘页公开了岗位，但站点的安全策略拦截了我们的抓取器（HTTP 567），我们不绕过安全控制</td><td>2026-09-23</td></tr>
 <tr><td>轻舟智航 QCraft</td><td><a href="https://www.qcraft.ai/cn/careers" rel="nofollow noopener">https://www.qcraft.ai/cn/careers</a></td><td>页面没有岗位列表，只有一个飞书收简历表单</td><td>雇主官网的招聘页只放了一个飞书收简历表单，没有岗位列表</td><td>2026-10-08</td></tr>
 <tr><td>鉴智机器人 PhiGent Robotics</td><td><a href="https://www.phigent.ai/" rel="nofollow noopener">https://www.phigent.ai/</a></td><td>纯 JS 网站，浏览器能打开；里面有没有岗位列表还没核过</td><td>雇主官网是纯 JS 应用，普通请求拿不到岗位列表；我们不执行站点脚本</td><td>2026-10-08</td></tr>

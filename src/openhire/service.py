@@ -224,7 +224,12 @@ _LOCATION_GROUPS: tuple[tuple[str, ...], ...] = (
     # spelled in English and none of the five spelled 香港·九龙区; "香港" the reverse. One
     # place, two answers. The rest are the cities the index actually carries under one
     # spelling only, so the other language reaches them too.
-    ("香港", "hong kong", "hongkong", "hong kong sar", "hksar", "香港特别行政区"),
+    # Boards also write a Hong Kong district or the airport code alone ("Sheung Wan, HKG":
+    # Atoms, 2026-10-21, reports/086). English district names and traditional spellings only:
+    # the simplified 九龙 / 沙田 / 大埔 are also places in Chongqing, Dongguan and Meizhou.
+    ("香港", "hong kong", "hongkong", "hong kong sar", "hksar", "香港特别行政区", "hkg",
+     "kowloon", "sheung wan", "sha tin", "tai po", "kwun tong", "wan chai", "tsim sha tsui",
+     "causeway bay", "quarry bay", "cyberport", "九龍", "灣仔", "觀塘", "銅鑼灣", "尖沙咀", "數碼港"),
     ("澳门", "macau", "macao"),
     ("台北", "taipei"),
     ("新加坡", "singapore"),

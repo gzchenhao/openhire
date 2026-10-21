@@ -45,3 +45,4 @@ drafts/
 
 # workflow agent worktrees (never tracked)
 .claude/worktrees/
+tests/cnb_mirror/data/

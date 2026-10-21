@@ -857,8 +857,9 @@ def _do_bootstrap() -> None:
         # restart (2026-10-20). Drop the pool again so the next session opens the new file.
         dispose_engine()
         _BOOTSTRAP_ERROR = None
+        via = f" (from the mirror {res.source})" if res.source and res.source != config.SNAPSHOT_URL else ""
         print(f"openhire: snapshot ready · {res.companies} employers · {res.jobs:,} jobs · "
-              f"data as of {res.data_as_of}", file=sys.stderr)
+              f"data as of {res.data_as_of}{via}", file=sys.stderr)
     except Exception as e:  # network / invalid snapshot: keep serving (empty) with a hint
         _BOOTSTRAP_ERROR = f"{type(e).__name__}: {e} (url: {config.SNAPSHOT_URL})"
         print(f"openhire: auto-bootstrap failed ({_BOOTSTRAP_ERROR}). "
@@ -880,14 +881,15 @@ def _explain_bootstrap_failure(diagnosis: dict) -> dict:
         diagnosis["hint"] = (
             f"The index is empty because this server tried to download the public snapshot "
             f"and failed: {_BOOTSTRAP_ERROR}. This is a network problem, not a market answer — "
-            "do not report it as 'no matches'. If GitHub is unreachable from this network "
-            "(common in mainland China without a proxy), fetch the snapshot through a mirror "
-            "the user trusts and point the server at it with OPENHIRE_SNAPSHOT_URL (a URL or "
-            "a local file path), or run `ohp bootstrap --snapshot-url <url-or-path>`; or "
+            "do not report it as 'no matches'. The download tries GitHub and then the CNB "
+            "mirror for mainland China (https://cnb.cool/gzchenhao/openhire); if both failed, "
+            "fetch the snapshot another way and point the server at it with "
+            "OPENHIRE_SNAPSHOT_URL (a URL or a local file path), or run `ohp bootstrap "
+            "--snapshot-url <url-or-path>`; or "
             "crawl the employers' own ATS directly with `ohp bootstrap --fresh` (20+ "
             "minutes, no GitHub needed). Restart the server afterwards. "
-            "索引是空的，因为服务器自己下载公开快照失败了（GitHub 在本网络可能不通）。这是网络问题，"
-            "不是「没有匹配的岗位」。可经你信任的镜像下载快照后 `ohp bootstrap --snapshot-url "
+            "索引是空的，因为服务器自己下载公开快照失败了（GitHub 和国内镜像 CNB 都试过了）。这是网络"
+            "问题，不是「没有匹配的岗位」。可换个网络或经别的途径拿到快照后 `ohp bootstrap --snapshot-url "
             "<地址或本地文件>`，或在 MCP 配置的 env 里设 OPENHIRE_SNAPSHOT_URL，或 "
             "`ohp bootstrap --fresh` 直接抓雇主 ATS。"
         )
