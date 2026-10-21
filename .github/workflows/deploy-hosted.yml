@@ -69,8 +69,14 @@ jobs:
           v=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
           echo "version=$v" >> "$GITHUB_OUTPUT"
           grep -q "\"openhire==$v\"" hosted/Dockerfile || { echo "hosted/Dockerfile does not pin openhire==$v"; exit 1; }
+          # The host's build runs `pip install openhire==$v`, which reads the simple index;
+          # that index can trail the JSON API by minutes (0.8.16's first deploy, 19 s after
+          # the release, never came up). Wait for both, then give the CDN a minute more.
           for i in $(seq 1 20); do
-            if curl -fsS "https://pypi.org/pypi/openhire/$v/json" >/dev/null; then echo "PyPI has $v"; exit 0; fi
+            if curl -fsS "https://pypi.org/pypi/openhire/$v/json" >/dev/null \
+               && curl -fsS -H "Accept: text/html" "https://pypi.org/simple/openhire/" | grep -q "openhire-$v-py3-none-any.whl"; then
+              echo "PyPI has $v in the JSON API and the simple index"; sleep 60; exit 0
+            fi
             sleep 30
           done
           echo "PyPI does not have openhire $v yet"; exit 1
