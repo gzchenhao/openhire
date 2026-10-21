@@ -337,6 +337,12 @@ def test_checklist_is_served_and_is_the_published_page(client):
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     assert "求职清单" in r.text and "反诈骗" in r.text and "openhire-vlny.onrender.com/checklist" in r.text
     assert "雇主认领入口" in r.text and "employer_claim.yml" in r.text  # the maintainer wants it on every seeker page
+    # 0.8.25: bilingual with a language switch (not interleaved lines), the maintainer's ask.
+    page = r.text
+    assert 'data-set="zh"' in page and 'data-set="en"' in page and 'class="lang-en"' in page
+    assert "Job-search checklist: what to do at each step" in page and "Three anti-scam checks" in page
+    assert "checklist_feedback.yml" in page and "Claim your listing" in page
+    assert page.index('class="lang-zh"') < page.index('class="lang-en"'), "Chinese first, English as a whole block"
     assert client.get("/checklist.html").text == r.text
     docs = Path(__file__).resolve().parents[1] / "docs" / "checklist.html"
     assert docs.read_text(encoding="utf-8") == r.text, "docs/checklist.html and src/openhire/pages/checklist.html differ: copy one over the other"

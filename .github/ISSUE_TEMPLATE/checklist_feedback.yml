@@ -1,0 +1,31 @@
+name: 求职清单 / 查公司 反馈 · Checklist feedback
+description: 清单缺了一步、哪个网址变了、哪句话不对，告诉我们。A step missing, an address moved, a line wrong on the checklist pages.
+title: "[清单] "
+labels: ["checklist"]
+body:
+  - type: dropdown
+    id: page
+    attributes:
+      label: 哪一页 · Which page
+      options:
+        - 求职清单 · Job-search checklist (checklist.html)
+        - 查公司 · check-company.html
+    validations:
+      required: true
+  - type: input
+    id: step
+    attributes:
+      label: 哪一步、哪一行 · Which step or row
+      placeholder: 例如 第 3 步 工商登记 / e.g. Step 4, check ②
+  - type: textarea
+    id: what
+    attributes:
+      label: 问题或建议 · What is wrong or missing
+      description: 网址打不开、信息过时、缺一个官方渠道、措辞有误，都可以。请不要写任何个人信息。No personal details, please.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 正确的官方网址（如果有）· The official address, if you have it
+      placeholder: https://

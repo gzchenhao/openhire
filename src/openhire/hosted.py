@@ -211,7 +211,7 @@ URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new cha
 </ul>
 <h2>Pages · 页面</h2>
 <ul>
-<li><a href="{e(url)}/checklist">求职清单</a>：找工作每一步该做什么、哪步能让 AI 替你做、查公司和防骗去哪个官网，一页写全，免费，不用注册。</li>
+<li><a href="{e(url)}/checklist">求职清单</a>：找工作每一步该做什么、哪步能让 AI 替你做、查公司和防骗去哪个官网，一页写全，免费，不用注册，中英文可切换。</li>
 <li><a href="{e(url)}/check-company">查公司</a>：入职前核一家公司去哪些官方网站，怎么识别冒充用人方的骗局。</li>
 <li><a href="{e(url)}/portals">读不到的招聘门户</a>：岗位放在飞书、BOSS 直聘或没有可读列表的官网上的公司，它们自己的招聘页链接。</li>
 <li><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a> · <a href="{e(PRIVACY_URL)}">隐私说明</a> · <a href="{e(REPO_URL)}">源码</a>（GitHub 不通时：<a href="https://cnb.cool/gzchenhao/openhire">cnb.cool 镜像</a>）</li>

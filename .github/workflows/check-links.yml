@@ -1,0 +1,21 @@
+# Monthly: every external link on the two public checklist pages (docs/checklist.html,
+# docs/check-company.html) is opened; a 404 or 410 fails the run, and GitHub's default
+# notification mails the maintainer. Those pages send job seekers to official registers and
+# anti-fraud services, so a moved address matters. Timeouts and blocks are reported, not
+# failed: several of these sites refuse data-centre addresses. Zero secrets.
+name: Check checklist links
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 2 1 * *"
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Open every external link on the checklist pages
+        run: python3 scripts/check_page_links.py docs/checklist.html docs/check-company.html

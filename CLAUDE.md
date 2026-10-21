@@ -6,9 +6,11 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.23 · 2026-10-21；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.25 · 2026-10-21；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.25（2026-10-21，云端会话，`reports/089`）：** **求职清单中英双语**（领导：「不是一行中文一行英文那种，是用户可以选择页面语言那种」）：同一个 `docs/checklist.html` 里中文整块在前、英文整块在后，右上角「中文 / English」切换；默认按 `?lang=` → 上次选择（localStorage）→ 浏览器语言；无 JS 两块都显示。Chromium 实测六种组合全对。**改清单要中英两块一起改**，测试钉住两块都在、中文在前。页脚反馈链接改成议题模板 `checklist_feedback.yml`（标签 `checklist`，不收个人信息）；新增月度工作流 `check-links.yml`（`scripts/check_page_links.py` 打开两页所有外链，404 / 410 才红，超时只报不红：12333.gov.cn 与 labour.gov.hk 对数据中心地址拒答）。**用户反馈闭环**：邮箱日检定时任务的提示词加一条，`checklist` 标签议题与本机知乎日检上报的清单意见一律当天改页、记更新记录、发版。宣传稿（知乎专文 + 投稿 + X 英文帖 + 领英）在私库，本机待办第 16 条。847 tests。
+- **v0.8.24（2026-10-21，云端会话）：** 领导要求求职清单页也带雇主认领那句（与托管首页、github.io 首页一致），`tests/test_hosted.py` 钉住。
 - **v0.8.23（2026-10-21，云端会话）：** 领导发现两个首页不一样（github.io 项目主页有雇主认领那句，Render 说明页没有）。托管首页补齐：求职清单、查公司、门户目录（新路由 `/portals`，由登记表渲染，测试钉住与 `docs/portals.html` 相同）、雇主页、隐私、源码与 CNB 镜像的链接，页脚同一句雇主认领。**规矩：两个首页列的页面和页脚那句要一致**，`tests/test_hosted.py` 钉住。847 tests。
 - **v0.8.22（2026-10-21，云端会话，`reports/088`）：** **「查公司」独立页** https://openhire-vlny.onrender.com/check-company （`docs/check-company.html` 与 `src/openhire/pages/check-company.html` 一字不差）。起因：领导想在 earlytip.com（**个人备案**，登记在领导名下）加入口指向求职清单，EarlyTip 项目经理会话复核后要求目标页只含「核公司去哪些官方网站」和「识别骗局」，**不出现求职流程、岗位、安装引导、/mcp、产品名，不出现「求职」「招聘」「岗位」字样，标题「查公司」，页脚只留反馈链接，永远免费无注册**；退出条件：收费、页面出现岗位或安装引导、域名不可达超过一周，任一发生入口当天撤。**这些条件钉在 `tests/test_hosted.py`，改坏了发不出去；要变先告知 EarlyTip 线。** `?from=earlytip` 接受不记录（主机无访问日志）。EarlyTip 另提的「OpenHire 面向国内是否落入网络招聘服务」进 12 月律师清单。0.8.20 是误发的空版本（脚本中途失败、只 bump 了版本号），0.8.21 是求职清单加「值得收藏的原因」与更新记录。847 tests。
 - **v0.8.19（2026-10-21，云端会话）：** 领导问「中国用户能打开求职清单吗」（github.io 国内不稳），当场加：托管端点多一个 `/checklist`（`src/openhire/pages/checklist.html` 随包发布，测试钉住与 `docs/checklist.html` 一字不差，改一处要同步另一处），国内地址 https://openhire-vlny.onrender.com/checklist 写进页面顶部、README、`check_employer.checklist_url_cn`、提示词、服务器指令。部署工作流改成两轮「请求部署 + 等 15 分钟」（0.8.18 第一轮 Render 接受了却停在旧版 20 分钟，CDN 还没拿到新包）。
