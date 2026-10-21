@@ -17,7 +17,9 @@
 #
 # The public URL is the repository variable HOSTED_URL (default https://openhire.onrender.com).
 # The daily job asks /healthz and fails loudly (GitHub mails the maintainer) when the host
-# does not answer or runs a version other than the released one. The ten-minute job only
+# does not answer or runs a version other than the released one; both the deploy and the
+# daily job then send /mcp an initialize and a tools/list (scripts/hosted_mcp_check.py),
+# because /healthz was green while 0.8.15 answered every client with 421. The ten-minute job only
 # touches /livez: a free Render instance spins down after 15 idle minutes and takes up to a
 # minute to wake, which a ChatGPT connector will not wait for. Both run only once HOSTED_URL
 # is set, so a repository without a hosted copy never produces failures or noise.
@@ -114,6 +116,10 @@ jobs:
           done
           echo "the host did not come up on ${{ steps.v.outputs.version }} within 20 minutes"; exit 1
 
+      - name: /mcp answers initialize and tools/list like a client sees it
+        if: steps.gate.outputs.target != 'none'
+        run: python3 scripts/hosted_mcp_check.py "$HOSTED_URL" "${{ steps.v.outputs.version }}"
+
   health:
     if: github.event_name == 'schedule' && github.event.schedule == '17 3 * * *' && vars.HOSTED_URL != ''
     runs-on: ubuntu-latest
@@ -125,6 +131,8 @@ jobs:
           body=$(curl -sS --max-time 90 "$HOSTED_URL/healthz" || true)
           echo "$body"
           echo "$body" | grep -q "\"version\": *\"$v\"" || { echo "hosted endpoint is not answering as $v"; exit 1; }
+      - name: /mcp answers initialize and tools/list
+        run: python3 scripts/hosted_mcp_check.py "$HOSTED_URL"
 
   warm:
     if: github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *' && vars.HOSTED_URL != ''
