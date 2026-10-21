@@ -196,15 +196,17 @@ def search_jobs(
         currency: restrict to a stated-pay currency, e.g. "USD" (implies stated pay).
         require_stated_salary: if true, drop roles that publish no salary.
         role_family: coarse family filter, one of engineering | data | product | design |
-            marketing | sales | ops | other. Any other value is refused
-            (ERR_UNKNOWN_ROLE_FAMILY) rather than ignored: "recruiting" used to pass
-            through and return the whole index. There is NO hr / recruiting / people
-            family — those roles are filed under ops; use `title` to isolate them.
+            marketing | sales | hr | ops | other. "hr" is recruiting, talent acquisition,
+            sourcing, HRBP, people operations, compensation and benefits, L&D (招聘、HRBP、
+            人力资源); "recruiting", "people" and "招聘" resolve to it. Any other value is
+            refused (ERR_UNKNOWN_ROLE_FAMILY) rather than ignored: an unknown value used to
+            pass through and return the whole index.
             Populated for most live rows, so this is an effective way to keep sales /
             solutions-architect roles out of an engineering search.
         title: caseless substrings over the job title, ANY-of, e.g. ["recruit", "招聘"]
             or ["感知"]. This is the filter for roles no skill tag or family can isolate:
-            HR, recruiting, finance, legal, a specific team name. An ASCII term must start
+            finance, legal, a specific team name; for HR it is a wider net than
+            role_family="hr". An ASCII term must start
             a word ("hr" reaches HR, HRBP and HR Business Partner but not Chrome); a CJK
             term is a plain substring. One synonym group is expanded for you: any of hr /
             hrbp / human resources / recruit / talent acquisition / sourcer / people ops /
@@ -385,8 +387,9 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     (list of title substrings, ANY-of, synonym-expanded for HR terms like search_jobs —
     the way to watch for recruiting or other roles no skill tag names).
     Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped, and a
-    `role_family` outside engineering | data | product | design | marketing | sales | ops |
-    other is refused too (ERR_UNKNOWN_ROLE_FAMILY).
+    `role_family` outside engineering | data | product | design | marketing | sales | hr |
+    ops | other is refused too (ERR_UNKNOWN_ROLE_FAMILY); "recruiting" and "招聘" resolve
+    to hr.
 
     `min_salary` keeps rows with NO stated pay (they cannot be ruled out); it only drops rows
     whose stated pay is below the floor. Pay is stated mostly where law requires it (US

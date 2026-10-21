@@ -63,31 +63,38 @@ def session():
                     role_family="engineering", location="Hong Kong"))
         s.add(mkjob("pm", "uisee", "项目经理", [], role_family="ops", location="香港·九龙区"))
         s.add(mkjob("perc", "dobot", "感知算法工程师", ["perception"], role_family="engineering"))
+        s.add(mkjob("mts", "mongodb", "Member of Technical Staff", [], role_family=None))
         s.commit()
         yield s
 
 
 # --- 1. an unknown role_family is refused, not ignored -------------------------------
+# "recruiting" was the value that slipped through on 09-28; since 0.8.17 it resolves to the
+# hr family (tests/test_hr_family.py), so the refusal is pinned with a value no one maps.
 def test_unknown_role_family_is_refused_with_the_valid_list(session):
     with pytest.raises(OpenHireError) as ei:
-        service.search_jobs(session, role_family="recruiting", now=NOW)
+        service.search_jobs(session, role_family="astrology", now=NOW)
     assert ei.value.code == "ERR_UNKNOWN_ROLE_FAMILY"
     assert "engineering" in ei.value.message and "ops" in ei.value.message
     assert "title" in ei.value.message, "the message must say what to use instead"
     # The valid values still work, case-insensitively.
     ids = {r["job_id"] for r in service.search_jobs(session, role_family="OPS", now=NOW)}
     assert "dobot:hrbp" in ids and "mongodb:chrome" not in ids
-    assert "dobot:zp" in ids, "an unclassified row is still included, never hidden"
+    assert "mongodb:mts" in ids, "an unclassified row the title rule is unsure of is never hidden"
+    # Since 0.8.17 an unclassified row the title rule is sure of counts as that family:
+    # 招聘经理 is an hr job, so it leaves the ops search and joins the hr one.
+    assert "dobot:zp" not in ids
+    assert "dobot:zp" in {r["job_id"] for r in service.search_jobs(session, role_family="hr", now=NOW)}
 
 
 def test_a_watch_refuses_an_unknown_role_family_too(session):
     with pytest.raises(OpenHireError) as ei:
-        service.watch_intent(session, "#hr-k2p7-x8q1-a1", {"role_family": "recruiting"}, now=NOW)
+        service.watch_intent(session, "#hr-k2p7-x8q1-a1", {"role_family": "astrology"}, now=NOW)
     assert ei.value.code == "ERR_UNKNOWN_ROLE_FAMILY"
 
 
 def test_mcp_search_returns_the_refusal_as_a_structured_error():
-    out = mcp_server.search_jobs(role_family="recruiting")
+    out = mcp_server.search_jobs(role_family="astrology")
     assert out["error"] == "ERR_UNKNOWN_ROLE_FAMILY"
 
 
@@ -132,7 +139,7 @@ def test_cli_search_accepts_and_echoes_title_and_refuses_bad_role_family():
     res = CliRunner().invoke(app, ["search", "--title", "招聘,hrbp", "--company", "dobot"])
     assert "--title招聘,hrbp" in "".join(res.stdout.split())
 
-    res = CliRunner().invoke(app, ["search", "--role-family", "recruiting"])
+    res = CliRunner().invoke(app, ["search", "--role-family", "astrology"])
     assert res.exit_code == 2
     assert "ERR_UNKNOWN_ROLE_FAMILY" in res.output and "engineering" in res.output
 

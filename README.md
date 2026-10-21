@@ -112,6 +112,7 @@ of minutes while you are already talking to it. No account, no signup, no résum
 把 https://jobs.lever.co/<公司> 加进我的索引，以后每周帮我刷新
 哪些具身公司的岗位在飞书上？把它们的招聘页给我
 查一下这家公司靠不靠谱：<公司名>
+智驾和具身公司现在在招哪些 HR 和招聘岗？列出公司、城市和发布日期
 
 Find perception roles in Shanghai with their original posting dates
 Watch OKX's careers page and tell me when something new appears
@@ -312,7 +313,7 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 
 | Tool | What it gives you |
 |------|-------------------|
-| `search_jobs` | Hard-filter the live index; every result carries `verified_at`, `datePosted`, `days_open`, `ghost_score`, `remote_scope`, `eligible_regions`, `apply_channel`. Filter by `required_skills` (AND), `role_family`, `remote_scope`, `min_salary` + `currency`, `company`, `location` (bilingual city aliases: 香港 = Hong Kong, 广州 reaches 天河区) and `title` (words in the job title, e.g. `招聘` / `recruit` — the filter for HR, finance and other roles no skill tag names). |
+| `search_jobs` | Hard-filter the live index; every result carries `verified_at`, `datePosted`, `days_open`, `ghost_score`, `remote_scope`, `eligible_regions`, `apply_channel`. Filter by `required_skills` (AND), `role_family` (engineering, data, product, design, marketing, sales, `hr` for recruiting / HRBP / people roles, ops, other), `remote_scope`, `min_salary` + `currency`, `company`, `location` (bilingual city aliases: 香港 = Hong Kong, 广州 reaches 天河区) and `title` (words in the job title, e.g. `招聘` / `recruit` — the filter for HR, finance and other roles no skill tag names). |
 | `watch_intent` | Register a standing intent once — new matching jobs are waiting next time you check, even after you close the terminal. Accepts `required_skills` / `role_family` / `location` / `title` so sales / solutions roles stay out. |
 | `check_watches` | Pull the matches that are new since your last check (client-pull; stdio has no push). |
 | `authorize_application` | One explicit confirmation per job. It records your authorization and returns the employer's **own** application URL — you apply as yourself. It **cannot** accept a résumé. |

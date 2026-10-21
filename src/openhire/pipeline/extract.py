@@ -370,12 +370,15 @@ _DEEPSEEK_SYSTEM = (
 )
 
 
-ROLE_FAMILIES = ("engineering", "data", "product", "design", "marketing", "sales", "ops", "other")
+# "hr" since 0.8.17 (the maintainer, 2026-10-21: an HR family so recruiters notice OpenHire):
+# recruiting, HRBP and people roles used to be filed under "ops", where a recruiter looking
+# for the next role could not find them and a search for them had to go by title.
+ROLE_FAMILIES = ("engineering", "data", "product", "design", "marketing", "sales", "hr", "ops", "other")
 
 _DEEPSEEK_ROLE_FAMILY_SYSTEM = (
     "Classify ONE job posting into exactly one job family and reply with a single JSON "
     'object and nothing else: {"role_family": "<value>"} where <value> is one of '
-    "engineering, data, product, design, marketing, sales, ops, other. "
+    "engineering, data, product, design, marketing, sales, hr, ops, other. "
     "Judge by the ACTUAL function of the role, NOT keywords in the title. Critically: "
     "'Sales Engineer', 'Solutions Engineer', 'Solutions Architect', 'Solutions "
     "Consultant', 'Sales Development Representative', 'Account Executive', 'Account "
@@ -383,8 +386,11 @@ _DEEPSEEK_ROLE_FAMILY_SYSTEM = (
     "services-sales org are 'sales' — NOT 'engineering'. Software / platform / infra / "
     "backend / frontend / security / ML-systems engineering is 'engineering'. 'Data "
     "Engineer', 'ML Engineer', 'Data Scientist', 'Analytics' is 'data'. Product "
-    "management is 'product'. Recruiting / HR / people / finance / legal / IT / support / "
-    "operations is 'ops'. If genuinely unclear, use 'other'."
+    "management is 'product'. Recruiting, talent acquisition, sourcing, HR business "
+    "partner, people operations, compensation and benefits, learning and development, "
+    "organisational development and employee relations are 'hr' (a 'Technical Recruiter' "
+    "is 'hr', not 'engineering'). Finance / legal / IT / support / supply chain / "
+    "manufacturing / operations is 'ops'. If genuinely unclear, use 'other'."
 )
 
 
@@ -396,9 +402,46 @@ _DEEPSEEK_ROLE_FAMILY_SYSTEM = (
 # None whenever it is not confident, leaving the row NULL so the DeepSeek pass (which
 # resumes on `role_family IS NULL`) can still claim it later.
 #
-# Order matters. The sales patterns are checked first because the exact trap the DeepSeek
+# Order matters. HR is decided first, by its own strict rule below: a recruiter for sales
+# roles is still a recruiter. Then the sales patterns, because the exact trap the DeepSeek
 # prompt calls out — 售前/解决方案/客户成功 "engineers" in a revenue org — is a sales role
 # whose title contains 工程师.
+#
+# The HR rule is stricter than the search-time title synonyms (service._TITLE_GROUPS),
+# because a label is a claim about the job and a search is only a net. Measured on the
+# 2026-10-19 snapshot (18,158 live rows) before it shipped:
+#   - 人事 is a substring of 机器人事业部 ("robotics business unit"), so it counts only when
+#     事业 does not follow;
+#   - 招聘 / 人力 / 猎头 name the job in 海外招聘, 校园招聘专家 and 人力招聘-杭州, but are a programme
+#     label in 「2027届校园招聘-感知算法工程师」, so they count only when the title names no
+#     other job (工程师, 算法, 销售, 采购…);
+#   - an English HR term decides on its own: "Recruiter, Field Engineering" and "People
+#     Partner - Engineering" are HR jobs that the old prompt filed under engineering.
+_HR_TITLE_STRONG = re.compile(
+    r"(?<![a-z0-9])(hr|hrbp|hris|hrg)(?![a-z0-9])"
+    r"|human resources|(?<![a-z])recruit(er|ers|ing|ment)?(?![a-z])|talent acquisition"
+    r"|talent partner|(?<![a-z])sourcer(?![a-z])"
+    r"|people (operations|ops|partner|business partner|lead|team|experience)|head of people"
+    r"|chief people|compensation (and|&) benefits|total rewards|learning (and|&) development"
+    r"|organi[sz]ational development|employee relations"
+    r"|人力资源|人事(?!业)|员工关系|组织发展|人才发展|雇主品牌|绩效(专员|经理|主管)|培训(专员|经理|主管|负责人)",
+    re.IGNORECASE,
+)
+_HR_TITLE_WEAK = re.compile(r"招聘|人力|猎头|薪酬")
+_OTHER_JOB_WORDS = re.compile(
+    r"工程师|算法|研发|开发|设计|产品|销售|测试|架构|科学家|研究员|技术员|技师|操作|采购|财务|法务"
+    r"|会计|司机|装配|焊|电工|医生|律师|编辑|主播"
+)
+
+
+def is_hr_title(title: str) -> bool:
+    """True when the title itself names an HR / recruiting / people job."""
+    text = title or ""
+    if _HR_TITLE_STRONG.search(text):
+        return True
+    return bool(_HR_TITLE_WEAK.search(text)) and not _OTHER_JOB_WORDS.search(text)
+
+
 _RF_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("sales", (
         "销售", "客户经理", "大客户", "商务", "渠道", "售前", "解决方案工程师",
@@ -420,9 +463,9 @@ _RF_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
         "marketing", "brand", "public relations",
     )),
     ("ops", (
-        "人力资源", "招聘", "行政", "财务", "法务", "供应链", "采购", "生产", "制造",
+        "行政", "财务", "法务", "供应链", "采购", "生产", "制造",
         "质量", "品质", "仓储", "物流", "运维", "客服", "职能",
-        "recruiter", "human resources", "finance", "legal", "procurement",
+        "finance", "legal", "procurement",
         "supply chain", "manufacturing", "quality", "operations manager", "it support",
     )),
     ("engineering", (
@@ -442,6 +485,8 @@ def classify_role_family_heuristic(title: str, description: str = "") -> str | N
     blob = f" {(title or '').lower()} "
     if not blob.strip():
         return None
+    if is_hr_title(title):
+        return "hr"
     for family, needles in _RF_RULES:
         if any(n in blob for n in needles):
             return family

@@ -15,7 +15,7 @@ import re
 import time
 from dataclasses import dataclass, field
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from .. import config
@@ -477,6 +477,7 @@ def rebuild_extraction(
     on_batch=None,
     backend: str = TARGET_SOURCE,
     model: str | None = None,
+    include_delisted: bool = False,
 ) -> RebuildStats:
     """Re-extract every job NOT already done by an LLM backend.
 
@@ -484,6 +485,8 @@ def rebuild_extraction(
     backend>`: with two LLM backends in play, the old test would have made glm and
     deepseek endlessly re-extract each other's rows for no quality gain. Rows with an
     empty JD are excluded outright (`_HAS_JD`): there is nothing for the model to read.
+    Delisted postings are skipped unless `include_delisted`: no search returns them, and on
+    the 2026-10-19 snapshot they were 850 of the 8,748 rows the pass would have paid for.
     """
     ensure_schema()
     extractor = _make_extractor(backend, model)
@@ -491,11 +494,13 @@ def rebuild_extraction(
     ceiling = config.EXTRACTION_COST_CEILING_CNY if ceiling_cny is None else ceiling_cny
     stats = RebuildStats(backend=source)
     consecutive_429 = 0
+    target = [Job.extraction_source.notin_(LLM_SOURCES), _HAS_JD]
+    if not include_delisted:
+        target.append(Job.delisted_at.is_(None))
 
     with session_scope() as s:
         stats.total_target = s.scalar(
-            select(func.count()).select_from(Job)
-            .where(Job.extraction_source.notin_(LLM_SOURCES), _HAS_JD)
+            select(func.count()).select_from(Job).where(*target)
         ) or 0
 
     remaining = stats.total_target if limit is None else min(limit, stats.total_target)
@@ -506,7 +511,7 @@ def rebuild_extraction(
             jobs = list(
                 s.execute(
                     select(Job)
-                    .where(Job.extraction_source.notin_(LLM_SOURCES), _HAS_JD)
+                    .where(*target)
                     .order_by(Job.id)
                     .limit(take)
                 ).scalars()
@@ -648,18 +653,23 @@ def rebuild_role_family(
     on_batch=None,
     backend: str = TARGET_SOURCE,
     model: str | None = None,
+    include_delisted: bool = False,
 ) -> RebuildStats:
     """Classify each job's role_family with an LLM. Resumable (role_family IS NULL) and
-    cost-capped (hard stop at the CNY ceiling), mirroring rebuild_extraction."""
+    cost-capped (hard stop at the CNY ceiling), mirroring rebuild_extraction; delisted
+    postings are skipped unless `include_delisted`."""
     ensure_schema()
     extractor = _make_extractor(backend, model)
     ceiling = config.EXTRACTION_COST_CEILING_CNY if ceiling_cny is None else ceiling_cny
     stats = RebuildStats(backend=_source_label(extractor, backend))
     consecutive_429 = 0
+    target = [Job.role_family.is_(None)]
+    if not include_delisted:
+        target.append(Job.delisted_at.is_(None))
 
     with session_scope() as s:
         stats.total_target = s.scalar(
-            select(func.count()).select_from(Job).where(Job.role_family.is_(None))
+            select(func.count()).select_from(Job).where(*target)
         ) or 0
 
     remaining = stats.total_target if limit is None else min(limit, stats.total_target)
@@ -669,7 +679,7 @@ def rebuild_role_family(
         with session_scope() as s:
             jobs = list(
                 s.execute(
-                    select(Job).where(Job.role_family.is_(None)).order_by(Job.id).limit(take)
+                    select(Job).where(*target).order_by(Job.id).limit(take)
                 ).scalars()
             )
             if not jobs:
@@ -732,6 +742,33 @@ def backfill_role_family_heuristic(limit: int | None = None) -> tuple[int, int]:
             else:
                 still_null += 1
     return labelled, still_null
+
+
+def reclassify_hr() -> dict[str, int]:
+    """Free, deterministic, idempotent: every row whose title names an HR job gets
+    role_family "hr", whatever it was filed under before.
+
+    The "hr" family arrived in 0.8.17; until then the classifiers were told to file
+    recruiting and people roles under ops, and the paid pass never revisits a classified
+    row. The rule (extract.is_hr_title) is title-only and strict, and was measured on the
+    2026-10-19 snapshot before it shipped: 414 of 18,158 live rows, previously NULL (243),
+    ops (158), engineering (9: sourcers and people partners for engineering teams), sales (3)
+    and marketing (1). Run by the weekly snapshot refresh, so the public index stays right.
+    Returns {previous family or "null": rows moved}."""
+    from .extract import is_hr_title
+
+    ensure_schema()
+    moved: dict[str, int] = {}
+    with session_scope() as s:
+        rows = s.execute(
+            select(Job).where(or_(Job.role_family.is_(None), Job.role_family != "hr"))
+        ).scalars()
+        for job in rows:
+            if is_hr_title(job.title or ""):
+                key = job.role_family or "null"
+                moved[key] = moved.get(key, 0) + 1
+                job.role_family = "hr"
+    return moved
 
 
 def rollback_extraction() -> int:

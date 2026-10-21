@@ -216,6 +216,12 @@ def test_traditional_character_lures_are_flagged_like_the_simplified_ones():
     assert checks.red_flags_in("Senior Perception Engineer, Hong Kong. 5+ years, LiDAR fusion.") == []
 
 
+def test_tianyancha_dates_are_beijing_midnight():
+    # 2013-03-01 00:00 in Beijing is 2013-02-28 16:00 UTC; read in UTC it was a day early.
+    assert tianyancha._ms_to_date(1362067200000) == "2013-03-01"
+    assert tianyancha._ms_to_date(None) is None
+
+
 def test_tianyancha_envelope_handling_without_network(monkeypatch):
     class R:
         def __init__(self, status, body):
@@ -237,10 +243,17 @@ def test_tianyancha_envelope_handling_without_network(monkeypatch):
     out = REAL_FETCH("佑驾创新", key="k")
     assert out["status"] == "verified" and out["record"]["established"] == "2013-03-01"
     assert calls[0][2]["Authorization"] == "k" and calls[0][1] == {"keyword": "佑驾创新"}
-    monkeypatch.setattr(tianyancha.httpx, "get", lambda *a, **k: R(200, {"error_code": 300001, "reason": "余额不足"}))
-    assert REAL_FETCH("x", key="k")["status"] == "unavailable"
+    monkeypatch.setattr(tianyancha.httpx, "get", lambda *a, **k: R(200, {"error_code": 300006, "reason": "余额不足"}))
+    out = REAL_FETCH("x", key="k")
+    assert out["status"] == "unavailable" and out["reason"] == "key" and "余额不足" in out["note"]
     monkeypatch.setattr(tianyancha.httpx, "get", lambda *a, **k: R(200, {"error_code": 0, "result": {}}))
     assert REAL_FETCH("x", key="k")["status"] == "not_verified"
+    # 300000 is 天眼查's "no result": an answer about the name, not a failure of the source.
+    monkeypatch.setattr(tianyancha.httpx, "get", lambda *a, **k: R(200, {"error_code": 300000, "reason": "经查无结果"}))
+    out = REAL_FETCH("宇树", key="k")
+    assert out["status"] == "not_verified" and out["reason"] == "no_record" and "全称" in out["note"]
+    monkeypatch.setattr(tianyancha.httpx, "get", lambda *a, **k: R(200, {"error_code": 300004, "reason": "访问频率过快"}))
+    assert REAL_FETCH("x", key="k")["reason"] == "rate_limited"
     monkeypatch.delenv(tianyancha.ENV_KEY, raising=False)
     assert REAL_FETCH("x")["status"] == "pending_user"
 

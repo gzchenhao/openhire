@@ -85,6 +85,12 @@ jobs:
           python scripts/clean_skill_noise.py "${{ github.workspace }}/index/openhire.db" --apply
           python scripts/clean_empty_jd.py "${{ github.workspace }}/index/openhire.db" --apply
 
+      - name: File HR postings under role_family "hr" (idempotent)
+        # The hr family arrived in 0.8.17; rows classified before it sat under ops (or
+        # engineering, for sourcers of engineers). Title-only and free; see
+        # pipeline/rebuild.reclassify_hr for the rule and its measurement.
+        run: ohp reclassify-hr
+
       - name: Check CN (Beisen) reachability from this runner
         # GitHub runners are outside China. Whether zhiye.com answers from here decides
         # if CN jobs can be refreshed in CI at all — so measure it instead of assuming.

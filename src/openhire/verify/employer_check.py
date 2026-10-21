@@ -172,7 +172,8 @@ def build_checklist(
         reg = register_fn(name) if run_network else {"status": "unavailable", "note": "本次没有联网检查"}
         status = reg.get("status", "unavailable")
         item = _item("registry_record", "工商登记（成立日期、经营状态、参保人数）", status, reg.get("note", ""),
-                     source=reg.get("source", "天眼查 OpenAPI（需要你自己的 key）"), record=reg.get("record"))
+                     source=reg.get("source", "天眼查 OpenAPI（需要你自己的 key）"), record=reg.get("record"),
+                     reason=reg.get("reason"))
         items.append(item)
         if status == "pending_user":
             pending.append({
@@ -181,7 +182,7 @@ def build_checklist(
                 "why_pending": "政府公示系统有验证码，没有接口；天眼查有接口但按次收费，钱由你自己付，key 只放在你自己的电脑上，我们看不到",
                 "how": [
                     {"way": "tianyancha_key", "steps": "到 open.tianyancha.com 注册并充值，拿到 API key，在运行 OpenHire 的环境里设置 TIANYANCHA_API_KEY，再问一次；每次查询由天眼查从你的账户扣费"},
-                    {"way": "tianyancha_mcp", "steps": "如果你的助手已经接了天眼查 MCP（https://mcp.tianyancha.com/v1，你自己的 key），让它查这家公司的基本信息：" + str(name)},
+                    {"way": "tianyancha_mcp", "steps": "如果你的助手已经接了天眼查自己的 MCP 服务（天眼 AI，用你自己的账号，个人免费账号也能查工商登记，以天眼查页面为准，入口 ai.tianyancha.com），让它查这家公司的工商登记：" + str(name) + "。天眼查不支持中国大陆、港澳台以外的用户和 IP"},
                     {"way": "manual_free", "steps": f"免费手动：爱企查 {AIQICHA.format(name=name)} ，或国家企业信用信息公示系统 {GSXT}（按全称查，有验证码）"},
                     {"way": "manual_free_hk_overseas",
                      "steps": (f"香港公司：公司註冊處電子服務網站 {HK_CR_ESERVICES} 免费查公司名称（无需账户）；"

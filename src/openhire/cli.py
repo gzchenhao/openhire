@@ -1248,6 +1248,7 @@ def extract_rebuild(
     ceiling: float = typer.Option(None, "--ceiling", help="CNY hard stop (default from config)."),
     backend: str = typer.Option("deepseek", "--backend", help="deepseek | glm (GLM runs on a prepaid coding plan: CNY 0)."),
     model: str = typer.Option(None, "--model", help="Override the backend's model id."),
+    include_delisted: bool = typer.Option(False, "--include-delisted", help="Also pay for delisted postings (no search returns them)."),
 ) -> None:
     """Rebuild extraction with an LLM in resumable batches; hard-stops at the CNY ceiling.
 
@@ -1266,7 +1267,7 @@ def extract_rebuild(
                 f"失败 {stx.failed} · 花费 CNY {stx.cost:.2f}"
             )
 
-        stats = rebuild_extraction(batch, workers, limit, ceiling, on_batch, backend, model)
+        stats = rebuild_extraction(batch, workers, limit, ceiling, on_batch, backend, model, include_delisted)
     except RuntimeError as e:
         console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
         raise typer.Exit(1)
@@ -1456,6 +1457,7 @@ def extract_role_family(
     ),
     backend: str = typer.Option("deepseek", "--backend", help="deepseek | glm (GLM runs on a prepaid coding plan: CNY 0)."),
     model: str = typer.Option(None, "--model", help="Override the backend's model id."),
+    include_delisted: bool = typer.Option(False, "--include-delisted", help="Also pay for delisted postings (no search returns them)."),
 ) -> None:
     """Classify each job's role_family with an LLM; resumable, hard-stops at the CNY ceiling."""
     from .pipeline import rebuild_role_family
@@ -1480,7 +1482,7 @@ def extract_role_family(
                 f"失败 {stx.failed} · 花费 CNY {stx.cost:.2f}"
             )
 
-        stats = rebuild_role_family(batch, workers, limit, ceiling, on_batch, backend, model)
+        stats = rebuild_role_family(batch, workers, limit, ceiling, on_batch, backend, model, include_delisted)
     except RuntimeError as e:
         console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
         raise typer.Exit(1)
@@ -1494,6 +1496,21 @@ def extract_role_family(
         f"完成 · 标注 {stats.updated}/{stats.total_target} · 失败 {stats.failed} · "
         f"总花费 CNY {stats.cost:.2f}（input {stats.prompt_tokens} / output {stats.completion_tokens} tok）"
     )
+
+
+# --- reclassify-hr ------------------------------------------------------------
+@app.command(name="reclassify-hr", rich_help_panel=LAB_PANEL)
+def reclassify_hr_cmd() -> None:
+    """File every posting whose title names an HR / recruiting / people job under role_family
+    "hr" (free, deterministic, idempotent; the weekly snapshot refresh runs it)."""
+    from .pipeline import reclassify_hr
+
+    init_db()
+    console.cmd("ohp reclassify-hr")
+    moved = reclassify_hr()
+    total = sum(moved.values())
+    detail = "、".join(f"{k} {v}" for k, v in sorted(moved.items(), key=lambda kv: -kv[1])) or "无"
+    console.ok(f"完成 · {total} 条归入 hr（原分类：{detail}）· 花费 CNY 0.00")
 
 
 # --- backfill-dates -----------------------------------------------------------

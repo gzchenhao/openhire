@@ -30,7 +30,7 @@ from .ats import apply_url_is_trusted
 from .pipeline.ghost_score import ghost_reason
 from .seed.claims import employer_correction
 from .seed import not_indexed
-from .pipeline.extract import ROLE_FAMILIES
+from .pipeline.extract import ROLE_FAMILIES, classify_role_family_heuristic
 from .pipeline.ranking import freshness, match_quality, rank_score
 
 DELIVERED_VIA = "employer_site"  # v0.1 always the employer's own channel
@@ -276,8 +276,10 @@ def _location_clause(query: str):
 # limit 10 missed Dobot's HRBP and Pudu's 招聘经理, which the agent then reported as
 # "Chinese embodied companies post no HR roles". The title is the one field every posting
 # has that names the job. An ASCII term must start a word ("hr" reaches HR, HRBP and HR
-# Business Partner, not Chrome); a CJK term is a plain substring. The HR family is the one
-# group of synonyms we expand, because it is the family the taxonomy lacks.
+# Business Partner, not Chrome); a CJK term is a plain substring, except where a common
+# compound swallows it (人事 inside 机器人事业部, "robotics business unit"). The HR family
+# (role_family="hr" since 0.8.17) is the one group of synonyms we expand: a title search
+# also reaches rows classified before the family existed.
 _TITLE_GROUPS: tuple[tuple[str, ...], ...] = (
     ("hr", "hrbp", "human resources", "recruit", "talent acquisition", "talent partner",
      "sourcer", "people operations", "people ops", "people partner", "people lead",
@@ -296,9 +298,14 @@ def expand_title_term(term: str) -> list[str]:
     return [t]
 
 
+# CJK aliases that sit inside an unrelated compound, with what must not follow them.
+_CJK_NOT_FOLLOWED_BY = {"人事": "业"}
+
+
 def _title_pattern(alias: str) -> re.Pattern[str]:
     if re.search(r"[^\x00-\x7f]", alias):
-        return re.compile(re.escape(alias), re.IGNORECASE)
+        tail = _CJK_NOT_FOLLOWED_BY.get(alias)
+        return re.compile(re.escape(alias) + (f"(?!{tail})" if tail else ""), re.IGNORECASE)
     return re.compile(r"(?<![a-z0-9])" + re.escape(alias), re.IGNORECASE)
 
 
@@ -320,24 +327,34 @@ def title_matches(title: str | None, terms: list[str]) -> bool:
     )
 
 
+# What people and agents call the HR family; resolved to it rather than refused.
+ROLE_FAMILY_ALIASES = {
+    "recruiting": "hr", "recruitment": "hr", "recruiter": "hr", "talent": "hr",
+    "talent acquisition": "hr", "people": "hr", "people ops": "hr", "human resources": "hr",
+    "human_resources": "hr", "招聘": "hr", "人力资源": "hr", "人事": "hr", "人力": "hr",
+}
+
+
 def check_role_family(role_family: str | None) -> str | None:
     """A role_family the taxonomy does not have is refused, not ignored.
 
     `role_family="recruiting"` used to pass straight through and return the whole index
     (Waymo engineers, on a search for HR jobs): the filter only excluded rows whose family
     was a DIFFERENT known value, and "recruiting" differed from all of them. The silent
-    no-op then read as "OpenHire has no HR roles" — it holds a few hundred. There is no HR
-    family: people / recruiting / talent roles are filed under ops, and `title` is the
-    filter that isolates them.
+    no-op then read as "OpenHire has no HR roles". Since 0.8.17 the taxonomy has an "hr"
+    family and the names people use for it (recruiting, people, 招聘…) resolve to it; any
+    other unknown value is still refused with the valid list.
     """
-    rf = (role_family or "").strip().lower() or None
+    rf = " ".join((role_family or "").strip().lower().split()) or None
+    if rf in ROLE_FAMILY_ALIASES:
+        rf = ROLE_FAMILY_ALIASES[rf]
     if rf and rf not in ROLE_FAMILIES:
         raise OpenHireError(
             "ERR_UNKNOWN_ROLE_FAMILY",
             f"role_family {role_family!r} is not a family this index uses. Valid values: "
-            f"{', '.join(ROLE_FAMILIES)}. There is no HR / recruiting / people family — those "
-            "roles sit under 'ops'; to isolate them filter on the title instead "
-            "(title=['hr'] also reaches recruiter / talent acquisition / HRBP / 招聘 / 人力).",
+            f"{', '.join(ROLE_FAMILIES)} (recruiting / talent / people / HRBP / 招聘 roles are "
+            "'hr'). For a role no family names, filter on the title instead, e.g. "
+            "title=['招聘'] or title=['finance'].",
         )
     return rf
 
@@ -662,7 +679,13 @@ def _filter_and_rank(
         # postings are exactly the ones the weekly classifier has not reached. Excluding
         # them hid a 19-day Torc BEV role from a watch on role_family="engineering". A
         # filter excludes rows known to be OTHER families, never rows we have not read.
+        # "Known" includes what the free title rule is sure of: with 43% of live rows still
+        # unclassified (2026-10-19), role_family="hr" otherwise returned mostly engineers.
+        # HR is decided by the title alone, so an unclassified row joins an hr search only
+        # when its title names an HR job; for any other family an unsure row stays in.
         jrf = (getattr(job, "role_family", None) or "").lower()
+        if rf and not jrf:
+            jrf = classify_role_family_heuristic(job.title or "") or ("unclassified" if rf == "hr" else "")
         if rf and jrf and jrf != rf:
             continue
         if terms and not title_matches(job.title, terms):

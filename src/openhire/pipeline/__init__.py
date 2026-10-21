@@ -11,6 +11,7 @@ from .rebuild import (
     cost_cny,
     rebuild_extraction,
     rebuild_role_family,
+    reclassify_hr,
     rollback_extraction,
     run_sample_comparison,
 )
@@ -36,6 +37,7 @@ __all__ = [
     "normalize_title",
     "rebuild_extraction",
     "rebuild_role_family",
+    "reclassify_hr",
     "regenerate_apply_channels",
     "rollback_extraction",
     "run_sample_comparison",
