@@ -81,9 +81,24 @@ jobs:
           done
           echo "PyPI does not have openhire $v yet"; exit 1
 
-      - name: "Render: trigger the deploy hook"
+      - name: "Render: deploy this commit through the deploy hook"
         if: steps.gate.outputs.target == 'render'
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
+          # Without a commit the hook deploys whatever Render last fetched of the public
+          # repository, which can trail a push by many minutes: 0.8.16 and 0.8.17 both stayed
+          # on the previous version for the whole wait (runs 39525820978, 39529449618), while
+          # a retry half an hour later came up in a minute. With ref=<sha> (render.com/docs/
+          # deploy-a-commit) the hook answers 404 until Render knows the commit, so ask again.
+          for i in $(seq 1 20); do
+            code=$(curl -sS -o hook.out -w '%{http_code}' -X POST "${RENDER_DEPLOY_HOOK}&ref=${SHA}" || true)
+            case "$code" in
+              200|201|202) echo "deploy of $SHA requested: $(cat hook.out)"; exit 0 ;;
+            esac
+            echo "attempt $i: HTTP $code, Render does not know $SHA yet"; sleep 30
+          done
+          echo "Render never accepted $SHA; asking for its latest commit instead"
           out=$(curl -fsS -X POST "$RENDER_DEPLOY_HOOK") || { echo "the deploy hook did not accept the request"; exit 1; }
           echo "deploy requested: $out"
 
