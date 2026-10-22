@@ -126,12 +126,15 @@ jobs:
             return 1
           }
           superseded() {
-            # PyPI's latest is at least VERSION here (the previous step saw it). A newer one
-            # means a newer release's own run deploys; asking Render for this commit again
-            # would roll the host back to it.
+            # A newer release means that release's own run deploys; asking Render for this
+            # commit again would roll the host back to it. Only a strictly newer version
+            # counts: PyPI's unversioned JSON can trail a release on a CDN edge, and 0.8.27's
+            # deploy read 0.8.26 there a minute after the previous step had seen 0.8.27,
+            # took "different" for "newer" and stopped without deploying.
             latest=$(curl -fsS https://pypi.org/pypi/openhire/json | python3 -c "import json,sys;print(json.load(sys.stdin)['info']['version'])" 2>/dev/null || true)
-            if [ -n "$latest" ] && [ "$latest" != "$VERSION" ]; then
-              echo "::notice::PyPI's latest is $latest, not $VERSION: that release's own deploy run takes over, so this one stops here."
+            if [ -n "$latest" ] && [ "$latest" != "$VERSION" ] \
+               && [ "$(printf '%s\n' "$VERSION" "$latest" | sort -V | tail -n 1)" = "$latest" ]; then
+              echo "::notice::PyPI's latest is $latest, newer than $VERSION: that release's own deploy run takes over, so this one stops here."
               return 0
             fi
             return 1
