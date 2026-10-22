@@ -186,7 +186,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.25.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.26.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -222,7 +222,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.25.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.26.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — paste the one-block prompt from the Quickstart
@@ -273,7 +273,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.25", "serve"]`.
+matters: `"args": ["openhire==0.8.26", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -354,7 +354,8 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 > **GitHub unreachable from your network** (mainland China without a proxy, some sandboxes)?
 > When the GitHub download of the index snapshot fails, the server and `ohp bootstrap` try a
 > copy on CNB, Tencent's code hosting, under the same checks (the copy is refreshed from
-> GitHub every 6 hours by the repository's `.cnb.yml`). The package itself comes from PyPI; a PyPI mirror makes the install fast, e.g. add
+> GitHub every 6 hours by the repository's `.cnb.yml`; direct link https://cnb.cool/gzchenhao/openhire/-/releases/download/snapshot/openhire-index.db.gz , and
+> `OPENHIRE_SNAPSHOT_URL` set to it skips GitHub altogether). The package itself comes from PyPI; a PyPI mirror makes the install fast, e.g. add
 > `"env": {"UV_DEFAULT_INDEX": "https://pypi.tuna.tsinghua.edu.cn/simple"}` to the server's
 > config (older uv: `UV_INDEX_URL`), or `pip install -i https://pypi.tuna.tsinghua.edu.cn/simple openhire`.
 > The code is mirrored at https://cnb.cool/gzchenhao/openhire . `ohp bootstrap --fresh`
@@ -362,6 +363,7 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 > An empty index caused by a failed download says so in the tool result (`bootstrap_error`)
 > instead of looking like "no matches".
 > 国内网络：GitHub 下载快照失败时，服务器和 `ohp bootstrap` 会改试国内镜像 CNB 上的副本（每 6 小时与 GitHub 同步，校验相同）。
+> 镜像直链：https://cnb.cool/gzchenhao/openhire/-/releases/download/snapshot/openhire-index.db.gz ；在 MCP 配置的 `env` 里把 `OPENHIRE_SNAPSHOT_URL` 设成它，就完全不走 GitHub。
 > 装包慢就用 PyPI 镜像：在 MCP 配置里加 `"env": {"UV_DEFAULT_INDEX": "https://pypi.tuna.tsinghua.edu.cn/simple"}`
 > （旧版 uv 用 `UV_INDEX_URL`），或 `pip install -i https://pypi.tuna.tsinghua.edu.cn/simple openhire`。
 > 代码镜像：https://cnb.cool/gzchenhao/openhire 。

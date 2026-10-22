@@ -39,12 +39,13 @@ import re
 import httpx
 
 from ._aes import decrypt_cbc
-from .base import ATSClient, FetchResult, JobRecord, html_to_text
+from .base import ATSClient, FetchResult, JobRecord, PerLoopSemaphore, html_to_text
 
 _HOST = "https://app.mokahr.com"
 
-# Domestic ATS politeness: at most 2 Moka orgs in flight at once.
-_MOKA_SEMAPHORE = asyncio.Semaphore(2)
+# Domestic ATS politeness: at most 2 Moka orgs in flight at once (per crawl loop, see
+# PerLoopSemaphore: a module-level asyncio.Semaphore broke `ingest --seed` on 2026-10-22).
+_MOKA_SEMAPHORE = PerLoopSemaphore(2)
 
 _PAGE_SIZE = 100
 _MAX_PAGES = 20            # 2,000 postings per org — far above any observed roster

@@ -44,13 +44,13 @@ import asyncio
 
 import httpx
 
-from .base import ATSClient, FetchResult, JobRecord, html_to_text
+from .base import ATSClient, FetchResult, JobRecord, PerLoopSemaphore, html_to_text
 
 _API = "https://api-web.lixiang.com/osd-hr-recruitment-website/v1/recruit"
 _SITE = "https://www.lixiang.com"
 
-# One employer: keep its list and detail calls strictly serial.
-_LIXIANG_SEMAPHORE = asyncio.Semaphore(1)
+# One employer: keep its list and detail calls strictly serial (per crawl loop).
+_LIXIANG_SEMAPHORE = PerLoopSemaphore(1)
 
 _PAGE_SIZE = 200
 _MAX_PAGES = 10            # 2,000 postings; the roster was 772 on 2026-09-23

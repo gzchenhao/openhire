@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.25 · 2026-10-21；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.26 · 2026-10-22；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.26（2026-10-22，云端会话，`reports/091`）：** 本机 10-22 上午补跑暴露的问题。① **抓取并发锁跨事件循环**：Moka、北森、理想三个适配器的模块级 `asyncio.Semaphore` 会绑定第一次排队时的事件循环，`ohp ingest --seed`（校验与抓取各一个 `asyncio.run()`）抓香港 15 家时崩溃；`ats/base.py` 新增 `PerLoopSemaphore`（每个循环一把锁），三家改用，`tests/test_per_loop_semaphore.py` 6 条（含用旧写法复现原错误、全包禁止模块级 asyncio 锁、三家 Moka 两次抓取端到端）。**规矩：模块里不许再有模块级 asyncio 锁，测试会红。** ② Windows 上 `test_bootstrap_reopens_the_index_after_installing` 标为非 Windows 才跑（那是 POSIX 才有的读旧文件情形，Windows 替换开着的文件直接报错）。③ 门户目录：禾赛浏览器核过（飞书，160 岗，有 JD 无日期）；**地平线是大易 wecruit（hotjob.cn），不是 Wintalent**，281 岗、无日期，接口未评估前不读。④ **CNB 镜像实测可匿名下载、与 GitHub 原件同字节**，README 加直链与 `OPENHIRE_SNAPSHOT_URL` 用法（原「等 CNB 跑通再写」那条了结）。⑤ `hosted/Dockerfile` 安装重试 15 分钟；`scripts/backup_drafts.py` 调 git 时去掉 `GITHUB_TOKEN` / `GH_TOKEN`（本机环境里那个只读公开仓库的 token 是外联系统 `profiler/github_http.py` 读的，压过 gh 登录态让私库同步失败）。853 tests。**报告编号：** 090 是本机写的（10-22 上午补跑），云端这次用 091。
 - **v0.8.25（2026-10-21，云端会话，`reports/089`）：** **求职清单中英双语**（领导：「不是一行中文一行英文那种，是用户可以选择页面语言那种」）：同一个 `docs/checklist.html` 里中文整块在前、英文整块在后，右上角「中文 / English」切换；默认按 `?lang=` → 上次选择（localStorage）→ 浏览器语言；无 JS 两块都显示。Chromium 实测六种组合全对。**改清单要中英两块一起改**，测试钉住两块都在、中文在前。页脚反馈链接改成议题模板 `checklist_feedback.yml`（标签 `checklist`，不收个人信息）；新增月度工作流 `check-links.yml`（`scripts/check_page_links.py` 打开两页所有外链，404 / 410 才红，超时只报不红：12333.gov.cn 与 labour.gov.hk 对数据中心地址拒答）。**用户反馈闭环**：邮箱日检定时任务的提示词加一条，`checklist` 标签议题与本机知乎日检上报的清单意见一律当天改页、记更新记录、发版。宣传稿（知乎专文 + 投稿 + X 英文帖 + 领英）在私库，本机待办第 16 条。847 tests。
 - **v0.8.24（2026-10-21，云端会话）：** 领导要求求职清单页也带雇主认领那句（与托管首页、github.io 首页一致），`tests/test_hosted.py` 钉住。
 - **v0.8.23（2026-10-21，云端会话）：** 领导发现两个首页不一样（github.io 项目主页有雇主认领那句，Render 说明页没有）。托管首页补齐：求职清单、查公司、门户目录（新路由 `/portals`，由登记表渲染，测试钉住与 `docs/portals.html` 相同）、雇主页、隐私、源码与 CNB 镜像的链接，页脚同一句雇主认领。**规矩：两个首页列的页面和页脚那句要一致**，`tests/test_hosted.py` 钉住。847 tests。

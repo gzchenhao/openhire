@@ -57,7 +57,7 @@ FEISHU_IDS = ["momenta", "ponyai", "agibot", "minimax", "zhipu", "sensetime", "l
 OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix",
                 "psibot", "inspire", "linkerbot", "lightwheel", "infinigence"]
 # 2026-10-20 survey (reports/084): systems not assessed (DingTalk) or not read yet (Moka campus);
-# 2026-10-21 Hong Kong survey (reports/086): Wintalent, not assessed.
+# 2026-10-21 Hong Kong survey (reports/086); 2026-10-22 browser check: Horizon is on Dayee wecruit, not assessed.
 OTHER_IDS = ["rokae", "horizon", "baai"]
 CEASED_IDS = ["haomo"]
 
@@ -89,8 +89,8 @@ def test_registry_holds_the_feishu_employers_nio_the_own_page_ones_and_haomo():
             assert e.ats in (not_indexed.OWN_PAGE_ATS, not_indexed.PLATFORM_ONLY_ATS)
             assert "machine-readable careers page" in e.employer_opt_in["summary"]
         if e.id in OTHER_IDS:
-            assert e.ats in (not_indexed.DINGTALK_ATS, not_indexed.MOKA_CAMPUS_ATS, not_indexed.WINTALENT_ATS)
-            assert "not" in e.reason and e.last_checked in ("2026-10-20", "2026-10-21")
+            assert e.ats in (not_indexed.DINGTALK_ATS, not_indexed.MOKA_CAMPUS_ATS, not_indexed.DAYEE_ATS)
+            assert "not" in e.reason and e.last_checked in ("2026-10-20", "2026-10-21", "2026-10-22")
 
 
 def test_a_ceased_employer_gets_a_hint_that_sends_the_seeker_nowhere():
@@ -188,11 +188,12 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
         assert "2026-10-20" in not_indexed.by_id(eid).confirmed_by
     # 2026-10-21 Hong Kong survey: found in search results, and the entries say so.
     assert urls["hesai"] == "https://www.hesaitech.com/cn/careers"
-    assert urls["horizon"] == "https://www.hotjob.cn/wt/Horizon/mobweb/v8/position/list"
+    # 2026-10-22: opened in a browser by the local session; Horizon's link redirects to Dayee wecruit.
+    assert urls["horizon"] == "https://wecruit.hotjob.cn/SU64819a4f2f9d2433ba8b043a/pb/social.html"
     survey_1021 = {"hesai", "horizon"}
     for eid in survey_1021:
-        assert "2026-10-21" in not_indexed.by_id(eid).confirmed_by
-        assert "not yet opened in a browser" in not_indexed.by_id(eid).confirmed_by
+        assert "2026-10-22" in not_indexed.by_id(eid).confirmed_by
+        assert "opened in a browser without logging in" in not_indexed.by_id(eid).confirmed_by
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
     assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"} - survey_1020 - survey_1021
     assert "zhipin.com" in not_indexed.by_id("deeprobotics").confirmed_by

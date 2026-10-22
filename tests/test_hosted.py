@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import sys
 
 import pytest
 
@@ -281,6 +282,10 @@ def test_loopback_bind_keeps_the_rebinding_guard(restore_http_settings):
     assert refused is not None and refused.status_code == 421
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason=(
+    "POSIX-only: the case is a pooled reader that keeps reading a file after it was unlinked "
+    "and replaced; Windows refuses to unlink or replace a file another connection holds open "
+    "(WinError 32), so a stale reader cannot arise there and the swap fails loudly instead"))
 def test_bootstrap_reopens_the_index_after_installing(tmp_path, monkeypatch):
     """A reader during the download pooled a connection to the empty file; on Linux it kept
     seeing that file after the swap, so the hosted /healthz said index_empty until a

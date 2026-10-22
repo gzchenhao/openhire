@@ -47,7 +47,12 @@ FORBIDDEN = ("*.env", ".env", "*.pem", "*.key", "*_token", "*.token", ".pypirc")
 
 
 def run(*args: str, cwd: Path | None = None) -> str:
-    r = subprocess.run(args, cwd=cwd, capture_output=True, text=True, encoding="utf-8")
+    # A GITHUB_TOKEN / GH_TOKEN in the environment wins over the keyring login in gh's git
+    # credential helper. The one on the maintainer's machine is a public_repo token the
+    # outreach pipeline reads for GitHub API rate limits; it cannot see this private repo,
+    # so every sync failed until it was unset by hand (2026-10-22). Git here never needs it.
+    env = {k: v for k, v in os.environ.items() if k not in ("GITHUB_TOKEN", "GH_TOKEN")}
+    r = subprocess.run(args, cwd=cwd, capture_output=True, text=True, encoding="utf-8", env=env)
     if r.returncode:
         raise SystemExit(f"$ {' '.join(args)}\n{r.stdout}{r.stderr}")
     return r.stdout.strip()

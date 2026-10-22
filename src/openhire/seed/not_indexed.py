@@ -145,13 +145,13 @@ DINGTALK_REASON = (
 )
 DINGTALK_REASON_ZH = "雇主的招聘站用钉钉招聘，这个系统我们还没评估过；确认它的公开页不要签名、登录或验证码之前，我们不读"
 MOKA_CAMPUS_ATS = "Moka campus portal (campus portals not read yet)"
-WINTALENT_ATS = "Wintalent / Hotjob 汇通 (not yet assessed)"
-WINTALENT_REASON = (
-    "this employer's careers site runs on Wintalent (Hotjob), a system this index has not "
-    "assessed yet; until it is checked that its public pages answer without a signature, a "
+DAYEE_ATS = "Dayee wecruit 大易 (hotjob.cn, not yet assessed)"
+DAYEE_REASON = (
+    "this employer's careers site runs on Dayee wecruit (大易, hotjob.cn), a system this index "
+    "has not assessed yet; until it is checked that its list answers without a signature, a "
     "login or a captcha, none of its postings are read"
 )
-WINTALENT_REASON_ZH = "雇主的招聘站用 Wintalent（汇通 Hotjob），这个系统我们还没评估过；确认它的公开页不要签名、登录或验证码之前，我们不读"
+DAYEE_REASON_ZH = "雇主的招聘站用大易 wecruit（hotjob.cn），这个系统我们还没评估过；确认它的岗位列表不要签名、登录或验证码之前，我们不读"
 FEISHU_VIA_OWN_PAGE_VIEW = (
     "The employer's page links to its Feishu Recruitment portal; there, in a browser without "
     "logging in, the job list and full descriptions are visible, with no posting date "
@@ -340,10 +340,14 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         id="hesai", name="禾赛科技 Hesai",
         aliases=("hesai", "hesai technology", "禾赛科技", "禾赛"),
         careers_url="https://www.hesaitech.com/cn/careers",
-        confirmed_by=("search results on 2026-10-21 show the employer's careers page and its Feishu "
-                      "Recruitment tenant kwh0jtf778.jobs.feishu.cn; not yet opened in a browser"),
-        sector="autonomous_driving", last_checked="2026-10-21",
-        portal_view=FEISHU_VIA_OWN_PAGE_VIEW, portal_view_zh=FEISHU_VIA_OWN_PAGE_VIEW_ZH,
+        confirmed_by=("opened in a browser without logging in on 2026-10-22: the careers page links "
+                      "its social, campus and internship hiring to the Feishu Recruitment tenant "
+                      "kwh0jtf778.jobs.feishu.cn"),
+        sector="autonomous_driving", last_checked="2026-10-22",
+        portal_view=("The employer's careers page links to its Feishu Recruitment portal; in a browser "
+                     "without logging in, the social-hiring list showed 160 postings with full "
+                     "descriptions, city and category, and no posting date (checked 2026-10-22)."),
+        portal_view_zh="雇主官网招聘页链到它的飞书招聘门户；浏览器打开、不登录，社招列表显示 160 个岗位，带完整职位描述、城市和类别，没有发布日期（2026-10-22 核过）",
     ),
     # Not Feishu. The page itself is public (a plain curl GET on 2026-09-23 returned the
     # 1,784-row roster inside __NEXT_DATA__, see ats/nio.py), and the same GET from this
@@ -545,15 +549,17 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
     NotIndexedEmployer(
         id="horizon", name="地平线 Horizon Robotics",
         aliases=("horizon robotics", "horizon", "地平线机器人", "地平线"),
-        careers_url="https://www.hotjob.cn/wt/Horizon/mobweb/v8/position/list",
-        confirmed_by=("search results on 2026-10-21 (the Hong Kong survey, reports/086) show the "
-                      "employer's social-hiring list on Wintalent / Hotjob and its campus site "
-                      "sp.wintalent.cn/Horizon; not yet opened in a browser"),
-        ats=WINTALENT_ATS, reason=WINTALENT_REASON, reason_zh=WINTALENT_REASON_ZH,
+        careers_url="https://wecruit.hotjob.cn/SU64819a4f2f9d2433ba8b043a/pb/social.html",
+        confirmed_by=("opened in a browser without logging in on 2026-10-22: the employer's link "
+                      "www.hotjob.cn/wt/Horizon redirects to its Dayee wecruit site, whose social-hiring "
+                      "list needs no login and no captcha; the list API has not been assessed"),
+        ats=DAYEE_ATS, reason=DAYEE_REASON, reason_zh=DAYEE_REASON_ZH,
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
-        sector="autonomous_driving", last_checked="2026-10-21",
-        portal_view="Search results show the employer's Wintalent job list; what it shows in a browser without a login has not been checked.",
-        portal_view_zh="搜索结果显示雇主在 Wintalent 上的岗位列表；浏览器不登录能看到什么还没核过",
+        sector="autonomous_driving", last_checked="2026-10-22",
+        portal_view=("In a browser without logging in, the list showed 281 open roles with title, "
+                     "function, hiring entity and city, 12 a page; no posting date, and each "
+                     "description opens on its own page (checked 2026-10-22)."),
+        portal_view_zh="浏览器不登录能看列表：281 个在招岗位，带职位名、序列、用人实体和城市，每页 12 条；没有发布日期，职位描述要点开另一页（2026-10-22 核过）",
     ),
     NotIndexedEmployer(
         id="baai", name="北京智源人工智能研究院 BAAI",

@@ -21,16 +21,15 @@ This endpoint is public and unauthenticated: no cookie, no token, no signature.
 
 from __future__ import annotations
 
-import asyncio
 import datetime as dt
 import re
 
 import httpx
 
-from .base import ATSClient, FetchResult, JobRecord, html_to_text
+from .base import ATSClient, FetchResult, JobRecord, PerLoopSemaphore, html_to_text
 
-# Domestic ATS politeness: at most 2 Beisen tenants in flight at once.
-_BEISEN_SEMAPHORE = asyncio.Semaphore(2)
+# Domestic ATS politeness: at most 2 Beisen tenants in flight at once (per crawl loop).
+_BEISEN_SEMAPHORE = PerLoopSemaphore(2)
 
 _PAGE_SIZE = 50
 _MAX_PAGES = 40  # 2,000 postings per tenant — far above any observed roster

@@ -9,15 +9,49 @@ pipeline is vendor-agnostic downstream.
 
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import html
 import re
+import threading
+import weakref
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
 import httpx
+
+class PerLoopSemaphore:
+    """A politeness limit that holds per event loop, never across loops.
+
+    asyncio primitives bind to the loop that first waits on them. A module-level
+    `asyncio.Semaphore` shared by two `asyncio.run()` calls in one process raises "bound to a
+    different event loop" in the second: `ohp ingest --seed` checks the seeds in one loop and
+    crawls in another, and the crawl of 15 Hong Kong employers died that way on 2026-10-22
+    (the Moka limit had bound to the seed check). Each running loop gets its own semaphore.
+    """
+
+    def __init__(self, value: int) -> None:
+        self._value = value
+        self._by_loop: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+        self._guard = threading.Lock()  # MCP tool calls run their loops in worker threads
+
+    def _current(self) -> asyncio.Semaphore:
+        loop = asyncio.get_running_loop()
+        with self._guard:
+            sem = self._by_loop.get(loop)
+            if sem is None:
+                sem = self._by_loop[loop] = asyncio.Semaphore(self._value)
+        return sem
+
+    async def __aenter__(self) -> None:
+        await self._current().acquire()
+
+    async def __aexit__(self, *exc_info) -> bool:
+        self._current().release()
+        return False
+
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"[ \t\r\f\v]+")
