@@ -23,6 +23,7 @@ from typing import Protocol
 
 from .. import config
 from ..ats.base import JobRecord
+from . import pricing
 
 REMOTE_POLICIES = ("remote", "hybrid", "onsite", "unknown")
 
@@ -587,7 +588,14 @@ class DeepSeekExtractor:
             return None
 
     def _call(self, payload: dict) -> dict:
-        """POST once. Raises RateLimited on 429 so the caller can back off."""
+        """POST once. Raises RateLimited on 429 so the caller can back off.
+
+        Raises pricing.PeakHours, before anything is sent, while DeepSeek bills full price.
+        Every paid DeepSeek call passes through here, so this is the lock itself; GLM
+        overrides `_call` and is untouched (its plan is prepaid). `extract` turns the
+        refusal into the free heuristic answer, stamped heuristic, for the paid pass later.
+        """
+        pricing.check()
         resp = self._http().post(self._url, json=payload)
         if resp.status_code == 429:
             raise RateLimited("HTTP 429 from provider")

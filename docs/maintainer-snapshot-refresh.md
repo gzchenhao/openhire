@@ -64,9 +64,15 @@ Then verify:
   local pass. Run the enrichment on your own machine, where the key lives in `.env`:
 
   ```powershell
-  ohp extract-rebuild --backend glm     # skills for every job no LLM has touched (CNY 0, coding plan)
-  ohp extract-role-family --backend glm # role_family for the NULL rows
+  ohp extract-role-family --backend deepseek --ceiling 15   # role_family for the NULL rows
+  ohp extract-rebuild --backend deepseek --ceiling 15       # skills for every job no LLM has touched
   ```
+
+  DeepSeek bills by time of day, and both commands refuse to run in its full-price hours
+  (weekdays 09:00-12:00 and 14:00-18:00 Beijing time, padded by 30 minutes on each side;
+  `src/openhire/pipeline/pricing.py`, since 0.8.27). A run that crosses into those hours
+  stops at the next batch with its progress saved. Run them in the evening or at the
+  weekend. GLM (`--backend glm`) still works but the plan was not renewed in 2026-09.
 
   Then build + upload the snapshot with the steps above, so the enriched data reaches users.
   Roughly monthly is enough; CI keeps freshness up in between.

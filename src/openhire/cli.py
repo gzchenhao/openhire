@@ -1135,6 +1135,7 @@ def extract_sample(
     init_db()
     _banner()
     console.cmd(f"ohp extract-sample --n {n}")
+    _refuse_deepseek_at_full_price()
     console.out(f"用 DeepSeek deepseek-chat 抽取 {n} 条并与启发式对比…")
     try:
         rep = run_sample_comparison(n, workers)
@@ -1239,6 +1240,27 @@ def _cfg_ceiling() -> float:
     return config.EXTRACTION_COST_CEILING_CNY
 
 
+def _refuse_deepseek_at_full_price(also: str = "") -> None:
+    """Exit before a paid DeepSeek run starts while DeepSeek bills full price (pricing.py)."""
+    from .pipeline import pricing
+
+    reason = pricing.explain()
+    if reason is not None:
+        console.error("ERR_DEEPSEEK_FULL_PRICE", f"{reason}{also}。")
+        raise typer.Exit(1)
+
+
+def _report_full_price_stop(stats, done: str) -> None:
+    """A paid run stopped (or never started) because DeepSeek bills full price: say so,
+    say how far it got, and exit non-zero so a chain of commands stops here too."""
+    console.error("ERR_DEEPSEEK_FULL_PRICE", f"{stats.halt_reason}。")
+    console.note(
+        f"本次{done} {stats.updated}/{stats.total_target} · 花费 CNY {stats.cost:.2f}。"
+        "进度已保存，到时运行同一条命令会从断点接着做。"
+    )
+    raise typer.Exit(1)
+
+
 # --- extract-rebuild ----------------------------------------------------------
 @app.command(name="extract-rebuild", rich_help_panel=LAB_PANEL)
 def extract_rebuild(
@@ -1272,6 +1294,8 @@ def extract_rebuild(
         console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
         raise typer.Exit(1)
 
+    if stats.peak_blocked:
+        _report_full_price_stop(stats, "更新")
     if getattr(stats, "keys_dead", False):
         # "Re-run from the checkpoint" is the wrong advice when no key can ever work.
         console.error("ERR_LLM_KEYS_DEAD", stats.halt_reason)
@@ -1347,6 +1371,8 @@ def bootstrap(
         console.error("ERR_DEEPSEEK_KEY_MISSING",
                       "--deepseek 需要你自己的 DEEPSEEK_API_KEY（写进 .env）。不加则用免费启发式。")
         raise typer.Exit(1)
+    if deepseek:
+        _refuse_deepseek_at_full_price("；不加 --deepseek 则现在就能用免费启发式跑")
 
     # --- Pre-flight: say exactly what will happen (no account, no PII) ---
     if fresh:
@@ -1489,6 +1515,8 @@ def extract_role_family(
         console.error("ERR_EXTRACTOR_KEY_MISSING", str(e))
         raise typer.Exit(1)
 
+    if stats.peak_blocked:
+        _report_full_price_stop(stats, "标注")
     if stats.rate_limited:
         console.note(f"其中 {stats.rate_limited} 条因限流（HTTP 429）未完成，重跑会从断点续上。")
     if stats.halted:

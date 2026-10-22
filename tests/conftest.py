@@ -36,3 +36,17 @@ def _never_the_real_index():
         "before conftest set OPENHIRE_DATABASE_URL"
     )
     yield
+
+
+@pytest.fixture(autouse=True)
+def _deepseek_at_half_price(monkeypatch):
+    """Every DeepSeek call checks the price band first (pipeline/pricing.py), so a suite run
+    on a weekday afternoon in Beijing would refuse every faked DeepSeek call. Pin the clock
+    to a Saturday; tests about the lock itself set their own time."""
+    import datetime as dt
+
+    from openhire.pipeline import pricing
+
+    saturday = dt.datetime(2026, 10, 24, 6, 0, tzinfo=dt.timezone.utc)  # 14:00 Beijing
+    monkeypatch.setattr(pricing, "_now", lambda: saturday)
+    yield

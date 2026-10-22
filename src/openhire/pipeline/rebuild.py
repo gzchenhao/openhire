@@ -22,6 +22,7 @@ from .. import config
 from ..ats.base import JobRecord
 from ..db import Job, session_scope
 from ..db.migrate import ensure_schema
+from . import pricing
 from .extract import (
     LLM_SOURCES,
     DeepSeekExtractor,
@@ -32,6 +33,7 @@ from .extract import (
     make_deepseek_extractor,
     make_llm_extractor,
 )
+from .pricing import PeakHours
 
 TARGET_SOURCE = "deepseek"
 
@@ -137,6 +139,10 @@ def _retry_call(fn, attempts: int = 3):
             # would burn the whole escalating sleep sequence 3,000 times over for an
             # outcome that is already decided.
             raise
+        except PeakHours as exc:
+            # Nothing was sent and seconds of retrying cannot reach the half-price band;
+            # the row stays as it is and the next batch check stops the run.
+            return None, f"PeakHours: {exc}", False
         except RateLimited as exc:
             last_err = f"RateLimited: {exc}"
             if hit_429 >= len(_429_BACKOFF_SECONDS):
@@ -445,10 +451,27 @@ class RebuildStats:
     rate_limited: int = 0
     # True when the run stopped because no key can work — renew or replace, do not re-run.
     keys_dead: bool = False
+    # True when the run stopped (or never started) because DeepSeek bills full price now.
+    peak_blocked: bool = False
 
     @property
     def cost(self) -> float:
         return cost_cny(self.prompt_tokens, self.completion_tokens, self.backend)
+
+
+def _stop_for_full_price(stats: RebuildStats) -> bool:
+    """Checked before every batch of a DeepSeek run, so a run started at full price does
+    nothing and one that crosses into it stops at the boundary with its progress committed.
+    The check inside each DeepSeek call is the lock; this makes the stop clean and says why."""
+    if stats.backend != "deepseek":
+        return False
+    reason = pricing.explain()
+    if reason is None:
+        return False
+    stats.halted = True
+    stats.peak_blocked = True
+    stats.halt_reason = reason
+    return True
 
 
 def _copy_fallback(job: Job) -> None:
@@ -506,6 +529,8 @@ def rebuild_extraction(
     remaining = stats.total_target if limit is None else min(limit, stats.total_target)
 
     while remaining > 0:
+        if _stop_for_full_price(stats):
+            break
         take = min(batch_size, remaining)
         with session_scope() as s:
             jobs = list(
@@ -675,6 +700,8 @@ def rebuild_role_family(
     remaining = stats.total_target if limit is None else min(limit, stats.total_target)
 
     while remaining > 0:
+        if _stop_for_full_price(stats):
+            break
         take = min(batch_size, remaining)
         with session_scope() as s:
             jobs = list(
