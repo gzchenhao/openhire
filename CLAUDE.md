@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.26 · 2026-10-22；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.27 · 2026-10-22；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.27（2026-10-22，云端会话，`reports/092`）：** **DeepSeek 全价时段代码锁**（领导：「这个要锁定以后必须是闲时跑，价格相差一倍的，请替我省点」）。起因：本机 10-22 上午北京时间 11:11 到 11:24 跑岗位族精抽（8,195 条、¥12.50），技能精抽 11:24 起也在全价时段，规则 9 写了但只靠会话记得。`pipeline/pricing.py`：工作日北京时间 08:30 到 12:30、13:30 到 18:30 拒绝（DeepSeek 全价时段前后各加 30 分钟，本机时钟偏慢；节假日按工作日算，宁可等）；`DeepSeekExtractor._call` 发请求前查，所以每一次 DeepSeek 调用都被锁住，`extract()` 退回免费启发式并如实盖 heuristic 章，GLM 不受影响；两条付费精抽每批之前查，全价时段一条不跑、跨进全价时段在批次边界停、进度已存；`extract-rebuild` / `extract-role-family` / `extract-sample` / `bootstrap --deepseek` 报 `ERR_DEEPSEEK_FULL_PRICE`、说几点再来、退出码 1。**没有开关**（测试钉住 pricing.py 不读环境变量、`_call` 先查再发）；DeepSeek 改时段就改常量发版。conftest 把测试时钟钉在周六。882 tests。
 - **v0.8.26（2026-10-22，云端会话，`reports/091`）：** 本机 10-22 上午补跑暴露的问题。① **抓取并发锁跨事件循环**：Moka、北森、理想三个适配器的模块级 `asyncio.Semaphore` 会绑定第一次排队时的事件循环，`ohp ingest --seed`（校验与抓取各一个 `asyncio.run()`）抓香港 15 家时崩溃；`ats/base.py` 新增 `PerLoopSemaphore`（每个循环一把锁），三家改用，`tests/test_per_loop_semaphore.py` 6 条（含用旧写法复现原错误、全包禁止模块级 asyncio 锁、三家 Moka 两次抓取端到端）。**规矩：模块里不许再有模块级 asyncio 锁，测试会红。** ② Windows 上 `test_bootstrap_reopens_the_index_after_installing` 标为非 Windows 才跑（那是 POSIX 才有的读旧文件情形，Windows 替换开着的文件直接报错）。③ 门户目录：禾赛浏览器核过（飞书，160 岗，有 JD 无日期）；**地平线是大易 wecruit（hotjob.cn），不是 Wintalent**，281 岗、无日期，接口未评估前不读。④ **CNB 镜像实测可匿名下载、与 GitHub 原件同字节**，README 加直链与 `OPENHIRE_SNAPSHOT_URL` 用法（原「等 CNB 跑通再写」那条了结）。⑤ `hosted/Dockerfile` 安装重试 15 分钟；`scripts/backup_drafts.py` 调 git 时去掉 `GITHUB_TOKEN` / `GH_TOKEN`（本机环境里那个只读公开仓库的 token 是外联系统 `profiler/github_http.py` 读的，压过 gh 登录态让私库同步失败）。853 tests。**报告编号：** 090 是本机写的（10-22 上午补跑），云端这次用 091。
 - **v0.8.25（2026-10-21，云端会话，`reports/089`）：** **求职清单中英双语**（领导：「不是一行中文一行英文那种，是用户可以选择页面语言那种」）：同一个 `docs/checklist.html` 里中文整块在前、英文整块在后，右上角「中文 / English」切换；默认按 `?lang=` → 上次选择（localStorage）→ 浏览器语言；无 JS 两块都显示。Chromium 实测六种组合全对。**改清单要中英两块一起改**，测试钉住两块都在、中文在前。页脚反馈链接改成议题模板 `checklist_feedback.yml`（标签 `checklist`，不收个人信息）；新增月度工作流 `check-links.yml`（`scripts/check_page_links.py` 打开两页所有外链，404 / 410 才红，超时只报不红：12333.gov.cn 与 labour.gov.hk 对数据中心地址拒答）。**用户反馈闭环**：邮箱日检定时任务的提示词加一条，`checklist` 标签议题与本机知乎日检上报的清单意见一律当天改页、记更新记录、发版。宣传稿（知乎专文 + 投稿 + X 英文帖 + 领英）在私库，本机待办第 16 条。847 tests。
 - **v0.8.24（2026-10-21，云端会话）：** 领导要求求职清单页也带雇主认领那句（与托管首页、github.io 首页一致），`tests/test_hosted.py` 钉住。
@@ -333,9 +334,10 @@
     `deepseek-chat` 现在指向 `deepseek-flash`（另有 `deepseek-v4-pro`，**不用**：抽技能是结构化提取不是强推理，
     flash 是实测过的那个）。**实测单价 ¥0.0022/条**，2026-09-20 全量 3,035 条花 **¥6.57**、零失败。
     `--ceiling` 是 CNY 硬停（默认 50，跑全量时给 15 就够）。
-    **只在 DeepSeek 低价时段跑（领导 2026-09-23 定）。** 官方定价页（api-docs.deepseek.com/quick_start/pricing）：
-    高价时段 = **工作日 UTC 01:00–04:00 和 06:00–10:00**，即**北京时间 09:00–12:00、14:00–18:00**；
+    **只在 DeepSeek 低价时段跑（领导 2026-09-23 定；0.8.27 起代码锁死，`pipeline/pricing.py`，没有开关）。** 官方定价页（api-docs.deepseek.com/quick_start/pricing）：
+    高价时段 = **工作日 UTC 01:00–04:00 和 06:00–10:00**，即**北京时间 09:00–12:00、14:00–18:00**（2026-08-17 起峰谷定价；08-23 起周六日全天半价）；
     其余时间、周末、中国法定假日全天都是半价。本机时钟是 UTC+7，别拿本机时间当北京时间，先 `date -u`。
+    代码锁比价格表多留 30 分钟余量（工作日北京时间 08:30 到 12:30、13:30 到 18:30 拒绝）、节假日按工作日算；命令显示的「花费」按 `config.DEEPSEEK_PRICE_*` 固定单价估算、不分时段，对账以 DeepSeek 后台账单为准。
     抽取脚本可以 detach 跑（PowerShell `Start-Process` + 日志文件），会话不用一直挂着。
   - **GLM —— 已停用（2026-09-20 领导决定不再续订）。** 四个 key 当天实测全死：
     #1/#2 是 `1309`「GLM Coding Plan 套餐已到期」、#3 是 401、#4 是 `1113` 余额不足。

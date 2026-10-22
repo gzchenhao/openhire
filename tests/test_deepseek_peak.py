@@ -1,6 +1,6 @@
 """DeepSeek runs only at half price (pipeline/pricing.py), and nothing can switch that off.
 
-On 2026-10-22 a session ran the paid role-family pass on a weekday afternoon in Beijing
+On 2026-10-22 a session ran the paid role-family pass at 11:11 on a weekday in Beijing
 and paid ¥12.50 for about ¥6 of work, although the rule to run off-peak had been written
 down since 2026-09-23. The rule is now code. What is locked down here:
   * the bands: weekdays 09:00-12:00 and 14:00-18:00 Beijing are refused, padded by 30
@@ -65,7 +65,8 @@ def _at(monkeypatch, when: dt.datetime) -> None:
         (_bj(THU, 12, 30), None),        # the lunch hour is half price
         (_bj(THU, 13, 29), None),
         (_bj(THU, 13, 30), (18, 30)),
-        (_bj(THU, 15, 8), (18, 30)),     # when the 2026-10-22 run happened
+        (_bj(THU, 11, 11), (12, 30)),    # when the 2026-10-22 role-family run started
+        (_bj(THU, 15, 8), (18, 30)),
         (_bj(THU, 18, 29), (18, 30)),
         (_bj(THU, 18, 30), None),
         (_bj(THU, 21, 30), None),        # the local session's nightly run

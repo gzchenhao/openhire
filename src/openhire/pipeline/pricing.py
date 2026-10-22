@@ -5,7 +5,7 @@ and 14:00-18:00 Beijing time, half price at every other hour, and since 2026-08-
 price all day on Saturdays and Sundays (api-docs.deepseek.com/quick_start/pricing and the
 two announcements). The lead's rule since 2026-09-23 has been to run paid extraction only
 at half price, but a rule a session has to remember is a rule a session can forget: on
-2026-10-22 the local session ran the role-family pass on a weekday afternoon and paid
+2026-10-22 the local session ran the role-family pass at 11:11 on a weekday and paid
 full price, ¥12.50, for work that costs half that off-peak. So the check now sits in front
 of every DeepSeek call (`DeepSeekExtractor._call`), and no flag, option or environment
 variable turns it off. If DeepSeek changes its bands, change the constants below in a
