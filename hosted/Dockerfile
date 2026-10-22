@@ -16,7 +16,14 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=7860
 
 RUN useradd -m -u 1000 user && mkdir -p /data && chown user:user /data
-RUN pip install --no-cache-dir "openhire==0.8.25"
+# PyPI's CDN edges lag a release by minutes; a build started right after one fails with
+# "no matching distribution" (seven failed Render builds on 2026-10-21). Retry for up to
+# 15 minutes, then prove the pinned version is what got installed.
+RUN for i in $(seq 1 30); do \
+      pip install --no-cache-dir "openhire==0.8.25" && break; \
+      echo "openhire==0.8.25 is not on this PyPI edge yet (attempt $i); retrying in 30 s"; sleep 30; \
+    done \
+ && ohp version | grep -q "0.8.25"
 
 COPY --chown=user:user entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
