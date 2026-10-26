@@ -24,6 +24,15 @@ RUN for i in $(seq 1 30); do \
       echo "openhire==0.8.27 is not on this PyPI edge yet (attempt $i); retrying in 30 s"; sleep 30; \
     done \
  && ohp version | grep -q "0.8.27"
+# The trust store the server verifies GitHub (the snapshot) and employer sites against.
+# Render's 2026-10-23 advisory: eight eMudhra intermediate certificates were compromised
+# (disclosed 2026-10-19); certifi 2026.10.19 and 2026.10.23 followed. httpx reads certifi,
+# so it is upgraded after the pinned install; the system store is refreshed for anything
+# else. This layer sits below the version line, so every release rebuilds it fresh.
+RUN pip install --no-cache-dir --upgrade certifi \
+ && apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && python -c "import certifi; print('certifi', certifi.__version__)"
 
 COPY --chown=user:user entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
