@@ -70,7 +70,7 @@ to hire. A long-open role can equally mean "hard to fill". Treat it as a reason 
 An MCP server that turns **any** MCP-speaking assistant — Claude, 豆包 Doubao, DeepSeek (through
 an MCP client such as Cherry Studio or Chatbox), Cursor, 腾讯 WorkBuddy, TRAE, Windsurf, Cline,
 ChatGPT (through the hosted endpoint below) — into a private radar for
-**AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **152 employers'**
+**AI / Infra, autonomous-driving and embodied-AI jobs** — pulled straight from **173 employers'**
 own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka, plus
 first-party employer career sites such as Li Auto's), across
 the US, Europe **and China** (Waymo, Figure, Zoox — and Unitree, XPeng, UBTECH, Mech-Mind…).
@@ -199,7 +199,7 @@ Per-client config paths and the trade-offs of `uvx` vs a one-time install are in
 
 ```bash
 pipx install openhire      # keeps it isolated and puts `ohp` on your PATH
-ohp bootstrap              # 152 employers · ~18k live postings · no account
+ohp bootstrap              # 173 employers · ~20k live postings · no account
 
 ohp search --required-skills rust,k8s --remote --role-family engineering
 ohp search --currency CNY --role-family engineering   # e.g. CN 智驾 / robotics roles
@@ -640,7 +640,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## Roadmap
 
 - **v0.2 – v0.3 (shipped)** — CN ATS adapters (北森 Beisen + Moka) · weekly auto-refreshed
-  public snapshot · `ghost_score` public beta · 152 employers across US / EU / China
+  public snapshot · `ghost_score` public beta · 173 employers across US / EU / China
 - **next** — Employer claim + verified badges — employers can [reserve their claim
   today](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml) via a
   corporate-identity GitHub issue (zero-cost now; badges + listing-status control ship next) ·
@@ -652,7 +652,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## FAQ
 
 **Where does the job data come from?**
-Directly from 152 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, Workable, SmartRecruiters, plus
+Directly from 173 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, Workable, SmartRecruiters, plus
 first-party employer career sites such as Li Auto's), the same endpoints that power their careers
 pages. No third-party job boards. `source` is
 always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.
