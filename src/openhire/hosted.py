@@ -336,6 +336,18 @@ def build_app(mcp, per_ip: int | None = None, total: int | None = None):
         async def _check_company(_: Request):
             return HTMLResponse(page_html("check-company.html"))
 
+        # The same page as a feed EarlyTip renders as its own 查公司 column (reports/095),
+        # built from the packaged page, byte for byte docs/check-company.json.
+        @mcp.custom_route("/check-company.json", methods=["GET"], include_in_schema=False)
+        async def _check_company_feed(_: Request):
+            from starlette.responses import Response
+
+            from .check_company_feed import build, dumps
+
+            return Response(dumps(build(page_html("check-company.html"))),
+                            media_type="application/json; charset=utf-8",
+                            headers={"Access-Control-Allow-Origin": "*"})
+
         # The portal directory, rendered from the registry (the same page as docs/portals.html).
         @mcp.custom_route("/portals", methods=["GET"], include_in_schema=False)
         @mcp.custom_route("/portals.html", methods=["GET"], include_in_schema=False)
