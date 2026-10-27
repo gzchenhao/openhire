@@ -142,7 +142,7 @@ def test_load_reads_once_a_day_and_a_failure_names_the_network_not_the_data(home
 
     monkeypatch.setattr(checks, "_get", fake_get)
     data = org_events.load()
-    assert calls == [org_events.URL] and data["event_count"] == 6 and data["downloaded"] == dt.date.today().isoformat()
+    assert calls == [org_events.URL] and data["event_count"] == 6 and data["downloaded"] == dt.datetime.now(dt.timezone.utc).date().isoformat()
     org_events.load()
     assert len(calls) == 1, "the second read within a day comes from the cache"
 
