@@ -186,6 +186,7 @@ jobs:
           curl -fsS --max-time 60 "$HOSTED_URL/check-company?from=earlytip" | grep -q "<title>查公司</title>"
           curl -fsS --max-time 60 "$HOSTED_URL/checklist" | grep -q "求职清单"
           curl -fsS --max-time 60 "$HOSTED_URL/check-company.json" | python3 -c "import json,sys;d=json.load(sys.stdin);assert d['schema']==1 and d['title']=='查公司'"
+          curl -fsS --max-time 60 "$HOSTED_URL/connect" | grep -q "连接向导"
           echo "pages ok"
 
   health:
@@ -206,6 +207,7 @@ jobs:
           curl -fsS --max-time 90 "$HOSTED_URL/check-company" | grep -q "<title>查公司</title>"
           curl -fsS --max-time 90 "$HOSTED_URL/checklist" | grep -q "求职清单"
           curl -fsS --max-time 90 "$HOSTED_URL/check-company.json" | python3 -c "import json,sys;d=json.load(sys.stdin);assert d['schema']==1 and d['title']=='查公司'"
+          curl -fsS --max-time 90 "$HOSTED_URL/connect" | grep -q "连接向导"
 
   warm:
     if: github.event_name == 'schedule' && github.event.schedule == '*/10 * * * *' && vars.HOSTED_URL != ''
