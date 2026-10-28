@@ -91,3 +91,59 @@ def test_hosted_endpoint_serves_the_same_feed():
     assert r.status_code == 200 and r.headers["content-type"].startswith("application/json")
     assert r.headers["access-control-allow-origin"] == "*"
     assert r.text == DOCS_FEED.read_text(encoding="utf-8")
+
+
+# --- EarlyTip's own two gates (reports/099) ------------------------------------------------
+# The column went live on 2026-10-28 with two checks of EarlyTip's own: the visible text must
+# not contain any of six words, and a new version must not be shorter than half of the one
+# shown. Both run on our side first, so nothing EarlyTip would refuse is ever published.
+
+
+def test_docs_feed_passes_earlytips_gates():
+    d = json.loads(DOCS_FEED.read_text(encoding="utf-8"))
+    assert feed.earlytip_gate(d, previous=d) == []
+
+
+@pytest.mark.parametrize("word", ["求职", "招聘", "岗位", "MCP", "安装", "OpenHire", "openhire"])
+def test_gate_catches_each_banned_word_in_the_visible_text(word):
+    bad = {"html": f"<p>这里提到 {word} 一次。</p>"}
+    problems = feed.earlytip_gate(bad)
+    assert len(problems) == 1 and word.lower() in problems[0].lower(), problems
+
+
+def test_gate_reads_the_visible_text_the_way_earlytip_does():
+    # EarlyTip checks what a reader sees; our own stricter test above still bans the product
+    # name anywhere in the html, hrefs included, so this only documents the gate's scope.
+    hidden = {"html": '<p>看 <a href="https://example.com/openhire">这里</a>。</p>'}
+    assert feed.earlytip_gate(hidden) == []
+    assert feed.visible_text("<p>a &amp; b</p><table><tr><td>c</td></tr></table>").split() == ["a", "&", "b", "c"]
+
+
+def test_gate_refuses_a_shrink_past_half_but_not_a_smaller_one():
+    previous = {"html": "x" * 2000}
+    assert feed.earlytip_gate({"html": "y" * 1100}, previous) == []
+    problems = feed.earlytip_gate({"html": "y" * 900}, previous)
+    assert len(problems) == 1 and "2000 to 900" in problems[0]
+    assert feed.earlytip_gate({"html": "y" * 900}) == [], "no previous version, no length gate"
+
+
+def test_build_script_refuses_a_shrunken_page_unless_allowed(tmp_path):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("build_feed", ROOT / "scripts" / "build_check_company_feed.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "check-company.html").write_text(
+        "<h1>查公司</h1><p>最后更新 2026-10-28。</p><p>短。</p><hr><p>footer</p>", encoding="utf-8")
+    long_feed = {"html": "<p>" + "很长的一段。" * 200 + "</p>"}
+    (docs / "check-company.json").write_text(json.dumps(long_feed, ensure_ascii=False), encoding="utf-8")
+    assert mod.main(tmp_path) == 1
+    assert json.loads((docs / "check-company.json").read_text(encoding="utf-8")) == long_feed, "refused means untouched"
+    assert mod.main(tmp_path, allow_shrink=True) == 0
+    assert "短。" in json.loads((docs / "check-company.json").read_text(encoding="utf-8"))["html"]
+    # The word gate is never waived.
+    (docs / "check-company.html").write_text(
+        "<h1>查公司</h1><p>最后更新 2026-10-28。</p><p>这页讲 OpenHire。</p><hr>", encoding="utf-8")
+    assert mod.main(tmp_path, allow_shrink=True) == 1

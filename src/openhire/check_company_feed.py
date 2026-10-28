@@ -96,3 +96,38 @@ def build(page: str) -> dict:
 
 def dumps(feed: dict) -> str:
     return json.dumps(feed, ensure_ascii=False, indent=2) + "\n"
+
+
+# EarlyTip renders this feed as its own 查公司 column and runs two gates of its own before it
+# replaces what it shows (its project manager, 2026-10-28, column live at
+# earlytip.com/check-company.html): the visible text must not contain any of these words
+# (case-insensitive; "mcp" anywhere, not only "/mcp", and the product name included), and
+# the new text must not be shorter than half of the previous one. A feed that fails either
+# is never shown there, and EarlyTip gets an alert instead. The same two gates run here, in
+# the tests and in scripts/build_check_company_feed.py, so a page EarlyTip would refuse is
+# never published in the first place; a deliberate shrink past the half mark is told to
+# EarlyTip before it goes out (the build script needs --allow-shrink for it).
+EARLYTIP_BANNED_WORDS = ("求职", "招聘", "岗位", "mcp", "安装", "openhire")
+EARLYTIP_MIN_RATIO = 0.5
+
+
+def visible_text(fragment: str) -> str:
+    """What a reader sees of an HTML fragment: tags dropped, entities decoded."""
+    return html.unescape(re.sub(r"<[^>]+>", " ", fragment))
+
+
+def earlytip_gate(feed: dict, previous: dict | None = None) -> list[str]:
+    """The problems EarlyTip's own gates would raise on `feed`; empty when it would be shown.
+
+    `previous` is the feed EarlyTip currently shows (for us: the docs copy before this
+    rebuild); without it only the word gate runs."""
+    low = visible_text(feed.get("html", "")).lower()
+    problems = [f"visible text contains {w!r}, which EarlyTip refuses" for w in EARLYTIP_BANNED_WORDS if w in low]
+    before = len((previous or {}).get("html", "")) if previous else 0
+    after = len(feed.get("html", ""))
+    if before and after < before * EARLYTIP_MIN_RATIO:
+        problems.append(
+            f"html shrank from {before} to {after} characters, past EarlyTip's half-length gate: "
+            "it would keep showing the old version and raise an alert there"
+        )
+    return problems
