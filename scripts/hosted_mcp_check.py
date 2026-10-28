@@ -1,12 +1,15 @@
-"""Ask a hosted OpenHire endpoint what every MCP client asks first: initialize, then tools/list.
+"""Ask a hosted OpenHire endpoint what every MCP client asks first: initialize, then tools/list,
+then one watch_intent / check_watches round trip.
 
 Usage: python3 scripts/hosted_mcp_check.py <base-url> [expected-version]
 
-Exit 0 when both answer 200 with the server's own name (and the expected version, if
-given) and the tool list carries search_jobs; 1 otherwise. deploy-hosted.yml runs it after
-each deploy and in the daily check, because /healthz can be green while /mcp refuses every
-client: 0.8.15 on Render answered 421 Misdirected Request to all of them (2026-10-20).
-Standard library only, so it runs on a bare runner.
+Exit 0 when initialize and tools/list answer 200 with the server's own name (and the
+expected version, if given), the tool list carries search_jobs, and a throwaway watch can be
+registered and pulled back; 1 otherwise. deploy-hosted.yml runs it after each deploy and in
+the daily check, because /healthz can be green while /mcp refuses every client: 0.8.15 on
+Render answered 421 Misdirected Request to all of them (2026-10-20), and until 0.8.29 every
+watch_intent on the host failed because the bootstrapped index had no watches table
+(reports/098). Standard library only, so it runs on a bare runner.
 """
 
 from __future__ import annotations
@@ -63,7 +66,66 @@ def check(base: str, expected_version: str | None = None) -> list[str]:
         problems.append(f"tools/list: search_jobs missing from {tools!r}")
     else:
         print(f"{url}: openhire {info.get('version')} answers initialize and tools/list ({len(tools)} tools)")
+    problems += _watch_round_trip(url)
     return problems
+
+
+def _call(url: str, id_: int, name: str, arguments: dict) -> tuple[int, dict | None]:
+    """tools/call, with the tool's own result dict (structuredContent, or the JSON text)."""
+    status, body = _post(url, {"jsonrpc": "2.0", "id": id_, "method": "tools/call",
+                               "params": {"name": name, "arguments": arguments}}, PROTOCOL)
+    if status != 200:
+        return status, None
+    result = _message(body).get("result") or {}
+    payload = result.get("structuredContent")
+    if payload is None:
+        texts = [c.get("text") for c in result.get("content") or [] if c.get("type") == "text"]
+        try:
+            payload = json.loads(texts[0]) if texts else None
+        except (json.JSONDecodeError, TypeError):
+            payload = None
+    return status, payload if isinstance(payload, dict) else None
+
+
+def _find(payload: dict | None, key: str):
+    """The first value under `key` at any depth: FastMCP may wrap a dict result once."""
+    if not isinstance(payload, dict):
+        return None
+    if key in payload:
+        return payload[key]
+    for v in payload.values():
+        if isinstance(v, dict):
+            found = _find(v, key)
+            if found is not None:
+                return found
+    return None
+
+
+def _watch_round_trip(url: str) -> list[str]:
+    """Register a throwaway watch and pull it back: proves the user-state tables exist.
+
+    A hosted instance bootstraps from the public snapshot on every cold start, and that
+    snapshot carries no `watches` table; until 0.8.29 nothing created it after the download,
+    so every watch_intent on the host failed with "no such table: watches" while /healthz
+    and tools/list stayed green (reports/098). The filter matches no posting on purpose, so
+    the check costs one small row, under a fingerprint nobody else uses."""
+    import secrets
+
+    fp = f"#deploy-check-{secrets.token_hex(4)}"
+    status, reg = _call(url, 3, "watch_intent", {"fingerprint": fp, "filters": {"title": ["openhire-deploy-check-no-such-title"]}})
+    if status != 200:
+        return [f"watch_intent: HTTP {status}"]
+    watch_id = _find(reg, "watch_id")
+    if not (isinstance(watch_id, str) and watch_id.startswith("w_")):
+        return [f"watch_intent: no watch_id in {str(reg)[:300]!r} (is the watches table missing after bootstrap?)"]
+    status, pulled = _call(url, 4, "check_watches", {"fingerprint": fp})
+    if status != 200:
+        return [f"check_watches: HTTP {status}"]
+    ids = [r.get("watch_id") for r in (_find(pulled, "results") or []) if isinstance(r, dict)]
+    if watch_id not in ids:
+        return [f"check_watches: {watch_id} not returned in {str(pulled)[:300]!r}"]
+    print(f"{url}: watch_intent and check_watches round trip ok ({watch_id})")
+    return []
 
 
 def main(argv: list[str]) -> int:

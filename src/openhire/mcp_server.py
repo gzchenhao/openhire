@@ -863,6 +863,13 @@ def _do_bootstrap() -> None:
         # outlives the replacement: the hosted endpoint kept answering "index_empty" until a
         # restart (2026-10-20). Drop the pool again so the next session opens the new file.
         dispose_engine()
+        # The snapshot carries companies and jobs only. serve() created the user-state
+        # tables (watches, applications) in the EMPTY file before this thread replaced it,
+        # so without this the first session's watch_intent failed with "no such table:
+        # watches" until a restart ran init_db again: a first-run tester hit exactly that
+        # (reports/098), and the hosted endpoint, which bootstraps on every cold start, could
+        # never register a watch at all. tests/test_first_run_watch.py pins it.
+        init_db()
         _BOOTSTRAP_ERROR = None
         via = f" (from the mirror {res.source})" if res.source and res.source != config.SNAPSHOT_URL else ""
         print(f"openhire: snapshot ready · {res.companies} employers · {res.jobs:,} jobs · "

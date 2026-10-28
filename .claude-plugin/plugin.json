@@ -1,7 +1,7 @@
 {
   "name": "openhire",
   "displayName": "OpenHire",
-  "version": "0.8.28",
+  "version": "0.8.29",
   "description": "Job postings read straight from employers' own ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka) with the employer's real posting date, days open and a direct apply link. AI infra, autonomous driving and embodied AI, US/EU/China. HR and recruiting roles have their own family; works from mainland China through a CNB mirror; free job-search checklist with anti-scam steps. Your résumé never leaves your machine. Starts `uvx openhire@latest serve`; needs uv.",
   "author": {
     "name": "gzchenhao",

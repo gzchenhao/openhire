@@ -2,6 +2,13 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-10-28（云端）· 0.8.29 首发盯岗缺陷修复；用户反馈六条的迭代方案（098）
+
+- 已完成：复现「第一次会话设盯岗报 no such table: watches、重启才好」（快照只含 companies / jobs，装完没再建表；托管端点因此从未能设盯岗），`_do_bootstrap` 装完即 `init_db()`，新测试撤掉修复即红；体检脚本加盯岗往返；本地托管模式冷启动实测通过；893 passed。`reports/098` 逐条方案。
+- 决策建议：网页搜索入口不做，等 12 月律师意见（网络招聘服务资质）；先做连接向导页与 VS Code 配置。
+- 下一步：领导点头后做 0.8.30（seniority、dates_in_words、index_status、盯岗说明、check_before_apply、向导页）。
+- 待领导：098 第四节三项；回信（私库稿）；问赵下载报错原文。
+
 ## 2026-10-27（云端）· 0.8.28「查公司」订阅文件，EarlyTip 单独栏目自动同步
 
 - 已完成：`check-company.json`（白名单重建的正文 + sha256），github.io / 托管 `/check-company.json` / CNB 三处发布；10 条新测试（与页面同步、EarlyTip 条件、白名单、恶意输入、查公司网址必须在清单里、托管与 docs 一致）；892 passed。EarlyTip 任务书写进私库。`reports/095`。
