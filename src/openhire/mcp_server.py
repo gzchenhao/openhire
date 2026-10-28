@@ -191,6 +191,10 @@ def search_jobs(
     index, the response switches to `{results, unknown_skills, suggestions}` so you can
     tell the user which word was dropped instead of presenting a half-match as a match.
 
+    Live means the employer's own system returned the posting within the last 30 days of
+    this index (counted back from its newest verification); older rows are not returned. An
+    employer whose rows are all older answers with status "not_verified_recently".
+
     `role_family` filters exclude rows KNOWN to be another family; rows not yet classified
     (role_family null, typically the newest postings) are included, not hidden.
     `remote_scope` can also be "unknown": remote with a location we could not read; it is
@@ -388,6 +392,11 @@ def get_company_info(company_id: str) -> dict:
     `postings_without_reported_date` counts those rows; their days_open, and so this
     employer's median_days_open and ghost_score_avg, are counted from the day this index
     first saw each posting, a lower bound on age rather than the employer's timeline.
+
+    `active_jobs` and every aggregate count only postings the employer's own system returned
+    within the last 30 days of this index; `unverified_over_30d` counts the ones it still
+    holds that went unconfirmed longer (most often a careers board that moved). Those are not
+    shown by search_jobs. Nonzero means a gap in our reading, never a fact about the employer.
 
     `claimed` is true only when the employer has claimed this tenant and we verified them by
     corporate identity, never by payment, and it never affects ranking. It is the only

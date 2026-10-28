@@ -760,7 +760,8 @@ def _filter_and_rank(
     # the others and never a ranking input: "Senior Manager, Perception Data" outranked every
     # engineer on a perception search because it was the newest, and nothing could keep it out.
     keep_levels = expand_seniority(seniority)
-    stmt = select(Job).where(Job.delisted_at.is_(None))
+    # Live = not delisted AND returned by the employer's system within 30 days (reports/101).
+    stmt = select(Job).where(live_clause(verified_cutoff(session)))
 
     if company_ids is not None:
         # An empty list means the caller named a company that does not exist. Filtering on
@@ -957,13 +958,41 @@ def skill_diagnostics(
     return unknown, suggestions
 
 
+# --- what counts as live (the maintainer, 2026-10-28, reports/101) ---------------------
+# A posting counts as live only while the employer's own system has returned it within the
+# last 30 days. When a board moves (four Greenhouse boards 404 since September), the crawl
+# leaves the existing rows alone on purpose, so one bad night cannot wipe an employer, and
+# those rows used to sit in every search and every published figure: 416 of them, last
+# confirmed one to two months earlier. The window is measured back from the newest
+# verification in the index being read, not from today's clock, so a copy of the index
+# that has not been refreshed for a while is not emptied by the calendar.
+STALE_AFTER_DAYS = 30
+
+
+def verified_cutoff(session: Session) -> dt.datetime | None:
+    """Rows verified before this are no longer counted as live; None for an empty index."""
+    newest = session.scalar(select(func.max(Job.verified_at)).where(Job.delisted_at.is_(None)))
+    if newest is None:
+        return None
+    if isinstance(newest, str):
+        newest = dt.datetime.fromisoformat(newest)
+    return _aware(newest) - dt.timedelta(days=STALE_AFTER_DAYS)
+
+
+def live_clause(cutoff: dt.datetime | None):
+    """The SQL condition for "live": not delisted and verified inside the window."""
+    if cutoff is None:
+        return Job.delisted_at.is_(None)
+    return (Job.delisted_at.is_(None)) & (Job.verified_at >= cutoff)
+
+
 def live_employer_count(session: Session) -> int:
     """Employers with at least one live posting right now: the `employers_with_live_postings`
     figure of docs/numbers.json, computed from the index being searched. A hint used to say
     "139 employers" as literal text; it was right by accident on the day it was written and
     against rule 1 of the writing rules every day after."""
     return int(session.scalar(
-        select(func.count(func.distinct(Job.company_id))).where(Job.delisted_at.is_(None))
+        select(func.count(func.distinct(Job.company_id))).where(live_clause(verified_cutoff(session)))
     ) or 0)
 
 
@@ -1125,11 +1154,29 @@ def diagnose_empty_search(
                 f"{company!r} is in the index, but none of its live postings match the rest "
                 "of these filters. Drop the other filters to see everything it has open."
             )
+    status = "unknown_tag" if unknown else "no_match"
+    if company and not unknown:
+        # Every posting we hold for this employer has gone unconfirmed for 30 days: its board
+        # most likely moved. Say that instead of "no match", which reads as "not hiring".
+        ids = [c.id for c in resolve_company(session, company)]
+        cutoff = verified_cutoff(session)
+        if ids and cutoff is not None:
+            fresh = session.scalar(select(func.count()).where(Job.company_id.in_(ids), live_clause(cutoff))) or 0
+            stale = session.scalar(select(func.count()).where(
+                Job.company_id.in_(ids), Job.delisted_at.is_(None), Job.verified_at < cutoff)) or 0
+            if not fresh and stale:
+                status = "not_verified_recently"
+                hint = (
+                    f"This index holds {stale} postings for {company!r}, but the employer's own system has not "
+                    f"returned them for {STALE_AFTER_DAYS} days or more, most likely because its careers board "
+                    "moved; they are no longer counted as live. Check the employer's careers page directly, or "
+                    "give read_board its current board URL. This says nothing about whether it is hiring."
+                )
     return {
         "results": [],
         "matched": 0,
-        "status": "unknown_tag" if unknown else "no_match",
-        "headline": EMPTY_HEADLINES["unknown_tag" if unknown else "no_match"],
+        "status": status,
+        "headline": EMPTY_HEADLINES[status],
         "hint": hint,
         "unknown_skills": unknown,
         "suggestions": suggestions,
@@ -1152,6 +1199,8 @@ EMPTY_HEADLINES = {
                           "en": "This employer posts on a portal this tool cannot read; use its own careers page."},
     "unknown_company": {"zh": "没有匹配的岗位：索引里没有这家公司。", "en": "No match: this employer is not in the index."},
     "unknown_tag": {"zh": "没有匹配的岗位：条件里有索引认不出的词，换个写法再搜。", "en": "No match: a filter word is unknown to the index; try another spelling."},
+    "not_verified_recently": {"zh": "这家公司的岗位已有 30 天以上没在雇主自己的系统里核验到（多半是招聘页搬了），不再算在架；去它的招聘页直接看。",
+                              "en": "This employer's postings have not been confirmed by its own system for 30+ days (its board probably moved), so they no longer count as live; check its careers page directly."},
     "no_match": {"zh": "没有匹配的岗位：条件都认得，只是现在没有在架岗位同时满足，放宽一项再搜。",
                  "en": "No matching postings: every filter is valid, nothing live meets all of them right now; loosen one."},
 }
@@ -1302,13 +1351,21 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
     # right Company row above but, until this line, zeros for its aggregates.
     company_id = company.id
 
-    live = select(Job).where(Job.company_id == company_id, Job.delisted_at.is_(None))
+    cutoff = verified_cutoff(session)
+    _live = live_clause(cutoff)
+    # Not delisted but not returned by the employer's system for 30 days: no longer counted
+    # as live (reports/101); counted here so an employer whose board moved stays visible.
+    unverified = session.scalar(
+        select(func.count()).where(Job.company_id == company_id, Job.delisted_at.is_(None),
+                                   Job.verified_at < cutoff)
+    ) if cutoff is not None else 0
+    live = select(Job).where(Job.company_id == company_id, _live)
     active_jobs = session.scalar(
         select(func.count()).select_from(live.subquery())
     ) or 0
     ghost_avg = session.scalar(
         select(func.avg(Job.ghost_score)).where(
-            Job.company_id == company_id, Job.delisted_at.is_(None)
+            Job.company_id == company_id, _live
         )
     )
     # A bare ghost_score_avg of 0.87 reads as "87% of this company is fake", which is not
@@ -1325,20 +1382,20 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
                 func.julianday(_now(now)) - func.julianday(
                     func.coalesce(Job.posted_at, Job.first_seen_at)
                 )
-            ).where(Job.company_id == company_id, Job.delisted_at.is_(None))
+            ).where(Job.company_id == company_id, _live)
         ) if d is not None
     ]
     days_open.sort()
     relisted = session.scalar(
         select(func.count()).where(
-            Job.company_id == company_id, Job.delisted_at.is_(None), Job.relist_count > 0
+            Job.company_id == company_id, _live, Job.relist_count > 0
         )
     ) or 0
     # Same rule as the per-row update_signal (see _touch_is_reported): a vendor with a
     # last-touched field of its own reports it even when no edit has happened yet.
     touch_reported = session.scalar(
         select(func.count()).where(
-            Job.company_id == company_id, Job.delisted_at.is_(None),
+            Job.company_id == company_id, _live,
             Job.updated_at.is_not(None), Job.posted_at.is_not(None),
             *(() if company.ats_vendor in TOUCH_REPORTING_VENDORS
               else (Job.updated_at != Job.posted_at,)),
@@ -1351,7 +1408,7 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
     # know that before reading ghost_score_avg as anything about this employer.
     dates_missing = session.scalar(
         select(func.count()).where(
-            Job.company_id == company_id, Job.delisted_at.is_(None),
+            Job.company_id == company_id, _live,
             Job.posted_at.is_(None),
         )
     ) or 0
@@ -1384,6 +1441,11 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
            if not_indexed.second_portals_for(company.id) else {}),
         "postings_without_reported_date": int(dates_missing),
         "active_jobs": int(active_jobs),
+        # Postings the index still holds for this employer that its own system has not
+        # returned for 30 days or more (the board moved, or the crawl keeps failing): not
+        # counted in active_jobs and never shown by search. Nonzero is a gap in our reading,
+        # not a fact about the employer.
+        "unverified_over_30d": int(unverified or 0),
         "user_added": bool(getattr(company, "user_added", False)),
         "claimed": bool(company.verified),
         "claimed_at": _aware(company.claimed_at).isoformat() if company.claimed_at else None,

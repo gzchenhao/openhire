@@ -116,6 +116,8 @@ async def test_all_five_acceptance_scripts(seeded):
             "posting_dates_reported", "postings_without_reported_date",
             # Employer-declared claim signals; still nothing about any candidate.
             "claimed", "claimed_at", "response_sla_days",
+            # 0.8.31: postings not confirmed for 30 days, no longer counted as live.
+            "unverified_over_30d",
         }
         blob = str(info).lower()
         for pii in ("fingerprint", "email", "resume", "candidate", "applicant"):

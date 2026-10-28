@@ -2,6 +2,12 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-10-28（云端）· 0.8.31 30 天未核验不算在架（101）
+
+- 已完成：在架 = 没下架且雇主系统 30 天内返回过（从索引最新核验往回算）；搜索、盯岗、公司信息、numbers 统一口径；`unverified_over_30d`、`not_verified_recently`；numbers.json 172 家 / 20,019 条；994 passed。
+- 更正：100 号补记二的 416 条是按日历算的，按规则现在是 177 条，Wayve / Amplitude 11-02 起超期。
+- EarlyTip 回话：CNB 10-29 启用，拉取顺序 onrender → CNB → github.io；栏目内容核对结果明早转回（本机待办 15）。
+
 ## 2026-10-28（云端）· 0.8.30 求职者反馈六条落地（100）
 
 - 已完成：seniority 字段与过滤（别名 ic / management，排序不动）；dates_in_words / date_source / check_before_apply；index_status preparing / unavailable 与五种空结果 headline；下载期间登记的盯岗不丢；watch_intent 的 matching_now / what_happens_next，check_watches 的 summary；指令与提示词改成先问级别、5 条六栏；连接向导页 + VS Code 说明。988 passed。Zoox / 理想 / 盯岗 / 空搜索四个场景在 10-26 快照副本上回放，结果在 `reports/100`。

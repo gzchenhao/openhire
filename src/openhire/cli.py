@@ -1786,17 +1786,24 @@ def numbers(
     console.cmd(f"ohp numbers --out {out}")
     today = _dt.datetime.now(_dt.timezone.utc)
     with session_scope() as s:
+        # Live = not delisted and returned by the employer's system within 30 days of the
+        # newest verification (service.live_clause, reports/101); every figure below uses it.
+        cutoff = service.verified_cutoff(s)
+        live_q = service.live_clause(cutoff)
         companies_total = s.execute(select(func.count()).select_from(Company)).scalar_one()
         employers_hiring = s.execute(
-            select(func.count(func.distinct(Job.company_id))).where(Job.delisted_at.is_(None))
+            select(func.count(func.distinct(Job.company_id))).where(live_q)
         ).scalar_one()
         live = s.execute(
-            select(func.count()).select_from(Job).where(Job.delisted_at.is_(None))
+            select(func.count()).select_from(Job).where(live_q)
         ).scalar_one()
+        unverified = s.execute(
+            select(func.count()).select_from(Job).where(Job.delisted_at.is_(None), Job.verified_at < cutoff)
+        ).scalar_one() if cutoff is not None else 0
         posted = [
             (today - (p if p.tzinfo else p.replace(tzinfo=_dt.timezone.utc))).days
             for p in s.execute(
-                select(Job.posted_at).where(Job.delisted_at.is_(None), Job.posted_at.isnot(None))
+                select(Job.posted_at).where(live_q, Job.posted_at.isnot(None))
             ).scalars()
         ]
         # The most-quoted and most-fragile figure we publish: of the highest-scoring
@@ -1811,7 +1818,7 @@ def numbers(
         # direction that made employers look worse.
         hi = list(s.execute(
             select(Job.posted_at, Job.updated_at).where(
-                Job.delisted_at.is_(None), Job.ghost_score >= 0.99
+                live_q, Job.ghost_score >= 0.99
             )
         ))
         hi_known = [
@@ -1833,6 +1840,7 @@ def numbers(
         "companies_in_index": companies_total,
         "employers_with_live_postings": employers_hiring,
         "live_postings": live,
+        "postings_unverified_over_30d": unverified,
         "postings_with_employer_posting_date": len(posted),
         "median_days_open": posted[n // 2] if posted else None,
         "pct_open_over_90d": _pct(90),
