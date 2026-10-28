@@ -51,8 +51,9 @@ def job_radar(
             f"地点：{location or '不限'}",
             f"技能：{skills or '不限'}",
             "",
-            "1. 用 search_jobs 搜：岗位名里的词放进 title，技能放进 skills，地点放进 location。结果为空就放宽一项再搜，并告诉我放宽了什么。",
-            "2. 列出最相关的 10 条：公司、岗位名、地点、原始发布日期、在架天数、投递链接。" + LENGTH_ZH,
+            "0. 我没说清是个人贡献者还是带团队、大概几年经验的，先问我一句，再把它作为 seniority 传给 search_jobs（ic 或 management；也可以用 intern、junior、senior、staff、lead、manager、director）。",
+            "1. 用 search_jobs 搜：岗位名里的词放进 title，技能放进 skills，地点放进 location。结果为空就按 headline 告诉我是哪种「没有」，放宽一项再搜，并告诉我放宽了什么。",
+            "2. 先给最相关的 5 条，每条六栏：岗位、公司与地点、薪资（没写就说雇主没写）、为什么匹配（matched_skills 加我说的条件）、投递前要确认什么（结果里的 check_before_apply）、投递链接；日期用结果里 dates_in_words 的原句。再问我要不要看更多。" + LENGTH_ZH,
             "3. 问我要不要建一个雷达。要的话用 watch_intent 登记同样的条件。" + FINGERPRINT_ZH,
             "4. 我想要的公司不在结果里，就问我它的招聘页网址，用 read_board 读，读得了再问我要不要用 add_employer 加进我这台电脑上的索引。",
             PRIVACY_ZH,
@@ -63,9 +64,13 @@ def job_radar(
         f"Location: {location or 'any'}",
         f"Skills: {skills or 'any'}",
         "",
+        "0. If I have not said whether I want an individual-contributor or a management role, or how many years I have, "
+        "ask me once, then pass it as seniority to search_jobs (ic or management; or intern, junior, senior, staff, lead, manager, director).",
         "1. Call search_jobs: words from the job title go in title, skills in skills, the place in location. "
-        "If nothing comes back, relax one filter, search again and tell me what you relaxed.",
-        "2. List the 10 most relevant: company, title, location, original posting date, days open, apply link. " + LENGTH_EN,
+        "If nothing comes back, tell me which kind of nothing it is (the headline), relax one filter, search again and tell me what you relaxed.",
+        "2. Show the 5 most relevant first, six columns each: title, company and location, salary (say so when the employer states none), "
+        "why it matches (matched_skills plus what I asked for), what to confirm before applying (check_before_apply), apply link; "
+        "give the dates as the dates_in_words sentence. Then ask whether I want more. " + LENGTH_EN,
         "3. Ask whether I want a standing radar. If yes, register the same filters with watch_intent. " + FINGERPRINT_EN,
         "4. If an employer I care about is missing, ask me for its careers page, read it with read_board, and if "
         "it reads, offer add_employer to put it in the index on my machine.",
@@ -147,9 +152,9 @@ def radar_check(
         "看看我的 OpenHire 雷达有没有新岗。 / Check my OpenHire radar for new postings.",
         f"指纹 / Fingerprint: {fp}",
         "",
-        "用 check_watches 查，列出新岗（公司、岗位名、地点、发布日期、投递链接）和上次之后已经关闭的岗位；没有新岗就直说没有。",
-        "Call check_watches; list the new postings (company, title, location, posting date, apply link) and the ones "
-        "closed since the last check; if nothing is new, say so.",
+        "用 check_watches 查，先把结果里的 summary 原句告诉我；列出新岗（公司、岗位名、地点、发布日期、投递链接）和上次之后已经关闭的岗位；没有新岗就直说没有。is_first_pull 为真时，列出的是已有岗位的基线，不要说成新出现的。",
+        "Call check_watches and start with its summary sentence; list the new postings (company, title, location, posting date, apply link) and the ones "
+        "closed since the last check; if nothing is new, say so. When is_first_pull is true, the list is the baseline of postings already live: never present it as new.",
         "用我写字的语言回答。 / Answer in the language I write in.",
     ])
 
@@ -193,8 +198,8 @@ def job_checklist(
         return "\n".join([
             f"我在找工作，阶段：{stage or '刚开始'}。请按 OpenHire 的求职清单带我走（完整版 {CHECKLIST_URL} ，国内打不开就用 {CHECKLIST_URL_CN} ；每条都说清是你替我做，还是我去哪里做）：",
             "",
-            "1. 定方向：问我目标城市、岗位方向、年限、三到五个技能、不考虑的方向。",
-            "2. 搜岗位：用 search_jobs 搜在架岗位，每条带公司、地点、原始发布日期、在架天数、投递链接；搜不到的公司用 list_portals 给我它们自己的招聘页。" + LENGTH_ZH,
+            "1. 定方向：问我目标城市、岗位方向、个人贡献者还是带团队、年限、三到五个技能、不考虑的方向。",
+            "2. 搜岗位：用 search_jobs 搜在架岗位（级别传 seniority），先给 5 条，每条带公司、地点、薪资、为什么匹配、投递前要确认什么（check_before_apply）、投递链接，日期用 dates_in_words 的原句；搜不到的公司用 list_portals 给我它们自己的招聘页。" + LENGTH_ZH,
             "3. 查公司：我挑中哪家，用 check_employer 查一遍；结果里 pending_user 的项，把官方网址原样给我，我自己去查（工商登记：国家企业信用信息公示系统、爱企查、天眼查自己的免费服务；香港公司：公司註冊處）。",
             "4. 反诈骗三步：① 要我先交钱、先出境面试、先交护照、包机票高薪的，先停下来查；② 投递链接必须在雇主自己的域名或招聘系统上，别的一律不点；③ 拿不准的电话、网址、收款账户，大陆用国家反诈中心 App 或 12321 举报平台，香港用防騙視伏器。",
             "5. 投递：我自己点投递链接去投，你不替我投，也不碰我的简历。要记录就用 authorize_application 记一条授权。",
@@ -205,8 +210,9 @@ def job_checklist(
     return "\n".join([
         f"I am looking for a job, stage: {stage or 'starting'}. Walk me through OpenHire's job-search checklist (full page {CHECKLIST_URL}); for every step say whether you do it for me or where I do it myself:",
         "",
-        "1. Target: ask me for city, role, years, three to five skills, what to exclude.",
-        "2. Search: search_jobs for live postings with company, location, original posting date, days open and apply link; "
+        "1. Target: ask me for city, role, individual contributor or management, years, three to five skills, what to exclude.",
+        "2. Search: search_jobs for live postings (level as seniority), 5 first, each with company, location, salary, why it matches, "
+        "what to confirm before applying (check_before_apply) and the apply link, dates as the dates_in_words sentence; "
         "for employers it cannot read, list_portals gives me their own careers pages. " + LENGTH_EN,
         "3. Check the employer: check_employer on the one I pick; for every pending_user item give me the official URL "
         "verbatim and I look it up myself (company registers, Hong Kong Companies Registry, OpenCorporates).",

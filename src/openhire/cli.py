@@ -259,6 +259,7 @@ def search(
     distinct: bool = typer.Option(False, "--distinct", help="One row per role instead of one per city."),
     location: str = typer.Option(None, "--location", help="Substring of the location text, e.g. 北京 / Beijing / Remote."),
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. 招聘 / recruit,hrbp / 感知. The filter for roles no skill tag names."),
+    seniority: str = typer.Option(None, "--seniority", help="Comma-separated levels the title names: ic / management, or intern, junior, senior, staff, lead, manager, director, unknown."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -267,6 +268,7 @@ def search(
     skill_list = _parse_skills(skills)
     req_list = [s.strip().lower() for s in required_skills.split(",")] if required_skills else None
     title_list = [t.strip() for t in title.split(",") if t.strip()] if title else None
+    seniority_list = [t.strip() for t in seniority.split(",") if t.strip()] if seniority else None
     floor = _parse_salary_arg(min_salary)
     console.cmd(
         "ohp search"
@@ -284,6 +286,7 @@ def search(
         + (" --distinct" if distinct else "")
         + (f" --location {location}" if location else "")
         + (f" --title {title}" if title else "")
+        + (f" --seniority {seniority}" if seniority else "")
     )
     try:
         with session_scope() as s:
@@ -293,6 +296,7 @@ def search(
                 require_stated_salary=require_stated_salary, remote_scope=remote_scope,
                 role_family=role_family, offset=offset, company=company,
                 collapse_role_group=distinct, location=location, title=title_list,
+                seniority=seniority_list,
             )
     except OpenHireError as e:
         # `--role-family recruiting` used to return Waymo engineers: the unknown value was
@@ -509,6 +513,7 @@ def watch(
     remote: bool = typer.Option(False, "--remote", help="Only fully-remote roles."),
     role_family: str = typer.Option(None, "--role-family", help="Only this family, e.g. engineering (keeps sales/SA out)."),
     min_salary: str = typer.Option(None, "--min-salary", help="e.g. 600000 / 60w / 600k."),
+    seniority: str = typer.Option(None, "--seniority", help="Comma-separated levels: ic / management, or intern, junior, senior, staff, lead, manager, director, unknown."),
     daemon: bool = typer.Option(False, "--daemon", help="Poll every 30 min and notify."),
 ) -> None:
     """Register a standing intent — jobs come knocking, even with the terminal closed."""
@@ -538,6 +543,8 @@ def watch(
     sal = _parse_salary_arg(min_salary)
     if sal is not None:
         filters["min_salary"] = sal
+    if seniority:
+        filters["seniority"] = [t.strip() for t in seniority.split(",") if t.strip()]
 
     with session_scope() as s:
         try:
@@ -548,7 +555,7 @@ def watch(
 
     console.ok(f"常驻意向已注册 · {out['watch_id']} · 指纹 {fp.id} · 出户内容仅一枚匿名指纹")
     console.out("过滤：" + (", ".join(f"{k}={v}" for k, v in filters.items()) or "（全部）"))
-    console.note("关掉终端也在生效 —— 有匹配它自己会响（ohp check 拉取新命中）")
+    console.note(out["what_happens_next"]["zh"] + "（终端里用 ohp check 拉取）")
 
 
 def _watch_daemon(fp) -> None:

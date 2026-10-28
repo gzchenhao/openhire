@@ -19,7 +19,12 @@ from openhire.mcp_server import mcp
 NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "radar_check", "new_this_week"]
 
 # Identifiers a template may mention that are argument names or field values, not tools.
-NOT_TOOLS = {"job_id", "posting_text", "board_url", "date_signal", "not_reported_by_ats", "pending_user"}
+NOT_TOOLS = {
+    "job_id", "posting_text", "board_url", "date_signal", "not_reported_by_ats", "pending_user",
+    # 0.8.30 (reports/100): result fields and a prompt name the templates now point at.
+    "check_before_apply", "dates_in_words", "matched_skills", "is_first_pull", "radar_check",
+    "date_source", "what_happens_next", "matching_now",
+}
 
 ZH_ARGS = {
     "job_radar": {"role": "感知算法工程师", "location": "上海", "skills": "点云, BEV"},

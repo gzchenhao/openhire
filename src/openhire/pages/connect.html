@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenHire · 连接向导</title>
+<meta name="description" content="把 OpenHire 接进你用的 AI 助手：选 ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy 或 VS Code，只看那一种的步骤和一段整段粘贴的话。Connect OpenHire to the assistant you already use: pick it and get only its steps plus the one block to paste.">
+<style>
+:root{--bg:#fff;--fg:#1a1d1a;--dim:#5e6b62;--line:#e3e7e3;--accent:#1f7a4d;--box:#f3f6f4}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1211;--fg:#e9eee9;--dim:#9aa69d;--line:#252b27;--accent:#4ade87;--box:#171c19}}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,"Segoe UI",system-ui,sans-serif;
+     margin:0 auto;max-width:52rem;padding:16px;padding-block:3rem}
+a{color:var(--accent);overflow-wrap:anywhere}
+h1{font-size:1.5rem;margin:0 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem}
+h3{font-size:1rem;margin:1.4rem 0 .4rem}
+.dim{color:var(--dim)}
+pre{background:var(--box);padding:.8rem;overflow:auto;border-radius:6px;white-space:pre-wrap;position:relative}
+code{font-size:.92em}
+.switch{display:flex;justify-content:flex-end;gap:.4rem;margin:0 0 1rem}
+.switch button,.pick button,.copy{font:inherit;font-size:.9em;padding:.1em .8em;border:1px solid var(--line);border-radius:999px;background:var(--box);color:var(--fg);cursor:pointer}
+.switch button[aria-pressed="true"],.pick button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.pick{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0 1.2rem}
+.client{border:1px solid var(--line);border-radius:8px;padding:.2rem 1rem 1rem;margin:1rem 0}
+html[data-picked] .client{display:none}
+html[data-picked] .client[data-show="1"]{display:block}
+.copy{position:absolute;top:.5rem;right:.5rem;padding:0 .6em}
+.os-win,.os-mac{display:inline}
+html[data-os="mac"] .os-win{display:none}
+html[data-os="win"] .os-mac{display:none}
+.lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+html[data-lang="en"] .lang-en{display:block}
+</style>
+<noscript><style>.lang-en{display:block}.switch,.pick,.copy{display:none}</style></noscript>
+</head>
+<body>
+<div class="switch" role="group" aria-label="语言 · Language">
+<button type="button" data-set="zh" aria-pressed="true">中文</button>
+<button type="button" data-set="en" aria-pressed="false">English</button>
+</div>
+
+<div class="lang-zh">
+<h1>连接向导：把 OpenHire 接进你已经在用的 AI 助手</h1>
+<p class="dim">这页打不开或很慢（国内网络常见），用国内能开的同一页：<a href="https://openhire-vlny.onrender.com/connect">openhire-vlny.onrender.com/connect</a>。免费，不用注册，不收简历。最后更新 2026-10-28。</p>
+<p>OpenHire 让 AI 助手直接从雇主自己的招聘系统里替你找工作，简历不出你的电脑。接入只做一次；最难的就是这一次，所以这页只讲这一件事。<b>先选你用的助手</b>，下面只显示那一种的步骤。</p>
+
+<div class="pick" role="group" aria-label="你用的助手">
+<button type="button" data-client="chatgpt">ChatGPT</button>
+<button type="button" data-client="claude-desktop">Claude 桌面版</button>
+<button type="button" data-client="agent">Claude Code / Cursor / WorkBuddy / TRAE</button>
+<button type="button" data-client="doubao">豆包</button>
+<button type="button" data-client="deepseek">DeepSeek</button>
+<button type="button" data-client="vscode">VS Code（Copilot）</button>
+<button type="button" data-client="other">其他 / 手动配置</button>
+</div>
+
+<div class="client" data-client="chatgpt">
+<h2>ChatGPT（付费档）：不用装任何东西</h2>
+<ol>
+<li>设置 → 连接器 → 高级 → 打开「开发者模式」→ 新建连接器：名字 <code>OpenHire</code>，地址 <code>https://openhire-vlny.onrender.com/mcp</code>，鉴权选「无」。</li>
+<li>开一个新对话，确认 OpenHire 连接器是打开的，把下面「提问」那段整段贴进去。</li>
+</ol>
+<p class="dim">这条路连的是我们挂在公网的一个端点。它看得到你的搜索条件和一个匿名指纹，看不到简历，不记查询日志；介意的话换下面任何一种装在自己电脑上的方式，连搜索都不出你的电脑。第一次请求可能要等几十秒，免费主机在休眠。</p>
+</div>
+
+<div class="client" data-client="claude-desktop">
+<h2>Claude 桌面版：下载一个文件，双击</h2>
+<ol>
+<li>到 <a href="https://github.com/gzchenhao/openhire/releases/latest">最新发布页</a> 下载 <code>openhire-x.y.z.mcpb</code>，双击，Claude 会问是否安装，确认。不用装 Python，不用命令行。</li>
+<li>完全退出 Claude 再打开（菜单里的 Quit，不是关窗口）。</li>
+<li>新对话里把下面「提问」那段整段贴进去。Claude 桌面版的「+」菜单里也会多出六个现成的提示词，「求职清单」那个会按步骤带你走。</li>
+</ol>
+</div>
+
+<div class="client" data-client="agent">
+<h2>Claude Code、Cursor、腾讯 WorkBuddy、TRAE：让它自己装</h2>
+<p>这些助手能执行命令，所以装机和第一次提问可以合成一段。把下面「装机加提问」整段贴给它（方括号里的内容改成你自己的）。中间那道检查很重要：助手刚装完 MCP 这一轮往往还用不上新工具，不检查它会拿网页搜索凑结果。</p>
+<p class="dim">Cursor 也可以一键：<a href="https://cursor.com/install-mcp?name=openhire&amp;config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==">Install in Cursor</a>（电脑上要先有 uv，见页尾）。WorkBuddy 改完配置要退出重开才会加载。</p>
+</div>
+
+<div class="client" data-client="doubao">
+<h2>豆包（豆包工作）：本机起一个端口，再新建连接器</h2>
+<p>豆包的自定义连接器只收 HTTP 地址，不收命令，所以要先在自己电脑上把 OpenHire 跑起来（索引、指纹、匹配都在你电脑上，豆包只是通过本机端口调用它）。</p>
+<ol>
+<li>装 uv（见页尾一行命令），然后在终端里跑：<pre><code>uvx openhire@latest serve --transport streamable-http --port 8000</code></pre></li>
+<li>豆包里：技能·连接器·伙伴 → 新建 → 新建自定义连接器：传输类型 HTTP，服务器 URL <code>http://127.0.0.1:8000/mcp</code>，Headers 留空，保存后打开开关。</li>
+<li>新对话里把下面「提问」那段整段贴进去。</li>
+</ol>
+</div>
+
+<div class="client" data-client="deepseek">
+<h2>DeepSeek：放进一个支持 MCP 的客户端</h2>
+<p>DeepSeek 自己的 App 没有 MCP 入口。把 DeepSeek 当模型用在 Cherry Studio、Chatbox、Cline、腾讯 WorkBuddy、TRAE 这类客户端里，再给那个客户端加 OpenHire：</p>
+<ol>
+<li>装 uv（见页尾一行命令）。</li>
+<li>Cherry Studio：设置 → MCP 服务器 → 添加 → 类型 STDIO，命令 <code>uvx</code>，参数 <code>openhire@latest serve</code>。其他客户端用「其他 / 手动配置」里那一行 JSON。</li>
+<li>新对话里把下面「提问」那段整段贴进去。</li>
+</ol>
+</div>
+
+<div class="client" data-client="vscode">
+<h2>VS Code（GitHub Copilot）：一个文件，或一键</h2>
+<ol>
+<li>装 uv（见页尾一行命令）。</li>
+<li>一键：<a href="vscode:mcp/install?%7B%22name%22%3A%22openhire%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22openhire%40latest%22%2C%22serve%22%5D%7D">Install in VS Code</a>。或者在项目里建 <code>.vscode/mcp.json</code>：<pre><code>{ "servers": { "openhire": { "type": "stdio", "command": "uvx", "args": ["openhire@latest", "serve"] } } }</code></pre></li>
+<li>打开这个文件，点 JSON 上方的 Start；Copilot Chat 切到 Agent 模式，工具列表里勾上 openhire。</li>
+<li>把下面「提问」那段整段贴进去。</li>
+</ol>
+</div>
+
+<div class="client" data-client="other">
+<h2>其他助手 / 手动配置</h2>
+<p>任何支持 MCP 的客户端都认这一行（放进它的 MCP 配置，电脑上要先有 uv）：</p>
+<pre><code>{ "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire@latest", "serve"] } } }</code></pre>
+<p>只收网址的客户端填 <code>https://openhire-vlny.onrender.com/mcp</code>（streamable HTTP，无鉴权）。改完配置有的客户端还要你在设置里手动「启用 / 信任」这个 server，工具才会出现；症状是配置明明在、助手却不知道有这些工具。装好后把下面「提问」那段整段贴进去。</p>
+</div>
+
+<h2>装机加提问（能执行命令的助手用这段）</h2>
+<pre><code>帮我装一个 MCP 服务：名字 openhire，启动命令 uvx openhire@latest serve。如果电脑上没有 uv，先帮我装 uv。
+
+装好后检查：你现在能不能调用 openhire 的工具（比如 search_jobs）？
+- 如果能，直接接着做下面的找工作任务。
+- 如果不能（需要重启或开新对话才能加载），就停下来，告诉我该怎么重启，不要用网页搜索或别的办法代替。我重启后会把这整段再贴一次。
+
+找工作任务：我的情况：[目标城市]，想做[岗位方向，例如 AI 产品经理 / 感知算法 / 机器人运营]，[几年]经验，会[3 到 5 个技能]，不考虑[不要的方向]。
+1. 用 OpenHire 搜索匹配的在架岗位，每条带公司、地点、原始发布日期、在架天数和投递链接，最近发布的排前面。
+2. 在架时间特别长的岗位单独列出来提醒我，但不要替我下结论说它不招了。
+3. 搜不到的公司，用门户目录告诉我它们的招聘页在哪里。
+4. 帮我把这个求职意向设成盯岗，以后我说「检查一下」，就告诉我新出现了哪些岗位。
+5. 我挑中哪家，就用企业背景查证帮我把这家公司查一遍。
+
+我的简历只留在我电脑上，不要发给任何服务器。投递由我自己点链接去做。</code></pre>
+
+<h2>提问（已经接好的助手用这段）</h2>
+<pre><code>用 OpenHire 帮我找工作。我的情况：[目标城市]，想做[岗位方向，例如 AI 产品经理 / 感知算法 / 机器人运营]，[个人贡献者还是带团队]，[几年]经验，会[3 到 5 个技能]，不考虑[不要的方向]。
+1. 搜索匹配的在架岗位，先给 5 条，每条带公司、地点、薪资、为什么匹配、投递前要确认什么、投递链接，日期用结果里现成的那句话。
+2. 在架时间特别长的岗位单独提醒我，但不要替我下结论说它不招了。
+3. 搜不到的公司，用门户目录告诉我它们的招聘页在哪里。
+4. 把这个求职意向设成盯岗，告诉我以后怎么检查新岗位。
+5. 我挑中哪家，就用企业背景查证帮我把这家公司查一遍。
+
+我的简历只留在我电脑上，不要发给任何服务器。投递由我自己点链接去做。</code></pre>
+
+<h2>页尾：装 uv（一行命令）</h2>
+<p>本机运行的方式都要先有 <a href="https://docs.astral.sh/uv/">uv</a>（它提供 uvx）。没有它，助手只会报「server failed to start」。</p>
+<pre class="os-win"><code>irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell</code></pre>
+<pre class="os-mac"><code>curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux</code></pre>
+<p class="dim">还是不行？终端里跑 <code>uvx openhire@latest doctor</code>，它能分辨三种从聊天窗口看起来一模一样的情况：uv 没装、索引还没下载、配置在但没启用。接好之后，下一步看<a href="checklist.html">求职清单</a>。</p>
+</div>
+
+<div class="lang-en">
+<h1>Connect guide: put OpenHire into the assistant you already use</h1>
+<p class="dim">Free, no sign-up, no résumé upload. Last updated 2026-10-28.</p>
+<p>OpenHire lets an AI assistant find jobs for you straight from employers' own hiring systems, with your résumé never leaving your computer. Connecting is a one-time step and the hardest one, so this page is only about that. <b>Pick your assistant first</b>; only its steps are shown.</p>
+
+<div class="pick" role="group" aria-label="Your assistant">
+<button type="button" data-client="chatgpt">ChatGPT</button>
+<button type="button" data-client="claude-desktop">Claude Desktop</button>
+<button type="button" data-client="agent">Claude Code / Cursor / WorkBuddy / TRAE</button>
+<button type="button" data-client="doubao">豆包 Doubao</button>
+<button type="button" data-client="deepseek">DeepSeek</button>
+<button type="button" data-client="vscode">VS Code (Copilot)</button>
+<button type="button" data-client="other">Other / by hand</button>
+</div>
+
+<div class="client" data-client="chatgpt">
+<h2>ChatGPT (paid plans): nothing to install</h2>
+<ol>
+<li>Settings → Connectors → Advanced → turn on Developer mode → Create: name <code>OpenHire</code>, URL <code>https://openhire-vlny.onrender.com/mcp</code>, authentication none.</li>
+<li>Start a new chat with the connector enabled and paste the "ask" block below.</li>
+</ol>
+<p class="dim">This path uses a copy of the server we run on a public host. It sees your search filters and an anonymous fingerprint, never a résumé, and keeps no query log; if you would rather have nothing leave your machine, use any of the local options. The first request after a quiet spell can take up to a minute: it is a free instance waking up.</p>
+</div>
+
+<div class="client" data-client="claude-desktop">
+<h2>Claude Desktop: download one file and double-click it</h2>
+<ol>
+<li>From the <a href="https://github.com/gzchenhao/openhire/releases/latest">latest release</a> download <code>openhire-x.y.z.mcpb</code> and double-click it; Claude asks to install it. No Python, no terminal.</li>
+<li>Quit Claude fully and reopen it (Quit from the menu, not just the window).</li>
+<li>Paste the "ask" block below into a new chat. Claude Desktop's "+" menu also lists six ready-made prompts; "Job-search checklist" walks you through the steps.</li>
+</ol>
+</div>
+
+<div class="client" data-client="agent">
+<h2>Claude Code, Cursor, Tencent WorkBuddy, TRAE: let it install itself</h2>
+<p>These assistants can run commands, so the install and the first search fit in one block. Paste the "install and ask" block below (replace what is in square brackets). The check in the middle matters: an assistant that has just added a server usually cannot use it until it restarts, and left alone it fakes the result with a web search.</p>
+<p class="dim">Cursor also has one click: <a href="https://cursor.com/install-mcp?name=openhire&amp;config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==">Install in Cursor</a> (uv must be on the machine, see the foot of the page). WorkBuddy loads a changed config only after you quit and reopen it.</p>
+</div>
+
+<div class="client" data-client="doubao">
+<h2>豆包 Doubao: run a local port, then add a connector</h2>
+<p>Doubao's custom connectors take an HTTP address, not a command, so OpenHire runs on your own machine first (index, fingerprint and matching stay there; Doubao only calls the local port).</p>
+<ol>
+<li>Install uv (one line at the foot of the page), then run: <pre><code>uvx openhire@latest serve --transport streamable-http --port 8000</code></pre></li>
+<li>In Doubao: 技能·连接器·伙伴 → 新建 → 新建自定义连接器: transport HTTP, server URL <code>http://127.0.0.1:8000/mcp</code>, no headers, save and switch it on.</li>
+<li>Paste the "ask" block below into a new chat.</li>
+</ol>
+</div>
+
+<div class="client" data-client="deepseek">
+<h2>DeepSeek: inside an MCP-capable client</h2>
+<p>The DeepSeek app has no MCP slot. Use DeepSeek as the model inside Cherry Studio, Chatbox, Cline, Tencent WorkBuddy or TRAE, and add OpenHire to that client:</p>
+<ol>
+<li>Install uv (one line at the foot of the page).</li>
+<li>Cherry Studio: Settings → MCP servers → Add → type STDIO, command <code>uvx</code>, arguments <code>openhire@latest serve</code>. Other clients take the one-line JSON under "Other / by hand".</li>
+<li>Paste the "ask" block below into a new chat.</li>
+</ol>
+</div>
+
+<div class="client" data-client="vscode">
+<h2>VS Code (GitHub Copilot): one file, or one click</h2>
+<ol>
+<li>Install uv (one line at the foot of the page).</li>
+<li>One click: <a href="vscode:mcp/install?%7B%22name%22%3A%22openhire%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22openhire%40latest%22%2C%22serve%22%5D%7D">Install in VS Code</a>. Or create <code>.vscode/mcp.json</code> in your project:<pre><code>{ "servers": { "openhire": { "type": "stdio", "command": "uvx", "args": ["openhire@latest", "serve"] } } }</code></pre></li>
+<li>Open that file and click Start above the JSON; switch Copilot Chat to Agent mode and tick openhire in the tools list.</li>
+<li>Paste the "ask" block below.</li>
+</ol>
+</div>
+
+<div class="client" data-client="other">
+<h2>Other assistants / by hand</h2>
+<p>Every MCP client takes this one line (uv must be installed first):</p>
+<pre><code>{ "mcpServers": { "openhire": { "command": "uvx", "args": ["openhire@latest", "serve"] } } }</code></pre>
+<p>A client that only takes a URL gets <code>https://openhire-vlny.onrender.com/mcp</code> (streamable HTTP, no authentication). Some clients also need you to enable or trust the new server in their settings before its tools appear; the symptom is a config that is clearly there and an assistant that does not know the tools. Then paste the "ask" block below.</p>
+</div>
+
+<h2>Install and ask (for assistants that can run commands)</h2>
+<pre><code>Install an MCP server for me: name openhire, command uvx openhire@latest serve. If uv is missing on this machine, install uv first.
+
+Then check: can you call openhire's tools right now (search_jobs, for example)?
+- If yes, go straight on to the job-search task below.
+- If not (a restart or a new chat is needed to load it), stop and tell me how to restart. Do not substitute a web search or anything else. I will paste this whole block again after restarting.
+
+Job-search task. About me: [city], looking for [role, e.g. AI product manager / perception / robotics operations], [N] years, skills [3 to 5], not interested in [what to exclude].
+1. Search OpenHire for matching live postings: company, location, original posting date, days open and apply link, newest first.
+2. List the postings that have been open unusually long separately, without concluding they are no longer hiring.
+3. For employers it cannot find, use the portal directory to tell me where their careers pages are.
+4. Register this intent as a watch; when I say "check", tell me what is new.
+5. When I pick one, run the employer check on it.
+
+My résumé stays on my machine; never send it to any server. I apply by clicking the links myself.</code></pre>
+
+<h2>Ask (for an assistant that is already connected)</h2>
+<pre><code>Use OpenHire to find me a job. About me: [city], looking for [role, e.g. AI product manager / perception / robotics operations], [individual contributor or management], [N] years, skills [3 to 5], not interested in [what to exclude].
+1. Search the live postings and show 5 first, each with company, location, salary, why it matches, what to confirm before applying, and the apply link; give the dates as the sentence in the result.
+2. Flag postings that have been open unusually long, without concluding they are no longer hiring.
+3. For employers it cannot find, use the portal directory to tell me where their careers pages are.
+4. Register this intent as a watch and tell me how I check for new postings later.
+5. When I pick one, run the employer check on it.
+
+My résumé stays on my machine; never send it to any server. I apply by clicking the links myself.</code></pre>
+
+<h2>Foot of the page: install uv (one line)</h2>
+<p>Every local option needs <a href="https://docs.astral.sh/uv/">uv</a> (it provides uvx). Without it the assistant only says "server failed to start".</p>
+<pre class="os-win"><code>irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell</code></pre>
+<pre class="os-mac"><code>curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux</code></pre>
+<p class="dim">Still stuck? Run <code>uvx openhire@latest doctor</code> in a terminal: it tells apart the three things that look identical from the chat window, uv missing, the index not downloaded yet, and a server configured but not enabled. Once connected, the next page is the <a href="checklist.html?lang=en">job-search checklist</a>.</p>
+</div>
+
+<hr>
+<p class="dim">哪一步卡住了、哪个助手的步骤变了，<a href="https://github.com/gzchenhao/openhire/issues/new?template=checklist_feedback.yml">在这里反馈</a>（不收个人信息）。隐私说明：<a href="PRIVACY.md">PRIVACY.md</a>。数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
+
+<script>
+(function(){
+  var html=document.documentElement;
+  var titles={zh:"OpenHire · 连接向导",en:"OpenHire · Connect guide"};
+  function setLang(l,save){
+    html.setAttribute("data-lang",l);
+    html.setAttribute("lang",l==="en"?"en":"zh-CN");
+    document.title=titles[l];
+    var bs=document.querySelectorAll(".switch button");
+    for(var i=0;i<bs.length;i++){bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-set")===l?"true":"false");}
+    if(save){try{localStorage.setItem("openhire-lang",l);}catch(e){}}
+  }
+  function pick(c){
+    if(!c){return;}
+    html.setAttribute("data-picked",c);
+    var secs=document.querySelectorAll(".client");
+    for(var i=0;i<secs.length;i++){secs[i].setAttribute("data-show",secs[i].getAttribute("data-client")===c?"1":"0");}
+    var bs=document.querySelectorAll(".pick button");
+    for(var j=0;j<bs.length;j++){bs[j].setAttribute("aria-pressed",bs[j].getAttribute("data-client")===c?"true":"false");}
+    try{localStorage.setItem("openhire-client",c);}catch(e){}
+  }
+  var q=null,qc=null;
+  try{var p=new URLSearchParams(location.search);q=p.get("lang");qc=p.get("client");}catch(e){}
+  var saved=null,savedc=null;
+  try{saved=localStorage.getItem("openhire-lang");savedc=localStorage.getItem("openhire-client");}catch(e){}
+  var nav=(navigator.language||"").toLowerCase();
+  var l=(q==="en"||q==="zh")?q:(saved==="en"||saved==="zh")?saved:(/^(zh|yue)/.test(nav)?"zh":"en");
+  setLang(l,false);
+  var ua=(navigator.userAgent||"")+" "+(navigator.platform||"");
+  html.setAttribute("data-os",/Windows/i.test(ua)?"win":"mac");
+  pick(qc||savedc);
+  var sw=document.querySelector(".switch");
+  if(sw){sw.addEventListener("click",function(ev){
+    var b=ev.target.closest?ev.target.closest("button"):null;
+    if(b&&b.getAttribute("data-set")){setLang(b.getAttribute("data-set"),true);}
+  });}
+  var picks=document.querySelectorAll(".pick");
+  for(var k=0;k<picks.length;k++){picks[k].addEventListener("click",function(ev){
+    var b=ev.target.closest?ev.target.closest("button"):null;
+    if(b&&b.getAttribute("data-client")){pick(b.getAttribute("data-client"));}
+  });}
+  if(navigator.clipboard){
+    var pres=document.querySelectorAll("pre");
+    for(var m=0;m<pres.length;m++){(function(pre){
+      var btn=document.createElement("button");btn.type="button";btn.className="copy";btn.textContent="复制 · copy";
+      btn.addEventListener("click",function(){
+        var code=pre.querySelector("code");
+        navigator.clipboard.writeText(code?code.textContent:pre.textContent).then(function(){btn.textContent="已复制 · copied";setTimeout(function(){btn.textContent="复制 · copy";},1500);});
+      });
+      pre.appendChild(btn);
+    })(pres[m]);}
+  }
+})();
+</script>
+</body>
+</html>

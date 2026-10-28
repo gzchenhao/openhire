@@ -494,6 +494,103 @@ def classify_role_family_heuristic(title: str, description: str = "") -> str | N
     return None
 
 
+# --- free, deterministic seniority from the title (0.8.30, reports/100) ----------------
+# A tester searching Zoox for "perception" got "Senior Manager, Perception Data" first, and
+# wanted the assistant to ask "engineer or manager, how many years?" before searching. The
+# index had nothing to filter that on. This reads the one place the level is written, the
+# title, with rules measured on the 2026-10-26 snapshot (20,196 live rows): director-plus
+# words on 4.5% of titles, manager / lead / 经理 on 24.5%, of which almost half are product,
+# project or account managers, which lead no one and are filed as individual contributors.
+# Conservative on purpose: a title that names no level is "unknown", never guessed; 经理 on
+# its own is no signal (销售经理 is a salesperson), only 研发 / 技术 / 工程 / 团队 / 部门经理 are.
+SENIORITY_LEVELS = ("intern", "junior", "senior", "staff", "lead", "manager", "director", "unknown")
+SENIORITY_ALIASES: dict[str, tuple[str, ...]] = {
+    # Individual contributors: everything that leads no team, including titles that name
+    # no level at all (most engineer titles), which cannot be ruled out.
+    "ic": ("intern", "junior", "senior", "staff", "unknown"),
+    "individual_contributor": ("intern", "junior", "senior", "staff", "unknown"),
+    "个人贡献者": ("intern", "junior", "senior", "staff", "unknown"),
+    "management": ("lead", "manager", "director"),
+    "manage": ("lead", "manager", "director"),
+    "管理": ("lead", "manager", "director"),
+    "管理岗": ("lead", "manager", "director"),
+}
+_SEN_INTERN = re.compile(r"\b(intern|interns|internship|internships)\b|实习", re.I)
+# Function managers lead a product, a project or an account, not people: the phrase is
+# removed before any other rule reads the title, so "Senior Product Manager" is senior and
+# "Product Manager" is unknown, never manager.
+_SEN_FUNCTION_MANAGER = re.compile(
+    r"\b(technical program|program|programme|product marketing|product|project|account|community"
+    r"|customer success|partner(?:ship)?s?|relationship|portfolio|release|delivery|campaign|events?"
+    r"|content|brand|growth|marketing|channel|key account|engagement|solutions?|category|office"
+    r"|payroll|scrum|alliances?|deal desk|bid|proposal|tender|training|quality assurance) managers?\b",
+    re.I,
+)
+_SEN_MTS = re.compile(r"\bmembers? of technical staff\b|\bchief of staff\b", re.I)
+_SEN_TEAM_LEAD = re.compile(r"团队负责人|组长|\bteam lead(er)?\b|\btech(nical)? lead\b", re.I)
+_SEN_TOP_IC = re.compile(r"首席[一-鿿]{0,4}(科学家|专家|工程师|架构师|研究员|设计师)|\bchief (scientist|architect|engineer|researcher|designer)\b", re.I)
+_SEN_DIRECTOR = re.compile(
+    r"\b(director|directors|vp|svp|evp|avp|vice president|president|chief|ceo|cto|coo|cfo|cio|cmo|cxo"
+    r"|general manager|head)\b|总监|总经理|副总裁|总裁|首席|合伙人|院长|所长|负责人",
+    re.I,
+)
+_SEN_MANAGER = re.compile(r"\bmanagers?\b|\bmgr\b|(研发|技术|工程|团队|部门|车间|中心)经理", re.I)
+_SEN_LEAD = re.compile(r"\blead\b|\bleads\b|\bleader\b|主管", re.I)
+_SEN_SUPERVISOR_IS_GRADE = re.compile(r"工程师|专员|算法|助理|技师|技术员")  # 工程师/主管: a grade option, not a job
+_SEN_STAFF = re.compile(r"\bstaff\b|\bprincipal\b|\bdistinguished\b|\barchitects?\b|架构师", re.I)
+_SEN_SENIOR = re.compile(r"\bsenior\b|\bsr\.?(?=\s)|\bsr\b|\bexpert\b|高级|资深|专家", re.I)
+_SEN_JUNIOR = re.compile(
+    r"\bjunior\b|\bjr\.?(?=\s)|\bjr\b|\bassociate\b|\bentry[- ]level\b|\bnew grad(uate)?s?\b|\bgraduates?\b"
+    r"|\bearly careers?\b|初级|助理|校招|应届|新卒|毕业生",
+    re.I,
+)
+
+
+def seniority_from_title(title: str | None) -> str:
+    """The level a job title names, one of SENIORITY_LEVELS; "unknown" when it names none.
+
+    Rules in order of precedence, each measured against real titles: an internship is an
+    internship whatever else it says; a team lead stays a lead even where 负责人 would read
+    as director; a 首席科学家 or chief architect is a top individual contributor, not an
+    executive; director-plus words beat manager, manager beats lead, staff / principal beat
+    senior ("Senior Staff Engineer" is staff), senior beats junior."""
+    text = _SEN_MTS.sub(" ", _SEN_FUNCTION_MANAGER.sub(" ", title or ""))
+    if _SEN_INTERN.search(text):
+        return "intern"
+    if _SEN_TEAM_LEAD.search(text) and not _SEN_MANAGER.search(text):
+        return "lead"  # 团队负责人 before 负责人 reads as director; a Tech Lead Manager is a manager
+    if _SEN_TOP_IC.search(text):
+        return "staff"
+    if _SEN_DIRECTOR.search(text):
+        return "director"
+    if _SEN_MANAGER.search(text):
+        return "manager"
+    if _SEN_LEAD.search(text):
+        if "主管" in text and not re.search(r"\blead", text, re.I) and _SEN_SUPERVISOR_IS_GRADE.search(text):
+            pass  # "感知融合算法工程师/主管": an engineer posting with a supervisor grade
+        else:
+            return "lead"
+    if _SEN_STAFF.search(text):
+        return "staff"
+    if _SEN_SENIOR.search(text):
+        return "senior"
+    if _SEN_JUNIOR.search(text):
+        return "junior"
+    return "unknown"
+
+
+def expand_seniority(values: list[str] | None) -> set[str] | None:
+    """The set of levels a seniority filter keeps, aliases expanded; None means no filter.
+    Values are not validated here (service.check_seniority refuses unknown ones)."""
+    if not values:
+        return None
+    out: set[str] = set()
+    for v in values:
+        key = (v or "").strip().lower()
+        out.update(SENIORITY_ALIASES.get(key, (key,)))
+    return out
+
+
 class RateLimited(RuntimeError):
     """HTTP 429 from the provider. Raised so callers can back off instead of retrying hot."""
 

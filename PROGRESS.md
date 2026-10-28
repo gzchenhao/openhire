@@ -2,6 +2,13 @@
 
 > 一页进度台账。新条目置顶。恢复会话请先读 `README.md` 再读本文件，勿重做已完成工作。
 
+## 2026-10-28（云端）· 0.8.30 求职者反馈六条落地（100）
+
+- 已完成：seniority 字段与过滤（别名 ic / management，排序不动）；dates_in_words / date_source / check_before_apply；index_status preparing / unavailable 与五种空结果 headline；下载期间登记的盯岗不丢；watch_intent 的 matching_now / what_happens_next，check_watches 的 summary；指令与提示词改成先问级别、5 条六栏；连接向导页 + VS Code 说明。988 passed。Zoox / 理想 / 盯岗 / 空搜索四个场景在 10-26 快照副本上回放，结果在 `reports/100`。
+- 决策：网页搜索入口不做，等 12 月律师意见（098 第三节）。
+- 下一步：本机今晚验收连接向导页（待办 27）；赵回复报错原文后复现第 4 条的兼容问题。
+- 待领导：把回信（私库 `reply-to-zhao-hangquan-2026-10-28.md`，已补 0.8.30 一段）发给赵。
+
 ## 2026-10-28（云端）· EarlyTip「查公司」栏目上线，两道关照抄进我方（099，不发版）
 
 - 已完成：核对 EarlyTip 首次显示的 sha256 / updated / html 长度与我方一致；`earlytip_gate`（六个禁词查可见文字、不区分大小写；短于上一份一半拒绝）进 `check_company_feed.py`，生成脚本先过关再写文件（`--allow-shrink` 只给已告知的缩减，词关不放行），11 条测试。`reports/099`。

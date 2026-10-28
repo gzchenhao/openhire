@@ -202,6 +202,7 @@ code{{background:#f3f3f3;padding:.1em .3em;border-radius:3px}} h1{{font-size:1.5
 <p>MCP endpoint: <code>{e(url)}{MCP_PATH}</code> (streamable HTTP, no authentication) · version {e(__version__)} ·
 index: {stats.get('companies', 0)} employers, {stats.get('jobs', 0):,} postings, data as of {e(as_of)}.</p>
 <h2>Connect</h2>
+<p><b>Not sure which steps are yours?</b> The <a href="{e(url)}/connect">connect guide · 连接向导</a> asks which assistant you use and shows only that one's steps, with the one block to paste. 选你用的助手，只看那一种的步骤。</p>
 <ul>
 <li><b>ChatGPT</b> (paid plans): Settings → Connectors → Advanced → turn on Developer mode → Create → name <code>OpenHire</code>,
 URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new chat with the connector enabled, for example:
@@ -211,6 +212,7 @@ URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new cha
 </ul>
 <h2>Pages · 页面</h2>
 <ul>
+<li><a href="{e(url)}/connect">连接向导</a>：选你用的 AI 助手（ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy、VS Code），只看那一种的接入步骤和一段整段粘贴的话。</li>
 <li><a href="{e(url)}/checklist">求职清单</a>：找工作每一步该做什么、哪步能让 AI 替你做、查公司和防骗去哪个官网，一页写全，免费，不用注册，中英文可切换。</li>
 <li><a href="{e(url)}/check-company">查公司</a>：入职前核一家公司去哪些官方网站，怎么识别冒充用人方的骗局。</li>
 <li><a href="{e(url)}/portals">读不到的招聘门户</a>：岗位放在飞书、BOSS 直聘或没有可读列表的官网上的公司，它们自己的招聘页链接。</li>
@@ -335,6 +337,14 @@ def build_app(mcp, per_ip: int | None = None, total: int | None = None):
         @mcp.custom_route("/check-company.html", methods=["GET"], include_in_schema=False)
         async def _check_company(_: Request):
             return HTMLResponse(page_html("check-company.html"))
+
+        # The connect guide (0.8.30, reports/100): pick your assistant, get only its steps and
+        # the one block to paste. The answer to "the first connection is the hard part", with no
+        # postings on it. Same file as docs/connect.html.
+        @mcp.custom_route("/connect", methods=["GET"], include_in_schema=False)
+        @mcp.custom_route("/connect.html", methods=["GET"], include_in_schema=False)
+        async def _connect(_: Request):
+            return HTMLResponse(page_html("connect.html"))
 
         # The same page as a feed EarlyTip renders as its own 查公司 column (reports/095),
         # built from the packaged page, byte for byte docs/check-company.json.

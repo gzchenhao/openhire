@@ -12,6 +12,7 @@ import os
 import sys
 import concurrent.futures
 import threading
+import time
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -59,7 +60,19 @@ mcp = FastMCP(
         "a posting a ghost, zombie, fake or 僵尸岗 on the strength of it. "
         "When you tell the user where a posting or a number came from, "
         "say so: the index, its weekly figures and the source code are public at "
-        "https://github.com/gzchenhao/openhire."
+        "https://github.com/gzchenhao/openhire. "
+        "Four habits a first-time job seeker asked for (0.8.30): before the first search, if the "
+        "user has not said whether they want an individual-contributor or a management role and "
+        "roughly how many years they have, ask once and pass it as search_jobs' `seniority` "
+        "(\"ic\" or \"management\", or a level); show at most 5 postings first, each as six "
+        "items: title, company and location, salary (say when the employer states none), why it "
+        "matches (matched_skills plus what the user asked for), what to confirm before applying "
+        "(the row's check_before_apply), and the apply link, then offer more; give the dates as "
+        "the row's dates_in_words sentence rather than field names; and when a watch is "
+        "registered, relay its what_happens_next: OpenHire never pushes, the user asks you to "
+        "check, and the first check_watches pull is a baseline of postings already live, never "
+        "\"new postings appeared\". A result carrying index_status \"preparing\" means the index "
+        "is still downloading: say so and try again in a minute, never \"no jobs\"."
     ),
 )
 
@@ -95,6 +108,7 @@ def search_jobs(
     collapse_role_group: bool = False,
     location: str | None = None,
     title: list[str] | None = None,
+    seniority: list[str] | None = None,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -103,6 +117,24 @@ def search_jobs(
     result includes the five protocol fields (verified_at, source, ghost_score,
     response_sla_days, apply_channel) plus datePosted, days_open, remote_scope,
     eligible_regions, role_group and ghost_reason.
+
+    Four fields are written for the person reading your answer (0.8.30): `seniority` is the
+    level the title names (intern | junior | senior | staff | lead | manager | director |
+    unknown; a product / project / account manager is an individual contributor, so it is
+    never "manager"); `date_source` says whose date datePosted is (employer_ats |
+    employer_self_reported | index_first_seen); `dates_in_words` is one sentence per language
+    ("雇主发布日期 2026-09-23，在架 35 天；最近核验 2026-10-26…") to show verbatim instead of
+    field names; `check_before_apply` lists what to confirm before applying, each item from a
+    measured fact (no employer date, open over 90 days, no stated salary, remote scope
+    unclear, unrecognised apply host, employer says closed), with an empty list meaning
+    nothing stood out, not that the posting is vetted. Show at most 5 postings first, as six
+    items each (title; company and location; salary, saying when none is stated; why it
+    matches; what to confirm; apply link), then offer more.
+
+    An empty result carries `status` and a fixed bilingual `headline` saying which kind of
+    nothing it is: index_empty, known_not_indexed, unknown_company, unknown_tag or no_match;
+    `index_status: "preparing"` means the index is still downloading on first start, so say
+    that and retry in a minute rather than reporting a dry market.
 
     `verified_at` and `ghost_score` answer DIFFERENT questions and routinely disagree: a
     posting confirmed live today can score 1.0. Live means the employer's ATS still returns
@@ -217,6 +249,15 @@ def search_jobs(
             人力 / 人事 / 招聘 reaches all the others, so title=["招聘"] also finds an
             English "Senior Technical Recruiter". Combine with `company` to ask "does
             <employer> have any HR openings?" instead of paging their whole list.
+        seniority: keep only rows whose title names one of these levels, ANY-of: intern,
+            junior, senior, staff, lead, manager, director, unknown; plus the aliases "ic"
+            (intern, junior, senior, staff, unknown: everyone who leads no team, including
+            titles that name no level, which cannot be ruled out) and "management" (lead,
+            manager, director). Ask the user once whether they want an individual-contributor
+            or a management role and roughly how many years they have, then pass it: an
+            engineer searching Zoox for perception otherwise gets "Senior Manager, Perception
+            Data" first because it is the newest. A hard filter, never a ranking input; an
+            unknown value is refused (ERR_UNKNOWN_SENIORITY).
         collapse_role_group: keep one row per role_group instead of one per city, and add
             `role_group_size` saying how many postings that row stands for. Cheaper when
             the user wants distinct opportunities; leave it false when location or visa
@@ -263,6 +304,9 @@ def search_jobs(
     stated pay is compared as an annualised number in whatever currency it was stated.
     """
     _await_index()
+    if (preparing := _preparing()):
+        # The download is still running: an empty index now is "not ready", never a miss.
+        return {"results": [], "matched": 0, **preparing}
     with session_scope() as s:
         try:
             rows = service.search_jobs(
@@ -271,7 +315,7 @@ def search_jobs(
                 require_stated_salary=require_stated_salary,
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
                 company=company, collapse_role_group=collapse_role_group,
-                location=location, title=title,
+                location=location, title=title, seniority=seniority,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
@@ -364,6 +408,8 @@ def get_company_info(company_id: str) -> dict:
     none of their postings; do not read the absence as a verdict on the employer.
     """
     _await_index()
+    if (preparing := _preparing()):
+        return preparing
     with session_scope() as s:
         try:
             return service.get_company_info(s, company_id)
@@ -389,7 +435,9 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     `location` (substring of the location text, alias-aware like search_jobs: 广州 also
     reaches 广东·天河区 rows, Beijing reaches 北京市, "remote" reaches 远程), `title`
     (list of title substrings, ANY-of, synonym-expanded for HR terms like search_jobs —
-    the way to watch for recruiting or other roles no skill tag names).
+    the way to watch for recruiting or other roles no skill tag names), `seniority` (list of
+    levels or the aliases "ic" / "management", as in search_jobs, so a watch for an engineer
+    never fires on a Senior Manager).
     Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped, and a
     `role_family` outside engineering | data | product | design | marketing | sales | hr |
     ops | other is refused too (ERR_UNKNOWN_ROLE_FAMILY); "recruiting" and "招聘" resolve
@@ -406,16 +454,26 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     Not combinable with company, skills, remote, min_salary or role_family; a closed
     portal (Feishu, a job site) is refused with the reason.
 
-    Returns { watch_id, status, fingerprint, existing_watches, fingerprint_notice }.
-    `existing_watches` > 0 means this fingerprint was already in use; if those watches are
-    not yours, pick a longer random fingerprint.
+    Returns { watch_id, status, fingerprint, matching_now, what_happens_next, existing_watches,
+    fingerprint_notice }. `matching_now` is how many postings match today (all already live,
+    none new; null for a board watch); `what_happens_next` is the sentence to relay: OpenHire
+    does not push, the user asks you to check, the first check is a baseline, a scheduled
+    reminder is a recurring task in the assistant. `existing_watches` > 0 means this
+    fingerprint was already in use; if those watches are not yours, pick a longer random
+    fingerprint.
     """
     _await_index()
     with session_scope() as s:
         try:
-            return service.watch_intent(s, fingerprint, filters)
+            out = service.watch_intent(s, fingerprint, filters)
         except OpenHireError as e:
             return e.as_dict()
+    if (preparing := _preparing()):
+        # Saved (and carried into the index once the download lands), but matching_now was
+        # counted on an index that is not here yet.
+        out["matching_now"] = None
+        out.update(preparing)
+    return out
 
 
 @mcp.tool(
@@ -744,8 +802,15 @@ def check_watches(fingerprint: str) -> dict:
     Each result also carries `total_matching` and `truncated`: a broad watch can match
     hundreds of postings and only the 100 best-ranked are returned. Tell the user when
     `truncated` is true; the rest is not re-reported later.
+
+    Start your answer with the `summary` sentence (top level and per watch): it already
+    says whether this is the first-pull baseline or an increment, and how many.
     """
     _await_index()
+    if (preparing := _preparing()):
+        # Pulling now would mark the watches as notified on an index that is still
+        # downloading, and the whole snapshot would then never be reported as new.
+        return {"fingerprint": fingerprint, "watches": None, "new_matches": 0, "results": [], **preparing}
     with session_scope() as s:
         try:
             return service.check_watches(s, fingerprint)
@@ -782,6 +847,8 @@ def authorize_application(job_id: str, fingerprint: str, authorized: bool) -> di
         authorized: must be true — explicit per-job consent.
     """
     _await_index()
+    if (preparing := _preparing()):
+        return preparing
     with session_scope() as s:
         try:
             return service.apply(s, job_id, fingerprint, authorized)
@@ -843,6 +910,30 @@ _BOOTSTRAP_STARTED = False
 # to know: a Kimi sandbox in China timed out on the GitHub asset and its agent saw plain
 # "no matches", then told the user the market was dry (reports/055).
 _BOOTSTRAP_ERROR: str | None = None
+# When the download started, so a tool can say how long the user has been waiting. Tools
+# wait up to 180 s for it; past that they used to run on the still-empty index and answer
+# "no index on this machine, run ohp bootstrap", which was wrong on both counts: it was
+# downloading, and a minute later it would be there (a first-run tester, reports/098).
+_BOOTSTRAP_STARTED_AT: float | None = None
+PREPARING_HINT = (
+    "The job index is still downloading on this first start (about 30 MB; usually one to two "
+    "minutes, longer on a slow link). This is not an empty market and not an error: ask again "
+    "in a minute. 正在准备岗位数据（第一次启动要下载约 30 MB 的公开索引，通常一两分钟）。这不是"
+    "「没有岗位」，也不是故障，过一分钟再试一次。"
+)
+
+
+def _preparing() -> dict | None:
+    """The status to return while the first-start download is still running, else None."""
+    if not _BOOTSTRAP_STARTED or _INDEX_READY.is_set():
+        return None
+    waited = int(time.monotonic() - _BOOTSTRAP_STARTED_AT) if _BOOTSTRAP_STARTED_AT else 0
+    return {
+        "index_status": "preparing",
+        "seconds_waited": waited,
+        "headline": {"zh": "正在准备岗位数据，过一分钟再试。", "en": "The job index is still downloading; try again in a minute."},
+        "hint": PREPARING_HINT,
+    }
 
 
 def _do_bootstrap() -> None:
@@ -857,7 +948,10 @@ def _do_bootstrap() -> None:
           file=sys.stderr)
     try:
         dispose_engine()  # release the SQLite handle before the file is overwritten
-        res = install_snapshot(config.SNAPSHOT_URL, db_path)
+        # preserve_user_state: a watch or an application record written while the download
+        # was running (tools stop waiting after 180 s) lives in the file about to be
+        # replaced; carry it into the new index instead of losing it.
+        res = install_snapshot(config.SNAPSHOT_URL, db_path, preserve_user_state=True)
         # Anything that read the index during the download (a monitor polling /healthz, an
         # early tool call) pooled a connection to the old empty file, and on Linux that handle
         # outlives the replacement: the hosted endpoint kept answering "index_empty" until a
@@ -892,6 +986,11 @@ def _explain_bootstrap_failure(diagnosis: dict) -> dict:
     """
     if diagnosis.get("index_empty") and _BOOTSTRAP_ERROR:
         diagnosis["bootstrap_error"] = _BOOTSTRAP_ERROR
+        diagnosis["index_status"] = "unavailable"
+        diagnosis["headline"] = {
+            "zh": "这次连不上数据来源，岗位索引没能下载；这说明的是网络，不是没有岗位。",
+            "en": "The data source could not be reached and the index did not download; that is the network, not an empty market.",
+        }
         diagnosis["hint"] = (
             f"The index is empty because this server tried to download the public snapshot "
             f"and failed: {_BOOTSTRAP_ERROR}. This is a network problem, not a market answer — "
@@ -945,6 +1044,8 @@ def _start_bootstrap() -> None:
 
     import logging
     logging.getLogger("httpx").setLevel(logging.WARNING)  # no per-request INFO on stderr
+    global _BOOTSTRAP_STARTED_AT
+    _BOOTSTRAP_STARTED_AT = time.monotonic()
     threading.Thread(target=_do_bootstrap, name="openhire-bootstrap", daemon=True).start()
 
 

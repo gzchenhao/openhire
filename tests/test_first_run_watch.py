@@ -78,3 +78,31 @@ def test_watch_and_apply_work_in_the_first_session_after_bootstrap(tmp_path, mon
     receipt = ms.authorize_application("acme:1", fp, True)
     assert receipt.get("receipt_id", "").startswith("r_"), receipt
     assert receipt["resume_transmitted"] is False
+
+
+def test_a_watch_registered_during_the_download_survives_the_install(tmp_path, monkeypatch, request):
+    """Tools stop waiting after 180 s; a watch written then lives in the empty file that the
+    download is about to replace. install_snapshot(preserve_user_state=True) carries it over."""
+    from openhire import config
+    from openhire import mcp_server as ms
+    from openhire.db import init_db
+    from openhire.db.session import dispose_engine
+
+    request.addfinalizer(dispose_engine)
+    gz = _public_snapshot(tmp_path, monkeypatch)
+    user_db = tmp_path / "user2.db"
+    monkeypatch.setattr(config, "DATABASE_URL", f"sqlite:///{user_db.as_posix()}")
+    monkeypatch.setattr(config, "SNAPSHOT_URL", gz.as_uri())
+    monkeypatch.setattr(ms, "_BOOTSTRAP_STARTED", True)
+    monkeypatch.setattr(ms, "_INDEX_READY", ms.threading.Event())
+    monkeypatch.setattr(ms, "_BOOTSTRAP_ERROR", None)
+    monkeypatch.setattr(ms, "_await_index", lambda timeout=180.0: None)
+    init_db()
+    saved = ms.watch_intent("#during-download-k2p7", {"skills": ["perception"]})
+    assert saved["watch_id"].startswith("w_") and saved["index_status"] == "preparing"
+    dispose_engine()
+    ms._do_bootstrap()
+    assert ms._BOOTSTRAP_ERROR is None
+    pulled = ms.check_watches("#during-download-k2p7")
+    assert pulled["watches"] == 1 and pulled["new_matches"] == 1
+    assert pulled["results"][0]["watch_id"] == saved["watch_id"]
