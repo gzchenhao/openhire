@@ -1,7 +1,8 @@
 """Simulated job seekers against the hosted OpenHire endpoint, graded against what OpenHire promises.
 
 Each persona is one conversation: Claude plays the person's AI assistant with OpenHire's MCP
-tools attached through the Messages API MCP connector, a second model plays the person (answers
+tools (by default the installed server run in memory on a copy of the index; --backend hosted
+goes to the public endpoint through the Messages API MCP connector), a second model plays the person (answers
 the assistant's questions from the persona brief, says when they are done), and a grader reads
 the whole transcript, tool calls and tool results included, against the promises in GRADER_RUBRIC.
 The report lists findings by severity so the next release can fix them.
@@ -27,10 +28,13 @@ the ledger already holds --total-cap. Exit code 0 on a finished run, 2 when the 
 from __future__ import annotations
 
 import argparse
+import asyncio
 import datetime as dt
 import json
 import os
+import shutil
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -54,6 +58,8 @@ PRICES = {
 
 MAX_USER_TURNS = 3
 MAX_PAUSE_RESUMES = 4
+MAX_TOOL_ROUNDS = 15       # local backend: tool calls the assistant may chain in one turn
+TOOL_RESULT_CHARS = 30000  # local backend: what the assistant sees of one tool result
 RESULT_CHARS = 6000  # tool results kept per call in the transcript the grader reads
 
 ASSISTANT_SYSTEM = (
@@ -308,6 +314,87 @@ def _is_mcp_connection_error(exc) -> bool:
     return getattr(exc, "status_code", None) == 400 and "MCP server" in str(getattr(exc, "message", exc))
 
 
+# --- the local server ----------------------------------------------------------------------
+
+class LocalMCP:
+    """The installed package's MCP server, in memory, the way scripts/mcp_call.py and
+    tests/test_mcp_acceptance.py start it. The default backend since the first real run
+    (2026-10-29): the Messages API MCP connector reached the free hosted instance only some
+    of the time, and in-process tests the code just pulled rather than the last deploy.
+    main() points OPENHIRE_HOME and OPENHIRE_DATABASE_URL at a temporary copy of the index
+    before this is built, so watches the personas register never touch the real one."""
+
+    def __init__(self):
+        import logging
+
+        from mcp.shared.memory import create_connected_server_and_client_session as connect
+        from openhire.mcp_server import mcp
+
+        logging.getLogger("mcp").setLevel(logging.WARNING)  # one INFO line per request otherwise
+
+        self._connect = connect
+        self._server = mcp._mcp_server
+        self.instructions = getattr(mcp, "instructions", None) or ""
+        listed = asyncio.run(self._list())
+        self.tools = [{"name": t.name, "description": t.description or "", "input_schema": t.inputSchema}
+                      for t in listed]
+
+    async def _list(self):
+        async with self._connect(self._server) as c:
+            return (await c.list_tools()).tools
+
+    def call(self, name: str, arguments: dict) -> tuple[str, bool]:
+        async def go():
+            async with self._connect(self._server) as c:
+                return await c.call_tool(name, arguments)
+        res = asyncio.run(go())
+        text = "\n".join(getattr(b, "text", "") or "" for b in (res.content or []))
+        return text, bool(getattr(res, "isError", False))
+
+
+def assistant_turn_local(client, messages: list, meter: Meter, model: str, local) -> tuple[list[dict], str]:
+    """One assistant turn with OpenHire's tools run here: call, execute, return, until the
+    model stops asking. Returns transcript events and the stop reason."""
+    system = ASSISTANT_SYSTEM
+    if local.instructions:
+        system += "\n\nInstructions from the OpenHire server:\n" + local.instructions
+    events: list[dict] = []
+    stop = None
+    for _ in range(MAX_TOOL_ROUNDS + MAX_PAUSE_RESUMES):
+        resp = client.messages.create(
+            model=model,
+            max_tokens=16000,
+            system=system,
+            tools=local.tools,
+            output_config={"effort": "high"},
+            cache_control={"type": "ephemeral"},
+            messages=messages,
+        )
+        meter.add(model, resp.usage)
+        messages.append({"role": "assistant", "content": resp.content})
+        stop = resp.stop_reason
+        results = []
+        for b in resp.content:
+            t = getattr(b, "type", None)
+            if t == "text":
+                events.append({"role": "assistant", "type": "text", "text": b.text})
+            elif t == "tool_use":
+                events.append({"role": "assistant", "type": "tool_call", "name": b.name, "input": b.input})
+                try:
+                    text, err = local.call(b.name, dict(b.input or {}))
+                except Exception as e:  # a tool crashing is a finding, not a reason to stop the run
+                    text, err = f"tool raised {type(e).__name__}: {e}", True
+                events.append({"role": "tool", "type": "tool_result", "is_error": err, "text": _clip(text)})
+                results.append({"type": "tool_result", "tool_use_id": b.id,
+                                "content": _clip(text, TOOL_RESULT_CHARS), "is_error": err})
+        if stop == "tool_use" and results:
+            messages.append({"role": "user", "content": results})
+            continue
+        if stop != "pause_turn":
+            break
+    return events, stop
+
+
 # --- the three roles -----------------------------------------------------------------------
 
 def assistant_turn(client, messages: list, meter: Meter, model: str, endpoint: str) -> tuple[list, str]:
@@ -384,8 +471,12 @@ def run_persona(client, persona: dict, meter: Meter, args) -> dict:
     messages: list = [{"role": "user", "content": persona["opening"]}]
     stop = None
     for turn in range(MAX_USER_TURNS):
-        blocks, stop = assistant_turn(client, messages, meter, args.model, args.endpoint)
-        events.extend(blocks_to_events(blocks))
+        if getattr(args, "local", None) is not None:
+            new_events, stop = assistant_turn_local(client, messages, meter, args.model, args.local)
+            events.extend(new_events)
+        else:
+            blocks, stop = assistant_turn(client, messages, meter, args.model, args.endpoint)
+            events.extend(blocks_to_events(blocks))
         if stop == "refusal" or turn == MAX_USER_TURNS - 1:
             break
         reply = simulated_user(client, persona, events, meter, args.user_model)
@@ -443,6 +534,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--personas", default="all", help="comma-separated ids, or all")
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--out", default="drafts/local-results/persona-runs")
+    ap.add_argument("--backend", choices=["local", "hosted"], default="local",
+                    help="local: the installed server in memory on a copy of the index (default); "
+                         "hosted: the public endpoint through the Messages API MCP connector")
     ap.add_argument("--endpoint", default=HOSTED_MCP)
     ap.add_argument("--model", default=ASSISTANT_MODEL)
     ap.add_argument("--user-model", default=USER_MODEL)
@@ -477,10 +571,27 @@ def main(argv: list[str] | None = None) -> int:
 
     import anthropic
 
-    print("waking the hosted endpoint...", flush=True)
-    if not warm_up(args.endpoint):
-        print(f"{args.endpoint} did not answer /healthz within {WARM_TIMEOUT_S}s; nothing run", file=sys.stderr)
-        return 1
+    work = None
+    args.local = None
+    if args.backend == "local":
+        home = Path(os.environ.get("OPENHIRE_HOME", Path.home() / ".openhire"))
+        src = home / "openhire.db"
+        if not src.exists():
+            print(f"no local index at {src}; run `ohp bootstrap` first, or use --backend hosted", file=sys.stderr)
+            return 1
+        # A throwaway copy outside drafts/ (it would otherwise be synced to the private repo):
+        # the personas register watches, and agents never run against the real index (0.6.7).
+        work = Path(tempfile.mkdtemp(prefix="openhire-persona-"))
+        shutil.copy2(src, work / "openhire.db")
+        os.environ["OPENHIRE_HOME"] = str(work)
+        os.environ["OPENHIRE_DATABASE_URL"] = f"sqlite+pysqlite:///{(work / 'openhire.db').resolve().as_posix()}"
+        args.local = LocalMCP()
+        print(f"local server: {len(args.local.tools)} tools, index copy in {work}", flush=True)
+    else:
+        print("waking the hosted endpoint...", flush=True)
+        if not warm_up(args.endpoint):
+            print(f"{args.endpoint} did not answer /healthz within {WARM_TIMEOUT_S}s; nothing run", file=sys.stderr)
+            return 1
     client = anthropic.Anthropic(api_key=key, max_retries=4)
     run_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%MZ")
     run_dir = out / run_id
@@ -513,6 +624,13 @@ def main(argv: list[str] | None = None) -> int:
         results.append(res)
         (run_dir / f"{i + 1:02d}-{pid}.json").write_text(
             json.dumps(res, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    if work is not None:
+        try:
+            from openhire.db.session import dispose_engine
+            dispose_engine()
+        except Exception:
+            pass
+        shutil.rmtree(work, ignore_errors=True)
     ledger.add_run(run_id, meter.usd, len(results))
     report = render_report(run_id, results, meter.usd, ledger.total, stopped)
     (run_dir / "report.md").write_text(report, encoding="utf-8")

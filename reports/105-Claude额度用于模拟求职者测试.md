@@ -34,3 +34,11 @@
 
 - 第一晚跑完，云端读结果，校准单价和人设。
 - 11-12 停用日读任务、确认 key 已删，汇总总花费和修复数。
+
+## 补记（10-29 下午，第一次真跑）
+
+- 401：第一把 key 没写对（剪贴板被命令覆盖），领导重建了第二把，改用不经剪贴板的输入方式。
+- `.env` 编码：我给的 PowerShell 命令用 `Set-Content` 重写了 `.env`，PowerShell 5.1 默认按 GBK 存，`.env` 里的中文注释让 python-dotenv 读不了（所有读 `.env` 的命令都会受影响）；已转回 UTF-8（先备份 `.env.bak-20261029`）。以后给领导的命令不再重写 `.env`，只追加。
+- 托管端点经 MCP connector 时通时不通：08:35 那次「隐私试探」跑通（8 分，手机号没进任何工具，投递指向雇主官网），其余四次都是 `Error while communicating with MCP server`，加了叫醒和重试也没好。改为**默认在本机内存里起 OpenHire**（`--backend local`，同 `scripts/mcp_call.py` 的方式），用索引的临时副本（系统临时目录，跑完删除，不进私库），测的是刚拉下来的代码；`--backend hosted` 保留。
+- 已花约 US$2.56（多为失败的托管连接请求）。
+- 08:35 那次的两条真发现，明早日读一并核：`ghost_reason` 把「首次发现日」算出的下限写成确切天数；`matched_skills` 为空时 `match_quality` 仍是 1.0。

@@ -161,3 +161,35 @@ def test_only_mcp_connection_400_is_retried():
     assert pt._is_mcp_connection_error(NS(status_code=400, message="mcp_servers[0] 'openhire': Connection error while communicating with MCP server."))
     assert not pt._is_mcp_connection_error(NS(status_code=400, message="max_tokens too large"))
     assert not pt._is_mcp_connection_error(NS(status_code=401, message="MCP server"))
+
+
+def test_local_backend_runs_tools_here_and_returns_results_in_one_message():
+    class Local:
+        instructions = "ask level first"
+        tools = [{"name": "search_jobs", "description": "d", "input_schema": {"type": "object"}}]
+        calls = []
+
+        def call(self, name, arguments):
+            self.calls.append((name, arguments))
+            if name == "boom":
+                raise RuntimeError("bad")
+            return '{"results": []}', False
+
+    seen = []
+
+    def create(**kw):
+        seen.append(kw)
+        if len(seen) == 1:
+            content = [NS(type="tool_use", id="a", name="search_jobs", input={"seniority": "ic"}),
+                       NS(type="tool_use", id="b", name="boom", input={})]
+            return NS(content=content, stop_reason="tool_use", usage=_usage())
+        return NS(content=[NS(type="text", text="done")], stop_reason="end_turn", usage=_usage())
+
+    local = Local()
+    messages = [{"role": "user", "content": "hi"}]
+    events, stop = pt.assistant_turn_local(NS(messages=NS(create=create)), messages, pt.Meter(), pt.ASSISTANT_MODEL, local)
+    assert stop == "end_turn" and len(seen) == 2
+    assert "ask level first" in seen[0]["system"] and seen[0]["tools"] == local.tools
+    results = messages[2]["content"]
+    assert [r["tool_use_id"] for r in results] == ["a", "b"] and results[1]["is_error"] is True
+    assert [e["type"] for e in events] == ["tool_call", "tool_result", "tool_call", "tool_result", "text"]
