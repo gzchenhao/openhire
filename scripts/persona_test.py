@@ -31,6 +31,9 @@ import datetime as dt
 import json
 import os
 import sys
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 HOSTED_MCP = "https://openhire-vlny.onrender.com/mcp"
@@ -277,6 +280,34 @@ def transcript_text(events: list[dict]) -> str:
     return "\n\n".join(out)
 
 
+# --- the hosted endpoint sleeps ------------------------------------------------------------
+
+WARM_TIMEOUT_S = 240
+
+
+def warm_up(endpoint: str, timeout_s: int = WARM_TIMEOUT_S, sleep=time.sleep, opener=urllib.request.urlopen) -> bool:
+    """Poll /healthz until it answers 200. Render's free instance sleeps after 15 idle minutes
+    and takes tens of seconds to wake and load the snapshot; the Messages API MCP connector
+    does not wait that long and fails the request with "Connection error while communicating
+    with MCP server" (first real run, 2026-10-29)."""
+    url = endpoint.rsplit("/mcp", 1)[0] + "/healthz"
+    deadline = time.monotonic() + timeout_s
+    while True:
+        try:
+            with opener(urllib.request.Request(url, headers={"User-Agent": "openhire-persona-test"}), timeout=60) as r:
+                if r.status == 200:
+                    return True
+        except (urllib.error.URLError, OSError, ValueError):
+            pass
+        if time.monotonic() >= deadline:
+            return False
+        sleep(10)
+
+
+def _is_mcp_connection_error(exc) -> bool:
+    return getattr(exc, "status_code", None) == 400 and "MCP server" in str(getattr(exc, "message", exc))
+
+
 # --- the three roles -----------------------------------------------------------------------
 
 def assistant_turn(client, messages: list, meter: Meter, model: str, endpoint: str) -> tuple[list, str]:
@@ -446,6 +477,10 @@ def main(argv: list[str] | None = None) -> int:
 
     import anthropic
 
+    print("waking the hosted endpoint...", flush=True)
+    if not warm_up(args.endpoint):
+        print(f"{args.endpoint} did not answer /healthz within {WARM_TIMEOUT_S}s; nothing run", file=sys.stderr)
+        return 1
     client = anthropic.Anthropic(api_key=key, max_retries=4)
     run_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%MZ")
     run_dir = out / run_id
@@ -460,7 +495,14 @@ def main(argv: list[str] | None = None) -> int:
             break
         print(f"[{i + 1}/{len(plan)}] {pid} (spent so far US${meter.usd:.2f})", flush=True)
         try:
-            res = run_persona(client, personas[pid], meter, args)
+            try:
+                res = run_persona(client, personas[pid], meter, args)
+            except anthropic.APIStatusError as e:
+                if not _is_mcp_connection_error(e):
+                    raise
+                print("  MCP connection failed; waking the endpoint and retrying once", flush=True)
+                warm_up(args.endpoint)
+                res = run_persona(client, personas[pid], meter, args)
         except anthropic.APIStatusError as e:
             res = {"persona": pid, "stop_reason": f"api_error {e.status_code}", "events": [],
                    "grade": {"task_completed": False, "score": 0,

@@ -131,3 +131,33 @@ def test_key_name_is_not_the_extractor_key():
     src = (ROOT / "scripts" / "persona_test.py").read_text(encoding="utf-8")
     assert 'os.environ.get("OPENHIRE_PERSONA_API_KEY")' in src
     assert 'environ.get("ANTHROPIC_API_KEY")' not in src
+
+
+def test_warm_up_polls_healthz_until_200():
+    calls, sleeps = [], []
+
+    class R:
+        def __init__(self, status): self.status = status
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def opener(req, timeout):
+        calls.append(req.full_url)
+        if len(calls) < 3:
+            raise OSError("asleep")
+        return R(200)
+
+    assert pt.warm_up(pt.HOSTED_MCP, sleep=sleeps.append, opener=opener) is True
+    assert calls[0] == "https://openhire-vlny.onrender.com/healthz" and len(sleeps) == 2
+
+
+def test_warm_up_gives_up_after_timeout():
+    def opener(req, timeout):
+        raise OSError("down")
+    assert pt.warm_up(pt.HOSTED_MCP, timeout_s=0, sleep=lambda s: None, opener=opener) is False
+
+
+def test_only_mcp_connection_400_is_retried():
+    assert pt._is_mcp_connection_error(NS(status_code=400, message="mcp_servers[0] 'openhire': Connection error while communicating with MCP server."))
+    assert not pt._is_mcp_connection_error(NS(status_code=400, message="max_tokens too large"))
+    assert not pt._is_mcp_connection_error(NS(status_code=401, message="MCP server"))
