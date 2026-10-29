@@ -43,7 +43,6 @@ _GREENHOUSE = [
     ("waymo", "Waymo"),
     # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
     # NOTE: Aurora moved to Ashby (see _ASHBY) — its Greenhouse board is gone.
-    ("wayve", "Wayve"),
     ("kodiak", "Kodiak Robotics"),
     ("motional", "Motional"),
     ("torcrobotics", "Torc Robotics"),
@@ -54,7 +53,6 @@ _GREENHOUSE = [
     # each board answered the public API with its postings on that day.
     ("skildai-careers", "Skild AI", "skildai"),
     ("apptronik", "Apptronik"),
-    ("carbonrobotics", "Carbon Robotics"),
     ("pathrobotics", "Path Robotics"),
     ("nebius", "Nebius"),
     ("samsara", "Samsara"),
@@ -67,7 +65,6 @@ _GREENHOUSE = [
     ("reddit", "Reddit"),
     ("affirm", "Affirm"),
     ("figma", "Figma"),
-    ("clickhouse", "ClickHouse"),
     ("twilio", "Twilio"),
     ("gitlab", "GitLab"),
     ("instacart", "Instacart"),
@@ -90,7 +87,6 @@ _GREENHOUSE = [
     ("discord", "Discord"),
     ("cribl", "Cribl"),
     ("fastly", "Fastly"),
-    ("amplitude", "Amplitude"),
     ("tailscale", "Tailscale"),
     ("dropbox", "Dropbox"),
     ("airtable", "Airtable"),
@@ -139,6 +135,14 @@ _ASHBY = [
     ("aurora-operations-inc", "Aurora", "aurorainnovation"),
     # Greenhouse -> Ashby. Confirmed: job UUIDs on temporal.io/careers are in this board.
     ("temporal", "Temporal", "temporaltechnologies"),
+    # Greenhouse -> Ashby, 2026-10 (the Greenhouse boards 404 since September; found by the
+    # local session on each careers page and read live 2026-10-28: ClickHouse 207, Wayve 180,
+    # Amplitude 43, Carbon Robotics 3). Same company ids, so their history stays attached and
+    # the stale Greenhouse rows are delisted on the first Ashby crawl (reports/102).
+    ("clickhouse", "ClickHouse"),
+    ("wayve", "Wayve"),
+    ("amplitude", "Amplitude"),
+    ("carbon-robotics", "Carbon Robotics", "carbonrobotics"),
     # v0.2 autonomous-driving / embodied-AI expansion (each verified live).
     ("1x", "1X Technologies"),
     # 2026-10-08 embodied-AI startups (reports/060), each verified live on the public board API.

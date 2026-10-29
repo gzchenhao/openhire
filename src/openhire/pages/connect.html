@@ -259,7 +259,7 @@ My résumé stays on my machine; never send it to any server. I apply by clickin
 </div>
 
 <hr>
-<p class="dim">哪一步卡住了、哪个助手的步骤变了，<a href="https://github.com/gzchenhao/openhire/issues/new?template=checklist_feedback.yml">在这里反馈</a>（不收个人信息）。隐私说明：<a href="PRIVACY.md">PRIVACY.md</a>。数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
+<p class="dim">哪一步卡住了、哪个助手的步骤变了，<a href="https://github.com/gzchenhao/openhire/issues/new?template=checklist_feedback.yml">在这里反馈</a>（不收个人信息）。隐私说明：<a href="https://github.com/gzchenhao/openhire/blob/main/docs/PRIVACY.md">PRIVACY.md</a>。数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
 
 <script>
 (function(){
@@ -308,7 +308,7 @@ My résumé stays on my machine; never send it to any server. I apply by clickin
       var btn=document.createElement("button");btn.type="button";btn.className="copy";btn.textContent="复制 · copy";
       btn.addEventListener("click",function(){
         var code=pre.querySelector("code");
-        navigator.clipboard.writeText(code?code.textContent:pre.textContent).then(function(){btn.textContent="已复制 · copied";setTimeout(function(){btn.textContent="复制 · copy";},1500);});
+        navigator.clipboard.writeText(code?code.textContent:pre.textContent).then(function(){btn.textContent="已复制 · copied";setTimeout(function(){btn.textContent="复制 · copy";},1500);},function(){btn.textContent="复制不了，请手动选中 · select it by hand";setTimeout(function(){btn.textContent="复制 · copy";},3000);});
       });
       pre.appendChild(btn);
     })(pres[m]);}

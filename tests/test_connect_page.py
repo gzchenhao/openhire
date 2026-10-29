@@ -59,3 +59,11 @@ def test_bilingual_with_chinese_first_and_the_same_footer_as_the_other_pages():
     assert "checklist_feedback.yml" in PAGE and "雇主认领入口" in PAGE and "employer_claim.yml" in PAGE
     assert "——" not in PAGE                                         # copy rule 3
     assert not re.search(r"\b0\.8\.\d+\b", PAGE), "no version number on the page (it would go stale)"
+
+
+def test_footer_links_work_on_both_hosts_and_copy_failure_is_said():
+    """10-28 local check: the relative PRIVACY.md link 404'd on the hosted copy (Render serves
+    no docs folder), and a refused clipboard left the button silent."""
+    assert 'href="PRIVACY.md"' not in PAGE
+    assert "https://github.com/gzchenhao/openhire/blob/main/docs/PRIVACY.md" in PAGE
+    assert "复制不了，请手动选中" in PAGE
