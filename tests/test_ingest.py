@@ -152,6 +152,7 @@ def test_delist_marks_row_not_deletes(session):
 
     b = session.get(Job, "acme:2")
     assert stats.jobs_delisted == 1
+    assert stats.delisted_jobs == [{"job_id": "acme:2", "title": "Role B"}]
     assert b is not None  # row kept
     assert b.delisted_at == t1
 

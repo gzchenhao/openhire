@@ -639,7 +639,11 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             # first_seen_at unconditionally would narrate "open 48d" next to a stored 1.0,
             # which is a worse answer than staying silent. Same calendar-day count as
             # days_open, so the two numbers on one row never disagree.
-            ghost_reason(job.relist_count or 0, float(age_days))
+            (ghost_reason(job.relist_count or 0, float(age_days))
+             # Counted from the day this index first saw the row when the employer's system
+             # gives no date, so the figure is a floor, not the age (persona test, 2026-10-29).
+             + (" (at least: counted from the day OpenHire first saw it; the employer's system gives no date)"
+                if date_signal_for(job, company) == "not_reported_by_ats" else ""))
             if age_days is not None else None
         ),
         # ④ The employer's own commitment. Falls back to what they declared for the whole
@@ -1613,17 +1617,17 @@ def watch_intent(
     short = len(fingerprint.strip()) < MIN_FINGERPRINT_LEN
     if clean.get("board_url"):
         next_zh = ("已保存。OpenHire 不会主动推送；下次对我说「检查一下」，我会现读这个招聘页，只列上次之后新出现和已下架的岗位。"
-                   "要定时提醒，在助手里另设定时任务，到点跑 radar_check。")
+                   "要定时提醒，在助手里另设定时任务，到点调用 check_watches（或用内置提示词 radar_check）。")
         next_en = ("Saved. OpenHire does not push notifications; next time, say \"check my radar\" and the board is read live, "
                    "listing only what appeared or disappeared since the last check. For a scheduled reminder, set a recurring "
-                   "task in your assistant that runs radar_check.")
+                   "task in your assistant that calls check_watches (or uses the built-in radar_check prompt).")
     else:
         n = matching_now or 0
         next_zh = (f"已保存条件，现在匹配 {n} 条，都是已有岗位，不是新发。OpenHire 不会主动推送；下次对我说「检查一下」，"
-                   "我只列新出现的岗位（第一次检查会把现在这些先列一遍作为基线）。要定时提醒，在助手里另设定时任务，到点跑 radar_check。")
+                   "我只列新出现的岗位（第一次检查会把现在这些先列一遍作为基线）。要定时提醒，在助手里另设定时任务，到点调用 check_watches（或用内置提示词 radar_check）。")
         next_en = (f"Saved. {n} postings match right now, all of them already live, none new. OpenHire does not push notifications; "
                    "next time, say \"check my radar\" and only postings that appeared since are listed (the first check shows the "
-                   "current set once, as the baseline). For a scheduled reminder, set a recurring task in your assistant that runs radar_check.")
+                   "current set once, as the baseline). For a scheduled reminder, set a recurring task in your assistant that calls check_watches (or uses the built-in radar_check prompt).")
     return {
         "watch_id": watch_id,
         "status": "active",
@@ -1648,7 +1652,12 @@ def watch_intent(
                 f" This fingerprint already had {existing} active watch(es) before this one. If "
                 "they are not yours, another client chose the same short tag: use a longer, "
                 "random one (12+ characters) and re-register."
-                if existing else ""
+                if existing and short else ""
+            )
+            + (
+                f" This fingerprint already has {existing} other active watch(es), most likely "
+                "your own from earlier; check_watches returns them all together."
+                if existing and not short else ""
             )
         ),
     }
@@ -2021,6 +2030,11 @@ def refresh_company_index(
         "jobs_updated": stats.jobs_updated,
         "jobs_delisted": stats.jobs_delisted,
         "jobs_unchanged": stats.jobs_unchanged,
+        "delisted": list(stats.delisted_jobs[:20]),
+        "counts_note": ("jobs_updated counts rows whose title or description changed; a row the employer "
+                        "re-saved without changing either counts as unchanged, so do not read jobs_updated: 0 "
+                        "as \"nobody touched these\" and do not read a recent updated_at as an edit. "
+                        "`delisted` names the rows this crawl took down (first 20)."),
     }
 
 

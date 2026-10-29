@@ -193,3 +193,18 @@ def test_a_crawl_that_failed_is_not_reported_as_a_refresh(seeded, monkeypatch):
     # It must also say how old the data the caller still holds actually is.
     assert out["data_age_days"] == 0
     assert "jobs_new" not in out  # no counters, because nothing was counted
+
+
+def test_a_refresh_names_what_it_delisted(seeded, monkeypatch):
+    """Persona test 2026-10-29: "jobs_delisted: 3" alone left the assistant unable to say
+    whether the three were the ones the user was watching."""
+    import openhire.pipeline as pipeline
+    from openhire.pipeline.ingest import IngestStats
+
+    stats = IngestStats(companies_crawled=1, jobs_delisted=1,
+                        delisted_jobs=[{"job_id": "unitree:9", "title": "运控算法工程师"}])
+    monkeypatch.setattr(pipeline, "run_ingest", lambda company_ids=None, **k: stats)
+    with session_scope() as s:
+        out = service.refresh_company_index(s, "unitree", now=NOW + dt.timedelta(hours=7))
+    assert out["delisted"] == [{"job_id": "unitree:9", "title": "运控算法工程师"}]
+    assert "jobs_updated counts rows whose title or description changed" in out["counts_note"]

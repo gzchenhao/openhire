@@ -146,3 +146,16 @@ def test_empty_index_headline():
         out = service.diagnose_empty_search(s, skills=["x"])
     assert out["status"] == "index_empty" and out["index_empty"] is True
     assert out["headline"]["zh"] == "本机还没有岗位数据，不是没有匹配的岗位。"
+
+
+def test_persona_round_2026_10_29_fixes(db):
+    """The first nightly persona run (reports/106): a first-seen age is a floor in ghost_reason
+    too; the scheduled reminder names the tool that exists; a long fingerprint's earlier
+    watches are the caller's own, not a collision."""
+    r = _row(db, "lixiang:3")
+    assert r["ghost_reason"].endswith("(at least: counted from the day OpenHire first saw it; the employer's system gives no date)")
+    w = service.watch_intent(db, "#persona-k2p7x8q1", {"title": ["perception"]}, now=NOW)
+    assert "check_watches" in w["what_happens_next"]["zh"] and "check_watches" in w["what_happens_next"]["en"]
+    again = service.watch_intent(db, "#persona-k2p7x8q1", {"title": ["slam"]}, now=NOW)
+    assert "most likely your own" in again["fingerprint_notice"]
+    assert "another client chose" not in again["fingerprint_notice"]

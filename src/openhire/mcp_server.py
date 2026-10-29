@@ -121,7 +121,12 @@ def search_jobs(
     Four fields are written for the person reading your answer (0.8.30): `seniority` is the
     level the title names (intern | junior | senior | staff | lead | manager | director |
     unknown; a product / project / account manager is an individual contributor, so it is
-    never "manager"); `date_source` says whose date datePosted is (employer_ats |
+    never "manager"; the `seniority` filter's alias `ic` means every individual-contributor
+    level (intern, junior, senior, staff, and unknown, because most titles name no level), so
+    for a new graduate pass ["intern", "junior", "unknown"] and for an experienced IC
+    ["senior", "staff", "unknown"]; listing levels leaves `unknown` out unless you name it. If you do not yet know
+    whether the person leads people and how many years they have, ask before the first
+    search rather than guessing the filter); `date_source` says whose date datePosted is (employer_ats |
     employer_self_reported | index_first_seen); `dates_in_words` is one sentence per language
     ("雇主发布日期 2026-09-23，在架 35 天；最近核验 2026-10-26…") to show verbatim instead of
     field names; `check_before_apply` lists what to confirm before applying, each item from a
@@ -515,7 +520,8 @@ def refresh_index(company: str) -> dict:
             language ("宇树", "XPeng"). Ambiguous input is refused, not guessed.
 
     Returns: `refreshed` plus `last_refreshed_at` / `next_allowed_at`; when it did run, also
-    jobs_new / jobs_updated / jobs_delisted / jobs_unchanged.
+    jobs_new / jobs_updated / jobs_delisted / jobs_unchanged, `delisted` (job_id and title of
+    the rows this crawl took down, first 20) and `counts_note` on what the counts mean.
     """
     _await_index()
 

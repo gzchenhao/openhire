@@ -52,6 +52,10 @@ class IngestStats:
     jobs_delisted: int = 0
     jobs_relisted: int = 0
     extractions: int = 0
+    # Which rows this crawl delisted (id and title, first 50), so refresh_index can say WHICH
+    # three went and not only that three did (persona test, 2026-10-29: the assistant could
+    # not tell whether the delisted rows were the ones the user was watching).
+    delisted_jobs: list[dict] = field(default_factory=list)
 
     @property
     def jobs_seen(self) -> int:
@@ -146,6 +150,8 @@ def ingest_company(
         if pk not in seen_ids and job.delisted_at is None:
             job.delisted_at = now
             stats.jobs_delisted += 1
+            if len(stats.delisted_jobs) < 50:
+                stats.delisted_jobs.append({"job_id": pk, "title": job.title})
 
     # Recompute ghost_score for every live job (staleness grows over time), aged off the
     # real posting date when known.
