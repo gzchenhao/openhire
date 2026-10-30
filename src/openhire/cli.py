@@ -260,6 +260,7 @@ def search(
     location: str = typer.Option(None, "--location", help="Substring of the location text, e.g. 北京 / Beijing / Remote."),
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. 招聘 / recruit,hrbp / 感知. The filter for roles no skill tag names."),
     seniority: str = typer.Option(None, "--seniority", help="Comma-separated levels the title names: ic / management, or intern, junior, senior, staff, lead, manager, director, unknown."),
+    sector: str = typer.Option(None, "--sector", help="autonomous_driving / embodied_ai / ai_infra / other (or 智驾 / 具身 / 大模型 / 其他)."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -296,7 +297,7 @@ def search(
                 require_stated_salary=require_stated_salary, remote_scope=remote_scope,
                 role_family=role_family, offset=offset, company=company,
                 collapse_role_group=distinct, location=location, title=title_list,
-                seniority=seniority_list,
+                seniority=seniority_list, sector=sector,
             )
     except OpenHireError as e:
         # `--role-family recruiting` used to return Waymo engineers: the unknown value was
@@ -312,7 +313,7 @@ def search(
             why = service.diagnose_empty_search(
                 s, skills=skill_list, required_skills=req_list,
                 role_family=role_family, currency=currency, company=company,
-                title=title_list, location=location, seniority=seniority_list,
+                title=title_list, location=location, seniority=seniority_list, sector=sector,
             )
         console.out("无匹配结果。")
         known_rows = why.get("known_not_indexed") or []
@@ -619,6 +620,7 @@ def check_company(
     domain: str = typer.Option(None, "--domain", help="The employer's own web domain, e.g. unitree.com."),
     jd: typer.FileText = typer.Option(None, "--jd", help="A file with the posting text, for the red-flag check."),
     job: str = typer.Option(None, "--job", help="A job id from search: the employer and the posting text come from the index."),
+    message: typer.FileText = typer.Option(None, "--message", help="A file with what the other side sent you (chat, private message): scanned here for scam lures and outsourcing words, not kept."),
     offline: bool = typer.Option(False, "--offline", help="Skip the network checks."),
     as_json: bool = typer.Option(False, "--json", help="Print the raw result as JSON (for scripts/run_local_tasks.py)."),
 ) -> None:
@@ -630,9 +632,11 @@ def check_company(
         _banner()
         console.cmd(f"ohp check-company {company or ''}" + (f" --domain {domain}" if domain else "") + (f" --job {job}" if job else ""))
     text = jd.read() if jd else None
+    msg = message.read() if message else None
     with session_scope() as s:
         try:
-            res = service.employer_check(s, company=company, domain=domain, posting_text=text, run_network=not offline, job_id=job)
+            res = service.employer_check(s, company=company, domain=domain, posting_text=text, run_network=not offline,
+                                         job_id=job, message_text=msg)
         except OpenHireError as e:
             if as_json:
                 print(_json.dumps(e.as_dict(), ensure_ascii=False))

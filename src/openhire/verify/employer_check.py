@@ -47,6 +47,29 @@ def _item(check_id: str, label: str, status: str, note: str, *, source: str, **e
     return out
 
 
+def text_scan_items(message_text: str | None = None, posting_text: str | None = None) -> list[dict]:
+    """The checks that read only text the user supplied: a pasted private message, and the
+    outsourcing words in either text. Pure, no network, nothing kept (reports/108)."""
+    out = []
+    if message_text:
+        flags = checks.message_red_flags_in(message_text)
+        out.append(_item(
+            "message_red_flags", "对方发来的文字里的骗局特征", "not_verified" if flags else "verified",
+            ("出现了：" + "、".join(flags) + "。这些是冒充用人方的骗局常用的说法；先按查公司页把公司全称查一遍，"
+             "不交任何费用、不装对方指定的软件、不共享屏幕、不在聊天里发证件照和验证码") if flags
+            else "没有出现交费、加微信、装软件、共享屏幕、贷款这类说法；这只说明这段文字里没有，不说明对方可信",
+            source="OpenHire message red-flag list (reports/108), matched on this machine", flags=flags))
+    words = checks.outsourcing_words_in(message_text, posting_text)
+    if message_text or posting_text:
+        out.append(_item(
+            "outsourcing_words", "外包、劳务派遣的字样", "pending_user" if words else "not_applicable",
+            ("出现了：" + "、".join(words) + "。合同可能和另一家公司签（外包或派遣公司），你真正的雇主是那一家："
+             "问清合同主体全称，按查公司页把那家也查一遍；劳务派遣公司要有劳务派遣经营许可证。这只是字样，不是结论") if words
+            else "没有出现外包、劳务派遣、驻场这类字样",
+            source="OpenHire outsourcing word list (reports/108)", words=words))
+    return out
+
+
 def build_checklist(
     *,
     query: dict,
@@ -54,6 +77,7 @@ def build_checklist(
     known_not_indexed: dict | None,
     domain: str | None,
     posting_text: str | None = None,
+    message_text: str | None = None,
     run_network: bool = True,
     homepage_fn: Callable[..., dict] | None = None,
     domain_age_fn: Callable[[str], dict] | None = None,
@@ -137,6 +161,7 @@ def build_checklist(
                            ("命中：" + "、".join(flags) + "。这些词在真实的智驾 / 具身 / AI 基础设施岗位里几乎不会出现") if flags
                            else "没有命中境外高薪、包机票、不限经验、打字员这类特征词",
                            source="OpenHire red-flag list (reports/064)", flags=flags))
+    items.extend(text_scan_items(message_text=message_text, posting_text=posting_text))
 
     # 3b. Sanctions lists, matched on this machine (reports/070): a live registration proved
     # nothing about Prince Group's eleven Hong Kong companies; the OFAC designation did.

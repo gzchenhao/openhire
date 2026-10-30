@@ -277,7 +277,7 @@ def test_tool_is_registered_read_only_open_world_and_says_it_is_not_a_verdict():
     assert "use it to fill `registry_record` directly instead of sending the user off to apply for a key" in doc
     assert "WorkBuddy" in doc
     assert EM_DASH not in doc and EM_DASH not in employer_check.NOT_A_VERDICT
-    assert set(t.inputSchema["properties"]) == {"company", "domain", "posting_text", "job_id"}
+    assert set(t.inputSchema["properties"]) == {"company", "domain", "posting_text", "job_id", "message_text"}
     assert "job_id" in doc and "reason" in doc
 
 
@@ -289,3 +289,27 @@ def test_result_carries_no_user_data_and_no_key(session, monkeypatch):
     for forbidden in ("fingerprint", "resume", "résumé"):
         assert forbidden not in blob.lower()
     assert res["not_a_verdict"].startswith("These are facts")
+
+
+def test_a_pasted_message_is_scanned_here_and_outsourcing_words_are_only_named(monkeypatch):
+    """reports/108: the scams people describe happen in private messages, and "卖人头"
+    outsourcing was a concrete harm; both are named, neither is judged."""
+    from openhire import service as svc
+    msg = "你好，岗位已通过，先加我微信，下载我们的会议app，交300元体检费，入职后派遣到甲方驻场。"
+    out = svc.employer_check(None, message_text=msg, run_network=False)
+    assert out["@type"] == "MessageScan" and "not stored or sent anywhere" in out["privacy"]
+    by_id = {c["id"]: c for c in out["checks"]}
+    flags = by_id["message_red_flags"]["flags"]
+    assert {"加我微信", "下载", "app", "体检费"} <= set(flags) and by_id["message_red_flags"]["status"] == "not_verified"
+    words = by_id["outsourcing_words"]["words"]
+    assert {"派遣", "甲方", "驻场"} <= set(words) and by_id["outsourcing_words"]["status"] == "pending_user"
+    assert "不是结论" in by_id["outsourcing_words"]["note"]
+    clean = svc.employer_check(None, message_text="感谢投递，下周二面试，地址见官网。", run_network=False)
+    assert {c["id"]: c["status"] for c in clean["checks"]} == {"message_red_flags": "verified", "outsourcing_words": "not_applicable"}
+
+
+def test_message_text_is_refused_on_the_hosted_endpoint(monkeypatch):
+    monkeypatch.setenv("OPENHIRE_HOSTED", "1")
+    monkeypatch.setattr(mcp_server, "_await_index", lambda: None)
+    out = mcp_server.check_employer(message_text="加我微信")
+    assert out["error"] == "ERR_LOCAL_ONLY" and "never goes through a server" in out["message"]

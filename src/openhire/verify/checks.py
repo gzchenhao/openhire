@@ -51,6 +51,25 @@ RED_FLAGS = (
     "押金", "保证金", "保證金", "培训费", "培訓費", "无需面试", "無需面試", "telegram", "whatsapp only",
 )
 
+# What a scam says in a private message rather than in a posting (reports/108: on Zhihu the
+# frauds people describe happened in chat: "add my WeChat", "install our app", "pay the
+# medical-check fee", "the training is on a loan"). Matched like RED_FLAGS, on top of them.
+MESSAGE_RED_FLAGS = (
+    "加微信", "加我微信", "加个微信", "加v", "微信联系", "加qq", "加群", "进群", "下载", "安装", "app",
+    "共享屏幕", "屏幕共享", "体检费", "服装费", "设备费", "资料费", "报名费", "办卡费", "工本费",
+    "贷款", "分期", "先交", "先付", "垫付", "转账", "收款码", "银行卡", "验证码", "身份证照片",
+    "手持身份证", "返利", "点赞", "做任务", "兼职", "高薪", "不用面试", "直接入职",
+    "add me on wechat", "download", "install", "screen share", "training fee", "upfront", "gift card",
+)
+
+# Words that say the contract may be with an outsourcing or staffing firm rather than the
+# company named in the ad (reports/108: "卖人头" was a concrete harm in the comments). Shown
+# as "these words appear", never as a judgement: outsourcing is legal and common.
+OUTSOURCING_WORDS = (
+    "外包", "劳务派遣", "派遣", "人力外包", "人力资源服务", "驻场", "甲方", "乙方", "第三方签约",
+    "代招", "外派", "outsourc", "staffing agency", "contract-to-hire", "via agency", "dispatched",
+)
+
 # Hosts that belong to a recruiting vendor, never to the employer: a careers_url on one of
 # these says nothing about the employer's own domain.
 VENDOR_HOST_SUFFIXES = (
@@ -115,6 +134,17 @@ def sender_matches(sender_domain: str | None, domain: str) -> tuple[bool, str]:
 def red_flags_in(*texts) -> list[str]:
     blob = " ".join(str(t or "") for t in texts).lower()
     return [w for w in RED_FLAGS if w.lower() in blob]
+
+
+def message_red_flags_in(*texts) -> list[str]:
+    blob = " ".join(str(t or "") for t in texts).lower()
+    seen = [w for w in RED_FLAGS if w.lower() in blob]
+    return seen + [w for w in MESSAGE_RED_FLAGS if w.lower() in blob and w not in seen]
+
+
+def outsourcing_words_in(*texts) -> list[str]:
+    blob = " ".join(str(t or "") for t in texts).lower()
+    return [w for w in OUTSOURCING_WORDS if w.lower() in blob]
 
 
 def email_on_domain(email: str, domain: str) -> bool:

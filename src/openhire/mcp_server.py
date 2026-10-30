@@ -109,6 +109,7 @@ def search_jobs(
     location: str | None = None,
     title: list[str] | None = None,
     seniority: list[str] | None = None,
+    sector: str | None = None,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -271,6 +272,12 @@ def search_jobs(
             engineer searching Zoox for perception otherwise gets "Senior Manager, Perception
             Data" first because it is the newest. A hard filter, never a ranking input; an
             unknown value is refused (ERR_UNKNOWN_SENIORITY).
+        sector: only employers in one sector: autonomous_driving (自动驾驶 / 智驾, including
+            the lidar, chip and truck companies built for it), embodied_ai (具身 / 机器人),
+            ai_infra (大模型 / AI labs, chips, AI tools) or other. Use it when the user says
+            "only robotics companies" instead of naming employers one by one. Every row
+            carries its `sector`; a board the user added themselves has none and is left out.
+            Unknown words are refused (ERR_UNKNOWN_SECTOR).
         collapse_role_group: keep one row per role_group instead of one per city, and add
             `role_group_size` saying how many postings that row stands for. Cheaper when
             the user wants distinct opportunities; leave it false when location or visa
@@ -328,14 +335,14 @@ def search_jobs(
                 require_stated_salary=require_stated_salary,
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
                 company=company, collapse_role_group=collapse_role_group,
-                location=location, title=title, seniority=seniority,
+                location=location, title=title, seniority=seniority, sector=sector,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
                 return _explain_bootstrap_failure(service.diagnose_empty_search(
                     s, skills=skills, required_skills=required_skills,
                     role_family=role_family, currency=currency, company=company,
-                    title=title, location=location, seniority=seniority,
+                    title=title, location=location, seniority=seniority, sector=sector,
                 ))
             if limit > service.MAX_PAGE_SIZE:
                 # You asked for more than one page holds. Returning the first page and
@@ -455,7 +462,9 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     (list of title substrings, ANY-of, synonym-expanded for HR terms like search_jobs —
     the way to watch for recruiting or other roles no skill tag names), `seniority` (list of
     levels or the aliases "ic" / "management", as in search_jobs, so a watch for an engineer
-    never fires on a Senior Manager).
+    never fires on a Senior Manager), `sector` (autonomous_driving / embodied_ai / ai_infra /
+    other, as in search_jobs: one watch for "robotics companies in Shenzhen" instead of one
+    per employer).
     Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped, and a
     `role_family` outside engineering | data | product | design | marketing | sales | hr |
     ops | other is refused too (ERR_UNKNOWN_ROLE_FAMILY); "recruiting" and "招聘" resolve
@@ -544,11 +553,18 @@ def refresh_index(company: str) -> dict:
         return ex.submit(_run).result()
 
 
+
+def _hosted_mode() -> bool:
+    from . import hosted
+    return hosted.is_hosted()
+
+
 @mcp.tool(
     title="Check an employer",
     annotations=ToolAnnotations(title="Check an employer", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=True),
 )
-def check_employer(company: str | None = None, domain: str | None = None, posting_text: str | None = None, job_id: str | None = None) -> dict:
+def check_employer(company: str | None = None, domain: str | None = None, posting_text: str | None = None, job_id: str | None = None,
+                   message_text: str | None = None) -> dict:
     """Facts about one employer, each with a source and a time. Never a score or a verdict.
 
     Use it when the user asks "is this company real / legit / what it says it is?" or is
@@ -623,6 +639,15 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
             the red-flag check runs over the posting as this index holds it, so you can check
             a role you just found without pasting anything. `posting_text`, if also given,
             wins.
+        message_text: what the other side sent the user in a private message or chat (most
+            job scams happen there, not in the posting): scanned on this machine for the
+            usual lures (fees, loans, "add my WeChat", "install our app", screen sharing,
+            ID photos, verification codes) and for outsourcing / labour-dispatch wording, and
+            neither kept nor sent anywhere. Works alone, without company or domain. Before
+            passing it, remove the user's own name, phone number and ID details from the text.
+            Refused on the hosted endpoint (ERR_LOCAL_ONLY): a pasted chat can carry the
+            user's personal data, which never goes through a server. Any text you pass also
+            gets an `outsourcing_words` item: which outsourcing words appear, never a verdict.
 
     Returns: `checks[]` (id, label, status: verified | not_verified | unavailable |
     not_applicable | pending_user, note, source, checked_at, plus the item's own fields),
@@ -633,7 +658,16 @@ def check_employer(company: str | None = None, domain: str | None = None, postin
     def _run() -> dict:
         with session_scope() as s:
             try:
-                return service.employer_check(s, company=company, domain=domain, posting_text=posting_text, job_id=job_id)
+                if message_text and _hosted_mode():
+                    raise OpenHireError(
+                        "ERR_LOCAL_ONLY",
+                        "message_text is not accepted on the hosted endpoint: a pasted chat can carry the user's "
+                        "personal data, and that never goes through a server. Install OpenHire locally (uvx openhire "
+                        "serve) to scan messages on the user's own machine, or read the scam signs on the 查公司 page "
+                        "(https://openhire-vlny.onrender.com/check-company) with the user.",
+                    )
+                return service.employer_check(s, company=company, domain=domain, posting_text=posting_text, job_id=job_id,
+                                              message_text=message_text)
             except OpenHireError as e:
                 return e.as_dict()
 

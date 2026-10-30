@@ -398,6 +398,22 @@ def check_role_family(role_family: str | None) -> str | None:
 TOUCH_REPORTING_VENDORS = frozenset({"greenhouse", "moka"})
 
 
+def check_sector(value: str | None) -> str | None:
+    """Validate a sector filter; unknown words are refused, like role_family, so "robtics" never
+    reads as "every employer"."""
+    if value is None or str(value).strip() == "":
+        return None
+    from .seed.sectors import SECTOR_ALIASES, resolve_sector
+    out = resolve_sector(value)
+    if out is None:
+        raise OpenHireError(
+            "ERR_UNKNOWN_SECTOR",
+            f"Unknown sector {value!r}. Use autonomous_driving (自动驾驶 / 智驾), embodied_ai "
+            "(具身 / 机器人), ai_infra (大模型 / AI) or other.",
+        )
+    return out
+
+
 def check_seniority(values: list[str] | str | None) -> list[str] | None:
     """Validate a seniority filter: a list of levels or aliases, refused when unknown.
 
@@ -566,6 +582,11 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
     return out
 
 
+def _sector_of(company_id: str | None) -> str | None:
+    from .seed.sectors import sector_of
+    return sector_of(company_id)
+
+
 def job_posting(job: Job, company: Company | None, requested_skills: list[str], now: dt.datetime) -> dict:
     """schema.org/JobPosting + the five OpenHire fields (protocol contract)."""
     mq = match_quality(requested_skills, job.skills)
@@ -590,6 +611,9 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "company_id": job.company_id,
         # Same role, several cities → same role_group. See role_group() above.
         "role_group": role_group(job.company_id, job.title),
+        # The employer's sector (seed/sectors.py): autonomous_driving | embodied_ai | ai_infra |
+        # other, or null for a board the user added themselves.
+        "sector": _sector_of(job.company_id),
         "datePosted": posted.date().isoformat() if posted else None,
         "days_open": age_days,
         # Present only when the employer's ATS or mirror reports NO posting date at all
@@ -778,6 +802,7 @@ def _filter_and_rank(
     location: str | None = None,
     title: str | list[str] | None = None,
     seniority: list[str] | None = None,
+    sector: str | None = None,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
@@ -793,6 +818,9 @@ def _filter_and_rank(
         # An empty list means the caller named a company that does not exist. Filtering on
         # an empty IN would be a silent no-op, which is the one answer we must not give.
         stmt = stmt.where(Job.company_id.in_(company_ids))
+    if sector:
+        from .seed.sectors import company_ids_in
+        stmt = stmt.where(Job.company_id.in_(company_ids_in(sector)))
     if remote is True:
         stmt = stmt.where(Job.remote_policy == "remote")
     if location:
@@ -885,10 +913,12 @@ def search_jobs(
     location: str | None = None,
     title: str | list[str] | None = None,
     seniority: list[str] | None = None,
+    sector: str | None = None,
 ) -> list[dict]:
     now = _now(now)
     role_family = check_role_family(role_family)
     seniority = check_seniority(seniority)
+    sector = check_sector(sector)
     # The page cap. Asking for 200 has always returned 100, and said nothing about it:
     # a reviewer pulled `company=XPeng limit=200`, got 100 of 198, and concluded the index
     # only held 100 XPeng jobs. Then a skill search surfaced two XPeng roles that were not
@@ -909,7 +939,7 @@ def search_jobs(
         required_skills=required_skills, currency=currency,
         require_stated_salary=require_stated_salary, remote_scope=remote_scope,
         role_family=role_family, offset=offset, company_ids=company_ids,
-        location=location, title=title, seniority=seniority,
+        location=location, title=title, seniority=seniority, sector=sector,
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
@@ -1032,6 +1062,7 @@ def diagnose_empty_search(
     title: str | list[str] | None = None,
     location: str | None = None,
     seniority: list[str] | str | None = None,
+    sector: str | None = None,
 ) -> dict:
     """Explain an empty result set so the caller can tell a typo from a genuine miss.
 
@@ -1053,6 +1084,7 @@ def diagnose_empty_search(
             "role_family": role_family, "currency": currency,
             "title": title_terms(title) or None, "location": (location or "").strip() or None,
             "seniority": ([seniority] if isinstance(seniority, str) else seniority) or None,
+            "sector": sector or None,
         }.items() if v}
 
     # An empty INDEX explains an empty result on its own, and every other diagnosis below
@@ -1499,7 +1531,7 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
 
 _WATCH_FILTER_KEYS = (
     "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
-    "title", "board_url", "seniority",
+    "title", "board_url", "seniority", "sector",
 )
 # A board watch (reports/070) reads one employer's public board live on every pull, so the
 # only filters that mean anything on it are the ones a live read can apply.
@@ -1545,6 +1577,8 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
         # Validated now, expanded at match time, so a watch on "ic" also keeps a level
         # added to the alias later.
         allowed["seniority"] = check_seniority(filters["seniority"])
+    if filters.get("sector"):
+        allowed["sector"] = check_sector(filters["sector"])
     if filters.get("min_salary") is not None:
         allowed["min_salary"] = int(filters["min_salary"])
     if filters.get("location"):
@@ -1625,7 +1659,7 @@ def watch_intent(
             session, clean.get("skills"), clean.get("remote"), clean.get("min_salary"), None, 100_000, now,
             required_skills=clean.get("required_skills"), role_family=clean.get("role_family"),
             company_ids=clean.get("company_ids"), location=clean.get("location"),
-            title=clean.get("title"), seniority=clean.get("seniority"),
+            title=clean.get("title"), seniority=clean.get("seniority"), sector=clean.get("sector"),
         ))
     watch_id = _new_id(session, Watch, "watch_id", "w_")
     session.add(
@@ -1719,7 +1753,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             session, f.get("skills"), f.get("remote"), f.get("min_salary"), since, 100_000, now,
             required_skills=f.get("required_skills"), role_family=f.get("role_family"),
             company_ids=f.get("company_ids"), location=f.get("location"),
-            title=f.get("title"), seniority=f.get("seniority"),
+            title=f.get("title"), seniority=f.get("seniority"), sector=f.get("sector"),
         )
         total_matching = len(ranked_all)
         ranked = ranked_all[:MAX_PAGE_SIZE]
@@ -2140,6 +2174,7 @@ def employer_check(
     run_network: bool = True,
     now: dt.datetime | None = None,
     job_id: str | None = None,
+    message_text: str | None = None,
 ) -> dict:
     """Facts about one employer with sources and times. Never a score, never a verdict.
 
@@ -2170,8 +2205,21 @@ def employer_check(
             posting_source = "index" if posting_text else None
     query = {"company": company, "domain": domain, "job_id": job_id,
              "posting_text_given": bool(posting_text), "posting_text_source": posting_source}
+    if not (company or domain) and message_text:
+        # A pasted message on its own: scan it, nothing else to look up (reports/108).
+        from .verify.employer_check import text_scan_items
+        items = text_scan_items(message_text=message_text)
+        return {
+            "@type": "MessageScan", "checks": items,
+            "summary": ("对方的文字里出现了需要停下来的说法，见 checks。" if items[0]["status"] == "not_verified"
+                        else "这段文字里没有出现常见的骗局说法。"),
+            "next": "Ask for the company's registered full name and run check_employer(company=...) on it; "
+                    "the checklist page lists the free official registries.",
+            "not_a_verdict": "这是文字里出现了哪些说法的清单，不是对对方的判断。",
+            "privacy": "The text was read on this machine and not stored or sent anywhere.",
+        }
     if not (company or domain):
-        raise OpenHireError("ERR_BAD_QUERY", "Give a company (name or id) or a domain, or both.")
+        raise OpenHireError("ERR_BAD_QUERY", "Give a company (name or id), a domain, or a pasted message_text.")
     index_facts = None
     known = None
     resolved_domain = normalise_domain(domain) if domain else None
@@ -2195,7 +2243,7 @@ def employer_check(
                     resolved_domain = own_domain_from_url(known.get("careers_url"))
     return build_checklist(
         query=query, index_facts=index_facts, known_not_indexed=known,
-        domain=resolved_domain, posting_text=posting_text, run_network=run_network,
+        domain=resolved_domain, posting_text=posting_text, message_text=message_text, run_network=run_network,
     )
 
 

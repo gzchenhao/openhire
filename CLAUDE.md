@@ -6,9 +6,11 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.33 · 2026-10-29；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.35 · 2026-10-30；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.35（2026-10-30，云端会话，`reports/109`）：** 领导批四件：**行业筛选** `seed/sectors.py`（176 家各一个行业：智驾 29、具身 42、AI 基础设施 55、其他 50；新种子不标行业测试就红），`search_jobs(sector=)`、盯岗键 `sector`、每行带 `sector`；**查公司页**加「不开会员，五分钟查一家公司」与外包派遣一段，订阅文件已重建（EarlyTip 两道关过，变长不用通知）；**`check_employer(message_text=)`** 本机扫私信骗局说法，托管端点拒收（`ERR_LOCAL_ONLY`，私信可能带用户个人信息）；任何文字多一项 `outsourcing_words`（只列字样不下结论）。1017 tests。
+- **v0.8.34（2026-10-30，云端会话，`reports/107`、`108`）：** 模拟求职者第一晚（10 人设、US$7.70）两条 high 修：中英混写标题判级别（`测试Leader`）；`read_board` 摘要从岗位职责截、`ats_job_id` 取全文；地点 China / Bay Area 展开、空结果 `unknown_location` 与 `filters_applied` 全回显。108 号知乎痛点地图（433 条手读，12 类）。
 - **v0.8.33（2026-10-29，云端会话，`reports/105`、`106`）：** **模拟求职者夜测**（领导的 Claude API 赠送额度 US$96，11-11 过期）：`scripts/persona_test.py` 10 个人设，Opus 5.5 当助手、Sonnet 5.5 当求职者、Opus 5.5 按十条承诺评分；默认 `--backend local` 在本机内存里起 OpenHire、用索引临时副本（托管端点经 MCP connector 五次只通一次）；key 名 `OPENHIRE_PERSONA_API_KEY`（不与精抽混用），累计上限 US$80；本机待办 29 每晚跑到 11-10，云端定时任务「模拟求职者测试日读」每天 10:37 核结果并修。首轮修四处：refresh_index 结果带 `delisted` 与 `counts_note`；盯岗文案的定时提醒改成 check_watches；长指纹重复登记不再说撞了别人；无雇主日期行的 ghost_reason 标「至少」；search_jobs 说明写清 `ic` 含哪些级别、不知道级别先问。**给领导的 PowerShell 命令不许重写 `.env`**（`Set-Content` 在 5.1 按 GBK 存，10-29 把 `.env` 弄成 python-dotenv 读不了，已转回 UTF-8）。1009 tests。
 - **v0.8.32（2026-10-29，云端会话，`reports/102`）：** 连接向导两处（本机验收发现）：页脚 PRIVACY.md 改绝对链接（托管端点无 docs 目录，原 404）；剪贴板被拒时复制按钮给提示。同日种子表：ClickHouse、Wayve、Amplitude、Carbon Robotics 从 Greenhouse 搬到 Ashby（本机核实，公司 id 不变，下周快照自动下架旧行）。本机 10-28 精抽约 ¥18、快照已上传；EarlyTip 栏目核对逐段一致。995 tests。
 - **v0.8.31（2026-10-28，云端会话，`reports/101`）：** **在架口径变严（领导批）：没下架且雇主系统 30 天内返回过才算在架**，30 天从索引里最新一次核验往回算（不按日历，旧索引不会被清空）。`service.verified_cutoff` / `live_clause` 一处定义：搜索、盯岗、`get_company_info`（新增 `unverified_over_30d`）、`live_employer_count`、`ohp numbers`（新增 `postings_unverified_over_30d`）都用它；全部过期的雇主空结果 `status: not_verified_recently`。抓取器照旧不动抓不到的板的行。10-26 快照新口径：172 家、20,019 条、过期 177（ClickHouse），Wayve / Amplitude 239 条 11-02 起超期。`numbers.json` 与 README 已改。994 tests。
