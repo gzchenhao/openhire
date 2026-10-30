@@ -39,7 +39,7 @@ CLOSED_PORTALS = {
     "zhipin.com": "BOSS 直聘是招聘网站不是雇主自己的系统，这个索引只读雇主自己的招聘系统。",
 }
 
-SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)、Workable (apply.workable.com/<subdomain>)、SmartRecruiters (jobs.smartrecruiters.com/<company>)、Workday (<account>.wd5.myworkdayjobs.com/<site>)、Rippling (ats.rippling.com/<board>/jobs)"
+SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)、Workable (apply.workable.com/<subdomain>)、SmartRecruiters (jobs.smartrecruiters.com/<company>)、Workday (<account>.wd5.myworkdayjobs.com/<site>)、Rippling (ats.rippling.com/<board>/jobs)、Personio (<tenant>.jobs.personio.de)"
 
 _WORKDAY_SUFFIX = ".myworkdayjobs.com"
 _WORKDAY_CLUSTER = re.compile(r"^wd\d+$")
@@ -163,6 +163,10 @@ def detect_board(url: str) -> tuple[str, str]:
         if not site or not _SLUG.match(site) or site.lower() in ("job", "jobs", "details", "login"):
             raise BoardNotSupported("bad_url", shape)
         return "workday", f"{sub}/{site}"
+
+    for suffix in (".jobs.personio.de", ".jobs.personio.com"):
+        if host.endswith(suffix) and host.count(".") == suffix.count("."):
+            return _checked("personio", host[: -len(suffix)], "<tenant>.jobs.personio.de")
 
     if host.endswith(".zhiye.com") and host.count(".") == 2:
         tenant = host.split(".", 1)[0]

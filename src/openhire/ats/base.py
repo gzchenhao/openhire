@@ -90,7 +90,7 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
 # the tenant instead. See `_apply_hosts`.
 # Workday likewise: every account has its own host (`<account>.<wdN>.myworkdayjobs.com`),
 # and this index keys a Workday board as "<account>.<wdN>/<site>" (ats/boards.py).
-_PER_TENANT_HOST: dict[str, str] = {"beisen": "{tenant}.zhiye.com", "workday": "{account}.myworkdayjobs.com"}
+_PER_TENANT_HOST: dict[str, str] = {"beisen": "{tenant}.zhiye.com", "personio": "{tenant}.jobs.personio.de", "workday": "{account}.myworkdayjobs.com"}
 
 
 def workday_host(tenant: str) -> str:
@@ -187,6 +187,9 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
     if vendor == "smartrecruiters":
         # The posting page on the employer's SmartRecruiters tenant, which carries the apply button.
         return f"https://jobs.smartrecruiters.com/{tenant}/{ats_job_id}"
+    if vendor == "personio":
+        # The posting page on the employer's Personio careers site, which carries the apply form.
+        return f"https://{tenant}.jobs.personio.de/job/{ats_job_id}"
     if vendor == "rippling":
         # The posting page on the employer's Rippling board, which carries the apply button.
         return f"https://ats.rippling.com/{tenant}/jobs/{ats_job_id}"
