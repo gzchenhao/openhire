@@ -59,12 +59,14 @@ OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix",
 # 2026-10-20 survey (reports/084): systems not assessed (DingTalk) or not read yet (Moka campus);
 # 2026-10-21 Hong Kong survey (reports/086); 2026-10-22 browser check: Horizon is on Dayee wecruit, not assessed.
 OTHER_IDS = ["rokae", "horizon", "baai"]
+# 2026-10-30 (reports/122): Dover boards (robots.txt closes /api/) and a bot-challenge site.
+SURVEY_1030_IDS = ["weave-robotics", "scythe-robotics", "innoviz"]
 CEASED_IDS = ["haomo"]
 
 
 def test_registry_holds_the_feishu_employers_nio_the_own_page_ones_and_haomo():
     ids = [e.id for e in not_indexed.NOT_INDEXED]
-    assert ids == [*FEISHU_IDS, "nio", *OWN_PAGE_IDS, *OTHER_IDS, *CEASED_IDS]
+    assert ids == [*FEISHU_IDS, "nio", *OWN_PAGE_IDS, *OTHER_IDS, *SURVEY_1030_IDS, *CEASED_IDS]
     assert len(set(ids)) == len(ids)
     for e in not_indexed.NOT_INDEXED:
         assert e.aliases, e.id
@@ -194,8 +196,17 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
     for eid in survey_1021:
         assert "2026-10-22" in not_indexed.by_id(eid).confirmed_by
         assert "opened in a browser without logging in" in not_indexed.by_id(eid).confirmed_by
+    # 2026-10-30: one plain GET each from an unrestricted network; none confirmed by title.
+    assert urls["weave-robotics"] == "https://app.dover.com/jobs/weaverobotics"
+    assert urls["scythe-robotics"] == "https://app.dover.com/jobs/scytherobotics"
+    assert urls["innoviz"] == "https://innoviz.tech/careers"
+    for eid in SURVEY_1030_IDS:
+        assert "2026-10-30" in not_indexed.by_id(eid).confirmed_by
+    assert "robots.txt" in not_indexed.by_id("weave-robotics").reason
+    assert "bot-challenge" in not_indexed.by_id("innoviz").reason
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
-    assert by_title == set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"} - survey_1020 - survey_1021
+    assert by_title == (set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"} - survey_1020 - survey_1021
+                        - set(SURVEY_1030_IDS))
     assert "zhipin.com" in not_indexed.by_id("deeprobotics").confirmed_by
     sensetime = not_indexed.by_id("sensetime")
     assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by

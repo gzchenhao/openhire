@@ -28,7 +28,7 @@ _BY_SECTOR: dict[str, tuple[str, ...]] = {
         "aurorainnovation", "wayve", "robosense", "deeproute", "minieye", "freetech", "yushi", "rino",
         "trunk", "zvision", "motovis", "inceptio", "lixiang", "xiaopeng", "seyond", "blacksesame",
         "outsight", "aerovect", "saronic", "shieldai",
-        'appliedintuition', 'plusai', 'stackav', 'maymobility', 'avride', 'aeva', 'skydio', 'anduril', 'wing', 'forterra',
+        'appliedintuition', 'plusai', 'stackav', 'maymobility', 'avride', 'aeva', 'skydio', 'anduril', 'wing', 'forterra', 'imagry',
     ),
     EMB: (
         "figureai", "agilityrobotics", "skildai", "apptronik", "pathrobotics", "dexterity", "fieldai",

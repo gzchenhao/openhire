@@ -145,6 +145,8 @@ DINGTALK_REASON = (
 )
 DINGTALK_REASON_ZH = "雇主的招聘站用钉钉招聘，这个系统我们还没评估过；确认它的公开页不要签名、登录或验证码之前，我们不读"
 MOKA_CAMPUS_ATS = "Moka campus portal (campus portals not read yet)"
+DOVER_ATS = "Dover (app.dover.com; robots.txt closes its API to crawlers)"
+SECURITY_BLOCK_ATS = "first-party site (behind a bot challenge)"
 DAYEE_ATS = "Dayee wecruit 大易 (hotjob.cn, not yet assessed)"
 DAYEE_REASON = (
     "this employer's careers site runs on Dayee wecruit (大易, hotjob.cn), a system this index "
@@ -578,6 +580,55 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         sector="ai_infra", last_checked="2026-10-20",
         portal_view="A browser opens the campus-recruiting portal; this index has not read it yet.",
         portal_view_zh="浏览器能打开它的校招门户；我们还没读",
+    ),
+    # --- 2026-10-30 (reports/122): Dover boards and a challenge page ---
+    NotIndexedEmployer(
+        id="weave-robotics", name="Weave Robotics",
+        aliases=("weave robotics", "weave", "weaverobotics"),
+        careers_url="https://app.dover.com/jobs/weaverobotics",
+        confirmed_by="HTTP 200 on 2026-10-30; the page is an app shell that loads its list from app.dover.com/api/",
+        ats=DOVER_ATS,
+        reason=(
+            "the employer's board is on Dover, whose page loads the job list from app.dover.com/api/, "
+            "and Dover's robots.txt disallows /api/; we honour robots.txt, so none of its postings are here"
+        ),
+        reason_zh="雇主的招聘板在 Dover 上，岗位列表从 app.dover.com/api/ 加载，而 Dover 的 robots.txt 禁止抓取 /api/；我们遵守 robots",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-30",
+        portal_view="A browser shows the job list; the page loads it from Dover's API, which robots.txt closes to crawlers.",
+        portal_view_zh="浏览器打开能看到岗位列表；页面从 Dover 的接口加载，robots.txt 不让爬虫读这个接口",
+    ),
+    NotIndexedEmployer(
+        id="scythe-robotics", name="Scythe Robotics",
+        aliases=("scythe robotics", "scythe", "scytherobotics"),
+        careers_url="https://app.dover.com/jobs/scytherobotics",
+        confirmed_by="HTTP 200 on 2026-10-30; scytherobotics.com/careers leads here; the page loads its list from app.dover.com/api/",
+        ats=DOVER_ATS,
+        reason=(
+            "the employer's board is on Dover, whose page loads the job list from app.dover.com/api/, "
+            "and Dover's robots.txt disallows /api/; we honour robots.txt, so none of its postings are here"
+        ),
+        reason_zh="雇主的招聘板在 Dover 上，岗位列表从 app.dover.com/api/ 加载，而 Dover 的 robots.txt 禁止抓取 /api/；我们遵守 robots",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="embodied_ai", last_checked="2026-10-30",
+        portal_view="A browser shows the job list; the page loads it from Dover's API, which robots.txt closes to crawlers.",
+        portal_view_zh="浏览器打开能看到岗位列表；页面从 Dover 的接口加载，robots.txt 不让爬虫读这个接口",
+    ),
+    NotIndexedEmployer(
+        id="innoviz", name="Innoviz Technologies",
+        aliases=("innoviz", "innoviz technologies"),
+        careers_url="https://innoviz.tech/careers",
+        confirmed_by="not confirmed by title: on 2026-10-30 every page on innoviz.tech, robots.txt included, answered a bot-challenge page",
+        ats=SECURITY_BLOCK_ATS,
+        reason=(
+            "the employer's site answers our client with a bot-challenge page; we treat that as access "
+            "control and stop, so none of its postings are here"
+        ),
+        reason_zh="雇主官网对我们的客户端回人机验证页；我们把它当作访问控制，停下不读",
+        employer_opt_in=dict(OWN_PAGE_OPT_IN),
+        sector="autonomous_driving", last_checked="2026-10-30",
+        portal_view="Not checked in a browser; the site serves a bot challenge to non-browser clients.",
+        portal_view_zh="还没用浏览器核过；站点对非浏览器客户端回人机验证页",
     ),
     # A former employer. Dated facts only; no opt-in because there is nobody to opt in.
     NotIndexedEmployer(

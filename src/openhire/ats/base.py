@@ -76,6 +76,7 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
     "workable": {"apply.workable.com"},
     "smartrecruiters": {"jobs.smartrecruiters.com"},
     "rippling": {"ats.rippling.com"},
+    "comeet": {"www.comeet.com"},
     # First-party employer mirror, not an ATS: the apply page is the employer's own site.
     "lixiang": {"www.lixiang.com"},
     # NIO 蔚来 is a first-party employer mirror (www.nio.cn/careers/jobs), not an ATS: the
@@ -193,6 +194,13 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
     if vendor == "rippling":
         # The posting page on the employer's Rippling board, which carries the apply button.
         return f"https://ats.rippling.com/{tenant}/jobs/{ats_job_id}"
+    if vendor == "comeet":
+        # The API gives every posting its own hosted page (url_comeet_hosted_page), which
+        # is what normally passes the check above. Its path carries a title slug we cannot
+        # rebuild, so the fallback is the employer's Comeet board, never a guessed link.
+        # The tenant is "<slug>/<uid>/<token>"; the token stays out of the link.
+        slug, uid = tenant.split("/")[:2]
+        return f"https://www.comeet.com/jobs/{slug}/{uid}"
     if vendor == "lixiang":
         # Li Auto's own job page, which carries the 立即申请 button. `tenant` is the board
         # (social); the page URL does not vary by board.

@@ -14,6 +14,7 @@ from .base import (
     apply_url_is_trusted,
     resolve_apply_channel,
 )
+from .comeet import ComeetClient
 from .greenhouse import GreenhouseClient
 from .lever import LeverClient
 from .lixiang import LixiangClient
@@ -37,6 +38,7 @@ _CLIENTS: dict[str, ATSClient] = {
     "workday": WorkdayClient(),
     "rippling": RipplingClient(),
     "personio": PersonioClient(),
+    "comeet": ComeetClient(),
     "lixiang": LixiangClient(),  # first-party employer mirror (理想汽车), one tenant
     "nio": NioClient(),
     # Employer self-reported rosters, verified by corporate identity (ats/self_reported.py).

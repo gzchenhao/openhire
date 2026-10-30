@@ -387,6 +387,14 @@ _PERSONIO = [
     ('franka-robotics', 'Franka Robotics', 'franka-robotics'),  # 3 live
 ]
 
+# --- Comeet (key "<slug>/<uid>/<token>") ------------------------------------------
+# 2026-10-30 (reports/122): reader ported from career-ops (MIT). The uid and careers token
+# are the ones the employer's own careers page publishes in plain text for this read
+# (Imagry: imagry.co/careers, inline `comeetvar`). 7 live that day.
+_COMEET = [
+    ('imagry/B7.00F/7BF2E7A1EFC1EFCF7E7BF36393DF826BB2E7A', 'Imagry', 'imagry'),
+]
+
 _SELF_REPORTED = [(e.slug, e.name) for e in SELF_REPORTED_EMPLOYERS.values()]
 
 
@@ -405,6 +413,7 @@ def all_candidates() -> list[Candidate]:
         ("workday", _WORKDAY),
         ("rippling", _RIPPLING),
         ("personio", _PERSONIO),
+        ("comeet", _COMEET),
         ("self_reported", _SELF_REPORTED),
     ):
         for row in rows:
@@ -426,5 +435,6 @@ def candidate_count() -> int:
         + len(_WORKDAY)
         + len(_RIPPLING)
         + len(_PERSONIO)
+        + len(_COMEET)
         + len(_SELF_REPORTED)
     )

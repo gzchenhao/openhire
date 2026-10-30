@@ -24,15 +24,16 @@ code{font-size:.92em}
 </head>
 <body>
 <h1>读不到的招聘门户</h1>
-<p class="dim">29 家公司 · 最近核对 2026-10-22 · 由 <a href="https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py">登记表</a> 生成</p>
+<p class="dim">32 家公司 · 最近核对 2026-10-30 · 由 <a href="https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py">登记表</a> 生成</p>
 <p>这些公司在自动驾驶、具身智能、大模型方向招人，岗位却放在 OpenHire 读不了的地方：飞书招聘的列表接口要请求签名（我们视为访问控制，不绕过），有的只在 BOSS 直聘上发，有的官网没有可读的岗位列表。岗位是真的，人用浏览器就能看。下面是它们自己的招聘页，点开直接看。</p>
 <p>OpenHire 不读、不存、不标日期、不盯这些页面。在 AI 助手里，<code>list_portals</code> 工具给的是同一份清单；带浏览器的助手可以替你打开。</p>
 <p>想让 AI 助手替你看，把下面这句连同招聘页链接发给它。飞书这类页面要浏览器执行脚本才显示岗位，只会抓网页文字的助手可能看不到，那就自己点开看。</p>
 <pre>用浏览器打开这个招聘页，把在招岗位的名称、城市和链接列给我；不用登录，打不开就告诉我：（贴上招聘页链接）</pre>
-<h2>自动驾驶（7）</h2>
+<h2>自动驾驶（8）</h2>
 <table>
 <thead><tr><th>公司</th><th>招聘页</th><th>不登录能看到什么</th><th>为什么不在索引里</th><th>核对</th></tr></thead>
 <tbody>
+<tr><td>Innoviz Technologies</td><td><a href="https://innoviz.tech/careers" rel="nofollow noopener">https://innoviz.tech/careers</a></td><td>还没用浏览器核过；站点对非浏览器客户端回人机验证页</td><td>雇主官网对我们的客户端回人机验证页；我们把它当作访问控制，停下不读</td><td>2026-10-30</td></tr>
 <tr><td>Momenta 魔门塔</td><td><a href="https://momenta.jobs.feishu.cn/" rel="nofollow noopener">https://momenta.jobs.feishu.cn/</a></td><td>浏览器打开、不登录：能看岗位列表和每条的完整职位描述；页面上没有发布日期（2026-10-15 在一家飞书门户上核过）</td><td>招聘站要求请求签名，我们视为访问控制、不绕过</td><td>2026-09-23</td></tr>
 <tr><td>地平线 Horizon Robotics</td><td><a href="https://wecruit.hotjob.cn/SU64819a4f2f9d2433ba8b043a/pb/social.html" rel="nofollow noopener">https://wecruit.hotjob.cn/SU64819a4f2f9d2433ba8b043a/pb/social.html</a></td><td>浏览器不登录能看列表：281 个在招岗位，带职位名、序列、用人实体和城市，每页 12 条；没有发布日期，职位描述要点开另一页（2026-10-22 核过）</td><td>雇主的招聘站用大易 wecruit（hotjob.cn），这个系统我们还没评估过；确认它的岗位列表不要签名、登录或验证码之前，我们不读</td><td>2026-10-22</td></tr>
 <tr><td>小马智行 Pony.ai</td><td><a href="https://ponyai.jobs.feishu.cn/ponyai/" rel="nofollow noopener">https://ponyai.jobs.feishu.cn/ponyai/</a></td><td>浏览器打开、不登录：能看岗位列表和每条的完整职位描述；页面上没有发布日期（2026-10-15 在一家飞书门户上核过）</td><td>招聘站要求请求签名，我们视为访问控制、不绕过</td><td>2026-09-23</td></tr>
@@ -41,10 +42,12 @@ code{font-size:.92em}
 <tr><td>轻舟智航 QCraft</td><td><a href="https://www.qcraft.ai/cn/careers" rel="nofollow noopener">https://www.qcraft.ai/cn/careers</a></td><td>页面没有岗位列表，只有一个飞书收简历表单</td><td>雇主官网的招聘页只放了一个飞书收简历表单，没有岗位列表</td><td>2026-10-08</td></tr>
 <tr><td>鉴智机器人 PhiGent Robotics</td><td><a href="https://www.phigent.ai/" rel="nofollow noopener">https://www.phigent.ai/</a></td><td>纯 JS 网站，浏览器能打开；里面有没有岗位列表还没核过</td><td>雇主官网是纯 JS 应用，普通请求拿不到岗位列表；我们不执行站点脚本</td><td>2026-10-08</td></tr>
 </tbody></table>
-<h2>具身智能（16）</h2>
+<h2>具身智能（18）</h2>
 <table>
 <thead><tr><th>公司</th><th>招聘页</th><th>不登录能看到什么</th><th>为什么不在索引里</th><th>核对</th></tr></thead>
 <tbody>
+<tr><td>Scythe Robotics</td><td><a href="https://app.dover.com/jobs/scytherobotics" rel="nofollow noopener">https://app.dover.com/jobs/scytherobotics</a></td><td>浏览器打开能看到岗位列表；页面从 Dover 的接口加载，robots.txt 不让爬虫读这个接口</td><td>雇主的招聘板在 Dover 上，岗位列表从 app.dover.com/api/ 加载，而 Dover 的 robots.txt 禁止抓取 /api/；我们遵守 robots</td><td>2026-10-30</td></tr>
+<tr><td>Weave Robotics</td><td><a href="https://app.dover.com/jobs/weaverobotics" rel="nofollow noopener">https://app.dover.com/jobs/weaverobotics</a></td><td>浏览器打开能看到岗位列表；页面从 Dover 的接口加载，robots.txt 不让爬虫读这个接口</td><td>雇主的招聘板在 Dover 上，岗位列表从 app.dover.com/api/ 加载，而 Dover 的 robots.txt 禁止抓取 /api/；我们遵守 robots</td><td>2026-10-30</td></tr>
 <tr><td>云深处科技 DeepRobotics</td><td><a href="https://www.deeprobotics.cn/" rel="nofollow noopener">https://www.deeprobotics.cn/</a></td><td>链接是公司官网；官网的「加入我们」指向 BOSS 直聘（平台，不登录能看到多少由 BOSS 直聘决定）</td><td>雇主只在 BOSS 直聘上发布岗位，官网没有招聘页；我们只读雇主自己的系统，不读平台</td><td>2026-10-08</td></tr>
 <tr><td>众擎机器人 EngineAI</td><td><a href="https://dx3a2bminsq.jobs.feishu.cn/" rel="nofollow noopener">https://dx3a2bminsq.jobs.feishu.cn/</a></td><td>浏览器打开、不登录：能看岗位列表和每条的完整职位描述；页面上没有发布日期（2026-10-15 在一家飞书门户上核过）</td><td>招聘站要求请求签名，我们视为访问控制、不绕过</td><td>2026-10-08</td></tr>
 <tr><td>光轮智能 Lightwheel</td><td><a href="https://lightwheel.ai/careers" rel="nofollow noopener">https://lightwheel.ai/careers</a></td><td>浏览器能看到 2 个岗位（美国 Palo Alto），邮箱投递</td><td>雇主官网的招聘页只用文字列了几个岗位、邮箱投递，没有发布日期，也没有可读的岗位数据</td><td>2026-10-20</td></tr>
