@@ -275,14 +275,14 @@ def evaluate_fit(
     if _zh(job):
         return "\n".join([
             f"帮我评估这个岗位：{job}",
-            "1. 用 search_jobs 找到这条，抄下 dates_in_words、check_before_apply、requirements；用 get_company_info 看 hiring_trend。",
+            "1. 用 search_jobs 找到这条，抄下 dates_in_words、check_before_apply、requirements；用 get_company_info 看 hiring_trend；它标了薪资的话，用 salary_benchmark（同币种、同岗位族和级别）看同类岗位雇主自己标的范围，只报数字。",
             "2. 在本机对照我的简历：启事要求里哪些我的简历有证据、哪些没有、哪些只是「优先」。",
             "3. 写进 openhire/evaluations.md，三段：雇主系统里的事实（原句）、和我简历的匹配、投之前要问清的问题。",
             NO_VERDICT_ZH, LOCAL_CV_ZH, PRIVACY_ZH,
         ])
     return "\n".join([
         f"Evaluate this posting for me: {job}",
-        "1. Find it with search_jobs and quote dates_in_words, check_before_apply and requirements; get_company_info for hiring_trend.",
+        "1. Find it with search_jobs and quote dates_in_words, check_before_apply and requirements; get_company_info for hiring_trend; if it states pay, salary_benchmark (same currency, family and level) for what comparable employers publish, numbers only.",
         "2. On this machine, compare with my CV: which stated requirements it shows evidence for, which it does not, which are only preferred.",
         "3. Write openhire/evaluations.md with three parts: facts from the employer's system (quoted), fit against my CV, questions to ask before applying.",
         NO_VERDICT_EN, LOCAL_CV_EN, PRIVACY_EN,

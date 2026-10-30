@@ -910,6 +910,44 @@ def check_watches(fingerprint: str) -> dict:
 
 
 @mcp.tool(
+    title="Salary benchmark",
+    annotations=ToolAnnotations(title="Salary benchmark", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False),
+)
+def salary_benchmark(
+    currency: str,
+    role_family: str | None = None,
+    seniority: list[str] | None = None,
+    sector: str | None = None,
+    location: str | None = None,
+    title: list[str] | None = None,
+    years_min: int | None = None,
+    years_max: int | None = None,
+) -> dict:
+    """What employers themselves publish as pay for comparable live postings.
+
+    Only ranges employers put on their own postings (most US postings carry one by law; most
+    Chinese ones carry none). Never mixes currencies; annualises monthly pay. Low and high
+    ends are reported separately as p25 / median / p75 (`annual_low`, `annual_high`), with
+    `postings`, `employers` and `wide_ranges` (ranges spanning 2x or more). Under 20 postings
+    there are no quantiles, only the count. Group by the level the title names (`seniority`,
+    as in search_jobs) and the years the posting asks for (`years_min` / `years_max`, from
+    the posting's own words), never by company grade.
+
+    Quote `in_words`. Say these are published ranges, not offers or what anyone was paid,
+    and never tell the user a posting "pays below market, skip it": give the numbers.
+    """
+    _await_index()
+    if (preparing := _preparing()):
+        return preparing
+    with session_scope() as s:
+        try:
+            return service.salary_benchmark(s, currency, role_family=role_family, seniority=seniority, sector=sector,
+                                            location=location, title=title, years_min=years_min, years_max=years_max)
+        except OpenHireError as e:
+            return e.as_dict()
+
+
+@mcp.tool(
     title="Check applications",
     annotations=ToolAnnotations(title="Check applications", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False),
 )

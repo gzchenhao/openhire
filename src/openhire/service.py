@@ -2817,3 +2817,123 @@ def check_applications(
         "note": ("Only postings in this index can be followed (job_id from search_jobs). Whether the employer "
                  "will reply is not something any index can see; this answers whether the posting is still there."),
     }
+
+
+# --- salary benchmark: what employers themselves publish (reports/118) ----------
+# Pay ranges employers put on their own postings (US pay-transparency law makes most US
+# ones carry one). Low and high ends are reported separately: Chinese ranges are often
+# wide (19% of stated CNY ranges span 2x or more on the 2026-10-26 index), and a midpoint
+# of 15K to 40K says less than "the lows sit around X, the highs around Y". Grouped by
+# level as the title names it plus the years the posting asks for, never by company grade
+# (P7, T9), which no two employers spell alike. A group under MIN_PEERS rows gets a count
+# and no quantiles.
+MIN_PEERS = 20
+WIDE_RANGE_RATIO = 2.0
+
+
+def _quantiles(values: list[float]) -> dict:
+    v = sorted(values)
+    n = len(v)
+
+    def q(p: float) -> int:
+        i = (n - 1) * p
+        lo, hi = int(i), min(int(i) + 1, n - 1)
+        return int(round(v[lo] + (v[hi] - v[lo]) * (i - lo)))
+    return {"p25": q(0.25), "median": q(0.5), "p75": q(0.75)}
+
+
+def _salaried_rows(session: Session) -> list[tuple]:
+    """(company_id, title, role_family, currency, annual_low, annual_high, description) for
+    every live row whose stated pay we would publish."""
+    out = []
+    stmt = select(Job.company_id, Job.title, Job.role_family, Job.salary_currency, Job.salary_min,
+                  Job.salary_max, Job.salary_period, Job.description_raw).where(
+        live_clause(verified_cutoff(session)),
+        (Job.salary_min.isnot(None)) | (Job.salary_max.isnot(None)),
+    )
+    for cid, title, rf, cur, lo, hi, period, desc in session.execute(stmt):
+        lo, hi, _ = usable_salary(lo, hi, period)
+        if lo is None and hi is None or not cur:
+            continue
+        out.append((cid, title or "", (rf or classify_role_family_heuristic(title or "") or "").lower() or None,
+                    cur.upper(), annualise(lo, period), annualise(hi, period), desc))
+    return out
+
+
+def salary_benchmark(
+    session: Session,
+    currency: str,
+    role_family: str | None = None,
+    seniority: list[str] | None = None,
+    sector: str | None = None,
+    location: str | None = None,
+    title: str | list[str] | None = None,
+    years_min: int | None = None,
+    years_max: int | None = None,
+) -> dict:
+    from .seed.sectors import sector_of
+    cur = (currency or "").strip().upper()
+    if not cur:
+        raise OpenHireError("ERR_BAD_QUERY", "currency is required (USD, CNY, GBP, EUR, CAD, ...): ranges in different currencies are never mixed.")
+    rf = check_role_family(role_family)
+    levels = expand_seniority(check_seniority(seniority))
+    sec = check_sector(sector)
+    terms = title_terms(title)
+    loc_ids = None
+    if location:
+        loc_ids = set(session.execute(select(Job.id).where(_location_clause(location), live_clause(verified_cutoff(session)))).scalars())
+    lows, highs, companies, wide, n = [], [], set(), 0, 0
+    rows = _salaried_rows(session) if loc_ids is None else None
+    if rows is None:
+        rows = []
+        stmt = select(Job.company_id, Job.title, Job.role_family, Job.salary_currency, Job.salary_min,
+                      Job.salary_max, Job.salary_period, Job.description_raw).where(Job.id.in_(loc_ids))
+        for cid, t, r, c, lo, hi, period, desc in session.execute(stmt):
+            lo, hi, _ = usable_salary(lo, hi, period)
+            if (lo is None and hi is None) or not c:
+                continue
+            rows.append((cid, t or "", (r or classify_role_family_heuristic(t or "") or "").lower() or None,
+                         c.upper(), annualise(lo, period), annualise(hi, period), desc))
+    for cid, t, r, c, lo, hi, desc in rows:
+        if c != cur or (rf and r != rf) or (sec and sector_of(cid) != sec):
+            continue
+        if levels is not None and seniority_from_title(t) not in levels:
+            continue
+        if terms and not title_matches(t, terms):
+            continue
+        if years_min is not None or years_max is not None:
+            y = requirements_from_text(t, desc)["min_years"]
+            if y is None or (years_min is not None and y < years_min) or (years_max is not None and y > years_max):
+                continue
+        n += 1
+        companies.add(cid)
+        if lo is not None:
+            lows.append(lo)
+        if hi is not None:
+            highs.append(hi)
+        if lo and hi and hi >= WIDE_RANGE_RATIO * lo:
+            wide += 1
+    applied = {k: v for k, v in {"currency": cur, "role_family": rf, "seniority": seniority, "sector": sec,
+                                 "location": location, "title": terms or None, "years_min": years_min,
+                                 "years_max": years_max}.items() if v not in (None, [], "")}
+    out = {
+        "source": "employer_published_ranges",
+        "filters_applied": applied,
+        "postings": n, "employers": len(companies), "wide_ranges": wide,
+        "annual_low": None, "annual_high": None,
+    }
+    if n >= MIN_PEERS:
+        out["annual_low"] = _quantiles(lows) if len(lows) >= MIN_PEERS else None
+        out["annual_high"] = _quantiles(highs) if len(highs) >= MIN_PEERS else None
+    if out["annual_low"] and out["annual_high"]:
+        zh = (f"{n} 条雇主自己标了薪资的在架岗位（{len(companies)} 家公司）：年薪下限中位数 {out['annual_low']['median']:,} {cur}，"
+              f"上限中位数 {out['annual_high']['median']:,} {cur}；其中 {wide} 条范围宽到 2 倍以上。数字来自雇主公开标注，不是成交价。")
+        en = (f"{n} live postings with employer-published pay ({len(companies)} employers): median low end {out['annual_low']['median']:,} {cur}, "
+              f"median high end {out['annual_high']['median']:,} {cur}; {wide} ranges span 2x or more. Published ranges, not offers.")
+    else:
+        zh = (f"只有 {n} 条雇主自己标了薪资的在架岗位符合这些条件，少于 {MIN_PEERS} 条，不给分位数。中国岗位大多不标薪资，放宽条件或换币种再看。")
+        en = (f"Only {n} live postings with employer-published pay match; under {MIN_PEERS}, so no quantiles. Most Chinese postings publish no pay; widen the filters.")
+    out["in_words"] = {"zh": zh, "en": en}
+    out["note"] = ("Annualised from monthly where the posting says so (x12; a 13th or 14th month is not added). Grouped by the level the title names and the years "
+                   "the posting asks for, not by company grade. Most postings in China state no pay at all.")
+    return out

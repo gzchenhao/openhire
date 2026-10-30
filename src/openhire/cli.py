@@ -1841,6 +1841,8 @@ def numbers(
             if (today - (up if up.tzinfo else up.replace(tzinfo=_dt.timezone.utc))).days <= 30
         )
         thermometer = service.sector_thermometer(s)
+        from collections import Counter as _Counter
+        paid = _Counter(r[3] for r in service._salaried_rows(s))
         # Live postings a new graduate can apply for, by the same rule as search_jobs'
         # entry_level filter (the posting's own words, or an intern / junior title).
         new_grad = sum(
@@ -1870,6 +1872,10 @@ def numbers(
             round(100 * hi_touched / len(hi_known)) if hi_known else None
         ),
         "live_postings_open_to_new_grads": new_grad,
+        # Live postings whose employer published a pay range we would show, by currency
+        # (salary_benchmark's population; most Chinese postings publish none).
+        "live_postings_with_employer_published_pay": sum(paid.values()),
+        "live_postings_with_employer_published_pay_by_currency": dict(paid.most_common()),
         # New postings by the employer's own posting date, per sector: the 30 days up to
         # window_end against the 30 days before. change_pct is null when the earlier window
         # is empty.

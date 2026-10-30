@@ -84,6 +84,8 @@ async def test_all_five_acceptance_scripts(seeded):
             "list_portals",
             # 0.8.37: an answer to "read, no reply" (reports/112).
             "check_applications",
+            # 0.8.40: employer-published pay ranges (reports/118).
+            "salary_benchmark",
         }
         portals = _payload(await client.call_tool("list_portals", {"sector": "具身"}))
         assert portals["@type"] == "PortalDirectory" and portals["sector"] == "embodied_ai"
