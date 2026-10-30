@@ -312,7 +312,7 @@ def search(
             why = service.diagnose_empty_search(
                 s, skills=skill_list, required_skills=req_list,
                 role_family=role_family, currency=currency, company=company,
-                title=title_list,
+                title=title_list, location=location, seniority=seniority_list,
             )
         console.out("无匹配结果。")
         known_rows = why.get("known_not_indexed") or []

@@ -546,6 +546,9 @@ _SEN_JUNIOR = re.compile(
 )
 
 
+_CJK_LATIN_SEAM = re.compile(r"(?<=[\u3400-\u9fff])(?=[A-Za-z])|(?<=[A-Za-z])(?=[\u3400-\u9fff])")
+
+
 def seniority_from_title(title: str | None) -> str:
     """The level a job title names, one of SENIORITY_LEVELS; "unknown" when it names none.
 
@@ -554,7 +557,10 @@ def seniority_from_title(title: str | None) -> str:
     as director; a 首席科学家 or chief architect is a top individual contributor, not an
     executive; director-plus words beat manager, manager beats lead, staff / principal beat
     senior ("Senior Staff Engineer" is staff), senior beats junior."""
-    text = _SEN_MTS.sub(" ", _SEN_FUNCTION_MANAGER.sub(" ", title or ""))
+    # Space out Latin letters glued to CJK ("AI应用测试Leader"): Python counts a CJK character
+    # as a word character, so \bleader\b never matched after 测试 (persona test, 2026-10-30).
+    text = _CJK_LATIN_SEAM.sub(" ", title or "")
+    text = _SEN_MTS.sub(" ", _SEN_FUNCTION_MANAGER.sub(" ", text))
     if _SEN_INTERN.search(text):
         return "intern"
     if _SEN_TEAM_LEAD.search(text) and not _SEN_MANAGER.search(text):

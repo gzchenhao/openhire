@@ -255,6 +255,21 @@ _LOCATION_GROUPS: tuple[tuple[str, ...], ...] = (
     ("嘉兴", "jiaxing", "嘉兴市"),
 )
 
+# Regions a seeker names that no posting spells out: rows say "Palo Alto" or "上海市", never
+# "Bay Area" or "China". A query for the region matches any of its places (persona test,
+# 2026-10-30: "China" returned nothing and an assistant ran eight searches for the Bay Area).
+# Plain 湾区 is left out: in Chinese it as often means the Guangdong-Hong Kong-Macao one.
+_MAINLAND_GROUPS = ("广州", "北京", "上海", "深圳", "杭州", "苏州", "南京", "武汉", "成都", "合肥", "长沙", "天津",
+                    "重庆", "青岛", "厦门", "无锡", "东莞", "佛山", "宁波", "郑州", "沈阳", "常州", "福州", "嘉兴")
+_REGION_QUERIES: dict[str, tuple[str, ...]] = {
+    **{q: ("china", "中国", "prc") for q in ("china", "中国", "全国", "中国大陆", "mainland china", "prc")},
+    **{q: ("bay area", "san francisco", "palo alto", "mountain view", "sunnyvale", "san jose",
+           "menlo park", "redwood city", "santa clara", "san mateo", "foster city", "burlingame",
+           "south san francisco", "cupertino", "fremont", "oakland", "berkeley", "emeryville", "milpitas",
+           "los altos", "san carlos", "belmont", "hayward", "san bruno")
+       for q in ("bay area", "sf bay area", "san francisco bay area", "旧金山湾区", "硅谷", "silicon valley")},
+}
+
 # Abbreviations a seeker types that must never be used as a match pattern: "hk" as a
 # substring is also the middle of Tashkent. They resolve to a group and are not in it.
 _LOCATION_QUERY_SYNONYMS = {"hk": "香港", "sg": "新加坡"}
@@ -266,6 +281,13 @@ def location_aliases(query: str) -> list[str]:
     if not q:
         return []
     q = _LOCATION_QUERY_SYNONYMS.get(q, q)
+    if q in _REGION_QUERIES:
+        out = list(_REGION_QUERIES[q])
+        if q in ("china", "中国", "全国", "中国大陆", "mainland china", "prc"):
+            for group in _LOCATION_GROUPS:
+                if group[0] in _MAINLAND_GROUPS:
+                    out.extend(group)
+        return list(dict.fromkeys(out))
     for group in _LOCATION_GROUPS:
         if q in {m.casefold() for m in group}:
             return list(dict.fromkeys(group))
@@ -1008,6 +1030,8 @@ def diagnose_empty_search(
     currency: str | None = None,
     company: str | None = None,
     title: str | list[str] | None = None,
+    location: str | None = None,
+    seniority: list[str] | str | None = None,
 ) -> dict:
     """Explain an empty result set so the caller can tell a typo from a genuine miss.
 
@@ -1020,6 +1044,17 @@ def diagnose_empty_search(
     Kept out of `search_jobs`, which always returns a list. Only the MCP boundary swaps in
     this shape, and only when the list came back empty.
     """
+    def _applied() -> dict:
+        # Every filter the caller sent, so an empty answer can be traced to one of them
+        # (persona test, 2026-10-30: location and seniority were missing and the assistant
+        # could not tell which one emptied the result).
+        return {k: v for k, v in {
+            "company": company, "skills": skills, "required_skills": required_skills,
+            "role_family": role_family, "currency": currency,
+            "title": title_terms(title) or None, "location": (location or "").strip() or None,
+            "seniority": ([seniority] if isinstance(seniority, str) else seniority) or None,
+        }.items() if v}
+
     # An empty INDEX explains an empty result on its own, and every other diagnosis below
     # would be actively misleading: with no rows to scan, every tag the caller asked for
     # looks "unknown" and we would tell them to fix a spelling that was never wrong. A new
@@ -1040,14 +1075,7 @@ def diagnose_empty_search(
                 "本机还没有职位索引，所以这不是「没找到」，是「没得找」。跑 `ohp bootstrap` "
                 "下载公开快照（约 30 MB，无需注册），或直接 `ohp serve`，服务器会自己拉。"
             ),
-            "filters_applied": {
-                k: v for k, v in {
-                    "company": company, "skills": skills,
-                    "required_skills": required_skills,
-                    "role_family": role_family, "currency": currency,
-                    "title": title_terms(title) or None,
-                }.items() if v
-            },
+            "filters_applied": _applied(),
         }
 
     # A company that does not resolve explains the empty list by itself, and no amount of
@@ -1122,13 +1150,7 @@ def diagnose_empty_search(
                 "hint": hint,
                 "unknown_companies": [company],
                 "suggestions": {company: candidates} if candidates else {},
-                "filters_applied": {
-                    k: v for k, v in {
-                        "company": company, "skills": skills,
-                        "required_skills": required_skills,
-                        "role_family": role_family, "currency": currency,
-                    }.items() if v
-                },
+                "filters_applied": _applied(),
             }
 
     unknown, suggestions = skill_diagnostics(session, skills, required_skills)
@@ -1159,6 +1181,17 @@ def diagnose_empty_search(
                 "of these filters. Drop the other filters to see everything it has open."
             )
     status = "unknown_tag" if unknown else "no_match"
+    if not unknown and (location or "").strip():
+        cutoff_l = verified_cutoff(session)
+        if cutoff_l is not None and not session.scalar(
+                select(func.count()).where(live_clause(cutoff_l), _location_clause(location))):
+            status = "unknown_location"
+            hint = (
+                f"No live posting's location matches {location!r} at all, so the place, not the other "
+                "filters, emptied this result. Locations match the employer's own text: try the city in "
+                "the other language (上海 / Shanghai), a single city rather than a province, or a region "
+                "the index knows (China / 全国, Bay Area). 地点对不上：换中文或英文城市名，或写具体城市。"
+            )
     if company and not unknown:
         # Every posting we hold for this employer has gone unconfirmed for 30 days: its board
         # most likely moved. Say that instead of "no match", which reads as "not hiring".
@@ -1184,13 +1217,7 @@ def diagnose_empty_search(
         "hint": hint,
         "unknown_skills": unknown,
         "suggestions": suggestions,
-        "filters_applied": {
-            k: v for k, v in {
-                "company": company, "skills": skills,
-                "required_skills": required_skills,
-                "role_family": role_family, "currency": currency,
-            }.items() if v
-        },
+        "filters_applied": _applied(),
     }
 
 
@@ -1205,6 +1232,8 @@ EMPTY_HEADLINES = {
     "unknown_tag": {"zh": "没有匹配的岗位：条件里有索引认不出的词，换个写法再搜。", "en": "No match: a filter word is unknown to the index; try another spelling."},
     "not_verified_recently": {"zh": "这家公司的岗位已有 30 天以上没在雇主自己的系统里核验到（多半是招聘页搬了），不再算在架；去它的招聘页直接看。",
                               "en": "This employer's postings have not been confirmed by its own system for 30+ days (its board probably moved), so they no longer count as live; check its careers page directly."},
+    "unknown_location": {"zh": "没有匹配的岗位：这个地点在索引里一条在架岗位都对不上，换中文或英文城市名、写具体城市再搜。",
+                         "en": "No match: no live posting's location matches this place; try the city in the other language or a specific city."},
     "no_match": {"zh": "没有匹配的岗位：条件都认得，只是现在没有在架岗位同时满足，放宽一项再搜。",
                  "en": "No matching postings: every filter is valid, nothing live meets all of them right now; loosen one."},
 }
@@ -2196,7 +2225,28 @@ def _fetch_board(vendor: str, tenant: str):
     return fetch_board(vendor, tenant)
 
 
-def _board_posting(rec, now: dt.datetime) -> dict:
+# Where the role itself starts in a description that opens with the company's boilerplate
+# ("About Anthropic ... About the role"): the persona test of 2026-10-30 got 400 characters
+# of company introduction and none of the job. The excerpt starts at the first of these.
+_ROLE_START = re.compile(
+    r"about (the|this) (role|position|job|team)|the role\b|the opportunity|what you('|’)ll do|what you will do"
+    r"|responsibilities|your role|in this role|job description|职位描述|岗位职责|工作职责|职位职责|岗位描述|工作内容",
+    re.I,
+)
+EXCERPT_CHARS = 400
+FULL_DESCRIPTION_CHARS = 20000
+
+
+def role_excerpt(text: str | None, n: int = EXCERPT_CHARS) -> str:
+    """The first `n` characters of the description from where the role starts, or from the
+    top when no marker is found or what follows it is too short to be the role."""
+    text = (text or "").strip()
+    m = _ROLE_START.search(text)
+    start = m.start() if m and len(text) - m.start() >= 200 else 0
+    return text[start:start + n]
+
+
+def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
     posted = _aware(rec.posted_at) if rec.posted_at else None
     updated = _aware(rec.updated_at) if rec.updated_at else None
     scope, regions = classify_remote(rec.remote_hint, rec.location)
@@ -2220,9 +2270,11 @@ def _board_posting(rec, now: dt.datetime) -> dict:
         "updated_at": updated.isoformat() if updated else None,
         "days_since_update": (now - updated).days if updated else None,
         "apply_channel": rec.apply_channel,
-        "description_excerpt": (rec.description_raw or "")[:400],
+        "description_excerpt": role_excerpt(rec.description_raw),
         "description_chars": len(rec.description_raw or ""),
     }
+    if full:
+        out["description"] = (rec.description_raw or "")[:FULL_DESCRIPTION_CHARS]
     if rec.salary_min or rec.salary_max:
         out.update(salary_min=rec.salary_min, salary_max=rec.salary_max,
                    salary_currency=rec.salary_currency, salary_period=rec.salary_period)
@@ -2384,8 +2436,12 @@ def read_board(
     now: dt.datetime | None = None,
     fetch=None,
     cache_ttl_minutes: int = BOARD_CACHE_TTL_MINUTES,
+    ats_job_id: str | None = None,
 ) -> dict:
     """Read one employer's public board live, whether or not the employer is indexed.
+
+    With `ats_job_id`, only that posting comes back, with its whole description
+    (`description`, up to FULL_DESCRIPTION_CHARS) for the user to read or summarise.
 
     `url` is the careers URL as the seeker pasted it; `ats.boards.detect_board` turns it
     into the (vendor, tenant) the adapter takes, or refuses it with the reason (a Feishu
@@ -2455,7 +2511,10 @@ def read_board(
     terms = title_terms(title)
     aliases = [a.casefold() for a in location_aliases(location)] if location else []
     rows = []
+    want = str(ats_job_id).strip() if ats_job_id else None
     for rec in result.records:
+        if want is not None and str(rec.ats_job_id) != want:
+            continue
         if aliases and not any(a in (rec.location or "").casefold() for a in aliases):
             continue
         if terms and not title_matches(rec.title, terms):
@@ -2465,5 +2524,8 @@ def read_board(
     page = rows[offset:offset + limit]
     out["total_matching"] = len(rows)
     out["truncated"] = offset + len(page) < len(rows)
-    out["postings"] = [_board_posting(rec, now) for rec in page]
+    out["postings"] = [_board_posting(rec, now, full=want is not None) for rec in page]
+    if want is not None and not rows:
+        out["hint"] = (f"No posting with ats_job_id {want!r} is on this board now: it may have closed. "
+                       "Read the board without ats_job_id to see what is open.")
     return out

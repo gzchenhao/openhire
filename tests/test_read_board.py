@@ -150,7 +150,7 @@ def test_tool_is_registered_read_only_open_world_and_names_its_limits():
     for phrase in ("whether or not the employer is in this index", "nothing is stored", "ERR_UNSUPPORTED_BOARD",
                    "Feishu", "15 minutes", "Nothing about the user", "never look for another way in"):
         assert phrase in doc, phrase
-    assert set(t.inputSchema["properties"]) == {"url", "location", "title", "limit", "offset"}
+    assert set(t.inputSchema["properties"]) == {"url", "location", "title", "limit", "offset", "ats_job_id"}
     assert "read_board" in mcp_server.mcp.instructions
 
 
@@ -167,3 +167,20 @@ def test_closed_portal_refusal_carries_the_browser_hint(session):
     with pytest.raises(service.OpenHireError) as ei:
         service.read_board(session, url="https://ponyai.jobs.feishu.cn/ponyai/", now=NOW, fetch=lambda v, t: None)
     assert ei.value.code == "ERR_UNSUPPORTED_BOARD" and "浏览器" in ei.value.message
+
+
+def test_excerpt_skips_company_boilerplate_and_one_posting_comes_back_whole(session):
+    """Persona test 2026-10-30: the 400-character excerpt was all "About Anthropic" and no
+    tool returned the job description itself."""
+    body = "About Acme\n" + "Acme builds things. " * 40 + "\nAbout the role\nYou will draft regulatory filings." + " More detail." * 50
+    rec = JobRecord(ats_job_id="77", title="Regulatory Counsel", description_raw=body,
+                    apply_channel="https://jobs.ashbyhq.com/acme/77/application", location="SF", posted_at=NOW)
+    fetch = lambda v, t: FetchResult(ok=True, status=200, records=[rec] + _records())
+    service._BOARD_CACHE.clear()
+    res = service.read_board(session, url="https://jobs.ashbyhq.com/acme", now=NOW, fetch=fetch)
+    p = next(x for x in res["postings"] if x["ats_job_id"] == "77")
+    assert p["description_excerpt"].startswith("About the role") and "description" not in p
+    one = service.read_board(session, url="https://jobs.ashbyhq.com/acme", now=NOW, fetch=fetch, ats_job_id="77")
+    assert one["total_matching"] == 1 and one["postings"][0]["description"] == body
+    gone = service.read_board(session, url="https://jobs.ashbyhq.com/acme", now=NOW, fetch=fetch, ats_job_id="999")
+    assert gone["postings"] == [] and "may have closed" in gone["hint"]

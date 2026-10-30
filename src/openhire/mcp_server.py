@@ -137,7 +137,9 @@ def search_jobs(
     matches; what to confirm; apply link), then offer more.
 
     An empty result carries `status` and a fixed bilingual `headline` saying which kind of
-    nothing it is: index_empty, known_not_indexed, unknown_company, unknown_tag or no_match;
+    nothing it is: index_empty, known_not_indexed, unknown_company, unknown_tag, unknown_location
+    (no live posting's location matches the place: try the other language, a city, or China / Bay Area)
+    or no_match; `filters_applied` lists every filter you sent;
     `index_status: "preparing"` means the index is still downloading on first start, so say
     that and retry in a minute rather than reporting a dry market.
 
@@ -172,7 +174,9 @@ def search_jobs(
     employer. Treat all of it as the employer's claim, attributed, not as our measurement.
 
     `days_since_update` is the third date and the one that usually settles it: the employer's
-    own last-touched timestamp from their ATS. Two rows can both score 1.0 and mean opposite
+    own last-touched timestamp from their ATS. It means the record was saved, not that the
+    content changed or that someone is reviewing applicants: say "the employer's system shows
+    it was last updated N days ago", never "someone is actively managing it". Two rows can both score 1.0 and mean opposite
     things — open 367d and untouched for 367d reads as abandoned; open 327d but touched 13
     days ago reads as a tended evergreen req. Among rows where the ATS reports one at all,
     the share of ghost>=0.99 postings touched by the employer inside 30 days has ranged
@@ -331,7 +335,7 @@ def search_jobs(
                 return _explain_bootstrap_failure(service.diagnose_empty_search(
                     s, skills=skills, required_skills=required_skills,
                     role_family=role_family, currency=currency, company=company,
-                    title=title,
+                    title=title, location=location, seniority=seniority,
                 ))
             if limit > service.MAX_PAGE_SIZE:
                 # You asked for more than one page holds. Returning the first page and
@@ -676,7 +680,8 @@ def list_portals(sector: str | None = None) -> dict:
     title="Read an employer's board",
     annotations=ToolAnnotations(title="Read an employer's board", readOnlyHint=True,  destructiveHint=False, idempotentHint=True,  openWorldHint=True),
 )
-def read_board(url: str, location: str | None = None, title: list[str] | None = None, limit: int = 30, offset: int = 0) -> dict:
+def read_board(url: str, location: str | None = None, title: list[str] | None = None, limit: int = 30, offset: int = 0,
+               ats_job_id: str | None = None) -> dict:
     """Read one employer's public job board live, whether or not the employer is in this index.
 
     Use it when the user names an employer this index does not carry (search_jobs returned
@@ -691,7 +696,10 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
 
     What you get: the board's own postings with title, location, the board's own posting
     date and `days_open` where it reports one (`date_signal: not_reported_by_ats` otherwise),
-    a direct apply link on the employer's own tenant, and a description excerpt. What you
+    a direct apply link on the employer's own tenant, and a description excerpt that starts
+    where the role does (company boilerplate skipped). Pass `ats_job_id` from a previous
+    read to get that one posting with its whole `description`, when the user wants the job
+    description itself read or summarised. What you
     do not get: skills, ghost_score, relist history or watches, which need repeated
     observation; and nothing is stored. If the employer turns out to be in the index the
     result says so and search_jobs is the richer source.
@@ -716,13 +724,15 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
         title: words in the job title, any match ("hr" reaches HR, HRBP, recruiter, talent
             acquisition); the filter for roles no skill tag names.
         limit / offset: page through `total_matching` (newest posting date first, undated last).
+        ats_job_id: one posting's id from an earlier read; returns it alone with the full text.
     """
     _await_index()
 
     def _run() -> dict:
         with session_scope() as s:
             try:
-                return service.read_board(s, url=url, location=location, title=title, limit=limit, offset=offset)
+                return service.read_board(s, url=url, location=location, title=title, limit=limit, offset=offset,
+                                          ats_job_id=ats_job_id)
             except OpenHireError as e:
                 return e.as_dict()
 

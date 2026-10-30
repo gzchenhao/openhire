@@ -159,3 +159,17 @@ def test_persona_round_2026_10_29_fixes(db):
     again = service.watch_intent(db, "#persona-k2p7x8q1", {"title": ["slam"]}, now=NOW)
     assert "most likely your own" in again["fingerprint_notice"]
     assert "another client chose" not in again["fingerprint_notice"]
+
+
+def test_persona_round_2026_10_30_fixes(db):
+    """Second persona night (reports/107): a Latin word glued to CJK is still read
+    ("测试Leader" is a lead); a region finds its cities; an empty result traced to the
+    place says so and lists every filter that was sent."""
+    from openhire.pipeline.extract import seniority_from_title
+    assert seniority_from_title("AI应用测试Leader") == "lead"
+    assert seniority_from_title("高级Python工程师") == "senior"
+    assert "上海" in service.location_aliases("China") and "palo alto" in service.location_aliases("Bay Area")
+    assert service.location_aliases("湾区") == ["湾区"]  # ambiguous in Chinese: not expanded
+    out = service.diagnose_empty_search(db, title=["perception"], location="Atlantis", seniority=["management"])
+    assert out["status"] == "unknown_location" and "地点" in out["headline"]["zh"]
+    assert out["filters_applied"]["location"] == "Atlantis" and out["filters_applied"]["seniority"] == ["management"]
