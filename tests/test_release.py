@@ -130,3 +130,12 @@ def test_hosted_image_installs_the_declared_version():
     assert "OPENHIRE_HOSTED=1" in dockerfile
     entry = (root / "hosted" / "entrypoint.sh").read_text(encoding="utf-8")
     assert "--transport streamable-http" in entry and "--host 0.0.0.0" in entry
+
+
+def test_pypi_summary_fits_the_512_character_limit():
+    """0.8.36's first upload was refused by PyPI ("'summary' field must be 512 characters or
+    less") after the second positioning sentence was added to the description."""
+    import tomllib
+    from pathlib import Path
+    desc = tomllib.loads((Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(encoding="utf-8"))["project"]["description"]
+    assert len(desc) <= 512, len(desc)
