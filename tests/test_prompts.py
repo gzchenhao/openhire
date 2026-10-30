@@ -16,7 +16,7 @@ import pytest
 from openhire import prompts
 from openhire.mcp_server import mcp
 
-NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "radar_check", "new_this_week"]
+NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "before_apply", "radar_check", "new_this_week"]
 
 # Identifiers a template may mention that are argument names or field values, not tools.
 NOT_TOOLS = {
@@ -24,6 +24,8 @@ NOT_TOOLS = {
     # 0.8.30 (reports/100): result fields and a prompt name the templates now point at.
     "check_before_apply", "dates_in_words", "matched_skills", "is_first_pull", "radar_check",
     "date_source", "what_happens_next", "matching_now",
+    # 0.8.36 (reports/111): before_apply quotes these result fields.
+    "ghost_reason", "message_text", "outsourcing_words", "apply_channel", "apply_channel_blocked",
 }
 
 ZH_ARGS = {
@@ -33,6 +35,7 @@ ZH_ARGS = {
     "radar_check": {"fingerprint": "#a3f9-k2p7-x8q1"},
     "new_this_week": {"role": "规控", "location": "深圳"},
     "job_checklist": {"stage": "刚开始"},
+    "before_apply": {"job": "宇树 运动控制工程师", "message": "加我微信，先交 500 元培训费"},
 }
 EN_ARGS = {
     "job_radar": {"role": "robotics software engineer", "location": "remote"},
@@ -41,6 +44,7 @@ EN_ARGS = {
     "radar_check": {},
     "new_this_week": {},
     "job_checklist": {"stage": "starting"},
+    "before_apply": {"job": "unitree:123"},
 }
 
 
@@ -53,7 +57,7 @@ def _tools() -> set[str]:
     return {t.name for t in asyncio.run(mcp.list_tools())}
 
 
-def test_the_six_templates_are_listed_with_titles_and_argument_help():
+def test_the_seven_templates_are_listed_with_titles_and_argument_help():
     listed = {p.name: p for p in asyncio.run(mcp.list_prompts())}
     assert list(listed) == NAMES
     for p in listed.values():
@@ -130,3 +134,14 @@ def test_the_checklist_names_the_official_lookups_and_the_anti_scam_steps():
     assert "你不替我投" in zh and prompts.PRIVACY_ZH in zh
     en = _render("job_checklist", {"stage": "starting"})
     assert "Anti-scam" in en and "Scameter" in en and "never submit for me" in en
+
+
+def test_before_apply_chains_search_employer_check_and_requirements():
+    """0.8.36 (reports/110, the positioning sentence): "is the job still open, is the company
+    real, check both before you apply" as one template."""
+    en = _render("before_apply", {"job": "unitree:123"})
+    for step in ("search_jobs", "check_employer", "requirements", "outsourcing_words", "check_before_apply"):
+        assert step in en
+    assert "job_id unitree:123" in en
+    zh = _render("before_apply", {"job": "某公司 算法", "message": "先交钱"})
+    assert "message_text" in zh and "不是判决" in zh

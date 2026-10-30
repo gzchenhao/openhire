@@ -186,6 +186,45 @@ def new_this_week(
     ])
 
 
+def before_apply(
+    job: Annotated[str, Field(description="An OpenHire job id, or the employer and title as you saw them, e.g. unitree:123 or 宇树 运动控制工程师")],
+    message: Annotated[str, Field(description="A recruiter message you were sent about it, pasted as is (optional; checked on your own machine only)")] = "",
+) -> str:
+    """Before you apply: is the posting still open, is the company real, and what to confirm. One pass, no verdict."""
+    looks_like_id = len(job) < 80 and ":" in job and " " not in job
+    if _zh(job, message):
+        return "\n".join(filter(None, [
+            f"我准备投这个岗位，投之前帮我查一遍：{job}",
+            f"招聘方发给我的私信（传给 check_employer 的 message_text）：\n{message}" if message else "",
+            "",
+            "1. 岗位还在不在：" + ("用 search_jobs 找到这条（按公司和岗位名搜）" if not looks_like_id else f"用 search_jobs(company=…) 找到 job_id 为 {job} 的这条")
+            + "，告诉我 dates_in_words 的原句、ghost_reason 和 check_before_apply 里的每一项；找不到就照结果的 headline 说清是哪种找不到，不要说成「已经招满」。",
+            "2. 要求对不对得上：结果里的 requirements（最低学历、最少年限、是否校招或实习）原样告诉我；null 是启事没写，不是不要求。",
+            "3. 公司真不真：用 check_employer 查" + (f"（job_id 传 {job}）" if looks_like_id else "（company 传公司名）")
+            + "，每项原样报状态、来源、时间；outsourcing_words 有内容就提醒我，这可能是外包或派遣岗，劳动合同签在哪家要问清；pending_user 的项把官方网址给我，我自己去查。",
+            "4. 投递链接：只认雇主自己的域名或招聘系统；结果里有 apply_channel_blocked 就别让我点。",
+            "5. 最后用三行总结：还在不在、公司查到了什么、我投之前要问清的事。这是查证清单，不是判决，不要说「是骗子」或「很安全」。" + LENGTH_ZH,
+            PRIVACY_ZH,
+        ]))
+    return "\n".join(filter(None, [
+        f"I am about to apply for this posting; check it first: {job}",
+        f"A recruiter message I was sent (pass it to check_employer as message_text):\n{message}" if message else "",
+        "",
+        "1. Is it still open: " + ("find it with search_jobs (by company and title)" if not looks_like_id else f"find job_id {job} with search_jobs(company=...)")
+        + "; give me the dates_in_words sentence, ghost_reason and every check_before_apply item. If it cannot be found, say which "
+        "kind of not found the headline gives; never call it filled.",
+        "2. Do the requirements fit: quote its requirements (lowest degree, fewest years, campus or intern track); null means "
+        "the posting does not say, not that nothing is required.",
+        "3. Is the company real: call check_employer" + (f" (job_id {job})" if looks_like_id else " (company name)")
+        + " and report every item with status, source and time; if outsourcing_words is not empty, tell me it may be an "
+        "agency or outsourced role and that I should ask which company the contract is with; for pending_user items give me the official URL.",
+        "4. Apply link: only the employer's own domain or ATS; if the result carries apply_channel_blocked, do not send me there.",
+        "5. End with three lines: still open or not, what the company check found, what I should ask before applying. "
+        "This is a checklist, not a verdict: never say it is a scam or that it is safe. " + LENGTH_EN,
+        PRIVACY_EN,
+    ]))
+
+
 CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
 CHECKLIST_URL_CN = "https://openhire-vlny.onrender.com/checklist"
 
@@ -232,6 +271,7 @@ PROMPTS = (
     ("job_radar", "找工作雷达 · Job radar", job_radar),
     ("track_employer", "盯一家公司 · Track one employer", track_employer),
     ("vet_employer", "查这家公司靠不靠谱 · Check an employer", vet_employer),
+    ("before_apply", "投之前查一遍 · Check before you apply", before_apply),
     ("radar_check", "看看我的雷达 · What's new on my radar", radar_check),
     ("new_this_week", "本周新岗 · New this week", new_this_week),
 )

@@ -2,10 +2,10 @@
 
 # OpenHire · 开聘
 
-> **A job-search radar for your AI assistant — first-party listings, every posting's real age, and your résumé never touches our servers.**
-> 让 AI 助手替你盯岗的求职雷达：一手职位、岗位在架时长打分，简历不经过我们的服务器。
+> **Let your AI assistant find jobs straight from employers' own systems, with your résumé never leaving your computer. Is the job still open? Is the company real? Check both before you apply.**
+> 让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。
 
-![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![143 employers hiring](https://img.shields.io/badge/employers%20hiring-143-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
+![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![172 employers hiring](https://img.shields.io/badge/employers%20hiring-172-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
 
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
@@ -155,17 +155,32 @@ My résumé stays on my machine; never send it to any server. I apply by clickin
 把 https://jobs.lever.co/<公司> 加进我的索引，以后每周帮我刷新
 哪些具身公司的岗位在飞书上？把它们的招聘页给我
 查一下这家公司靠不靠谱：<公司名>
+投之前帮我查一遍这个岗位：<公司名> <岗位名>
+我是 2027 届应届生，帮我找具身公司收应届的岗位，写清学历要求
 智驾和具身公司现在在招哪些 HR 和招聘岗？列出公司、城市和发布日期
 
 Find perception roles in Shanghai with their original posting dates
 Watch OKX's careers page and tell me when something new appears
 Which embodied-AI employers post on Feishu? Give me their careers pages
+Before I apply, check this posting: <company> <title>
+I graduate in 2027; find robotics roles open to new grads and say what degree each asks for
 ```
 
 Clients that show MCP prompts (Claude Desktop's "+" menu, a slash command in Claude Code or
-VS Code) also list six ready-made ones: 求职清单 · Job-search checklist, 找工作雷达 · Job radar,
-盯一家公司 · Track one employer, 查这家公司靠不靠谱 · Check an employer, 看看我的雷达 · What's new
-on my radar, and 本周新岗 · New this week. Each one renders in Chinese when you type Chinese into it.
+VS Code) also list seven ready-made ones: 求职清单 · Job-search checklist, 找工作雷达 · Job radar,
+盯一家公司 · Track one employer, 查这家公司靠不靠谱 · Check an employer, 投之前查一遍 · Check before
+you apply, 看看我的雷达 · What's new on my radar, and 本周新岗 · New this week. Each one renders in Chinese when you type Chinese into it.
+
+**New graduates (应届生) start here.** Say what year you graduate and which sector; the
+assistant passes `entry_level: true`, which keeps only postings that say campus hiring,
+internship or no experience required, or whose title says intern or junior. Every result
+carries `requirements`: the lowest degree the posting requires (a degree it only prefers does
+not count), the fewest years it asks for, and whether it is a campus or intern track, read from
+the posting's own words. On the 2026-10-26 index that is 671 live postings
+([numbers.json](https://gzchenhao.github.io/openhire/numbers.json), `live_postings_open_to_new_grads`).
+应届生直接说「我是 2027 届，找收应届的具身岗位」：助手会只留写明校招、实习、经验不限，或岗位名带实习 / 初级的岗位，
+每条都写出启事里要求的最低学历（只写「优先」的不算要求）和最少年限，不用一条条点开 JD 找「3 年以上」。
+没写的就是没写，不等于不要求。
 
 **Three things a first-time user gets without asking:**
 - **A free job-search checklist**: every step from target to offer, what the AI does for you,
@@ -191,7 +206,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.35.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.36.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -227,7 +242,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.35.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.36.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — paste the one-block prompt from the Quickstart
@@ -280,7 +295,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.35", "serve"]`.
+matters: `"args": ["openhire==0.8.36", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.

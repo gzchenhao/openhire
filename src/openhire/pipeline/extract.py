@@ -1008,3 +1008,90 @@ def get_extractor() -> Extractor:
         except Exception:
             return HeuristicExtractor()
     return HeuristicExtractor()
+
+
+# --- hiring requirements from the posting text (reports/110) ------------------------------
+# What a new graduate asks first ("can I apply with a master's and no full-time job?") was
+# not answerable from the index: three of ten simulated seekers asked it (reports/107) and the
+# Zhihu complaints put degree thresholds second by weight (reports/108). These are read from
+# the title and description at query time with fixed rules, like seniority: free, nothing
+# stored, and "unknown" whenever the text does not say. A degree or a number of years named
+# only as a preference ("硕士优先", "PhD preferred") is not a requirement.
+DEGREE_LEVELS = ("associate", "bachelor", "master", "phd")
+_DEGREE_PATTERNS = (
+    ("phd", re.compile(r"博士|\bph\.?\s?d\b|\bdoctora(te|l)\b", re.I)),
+    ("master", re.compile(r"硕士|研究生|\bmaster['’]?s\b|\bm\.?s\.?\b(?= degree| in | required)|\bmsc\b", re.I)),
+    ("bachelor", re.compile(r"本科|学士|\bbachelor['’]?s\b|\bb\.?s\.?\b(?= degree| in | required)|\bbsc\b|\bundergraduate\b", re.I)),
+    ("associate", re.compile(r"大专|专科|\bassociate'?s? degree\b", re.I)),
+)
+# The preference word must sit in the same clause: "硕士及以上学历，博士优先" requires a master's.
+_PREFERENCE_AFTER = re.compile(r"^[^，,。.;；\n]{0,40}?(优先|加分|更佳|preferred|a plus|is a plus|bonus|nice to have|desired)", re.I)
+_PREFERENCE_BEFORE = re.compile(r"(preferred|ideally|bonus|nice to have|plus)[^，,.。;；\n]{0,25}$", re.I)
+_YEARS_ZH = re.compile(r"(\d{1,2})\s*(?:[-~～至到]\s*\d{1,2}\s*)?年(?:以上|及以上)?[^。；;\n]{0,12}?(?:工作|相关|行业|开发|研发)?经验")
+_YEARS_ZH_AFTER = re.compile(r"经验\s*(\d{1,2})\s*年")
+_YEARS_EN = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d{1,2}\s*)?(?:years?|yrs?)\b[^.\n]{0,40}?experience", re.I)
+_NO_EXPERIENCE = re.compile(r"经验不限|不限经验|无需经验|应届|\bno (prior )?experience (required|needed)\b|\bnew grad", re.I)
+_CAMPUS = re.compile(r"校招|校园招聘|应届|\b20\d\d\s*届|届毕业生|\bnew grad(uate)?s?\b|\bgraduate (program|programme|scheme)\b|\bcampus\b|\buniversity grad", re.I)
+_INTERN = re.compile(r"实习|\binterns?(hip)?\b|\bco-?op\b", re.I)
+
+
+# "from new graduates to domain experts" describes a team, not who may apply (Skild AI's
+# boilerplate on every posting, 2026-10-26 snapshot).
+_RANGE_FROM = re.compile(r"\bfrom\s+$", re.I)
+_RANGE_TO = re.compile(r"^\w*\s+to\b", re.I)
+
+
+def _invites(pat: re.Pattern, text: str) -> bool:
+    return any(not (_RANGE_FROM.search(text[max(0, m.start() - 8):m.start()]) and _RANGE_TO.match(text[m.end():m.end() + 12]))
+               for m in pat.finditer(text))
+
+
+def _is_preference(text: str, start: int, end: int) -> bool:
+    return bool(_PREFERENCE_AFTER.match(text[end:end + 60]) or _PREFERENCE_BEFORE.search(text[max(0, start - 40):start]))
+
+
+def requirements_from_text(title: str | None, description: str | None) -> dict:
+    """{min_degree, min_years, hire_track, entry_level} as the posting itself states them.
+
+    min_degree: the lowest degree the text requires (associate | bachelor | master | phd), or
+    None when it names none or only prefers one. min_years: the smallest number of years of
+    experience it asks for, 0 when it says none is needed, None when it does not say.
+    hire_track: campus (校招 / 应届 / new grad) | intern | experienced (asks for 1+ years) |
+    unknown. entry_level: True when a new graduate is plainly in scope (campus, intern, or no
+    experience required), False only when the text asks for experience, None otherwise."""
+    title = title or ""
+    text = f"{title}\n{description or ''}"
+    required = []
+    for level, pat in _DEGREE_PATTERNS:
+        for m in pat.finditer(text):
+            if not _is_preference(text, m.start(), m.end()):
+                required.append(level)
+                break
+    min_degree = min(required, key=DEGREE_LEVELS.index) if required else None
+
+    years = []
+    for pat in (_YEARS_ZH, _YEARS_ZH_AFTER, _YEARS_EN):
+        for m in pat.finditer(text):
+            if _is_preference(text, m.start(), m.end()):
+                continue
+            n = int(m.group(1))
+            if 0 <= n <= 20:
+                years.append(n)
+    no_exp = _invites(_NO_EXPERIENCE, text)
+    min_years = 0 if no_exp and not years else (min(years) if years else None)
+
+    if _INTERN.search(title):
+        track = "intern"
+    elif _CAMPUS.search(title) or (_invites(_CAMPUS, text) and not years):
+        track = "campus"
+    elif min_years and min_years >= 1:
+        track = "experienced"
+    else:
+        track = "unknown"
+    if track in ("campus", "intern") or min_years == 0:
+        entry = True
+    elif track == "experienced":
+        entry = False
+    else:
+        entry = None
+    return {"min_degree": min_degree, "min_years": min_years, "hire_track": track, "entry_level": entry}

@@ -261,6 +261,7 @@ def search(
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. 招聘 / recruit,hrbp / 感知. The filter for roles no skill tag names."),
     seniority: str = typer.Option(None, "--seniority", help="Comma-separated levels the title names: ic / management, or intern, junior, senior, staff, lead, manager, director, unknown."),
     sector: str = typer.Option(None, "--sector", help="autonomous_driving / embodied_ai / ai_infra / other (or 智驾 / 具身 / 大模型 / 其他)."),
+    entry_level: bool = typer.Option(False, "--entry-level", help="Only postings open to a new graduate (校招 / 实习 / 无经验要求 / junior)."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -288,6 +289,8 @@ def search(
         + (f" --location {location}" if location else "")
         + (f" --title {title}" if title else "")
         + (f" --seniority {seniority}" if seniority else "")
+        + (f" --sector {sector}" if sector else "")
+        + (" --entry-level" if entry_level else "")
     )
     try:
         with session_scope() as s:
@@ -297,7 +300,7 @@ def search(
                 require_stated_salary=require_stated_salary, remote_scope=remote_scope,
                 role_family=role_family, offset=offset, company=company,
                 collapse_role_group=distinct, location=location, title=title_list,
-                seniority=seniority_list, sector=sector,
+                seniority=seniority_list, sector=sector, entry_level=entry_level,
             )
     except OpenHireError as e:
         # `--role-family recruiting` used to return Waymo engineers: the unknown value was
@@ -314,6 +317,7 @@ def search(
                 s, skills=skill_list, required_skills=req_list,
                 role_family=role_family, currency=currency, company=company,
                 title=title_list, location=location, seniority=seniority_list, sector=sector,
+                entry_level=entry_level,
             )
         console.out("无匹配结果。")
         known_rows = why.get("known_not_indexed") or []
@@ -1833,6 +1837,13 @@ def numbers(
             1 for _pa, up in hi_known
             if (today - (up if up.tzinfo else up.replace(tzinfo=_dt.timezone.utc))).days <= 30
         )
+        thermometer = service.sector_thermometer(s)
+        # Live postings a new graduate can apply for, by the same rule as search_jobs'
+        # entry_level filter (the posting's own words, or an intern / junior title).
+        new_grad = sum(
+            1 for t, d in s.execute(select(Job.title, Job.description_raw).where(live_q))
+            if service.is_entry_level(t, d)
+        )
     posted.sort()
     n = len(posted) or 1
 
@@ -1855,13 +1866,22 @@ def numbers(
         "pct_ghost_hi_touched_within_30d": (
             round(100 * hi_touched / len(hi_known)) if hi_known else None
         ),
+        "live_postings_open_to_new_grads": new_grad,
+        # New postings by the employer's own posting date, per sector: the 30 days up to
+        # window_end against the 30 days before. change_pct is null when the earlier window
+        # is empty.
+        "new_postings_by_sector_30d": thermometer,
     }
     path = _Path(out)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     console.ok(f"已写入 {path}")
     for k, v in data.items():
-        if k != "generated_at":
+        if k == "new_postings_by_sector_30d" and v:
+            console.out(f"  {k:38} 截至 {v['window_end']}")
+            for sec, c in v["by_sector"].items():
+                console.out(f"    {sec:36} 近 30 天 {c['last_30d']}，前 30 天 {c['prior_30d']}，变化 {c['change_pct']}%")
+        elif k != "generated_at":
             console.out(f"  {k:38} {v}")
     console.note("对外文案只准引用这个文件里的数字。数字变了就重跑一次，不要凭记忆写。")
 

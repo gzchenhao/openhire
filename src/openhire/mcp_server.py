@@ -72,7 +72,12 @@ mcp = FastMCP(
         "registered, relay its what_happens_next: OpenHire never pushes, the user asks you to "
         "check, and the first check_watches pull is a baseline of postings already live, never "
         "\"new postings appeared\". A result carrying index_status \"preparing\" means the index "
-        "is still downloading: say so and try again in a minute, never \"no jobs\"."
+        "is still downloading: say so and try again in a minute, never \"no jobs\". "
+        "For a new graduate (应届生, new grad, 校招) pass search_jobs' entry_level and quote each row's "
+        "requirements (lowest required degree, fewest years; null means the posting does not say). "
+        "When the user is about to apply, check both questions before they click: is the posting "
+        "still open (dates_in_words, check_before_apply) and is the company real (check_employer "
+        "with the job_id); the before_apply prompt walks it."
     ),
 )
 
@@ -110,6 +115,7 @@ def search_jobs(
     title: list[str] | None = None,
     seniority: list[str] | None = None,
     sector: str | None = None,
+    entry_level: bool = False,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -278,6 +284,14 @@ def search_jobs(
             "only robotics companies" instead of naming employers one by one. Every row
             carries its `sector`; a board the user added themselves has none and is left out.
             Unknown words are refused (ERR_UNKNOWN_SECTOR).
+        entry_level: true keeps only postings open to a new graduate (应届生 / new grad):
+            the text says campus hiring, internship or no experience required, or the title
+            names an intern or junior level. Postings that say nothing either way are left
+            out. Every row carries `requirements` {min_degree, min_years, hire_track,
+            entry_level}, read from the posting's own words with free rules: min_degree is
+            the lowest degree it REQUIRES (a degree it only prefers does not count), and null
+            means the posting did not say, never "not required". Quote it as what the posting
+            says, not as a rule the employer will enforce.
         collapse_role_group: keep one row per role_group instead of one per city, and add
             `role_group_size` saying how many postings that row stands for. Cheaper when
             the user wants distinct opportunities; leave it false when location or visa
@@ -336,6 +350,7 @@ def search_jobs(
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
                 company=company, collapse_role_group=collapse_role_group,
                 location=location, title=title, seniority=seniority, sector=sector,
+                entry_level=entry_level,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
@@ -343,6 +358,7 @@ def search_jobs(
                     s, skills=skills, required_skills=required_skills,
                     role_family=role_family, currency=currency, company=company,
                     title=title, location=location, seniority=seniority, sector=sector,
+                    entry_level=entry_level,
                 ))
             if limit > service.MAX_PAGE_SIZE:
                 # You asked for more than one page holds. Returning the first page and
@@ -464,7 +480,8 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     levels or the aliases "ic" / "management", as in search_jobs, so a watch for an engineer
     never fires on a Senior Manager), `sector` (autonomous_driving / embodied_ai / ai_infra /
     other, as in search_jobs: one watch for "robotics companies in Shenzhen" instead of one
-    per employer).
+    per employer), `entry_level` (true: only postings open to a new graduate, as in
+    search_jobs).
     Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped, and a
     `role_family` outside engineering | data | product | design | marketing | sales | hr |
     ops | other is refused too (ERR_UNKNOWN_ROLE_FAMILY); "recruiting" and "招聘" resolve

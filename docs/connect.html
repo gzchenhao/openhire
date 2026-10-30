@@ -43,7 +43,7 @@ html[data-lang="en"] .lang-en{display:block}
 <div class="lang-zh">
 <h1>连接向导：把 OpenHire 接进你已经在用的 AI 助手</h1>
 <p class="dim">这页打不开或很慢（国内网络常见），用国内能开的同一页：<a href="https://openhire-vlny.onrender.com/connect">openhire-vlny.onrender.com/connect</a>。免费，不用注册，不收简历。最后更新 2026-10-28。</p>
-<p>OpenHire 让 AI 助手直接从雇主自己的招聘系统里替你找工作，简历不出你的电脑。接入只做一次；最难的就是这一次，所以这页只讲这一件事。<b>先选你用的助手</b>，下面只显示那一种的步骤。</p>
+<p>OpenHire 让 AI 助手直接从雇主自己的招聘系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。接入只做一次；最难的就是这一次，所以这页只讲这一件事。<b>先选你用的助手</b>，下面只显示那一种的步骤。</p>
 
 <div class="pick" role="group" aria-label="你用的助手">
 <button type="button" data-client="chatgpt">ChatGPT</button>
@@ -69,7 +69,7 @@ html[data-lang="en"] .lang-en{display:block}
 <ol>
 <li>到 <a href="https://github.com/gzchenhao/openhire/releases/latest">最新发布页</a> 下载 <code>openhire-x.y.z.mcpb</code>，双击，Claude 会问是否安装，确认。不用装 Python，不用命令行。</li>
 <li>完全退出 Claude 再打开（菜单里的 Quit，不是关窗口）。</li>
-<li>新对话里把下面「提问」那段整段贴进去。Claude 桌面版的「+」菜单里也会多出六个现成的提示词，「求职清单」那个会按步骤带你走。</li>
+<li>新对话里把下面「提问」那段整段贴进去。Claude 桌面版的「+」菜单里也会多出七个现成的提示词，「求职清单」那个会按步骤带你走。</li>
 </ol>
 </div>
 
@@ -142,6 +142,14 @@ html[data-lang="en"] .lang-en{display:block}
 
 我的简历只留在我电脑上，不要发给任何服务器。投递由我自己点链接去做。</code></pre>
 
+<h2>应届生用这段</h2>
+<pre><code>用 OpenHire 帮我找应届生能投的岗位。我是 [20XX] 届，[学历和专业]，想去 [智驾 / 具身 / 大模型] 公司，城市 [城市或不限]。
+1. 只搜写明校招、实习、经验不限，或岗位名带实习、初级的在架岗位（search_jobs 传 entry_level）。
+2. 先给 5 条，每条写出启事要求的最低学历和最少年限（结果里的 requirements），只写「优先」的不算要求，没写就说没写。
+3. 我挑中哪条，就投之前帮我查一遍：岗位还在不在、公司真不真、投递链接是不是雇主自己的。
+
+我的简历只留在我电脑上，不要发给任何服务器。投递由我自己点链接去做。</code></pre>
+
 <h2>页尾：装 uv（一行命令）</h2>
 <p>本机运行的方式都要先有 <a href="https://docs.astral.sh/uv/">uv</a>（它提供 uvx）。没有它，助手只会报「server failed to start」。</p>
 <pre class="os-win"><code>irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell</code></pre>
@@ -152,7 +160,7 @@ html[data-lang="en"] .lang-en{display:block}
 <div class="lang-en">
 <h1>Connect guide: put OpenHire into the assistant you already use</h1>
 <p class="dim">Free, no sign-up, no résumé upload. Last updated 2026-10-28.</p>
-<p>OpenHire lets an AI assistant find jobs for you straight from employers' own hiring systems, with your résumé never leaving your computer. Connecting is a one-time step and the hardest one, so this page is only about that. <b>Pick your assistant first</b>; only its steps are shown.</p>
+<p>OpenHire lets an AI assistant find jobs for you straight from employers' own hiring systems, with your résumé never leaving your computer. Is the job still open? Is the company real? Check both before you apply. Connecting is a one-time step and the hardest one, so this page is only about that. <b>Pick your assistant first</b>; only its steps are shown.</p>
 
 <div class="pick" role="group" aria-label="Your assistant">
 <button type="button" data-client="chatgpt">ChatGPT</button>
@@ -178,7 +186,7 @@ html[data-lang="en"] .lang-en{display:block}
 <ol>
 <li>From the <a href="https://github.com/gzchenhao/openhire/releases/latest">latest release</a> download <code>openhire-x.y.z.mcpb</code> and double-click it; Claude asks to install it. No Python, no terminal.</li>
 <li>Quit Claude fully and reopen it (Quit from the menu, not just the window).</li>
-<li>Paste the "ask" block below into a new chat. Claude Desktop's "+" menu also lists six ready-made prompts; "Job-search checklist" walks you through the steps.</li>
+<li>Paste the "ask" block below into a new chat. Claude Desktop's "+" menu also lists seven ready-made prompts; "Job-search checklist" walks you through the steps.</li>
 </ol>
 </div>
 
@@ -248,6 +256,14 @@ My résumé stays on my machine; never send it to any server. I apply by clickin
 3. For employers it cannot find, use the portal directory to tell me where their careers pages are.
 4. Register this intent as a watch and tell me how I check for new postings later.
 5. When I pick one, run the employer check on it.
+
+My résumé stays on my machine; never send it to any server. I apply by clicking the links myself.</code></pre>
+
+<h2>For new graduates</h2>
+<pre><code>Use OpenHire to find roles open to new graduates. I graduate in [year], [degree and major], I want [autonomous driving / robotics / AI] companies, in [city or anywhere].
+1. Search only live postings that say campus hiring, internship or no experience required, or whose title says intern or junior (search_jobs with entry_level).
+2. Show 5 first, each with the lowest degree and fewest years the posting requires (requirements in the result); a degree it only prefers is not required, and when it says nothing, say so.
+3. When I pick one, check it before I apply: is it still open, is the company real, is the apply link the employer's own.
 
 My résumé stays on my machine; never send it to any server. I apply by clicking the links myself.</code></pre>
 

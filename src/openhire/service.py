@@ -32,7 +32,7 @@ from .seed.claims import employer_correction
 from .seed import not_indexed
 from .pipeline.extract import (
     ROLE_FAMILIES, SENIORITY_ALIASES, SENIORITY_LEVELS, classify_role_family_heuristic,
-    expand_seniority, seniority_from_title,
+    expand_seniority, requirements_from_text, seniority_from_title,
 )
 from .pipeline.ranking import freshness, match_quality, rank_score
 
@@ -398,6 +398,21 @@ def check_role_family(role_family: str | None) -> str | None:
 TOUCH_REPORTING_VENDORS = frozenset({"greenhouse", "moka"})
 
 
+def is_entry_level(title: str | None, description: str | None) -> bool:
+    """Open to a new graduate: the posting says campus / intern / no experience needed, or
+    its title names an intern or junior level. A posting that says nothing either way is
+    left out: entry_level is the filter a 应届生 uses to stop scrolling past 5-year roles,
+    and "might be" is what they already had (reports/110)."""
+    level = seniority_from_title(title)
+    if level in ("lead", "manager", "director", "staff"):
+        return False
+    entry = requirements_from_text(title, description)["entry_level"]
+    if entry is not None:
+        # The posting's own words win: "Associate Technician, 2+ years" is not entry level.
+        return entry
+    return level in ("intern", "junior")
+
+
 def check_sector(value: str | None) -> str | None:
     """Validate a sector filter; unknown words are refused, like role_family, so "robtics" never
     reads as "every employer"."""
@@ -717,6 +732,10 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # from, the dates as a sentence, and what to confirm before applying. _ds and _corr
         # were bound by the walrus expressions above; a dict display evaluates in order.
         "seniority": seniority_from_title(job.title),
+        # What the posting itself asks for: lowest required degree, fewest years, campus /
+        # intern track (pipeline.extract.requirements_from_text). Read from the text with free
+        # rules at read time; null means the posting did not say, not "none required".
+        "requirements": requirements_from_text(job.title, job.description_raw),
         "date_source": _date_source(job, company),
         "dates_in_words": dates_in_words(
             posted.date() if posted else None, age_days, _date_source(job, company),
@@ -803,6 +822,7 @@ def _filter_and_rank(
     title: str | list[str] | None = None,
     seniority: list[str] | None = None,
     sector: str | None = None,
+    entry_level: bool = False,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
@@ -887,6 +907,8 @@ def _filter_and_rank(
             continue
         if keep_levels is not None and seniority_from_title(job.title) not in keep_levels:
             continue
+        if entry_level and not is_entry_level(job.title, job.description_raw):
+            continue
         mq = match_quality(list(skills or []) or list(required_skills or []), job.skills)
         fr = freshness(_freshness_anchor(job), now)
         scored.append((job, rank_score(mq, fr)))
@@ -914,6 +936,7 @@ def search_jobs(
     title: str | list[str] | None = None,
     seniority: list[str] | None = None,
     sector: str | None = None,
+    entry_level: bool = False,
 ) -> list[dict]:
     now = _now(now)
     role_family = check_role_family(role_family)
@@ -940,6 +963,7 @@ def search_jobs(
         require_stated_salary=require_stated_salary, remote_scope=remote_scope,
         role_family=role_family, offset=offset, company_ids=company_ids,
         location=location, title=title, seniority=seniority, sector=sector,
+        entry_level=bool(entry_level),
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
@@ -1035,6 +1059,38 @@ def verified_cutoff(session: Session) -> dt.datetime | None:
     return _aware(newest) - dt.timedelta(days=STALE_AFTER_DAYS)
 
 
+def sector_thermometer(session: Session) -> dict:
+    """New postings per sector in the 30 days up to the index's newest verification, against
+    the 30 days before (reports/110: "which sector is hiring more this month" was a question
+    nobody could answer from a job board). Counted by the employer's own posting date, closed
+    postings included, so a window is not shrunk by later closures; rows whose system reports
+    no posting date are left out of both windows. Anchored to the index, not the wall clock,
+    so an old snapshot is not read as a hiring freeze."""
+    from .seed.sectors import SECTORS, sector_of
+    newest = session.scalar(select(func.max(Job.verified_at)))
+    if newest is None:
+        return {}
+    if isinstance(newest, str):
+        newest = dt.datetime.fromisoformat(newest)
+    end = _aware(newest)
+    mid, start = end - dt.timedelta(days=30), end - dt.timedelta(days=60)
+    out = {sec: {"last_30d": 0, "prior_30d": 0} for sec in SECTORS}
+    for cid, posted in session.execute(
+        select(Job.company_id, Job.posted_at).where(Job.posted_at.isnot(None))
+    ):
+        sec = sector_of(cid)
+        if sec is None:
+            continue
+        p = _aware(dt.datetime.fromisoformat(posted) if isinstance(posted, str) else posted)
+        if mid < p <= end:
+            out[sec]["last_30d"] += 1
+        elif start < p <= mid:
+            out[sec]["prior_30d"] += 1
+    for v in out.values():
+        v["change_pct"] = round(100 * (v["last_30d"] - v["prior_30d"]) / v["prior_30d"]) if v["prior_30d"] else None
+    return {"window_end": end.date().isoformat(), "by_sector": out}
+
+
 def live_clause(cutoff: dt.datetime | None):
     """The SQL condition for "live": not delisted and verified inside the window."""
     if cutoff is None:
@@ -1063,6 +1119,7 @@ def diagnose_empty_search(
     location: str | None = None,
     seniority: list[str] | str | None = None,
     sector: str | None = None,
+    entry_level: bool = False,
 ) -> dict:
     """Explain an empty result set so the caller can tell a typo from a genuine miss.
 
@@ -1085,6 +1142,7 @@ def diagnose_empty_search(
             "title": title_terms(title) or None, "location": (location or "").strip() or None,
             "seniority": ([seniority] if isinstance(seniority, str) else seniority) or None,
             "sector": sector or None,
+            "entry_level": True if entry_level else None,
         }.items() if v}
 
     # An empty INDEX explains an empty result on its own, and every other diagnosis below
@@ -1531,7 +1589,7 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
 
 _WATCH_FILTER_KEYS = (
     "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
-    "title", "board_url", "seniority", "sector",
+    "title", "board_url", "seniority", "sector", "entry_level",
 )
 # A board watch (reports/070) reads one employer's public board live on every pull, so the
 # only filters that mean anything on it are the ones a live read can apply.
@@ -1579,6 +1637,8 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
         allowed["seniority"] = check_seniority(filters["seniority"])
     if filters.get("sector"):
         allowed["sector"] = check_sector(filters["sector"])
+    if filters.get("entry_level"):
+        allowed["entry_level"] = True
     if filters.get("min_salary") is not None:
         allowed["min_salary"] = int(filters["min_salary"])
     if filters.get("location"):
@@ -1660,6 +1720,7 @@ def watch_intent(
             required_skills=clean.get("required_skills"), role_family=clean.get("role_family"),
             company_ids=clean.get("company_ids"), location=clean.get("location"),
             title=clean.get("title"), seniority=clean.get("seniority"), sector=clean.get("sector"),
+            entry_level=bool(clean.get("entry_level")),
         ))
     watch_id = _new_id(session, Watch, "watch_id", "w_")
     session.add(
@@ -1754,6 +1815,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             required_skills=f.get("required_skills"), role_family=f.get("role_family"),
             company_ids=f.get("company_ids"), location=f.get("location"),
             title=f.get("title"), seniority=f.get("seniority"), sector=f.get("sector"),
+            entry_level=bool(f.get("entry_level")),
         )
         total_matching = len(ranked_all)
         ranked = ranked_all[:MAX_PAGE_SIZE]
@@ -2302,6 +2364,7 @@ def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
         "ats_job_id": rec.ats_job_id,
         "title": rec.title,
         "seniority": seniority_from_title(rec.title),
+        "requirements": requirements_from_text(rec.title, rec.description_raw),
         "location": rec.location,
         "remote_policy": rec.remote_hint or "unknown",
         "remote_scope": scope,

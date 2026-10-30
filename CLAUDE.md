@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.35 · 2026-10-30；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.36 · 2026-10-30；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.36（2026-10-30，云端会话，`reports/111`）：** 领导定第二句定位「**岗位还在不在，公司真不真，投之前先查一遍。**」（README、托管首页、连接向导、求职清单、github.io 首页、pyproject；server.json 已 99 字符没放）。110 第三节四件：① 每条结果带 **`requirements`**（`extract.requirements_from_text`：最低要求学历、最少年限、校招 / 实习轨，同分句写「优先」的不算要求，null = 启事没写），筛选 **`entry_level`**（search / 盯岗键 / `--entry-level`，启事明说年限或标题 lead/manager/director/staff 的排除，什么都没写的不留）；② 第七个提示词 **`before_apply`**（岗位还在不在 + check_employer + 外包字样 + 投递链接，三行收尾不下结论），服务器指令同步；③ `ohp numbers` 加 **`new_postings_by_sector_30d`**（按雇主发布日、窗口终点取索引最新核验日）与 `live_postings_open_to_new_grads`（10-26 快照 671）；④ README 与 `/connect` 加应届生段。1035 tests。
 - **v0.8.35（2026-10-30，云端会话，`reports/109`）：** 领导批四件：**行业筛选** `seed/sectors.py`（176 家各一个行业：智驾 29、具身 42、AI 基础设施 55、其他 50；新种子不标行业测试就红），`search_jobs(sector=)`、盯岗键 `sector`、每行带 `sector`；**查公司页**加「不开会员，五分钟查一家公司」与外包派遣一段，订阅文件已重建（EarlyTip 两道关过，变长不用通知）；**`check_employer(message_text=)`** 本机扫私信骗局说法，托管端点拒收（`ERR_LOCAL_ONLY`，私信可能带用户个人信息）；任何文字多一项 `outsourcing_words`（只列字样不下结论）。1017 tests。
 - **v0.8.34（2026-10-30，云端会话，`reports/107`、`108`）：** 模拟求职者第一晚（10 人设、US$7.70）两条 high 修：中英混写标题判级别（`测试Leader`）；`read_board` 摘要从岗位职责截、`ats_job_id` 取全文；地点 China / Bay Area 展开、空结果 `unknown_location` 与 `filters_applied` 全回显。108 号知乎痛点地图（433 条手读，12 类）。
 - **v0.8.33（2026-10-29，云端会话，`reports/105`、`106`）：** **模拟求职者夜测**（领导的 Claude API 赠送额度 US$96，11-11 过期）：`scripts/persona_test.py` 10 个人设，Opus 5.5 当助手、Sonnet 5.5 当求职者、Opus 5.5 按十条承诺评分；默认 `--backend local` 在本机内存里起 OpenHire、用索引临时副本（托管端点经 MCP connector 五次只通一次）；key 名 `OPENHIRE_PERSONA_API_KEY`（不与精抽混用），累计上限 US$80；本机待办 29 每晚跑到 11-10，云端定时任务「模拟求职者测试日读」每天 10:37 核结果并修。首轮修四处：refresh_index 结果带 `delisted` 与 `counts_note`；盯岗文案的定时提醒改成 check_watches；长指纹重复登记不再说撞了别人；无雇主日期行的 ghost_reason 标「至少」；search_jobs 说明写清 `ic` 含哪些级别、不知道级别先问。**给领导的 PowerShell 命令不许重写 `.env`**（`Set-Content` 在 5.1 按 GBK 存，10-29 把 `.env` 弄成 python-dotenv 读不了，已转回 UTF-8）。1009 tests。

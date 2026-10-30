@@ -198,7 +198,8 @@ code{{background:#f3f3f3;padding:.1em .3em;border-radius:3px}} h1{{font-size:1.5
 <body>
 <h1>OpenHire · hosted MCP endpoint</h1>
 <p>Let an AI assistant find jobs for you straight from employers' own systems, with your résumé never leaving your computer.
-让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。</p>
+Is the job still open? Is the company real? Check both before you apply.<br>
+让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</p>
 <p>MCP endpoint: <code>{e(url)}{MCP_PATH}</code> (streamable HTTP, no authentication) · version {e(__version__)} ·
 index: {stats.get('companies', 0)} employers, {stats.get('jobs', 0):,} postings, data as of {e(as_of)}.</p>
 <h2>Connect</h2>

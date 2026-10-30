@@ -1,15 +1,41 @@
 {
-  "generated_at": "2026-10-28T06:39:30.631818+00:00",
+  "generated_at": "2026-10-30T05:52:18.609782+00:00",
   "companies_in_index": 176,
   "employers_with_live_postings": 172,
   "live_postings": 20019,
   "postings_unverified_over_30d": 177,
   "postings_with_employer_posting_date": 19244,
-  "median_days_open": 72,
-  "pct_open_over_90d": 43.1,
-  "pct_open_over_180d": 21.8,
-  "pct_open_over_365d": 8.9,
+  "median_days_open": 74,
+  "pct_open_over_90d": 44.0,
+  "pct_open_over_180d": 22.0,
+  "pct_open_over_365d": 9.1,
   "ghost_hi_postings": 3196,
   "ghost_hi_with_last_touched_reported": 1783,
-  "pct_ghost_hi_touched_within_30d": 64
+  "pct_ghost_hi_touched_within_30d": 56,
+  "live_postings_open_to_new_grads": 671,
+  "new_postings_by_sector_30d": {
+    "window_end": "2026-10-26",
+    "by_sector": {
+      "autonomous_driving": {
+        "last_30d": 607,
+        "prior_30d": 798,
+        "change_pct": -24
+      },
+      "embodied_ai": {
+        "last_30d": 282,
+        "prior_30d": 281,
+        "change_pct": 0
+      },
+      "ai_infra": {
+        "last_30d": 2110,
+        "prior_30d": 2071,
+        "change_pct": 2
+      },
+      "other": {
+        "last_30d": 2176,
+        "prior_30d": 2287,
+        "change_pct": -5
+      }
+    }
+  }
 }
