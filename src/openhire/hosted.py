@@ -197,7 +197,7 @@ def landing_html() -> str:
 code{{background:#f3f3f3;padding:.1em .3em;border-radius:3px}} h1{{font-size:1.5rem}} li{{margin:.25rem 0}}</style></head>
 <body>
 <h1>OpenHire · hosted MCP endpoint</h1>
-<p><b>Companies screen you with AI. Screen them back. 公司用 AI 筛你，你也用 AI 筛公司。</b></p>
+<p><b>Companies screen you with AI. Screen them back. 已读不回？先看岗位还在不在。</b></p>
 <p>Let an AI assistant find jobs for you straight from employers' own systems, with your résumé never leaving your computer.
 Is the job still open? Is the company real? Check both before you apply.<br>
 让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</p>

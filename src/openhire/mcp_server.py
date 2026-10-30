@@ -119,6 +119,7 @@ def search_jobs(
     seniority: list[str] | None = None,
     sector: str | None = None,
     entry_level: bool = False,
+    posted_within_days: int | None = None,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -295,6 +296,10 @@ def search_jobs(
             the lowest degree it REQUIRES (a degree it only prefers does not count), and null
             means the posting did not say, never "not required". Quote it as what the posting
             says, not as a rule the employer will enforce.
+        posted_within_days: only postings the employer published in the last N days (1 to
+            365), counted from the employer's own posting date, or from the day this index
+            first saw a row whose system gives none. Use it when the user wants fresh
+            postings only ("只看两周内发的"); it is a filter, the ranking is unchanged.
         collapse_role_group: keep one row per role_group instead of one per city, and add
             `role_group_size` saying how many postings that row stands for. Cheaper when
             the user wants distinct opportunities; leave it false when location or visa
@@ -353,7 +358,7 @@ def search_jobs(
                 remote_scope=remote_scope, role_family=role_family, offset=offset,
                 company=company, collapse_role_group=collapse_role_group,
                 location=location, title=title, seniority=seniority, sector=sector,
-                entry_level=entry_level,
+                entry_level=entry_level, posted_within_days=posted_within_days,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
@@ -361,7 +366,7 @@ def search_jobs(
                     s, skills=skills, required_skills=required_skills,
                     role_family=role_family, currency=currency, company=company,
                     title=title, location=location, seniority=seniority, sector=sector,
-                    entry_level=entry_level,
+                    entry_level=entry_level, posted_within_days=posted_within_days,
                 ))
             if limit > service.MAX_PAGE_SIZE:
                 # You asked for more than one page holds. Returning the first page and
@@ -438,6 +443,12 @@ def get_company_info(company_id: str) -> dict:
     signal here that comes from the employer rather than from their public ATS data, and it
     is what makes `response_sla_days` non-null on their postings.
 
+    `hiring_trend` counts what the employer's own system shows: postings published in the 30
+    days up to the index's newest verification, the 30 days before, and postings taken down
+    in the last 30, with `in_words` (zh, en) to quote. Use it when the user is about to sign
+    or bet months on an internship and asks whether the company is growing or shrinking.
+    Report the counts; never turn them into "they are about to lay off" or "safe to join".
+
     Takes an id or any part of the name in either language, like search_jobs' `company`.
 
     Known-but-not-indexed employers (Momenta, 小马智行 Pony.ai, 智元 AgiBot, MiniMax, 智谱
@@ -484,6 +495,7 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     never fires on a Senior Manager), `sector` (autonomous_driving / embodied_ai / ai_infra /
     other, as in search_jobs: one watch for "robotics companies in Shenzhen" instead of one
     per employer), `entry_level` (true: only postings open to a new graduate, as in
+    search_jobs), `posted_within_days` (only postings published in the last N days, as in
     search_jobs).
     Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped, and a
     `role_family` outside engineering | data | product | design | marketing | sales | hr |

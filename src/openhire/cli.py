@@ -262,6 +262,7 @@ def search(
     seniority: str = typer.Option(None, "--seniority", help="Comma-separated levels the title names: ic / management, or intern, junior, senior, staff, lead, manager, director, unknown."),
     sector: str = typer.Option(None, "--sector", help="autonomous_driving / embodied_ai / ai_infra / other (or 智驾 / 具身 / 大模型 / 其他)."),
     entry_level: bool = typer.Option(False, "--entry-level", help="Only postings open to a new graduate (校招 / 实习 / 无经验要求 / junior)."),
+    posted_within_days: int = typer.Option(None, "--posted-within-days", help="Only postings the employer published in the last N days, e.g. 14."),
     limit: int = typer.Option(10, "--limit", help="Max results."),
 ) -> None:
     """Search the local index (same hard filter + ranking as the MCP tool)."""
@@ -291,6 +292,7 @@ def search(
         + (f" --seniority {seniority}" if seniority else "")
         + (f" --sector {sector}" if sector else "")
         + (" --entry-level" if entry_level else "")
+        + (f" --posted-within-days {posted_within_days}" if posted_within_days else "")
     )
     try:
         with session_scope() as s:
@@ -301,6 +303,7 @@ def search(
                 role_family=role_family, offset=offset, company=company,
                 collapse_role_group=distinct, location=location, title=title_list,
                 seniority=seniority_list, sector=sector, entry_level=entry_level,
+                posted_within_days=posted_within_days,
             )
     except OpenHireError as e:
         # `--role-family recruiting` used to return Waymo engineers: the unknown value was
@@ -317,7 +320,7 @@ def search(
                 s, skills=skill_list, required_skills=req_list,
                 role_family=role_family, currency=currency, company=company,
                 title=title_list, location=location, seniority=seniority_list, sector=sector,
-                entry_level=entry_level,
+                entry_level=entry_level, posted_within_days=posted_within_days,
             )
         console.out("无匹配结果。")
         known_rows = why.get("known_not_indexed") or []

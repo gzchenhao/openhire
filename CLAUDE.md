@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.37 · 2026-10-30；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.38 · 2026-10-30；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.38（2026-10-30，云端会话，`reports/114`、`115`）：** 114 号知乎 20 题手读（375 条）：「投了没回音」一簇约 317 万浏览、AI 面试只有 1,137，于是**中文钩子句改成「已读不回？先看岗位还在不在。」**（英文钩子句保留）；`posted_within_days` 筛选（1 到 365，按雇主发布日，search / 盯岗 / `--posted-within-days`）；`get_company_info` 加 **`hiring_trend`**（近 30 天新发、前 30 天新发、近 30 天下架，只报数不预测）；README 第一屏放 `check_applications` 真跑结果。知乎回答稿两题（本机待办 34），career-ops issue 稿待领导看（私库）。1052 tests。
 - **v0.8.37（2026-10-30，云端会话，`reports/112`、`113`）：** 领导批 112 第三节 1 至 3：① 钩子句「**公司用 AI 筛你，你也用 AI 筛公司。**」（"Companies screen you with AI. Screen them back."）放在主句前（README、两个首页、连接向导、求职清单、pyproject 492 字符；server.json 没放；GitHub 仓库描述待本机 `gh repo edit`）；② **第 12 个工具 `check_applications`**（投递追踪：`add_job_ids` / `remove_job_ids`，按雇主系统报 closed / not_verified_recently / open，存成 `applications` 里 `authorized=False`、`delivered_via=user_tracked`，**永不算授权**，只说岗位在不在、不说雇主无视或已招满）；③ 第八个提示词 **`shortlist`**（海投改精投）。**服务器现在是 12 个工具、8 个提示词。** 1045 tests。
 - **v0.8.36（2026-10-30，云端会话，`reports/111`）：** 领导定第二句定位「**岗位还在不在，公司真不真，投之前先查一遍。**」（README、托管首页、连接向导、求职清单、github.io 首页、pyproject；server.json 已 99 字符没放）。110 第三节四件：① 每条结果带 **`requirements`**（`extract.requirements_from_text`：最低要求学历、最少年限、校招 / 实习轨，同分句写「优先」的不算要求，null = 启事没写），筛选 **`entry_level`**（search / 盯岗键 / `--entry-level`，启事明说年限或标题 lead/manager/director/staff 的排除，什么都没写的不留）；② 第七个提示词 **`before_apply`**（岗位还在不在 + check_employer + 外包字样 + 投递链接，三行收尾不下结论），服务器指令同步；③ `ohp numbers` 加 **`new_postings_by_sector_30d`**（按雇主发布日、窗口终点取索引最新核验日）与 `live_postings_open_to_new_grads`（10-26 快照 671）；④ README 与 `/connect` 加应届生段。1035 tests。
 - **v0.8.35（2026-10-30，云端会话，`reports/109`）：** 领导批四件：**行业筛选** `seed/sectors.py`（176 家各一个行业：智驾 29、具身 42、AI 基础设施 55、其他 50；新种子不标行业测试就红），`search_jobs(sector=)`、盯岗键 `sector`、每行带 `sector`；**查公司页**加「不开会员，五分钟查一家公司」与外包派遣一段，订阅文件已重建（EarlyTip 两道关过，变长不用通知）；**`check_employer(message_text=)`** 本机扫私信骗局说法，托管端点拒收（`ERR_LOCAL_ONLY`，私信可能带用户个人信息）；任何文字多一项 `outsourcing_words`（只列字样不下结论）。1017 tests。

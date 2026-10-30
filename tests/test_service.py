@@ -131,7 +131,7 @@ def test_company_info_aggregate_only(session):
         # The aggregate-only rule below still holds over the whole payload.
         "claimed", "claimed_at", "response_sla_days",
         # 0.8.31: postings not confirmed for 30 days, no longer counted as live.
-        "unverified_over_30d",
+        "unverified_over_30d", "hiring_trend",
     }
     assert info["active_jobs"] == 3
     # `verified` stays gone as a name; `claimed` replaces it and is only true behind a real

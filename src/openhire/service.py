@@ -398,6 +398,19 @@ def check_role_family(role_family: str | None) -> str | None:
 TOUCH_REPORTING_VENDORS = frozenset({"greenhouse", "moka"})
 
 
+def check_posted_within_days(value) -> int | None:
+    """1 to 365, or None. A typo like 0 or -3 is refused rather than read as "no limit"."""
+    if value is None or value == "":
+        return None
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        n = 0
+    if not 1 <= n <= 365:
+        raise OpenHireError("ERR_BAD_QUERY", f"posted_within_days must be a whole number from 1 to 365 (got {value!r}).")
+    return n
+
+
 def is_entry_level(title: str | None, description: str | None) -> bool:
     """Open to a new graduate: the posting says campus / intern / no experience needed, or
     its title names an intern or junior level. A posting that says nothing either way is
@@ -823,6 +836,7 @@ def _filter_and_rank(
     seniority: list[str] | None = None,
     sector: str | None = None,
     entry_level: bool = False,
+    posted_within_days: int | None = None,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
@@ -872,6 +886,11 @@ def _filter_and_rank(
         stmt = stmt.where(Job.salary_currency == currency.upper(), _salary_is_usable())
     if since is not None:
         stmt = stmt.where(Job.first_seen_at > since)
+    if posted_within_days:
+        # By the employer's own posting date, or the day this index first saw a row whose
+        # system reports none (the same date days_open counts from). A seeker on Zhihu:
+        # "超过14天的岗位往往希望就不是那么大了" (reports/114).
+        stmt = stmt.where(func.coalesce(Job.posted_at, Job.first_seen_at) >= now - dt.timedelta(days=int(posted_within_days)))
 
     # Separator-insensitive and alias-aware on the request side (see expand_skill): a
     # requested skill matches a row when ANY of its spellings is on the row.
@@ -937,8 +956,10 @@ def search_jobs(
     seniority: list[str] | None = None,
     sector: str | None = None,
     entry_level: bool = False,
+    posted_within_days: int | None = None,
 ) -> list[dict]:
     now = _now(now)
+    posted_within_days = check_posted_within_days(posted_within_days)
     role_family = check_role_family(role_family)
     seniority = check_seniority(seniority)
     sector = check_sector(sector)
@@ -963,7 +984,7 @@ def search_jobs(
         require_stated_salary=require_stated_salary, remote_scope=remote_scope,
         role_family=role_family, offset=offset, company_ids=company_ids,
         location=location, title=title, seniority=seniority, sector=sector,
-        entry_level=bool(entry_level),
+        entry_level=bool(entry_level), posted_within_days=posted_within_days,
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
@@ -1120,6 +1141,7 @@ def diagnose_empty_search(
     seniority: list[str] | str | None = None,
     sector: str | None = None,
     entry_level: bool = False,
+    posted_within_days: int | None = None,
 ) -> dict:
     """Explain an empty result set so the caller can tell a typo from a genuine miss.
 
@@ -1143,6 +1165,7 @@ def diagnose_empty_search(
             "seniority": ([seniority] if isinstance(seniority, str) else seniority) or None,
             "sector": sector or None,
             "entry_level": True if entry_level else None,
+            "posted_within_days": posted_within_days or None,
         }.items() if v}
 
     # An empty INDEX explains an empty result on its own, and every other diagnosis below
@@ -1435,6 +1458,39 @@ def list_portals(sector: str | None = None) -> dict:
 
 
 # --- company trust signals (aggregate only) ----------------------------------
+def hiring_trend(session: Session, company_id: str) -> dict:
+    """What this employer's own system shows over the last 60 days: postings it published in
+    the 30 days up to the index's newest verification, the 30 before, and postings taken
+    down in the last 30 (reports/114: seekers worried about rescinded offers and "betting on
+    a headcount" asked whether a company is growing or shrinking before they sign). Counts
+    only, never a forecast: a dip can be a hiring cycle, a burst can be one new office."""
+    newest = session.scalar(select(func.max(Job.verified_at)))
+    if newest is None:
+        return {}
+    if isinstance(newest, str):
+        newest = dt.datetime.fromisoformat(newest)
+    end = _aware(newest)
+    mid, start = end - dt.timedelta(days=30), end - dt.timedelta(days=60)
+
+    def _n(*where) -> int:
+        return session.scalar(select(func.count()).select_from(Job).where(Job.company_id == company_id, *where)) or 0
+
+    last = _n(Job.posted_at > mid, Job.posted_at <= end)
+    prior = _n(Job.posted_at > start, Job.posted_at <= mid)
+    down = _n(Job.delisted_at.is_not(None), Job.delisted_at > mid, Job.delisted_at <= end)
+    no_date = _n(Job.posted_at.is_(None), Job.first_seen_at > mid)
+    zh = (f"截至 {end.date().isoformat()}：近 30 天雇主新发 {last} 条，前 30 天 {prior} 条；"
+          f"近 30 天下架 {down} 条。这是雇主系统里的数，不是对公司前景的判断。")
+    en = (f"As of {end.date().isoformat()}: {last} postings published in the last 30 days, {prior} in the 30 before; "
+          f"{down} taken down in the last 30. Counts from the employer's own system, not a forecast.")
+    return {
+        "window_end": end.date().isoformat(),
+        "new_last_30d": last, "new_prior_30d": prior, "delisted_last_30d": down,
+        "first_seen_last_30d_without_employer_date": no_date,
+        "in_words": {"zh": zh, "en": en},
+    }
+
+
 def get_company_info(session: Session, company_id: str, now: dt.datetime | None = None) -> dict:
     company = session.get(Company, company_id)
     if company is None:
@@ -1569,6 +1625,7 @@ def get_company_info(session: Session, company_id: str, now: dt.datetime | None 
         # counted in active_jobs and never shown by search. Nonzero is a gap in our reading,
         # not a fact about the employer.
         "unverified_over_30d": int(unverified or 0),
+        "hiring_trend": hiring_trend(session, company_id),
         "user_added": bool(getattr(company, "user_added", False)),
         "claimed": bool(company.verified),
         "claimed_at": _aware(company.claimed_at).isoformat() if company.claimed_at else None,
@@ -1589,7 +1646,7 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
 
 _WATCH_FILTER_KEYS = (
     "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
-    "title", "board_url", "seniority", "sector", "entry_level",
+    "title", "board_url", "seniority", "sector", "entry_level", "posted_within_days",
 )
 # A board watch (reports/070) reads one employer's public board live on every pull, so the
 # only filters that mean anything on it are the ones a live read can apply.
@@ -1639,6 +1696,8 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
         allowed["sector"] = check_sector(filters["sector"])
     if filters.get("entry_level"):
         allowed["entry_level"] = True
+    if filters.get("posted_within_days"):
+        allowed["posted_within_days"] = check_posted_within_days(filters["posted_within_days"])
     if filters.get("min_salary") is not None:
         allowed["min_salary"] = int(filters["min_salary"])
     if filters.get("location"):
@@ -1720,7 +1779,7 @@ def watch_intent(
             required_skills=clean.get("required_skills"), role_family=clean.get("role_family"),
             company_ids=clean.get("company_ids"), location=clean.get("location"),
             title=clean.get("title"), seniority=clean.get("seniority"), sector=clean.get("sector"),
-            entry_level=bool(clean.get("entry_level")),
+            entry_level=bool(clean.get("entry_level")), posted_within_days=clean.get("posted_within_days"),
         ))
     watch_id = _new_id(session, Watch, "watch_id", "w_")
     session.add(
@@ -1815,7 +1874,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             required_skills=f.get("required_skills"), role_family=f.get("role_family"),
             company_ids=f.get("company_ids"), location=f.get("location"),
             title=f.get("title"), seniority=f.get("seniority"), sector=f.get("sector"),
-            entry_level=bool(f.get("entry_level")),
+            entry_level=bool(f.get("entry_level")), posted_within_days=f.get("posted_within_days"),
         )
         total_matching = len(ranked_all)
         ranked = ranked_all[:MAX_PAGE_SIZE]
