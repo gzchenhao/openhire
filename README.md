@@ -2,6 +2,8 @@
 
 # OpenHire · 开聘
 
+> **Companies screen you with AI. Screen them back.** 公司用 AI 筛你，你也用 AI 筛公司。
+>
 > **Let your AI assistant find jobs straight from employers' own systems, with your résumé never leaving your computer. Is the job still open? Is the company real? Check both before you apply.**
 > 让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。
 
@@ -157,6 +159,8 @@ My résumé stays on my machine; never send it to any server. I apply by clickin
 查一下这家公司靠不靠谱：<公司名>
 投之前帮我查一遍这个岗位：<公司名> <岗位名>
 我是 2027 届应届生，帮我找具身公司收应届的岗位，写清学历要求
+别让我海投：帮我挑 10 个值得认真投的智驾岗，剔掉的说明原因
+我投过的那几个岗位，哪些已经下架了，不用再等？
 智驾和具身公司现在在招哪些 HR 和招聘岗？列出公司、城市和发布日期
 
 Find perception roles in Shanghai with their original posting dates
@@ -164,12 +168,13 @@ Watch OKX's careers page and tell me when something new appears
 Which embodied-AI employers post on Feishu? Give me their careers pages
 Before I apply, check this posting: <company> <title>
 I graduate in 2027; find robotics roles open to new grads and say what degree each asks for
+Which of the postings I applied to have closed, so I can stop waiting?
 ```
 
 Clients that show MCP prompts (Claude Desktop's "+" menu, a slash command in Claude Code or
-VS Code) also list seven ready-made ones: 求职清单 · Job-search checklist, 找工作雷达 · Job radar,
+VS Code) also list eight ready-made ones: 求职清单 · Job-search checklist, 找工作雷达 · Job radar,
 盯一家公司 · Track one employer, 查这家公司靠不靠谱 · Check an employer, 投之前查一遍 · Check before
-you apply, 看看我的雷达 · What's new on my radar, and 本周新岗 · New this week. Each one renders in Chinese when you type Chinese into it.
+you apply, 海投改精投 · Shortlist, don't mass-apply, 看看我的雷达 · What's new on my radar, and 本周新岗 · New this week. Each one renders in Chinese when you type Chinese into it.
 
 **New graduates (应届生) start here.** Say what year you graduate and which sector; the
 assistant passes `entry_level: true`, which keeps only postings that say campus hiring,
@@ -206,7 +211,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.36.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.37.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -242,7 +247,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.36.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.37.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — paste the one-block prompt from the Quickstart
@@ -295,7 +300,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.36", "serve"]`.
+matters: `"args": ["openhire==0.8.37", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -408,6 +413,7 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 | `search_jobs` | Hard-filter the live index; every result carries `verified_at`, `datePosted`, `days_open`, `ghost_score`, `remote_scope`, `eligible_regions`, `apply_channel`. Filter by `required_skills` (AND), `role_family` (engineering, data, product, design, marketing, sales, `hr` for recruiting / HRBP / people roles, ops, other), `remote_scope`, `min_salary` + `currency`, `company`, `location` (bilingual city aliases: 香港 = Hong Kong, 广州 reaches 天河区), `title` (words in the job title, e.g. `招聘` / `recruit` — the filter for HR, finance and other roles no skill tag names) and `seniority` (`ic` / `management`, or intern, junior, senior, staff, lead, manager, director, unknown: the level the title names, so an engineer's search does not open with a Senior Manager). Each row also carries `seniority`, `date_source`, `dates_in_words` (the dates as one sentence, zh and en) and `check_before_apply` (what to confirm before applying, from measured facts). |
 | `watch_intent` | Register a standing intent once — new matching jobs are waiting next time you check, even after you close the terminal. Accepts `required_skills` / `role_family` / `location` / `title` / `seniority` so sales / solutions / management roles stay out. Returns `matching_now` and `what_happens_next`: OpenHire never pushes; you ask the assistant to check, and the first check is a baseline of postings already live. |
 | `check_watches` | Pull the matches that are new since your last check (client-pull; stdio has no push). |
+| `check_applications` | An answer to "I applied and heard nothing": follows the postings you applied to (add their `job_id`s; authorized ones are included) and says, from the employer's own system, which are closed (stop waiting), which have not been seen for 30 days, and which are still live. Only job ids and your anonymous fingerprint are stored. |
 | `authorize_application` | One explicit confirmation per job. It records your authorization and returns the employer's **own** application URL — you apply as yourself. It **cannot** accept a résumé. |
 | `get_company_info` | Aggregate, anonymous trust signals for one employer (`ghost_score_avg`, `active_jobs`, `index_built_at`). Never any candidate data. |
 | `check_employer` | Facts about one employer with sources and times: whether its own system is in the index, domain age (RDAP), site history (Wayback), the ICP record on its homepage, scam red flags in a pasted posting, the OFAC sanctions lists, the organisational and financing events on EarlyTip's public record, and the company register with **your own** 天眼查 key (`TIANYANCHA_API_KEY`, never ours). A checklist, never a score. |

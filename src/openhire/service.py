@@ -2640,3 +2640,121 @@ def read_board(
         out["hint"] = (f"No posting with ats_job_id {want!r} is on this board now: it may have closed. "
                        "Read the board without ats_job_id to see what is open.")
     return out
+
+
+# --- application tracker: an answer to "read, no reply" (reports/112) -----------
+# Zhihu's most-asked young-seeker question is some form of "投了一堆简历都是已读不回，是真的在
+# 招人吗?". Whether the employer will reply is not ours to know; whether the posting is still
+# on the employer's own system is, and it is the half that tells a seeker when to stop
+# waiting. A tracked posting is an Application row with authorized=False and
+# delivered_via=TRACKED_VIA: the user applied somewhere themselves and asks us to follow
+# the posting, which is not an authorization and is never counted as one.
+TRACKED_VIA = "user_tracked"
+MAX_TRACKED = 200
+
+
+def check_applications(
+    session: Session,
+    fingerprint: str,
+    add_job_ids: list[str] | None = None,
+    remove_job_ids: list[str] | None = None,
+    now: dt.datetime | None = None,
+) -> dict:
+    """The status of every posting this fingerprint applied to or asked to follow, read
+    from the employer's own system: still live, closed (delisted) since, or not returned by
+    the employer's system for 30 days. Facts only: a live posting may still never answer,
+    and a closed one may have been filled or withdrawn; we cannot see which."""
+    now = _now(now)
+    _assert_anonymous(fingerprint)
+    added, unknown, removed = [], [], []
+    for jid in [str(j).strip() for j in (add_job_ids or []) if str(j).strip()]:
+        _assert_anonymous(jid)
+        if session.get(Job, jid) is None:
+            unknown.append(jid)
+            continue
+        exists = session.execute(
+            select(Application.receipt_id).where(Application.fingerprint == fingerprint, Application.job_id == jid)
+        ).first()
+        if exists:
+            continue
+        n = session.scalar(select(func.count()).select_from(Application).where(Application.fingerprint == fingerprint)) or 0
+        if n >= MAX_TRACKED:
+            raise OpenHireError("ERR_TOO_MANY", f"A fingerprint follows at most {MAX_TRACKED} postings; remove some first.")
+        session.add(Application(receipt_id=_new_id(session, Application, "receipt_id", "t_"), job_id=jid,
+                                fingerprint=fingerprint, authorized=False, delivered_via=TRACKED_VIA, created_at=now))
+        session.flush()
+        added.append(jid)
+    for jid in [str(j).strip() for j in (remove_job_ids or []) if str(j).strip()]:
+        rows = session.execute(select(Application).where(
+            Application.fingerprint == fingerprint, Application.job_id == jid,
+            Application.delivered_via == TRACKED_VIA)).scalars().all()
+        for r in rows:
+            session.delete(r)
+        if rows:
+            removed.append(jid)
+    session.flush()
+
+    cutoff = verified_cutoff(session)
+    apps = session.execute(
+        select(Application).where(Application.fingerprint == fingerprint).order_by(Application.created_at)
+    ).scalars().all()
+    seen: set[str] = set()
+    items, counts = [], {"open": 0, "closed": 0, "not_verified_recently": 0}
+    for a in apps:
+        if a.job_id in seen:
+            continue
+        seen.add(a.job_id)
+        job = session.get(Job, a.job_id)
+        if job is None:
+            continue
+        company = session.get(Company, job.company_id)
+        since = _aware(a.created_at)
+        days_since = (now - since).days if since else None
+        posted = _aware(job.posted_at) if job.posted_at else None
+        updated = _aware(job.updated_at) if job.updated_at else None
+        if job.delisted_at is not None:
+            status = "closed"
+            closed = _aware(job.delisted_at).date().isoformat()
+            zh = f"已从雇主系统下架（索引在 {closed} 发现），不用再等这一个了。"
+            en = f"Taken off the employer's system (seen by the index on {closed}); no need to keep waiting on this one."
+        elif cutoff is not None and _aware(job.verified_at) < cutoff:
+            status = "not_verified_recently"
+            zh = "雇主系统 30 天内没有再返回这个岗位，多半已不在招，但我们没法确认。"
+            en = "The employer's system has not returned this posting for 30 days; it is probably no longer open, but we cannot confirm it."
+        else:
+            status = "open"
+            age = f"已在架 {(now - posted).days} 天" if posted else "雇主没标发布日期"
+            touched = "，你记下之后雇主改动过它" if (updated and since and updated > since) else ""
+            zh = f"还在雇主系统上（{age}{touched}）。还在架不代表会回复，只说明岗位没撤。"
+            en = (f"Still on the employer's system ({f'open {(now - posted).days} days' if posted else 'no posting date from the employer'}"
+                  f"{'; the employer edited it after you noted it' if touched else ''}). Live does not mean a reply is coming, only that the posting was not withdrawn.")
+        counts[status] += 1
+        items.append({
+            "job_id": job.id, "title": job.title,
+            "company": company.name if company else job.company_id,
+            "location": job.location,
+            "kind": "authorized" if a.authorized else "tracked",
+            "noted_at": since.date().isoformat() if since else None,
+            "days_since_noted": days_since,
+            "status": status,
+            "status_in_words": {"zh": zh, "en": en},
+            "apply_channel": job.apply_channel,
+        })
+    order = {"closed": 0, "not_verified_recently": 1, "open": 2}
+    items.sort(key=lambda r: (order[r["status"]], -(r["days_since_noted"] or 0)))
+    total = len(items)
+    summary = {
+        "zh": (f"你记下的 {total} 个岗位里：{counts['closed']} 个已从雇主系统下架，{counts['not_verified_recently']} 个 "
+               f"30 天没再出现，{counts['open']} 个还在架。下架和长期不出现的，不用再等回复了。") if total else
+              "还没有记下任何岗位。说一句「我投了这几个」，把 job_id 传给 add_job_ids 就能开始跟。",
+        "en": (f"Of the {total} postings you noted: {counts['closed']} closed on the employer's system, "
+               f"{counts['not_verified_recently']} not seen for 30 days, {counts['open']} still live. "
+               "Stop waiting on the closed and long-unseen ones.") if total else
+              "Nothing noted yet. Pass the job_ids you applied to as add_job_ids to start following them.",
+    }
+    return {
+        "fingerprint": fingerprint, "summary": summary, "counts": {**counts, "total": total},
+        "applications": items, "added": added, "removed": removed, "unknown_job_ids": unknown,
+        "note": ("Only postings in this index can be followed (job_id from search_jobs). Whether the employer "
+                 "will reply is not something any index can see; this answers whether the posting is still there."),
+    }

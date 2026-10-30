@@ -16,7 +16,7 @@ import pytest
 from openhire import prompts
 from openhire.mcp_server import mcp
 
-NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "before_apply", "radar_check", "new_this_week"]
+NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "before_apply", "shortlist", "radar_check", "new_this_week"]
 
 # Identifiers a template may mention that are argument names or field values, not tools.
 NOT_TOOLS = {
@@ -26,6 +26,8 @@ NOT_TOOLS = {
     "date_source", "what_happens_next", "matching_now",
     # 0.8.36 (reports/111): before_apply quotes these result fields.
     "ghost_reason", "message_text", "outsourcing_words", "apply_channel", "apply_channel_blocked",
+    # 0.8.37 (reports/112): shortlist quotes these.
+    "min_years", "min_degree", "entry_level", "add_job_ids",
 }
 
 ZH_ARGS = {
@@ -36,6 +38,7 @@ ZH_ARGS = {
     "new_this_week": {"role": "规控", "location": "深圳"},
     "job_checklist": {"stage": "刚开始"},
     "before_apply": {"job": "宇树 运动控制工程师", "message": "加我微信，先交 500 元培训费"},
+    "shortlist": {"role": "机器人算法", "years": "应届", "location": "上海"},
 }
 EN_ARGS = {
     "job_radar": {"role": "robotics software engineer", "location": "remote"},
@@ -45,6 +48,7 @@ EN_ARGS = {
     "new_this_week": {},
     "job_checklist": {"stage": "starting"},
     "before_apply": {"job": "unitree:123"},
+    "shortlist": {"role": "robotics software engineer"},
 }
 
 
@@ -57,7 +61,7 @@ def _tools() -> set[str]:
     return {t.name for t in asyncio.run(mcp.list_tools())}
 
 
-def test_the_seven_templates_are_listed_with_titles_and_argument_help():
+def test_the_eight_templates_are_listed_with_titles_and_argument_help():
     listed = {p.name: p for p in asyncio.run(mcp.list_prompts())}
     assert list(listed) == NAMES
     for p in listed.values():
@@ -145,3 +149,10 @@ def test_before_apply_chains_search_employer_check_and_requirements():
     assert "job_id unitree:123" in en
     zh = _render("before_apply", {"job": "某公司 算法", "message": "先交钱"})
     assert "message_text" in zh and "不是判决" in zh
+
+
+def test_shortlist_drops_with_reasons_and_follows_what_was_sent():
+    """0.8.37 (reports/112): "海投改精投" as one template; it ends by following the postings."""
+    zh = _render("shortlist", {"role": "机器人算法", "years": "应届"})
+    for word in ("entry_level", "min_years", "min_degree", "check_applications", "剔掉"):
+        assert word in zh

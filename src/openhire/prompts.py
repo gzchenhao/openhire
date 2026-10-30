@@ -155,6 +155,7 @@ def radar_check(
         "用 check_watches 查，先把结果里的 summary 原句告诉我；列出新岗（公司、岗位名、地点、发布日期、投递链接）和上次之后已经关闭的岗位；没有新岗就直说没有。is_first_pull 为真时，列出的是已有岗位的基线，不要说成新出现的。",
         "Call check_watches and start with its summary sentence; list the new postings (company, title, location, posting date, apply link) and the ones "
         "closed since the last check; if nothing is new, say so. When is_first_pull is true, the list is the baseline of postings already live: never present it as new.",
+        "再用同一个指纹调 check_applications，告诉我投过的岗位里哪些已经下架、不用再等。 / Then call check_applications with the same fingerprint and tell me which postings I applied to have closed, so I can stop waiting.",
         "用我写字的语言回答。 / Answer in the language I write in.",
     ])
 
@@ -225,6 +226,40 @@ def before_apply(
     ]))
 
 
+def shortlist(
+    role: Annotated[str, Field(description="The job in your own words, e.g. 机器人算法 or robotics software engineer")],
+    years: Annotated[str, Field(description="Years of experience, or 应届 / new grad (optional)")] = "",
+    location: Annotated[str, Field(description="City or region (optional)")] = "",
+) -> str:
+    """Instead of sending 300 applications: drop the postings not worth sending to, and say why, before you apply."""
+    if _zh(role, years, location):
+        return "\n".join([
+            "别让我海投。帮我把值得认真投的岗位挑出来，不值得投的剔掉并说明理由。",
+            f"岗位：{role}；经验：{years or '没说，先问我一句'}；地点：{location or '不限'}",
+            "",
+            "1. 用 search_jobs 搜（岗位词放 title，地点放 location；应届就传 entry_level，否则按我的年限传 seniority），limit 100。",
+            "2. 逐条剔掉这几类，每类数一下有多少条：requirements 里 min_years 超过我的年限的；requirements 里 min_degree 我够不上的（先问我学历）；check_before_apply 里提示在架超过 90 天的；雇主没标发布日期且索引首次看到已超过 90 天的。",
+            "3. 剩下的按匹配度排，给我最多 10 条，每条一句话说为什么值得投，日期用 dates_in_words 的原句，附投递链接。",
+            "4. 最后一段写「剔掉了多少条、各是什么原因」，让我知道省下了多少无效投递。",
+            "5. 我投了哪几条，就用 check_applications 的 add_job_ids 记下来，以后我问「投的那些还在不在」就用它答。" + FINGERPRINT_ZH,
+            LENGTH_ZH,
+            PRIVACY_ZH,
+        ])
+    return "\n".join([
+        "Do not let me mass-apply. Pick the postings worth a careful application, and drop the rest with the reason.",
+        f"Role: {role}; experience: {years or 'not given, ask me once'}; location: {location or 'any'}",
+        "",
+        "1. Call search_jobs (role words in title, place in location; entry_level for a new grad, otherwise seniority from my years), limit 100.",
+        "2. Drop, and count, each of: requirements.min_years above my years; requirements.min_degree I do not meet (ask my degree first); "
+        "check_before_apply saying open over 90 days; no employer date and first seen by the index over 90 days ago.",
+        "3. Rank what is left by fit and give me at most 10, one sentence each on why it is worth applying, dates as the dates_in_words sentence, apply link.",
+        "4. End with how many you dropped and for which reasons, so I can see how many wasted applications this saved.",
+        "5. When I say which ones I applied to, record them with check_applications add_job_ids, and use it later when I ask whether they are still open. " + FINGERPRINT_EN,
+        LENGTH_EN,
+        PRIVACY_EN,
+    ])
+
+
 CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
 CHECKLIST_URL_CN = "https://openhire-vlny.onrender.com/checklist"
 
@@ -272,6 +307,7 @@ PROMPTS = (
     ("track_employer", "盯一家公司 · Track one employer", track_employer),
     ("vet_employer", "查这家公司靠不靠谱 · Check an employer", vet_employer),
     ("before_apply", "投之前查一遍 · Check before you apply", before_apply),
+    ("shortlist", "海投改精投 · Shortlist, don't mass-apply", shortlist),
     ("radar_check", "看看我的雷达 · What's new on my radar", radar_check),
     ("new_this_week", "本周新岗 · New this week", new_this_week),
 )

@@ -77,7 +77,10 @@ mcp = FastMCP(
         "requirements (lowest required degree, fewest years; null means the posting does not say). "
         "When the user is about to apply, check both questions before they click: is the posting "
         "still open (dates_in_words, check_before_apply) and is the company real (check_employer "
-        "with the job_id); the before_apply prompt walks it."
+        "with the job_id); the before_apply prompt walks it. When the user says they applied and "
+        "heard nothing, or asks whether a company is still hiring for a role they applied to, "
+        "follow those postings with check_applications (add_job_ids) and tell them which ones "
+        "are closed so they can stop waiting."
     ),
 )
 
@@ -895,6 +898,46 @@ def check_watches(fingerprint: str) -> dict:
 
 
 @mcp.tool(
+    title="Check applications",
+    annotations=ToolAnnotations(title="Check applications", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False),
+)
+def check_applications(
+    fingerprint: str,
+    add_job_ids: list[str] | None = None,
+    remove_job_ids: list[str] | None = None,
+) -> dict:
+    """An answer to "I applied and heard nothing: are they even still hiring?".
+
+    Follows the postings this fingerprint applied to and reports, from the employer's own
+    system, whether each is still live, has been taken down since (`closed`: stop waiting on
+    it), or has not been returned by the employer's system for 30 days
+    (`not_verified_recently`). Postings recorded with authorize_application are included
+    automatically. When the user says they applied to postings found in this index (on the
+    employer's site or anywhere else), pass those job_ids as `add_job_ids` to follow them;
+    `remove_job_ids` stops following ones they added. Only job_ids are stored, keyed by the
+    anonymous fingerprint: never a name, résumé or where they applied from.
+
+    Start your answer with the `summary` sentence, then list `closed` first, then
+    `not_verified_recently`, then `open`, quoting each row's `status_in_words`. Do not say an
+    employer ignored the user or that a closed posting was filled: we see the posting, never
+    the employer's inbox. Call it again at the start of a later session to see what changed.
+
+    Args:
+        fingerprint: the user's anonymous fingerprint (the same one their watches use).
+        add_job_ids: job_ids (from search_jobs) the user says they applied to.
+        remove_job_ids: job_ids to stop following.
+    """
+    _await_index()
+    if (preparing := _preparing()):
+        return {"fingerprint": fingerprint, "applications": None, **preparing}
+    with session_scope() as s:
+        try:
+            return service.check_applications(s, fingerprint, add_job_ids, remove_job_ids)
+        except OpenHireError as e:
+            return e.as_dict()
+
+
+@mcp.tool(
     title="Authorize application",
     annotations=ToolAnnotations(title="Authorize application", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False),
 )
@@ -976,7 +1019,7 @@ def _refuse_undeclared_arguments(tool_name: str) -> None:
     )
 
 
-for _name in ("authorize_application", "watch_intent", "add_employer", "list_portals"):
+for _name in ("authorize_application", "watch_intent", "add_employer", "list_portals", "check_applications"):
     _refuse_undeclared_arguments(_name)
 
 
