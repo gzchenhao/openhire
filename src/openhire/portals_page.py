@@ -96,7 +96,7 @@ def render() -> str:
         parts.append("</tbody></table>")
     parts += [
         "<h2>不在这张表上的公司</h2>",
-        "<p>它的招聘页如果在 Greenhouse、Lever、Ashby、Moka、北森、Workable、SmartRecruiters 或 Workday 上，"
+        "<p>它的招聘页如果在 Greenhouse、Lever、Ashby、Moka、北森、Workable、SmartRecruiters、Workday、Rippling 或 Personio 上，"
         "对助手说「读一下这家公司的招聘页」并贴上网址，OpenHire 现读给你；想以后一直盯着，"
         "再说「把它加进我的索引」。</p>",
         '<p>是这些公司的招聘负责人？想让贵公司的岗位在这里可读，见 <a href="employers.html">给雇主的一页说明</a>：'

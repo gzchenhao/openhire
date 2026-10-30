@@ -1451,7 +1451,7 @@ def list_portals(sector: str | None = None) -> dict:
         "note_zh": PORTALS_NOTE_ZH,
         "also": (
             "Not on this list and not in the index? read_board reads any Greenhouse, Lever, "
-            "Ashby, Moka, 北森, Workable, SmartRecruiters or Workday board live; add_employer "
+            "Ashby, Moka, 北森, Workable, SmartRecruiters, Workday, Rippling or Personio board live; add_employer "
             "keeps one in the user's own index."
         ),
     }

@@ -27,7 +27,7 @@ mcp = FastMCP(
     "openhire",
     instructions=(
         "OpenHire searches job postings pulled straight from employers' own ATS APIs "
-        "(Greenhouse, Lever, Ashby, Beisen 北森, Moka, Workable, SmartRecruiters, plus first-party employer career "
+        "(Greenhouse, Lever, Ashby, Beisen 北森, Moka, Workable, SmartRecruiters, Workday, Rippling, Personio, plus first-party employer career "
         "sites): employers in AI infra, autonomous driving and embodied AI (the live count is "
         "in docs/numbers.json), every "
         "posting with the employer's own posting date where its ATS reports one, otherwise "
@@ -40,7 +40,7 @@ mcp = FastMCP(
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; authorize_application to record an "
         "authorized, employer-direct application; read_board to read any employer's public "
-        "board live (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters, Workday, any sector) when the employer is not "
+        "board live (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters, Workday, Rippling, Personio, any sector) when the employer is not "
         "in the index, with nothing stored; add_employer to put such a board into the user's own "
         "index on this machine (kept across refreshes, never published), remove_employer to "
         "take it out. The user never has to know these tool names: when they name an employer "
@@ -506,7 +506,7 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     whose stated pay is below the floor. Pay is stated mostly where law requires it (US
     postings on Greenhouse/Lever/Ashby), so a watch that needs a number will lean US.
 
-    A board watch: pass `board_url` (a Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday careers URL,
+    A board watch: pass `board_url` (a Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday / Rippling / Personio careers URL,
     as for read_board) with optional `location` and `title` and nothing else; check_watches
     then reads that board live on every pull and reports what appeared and what
     disappeared since the last pull. This is how an employer outside the index is watched.
@@ -757,7 +757,8 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
     Lever (jobs.lever.co/<site>), Ashby (jobs.ashbyhq.com/<board>), Moka
     (app.mokahr.com/apply/<org>/<siteId>), 北森 (<tenant>.zhiye.com), Workable
     (apply.workable.com/<subdomain>), SmartRecruiters (jobs.smartrecruiters.com/<company>)
-    or Workday (<account>.wd5.myworkdayjobs.com/<site>). Any sector. To keep the employer,
+    Workday (<account>.wd5.myworkdayjobs.com/<site>), Rippling (ats.rippling.com/<slug>/jobs)
+    or Personio (<slug>.jobs.personio.de). Any sector. To keep the employer,
     add_employer puts the same board into the user's own index.
 
     What you get: the board's own postings with title, location, the board's own posting
@@ -818,7 +819,7 @@ def add_employer(url: str, name: str | None = None) -> dict:
     The public index is a curated list (AI infra, autonomous driving, embodied AI). The
     employers a user actually targets are wider than that, so any board a vendor adapter can
     read goes into the user's own index on request: Greenhouse, Lever, Ashby, Moka, 北森,
-    Workable, SmartRecruiters or Workday (<account>.wd5.myworkdayjobs.com/<site>), any sector.
+    Workable, SmartRecruiters, Workday, Rippling or Personio (<account>.wd5.myworkdayjobs.com/<site>), any sector.
     After this call the employer behaves like a seeded one: search_jobs(company=...) with the
     board's own posting dates, days_open and ghost_score; watch_intent on it; refresh_index
     re-crawls it; the weekly refresh keeps it. It is flagged user_added, is never part of the

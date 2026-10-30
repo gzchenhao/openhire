@@ -731,7 +731,7 @@ def org_events_audit(
 # --- add-employer / remove-employer (the user's own index, 0.8.13) --------------------
 @app.command(name="add-employer", rich_help_panel=FIND_PANEL)
 def add_employer(
-    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday."),
+    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday / Rippling / Personio."),
     name: str = typer.Option(None, "--name", help="Display name for the employer (defaults to the board's tenant)."),
     as_json: bool = typer.Option(False, "--json", help="Print the raw result as JSON."),
 ) -> None:
@@ -789,7 +789,7 @@ def remove_employer(
 # --- read-board -------------------------------------------------------------------
 @app.command(name="read-board", rich_help_panel=FIND_PANEL)
 def read_board(
-    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday."),
+    url: str = typer.Argument(..., help="The employer's careers URL on Greenhouse / Lever / Ashby / Moka / 北森 / Workable / SmartRecruiters / Workday / Rippling / Personio."),
     location: str = typer.Option(None, "--location", help="Only postings whose location contains this (either language)."),
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. partner,ecosystem / 招聘,hr."),
     limit: int = typer.Option(30, "--limit", help="How many to print."),

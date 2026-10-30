@@ -372,6 +372,21 @@ _WORKDAY = [
     ('autostore.wd3/autostore', 'AutoStore', 'autostore'),  # 33 live
 ]
 
+# --- Rippling (`ats.rippling.com/<slug>/jobs`) and Personio (`<slug>.jobs.personio.de`) ---
+# 2026-10-30 (reports/121): readers ported from career-ops (MIT); every tenant read live that
+# day with our default client. Rippling's list carries no posting date (date_signal
+# not_reported_by_ats); Personio's XML feed carries createdAt.
+_RIPPLING = [
+    ('forterra', 'Forterra', 'forterra'),  # 55 live
+    ('foundation-robotics', 'Foundation Robotics', 'foundation-robotics'),  # 26 live
+    ('mytra', 'Mytra', 'mytra'),  # 43 live
+    ('bonsairoboticsmain', 'Bonsai Robotics', 'bonsai-robotics'),  # 8 live
+]
+_PERSONIO = [
+    ('wandelbots', 'Wandelbots', 'wandelbots'),  # 11 live
+    ('franka-robotics', 'Franka Robotics', 'franka-robotics'),  # 3 live
+]
+
 _SELF_REPORTED = [(e.slug, e.name) for e in SELF_REPORTED_EMPLOYERS.values()]
 
 
@@ -388,6 +403,8 @@ def all_candidates() -> list[Candidate]:
         ("workable", _WORKABLE),
         ("smartrecruiters", _SMARTRECRUITERS),
         ("workday", _WORKDAY),
+        ("rippling", _RIPPLING),
+        ("personio", _PERSONIO),
         ("self_reported", _SELF_REPORTED),
     ):
         for row in rows:
@@ -407,5 +424,7 @@ def candidate_count() -> int:
         + len(_WORKABLE)
         + len(_SMARTRECRUITERS)
         + len(_WORKDAY)
+        + len(_RIPPLING)
+        + len(_PERSONIO)
         + len(_SELF_REPORTED)
     )
