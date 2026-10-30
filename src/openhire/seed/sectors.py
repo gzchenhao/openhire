@@ -28,6 +28,7 @@ _BY_SECTOR: dict[str, tuple[str, ...]] = {
         "aurorainnovation", "wayve", "robosense", "deeproute", "minieye", "freetech", "yushi", "rino",
         "trunk", "zvision", "motovis", "inceptio", "lixiang", "xiaopeng", "seyond", "blacksesame",
         "outsight", "aerovect", "saronic", "shieldai",
+        'appliedintuition', 'plusai', 'stackav', 'maymobility', 'avride', 'aeva', 'skydio', 'anduril', 'wing',
     ),
     EMB: (
         "figureai", "agilityrobotics", "skildai", "apptronik", "pathrobotics", "dexterity", "fieldai",
@@ -36,6 +37,7 @@ _BY_SECTOR: dict[str, tuple[str, ...]] = {
         "ubtrobot", "dobot", "jaka", "mechmind", "megarobo", "pudutech", "hairobotics", "siasun",
         "yijiahe", "paxini", "magiclab", "galbot", "robotera", "fftai", "geekplus", "keenon", "astribot",
         "estun", "palrobotics", "flexion-robotics", "andromeda-robotics", "agile-robots", "robotec-ai",
+        'bostondynamics', 'thebotcompany', 'humanoid', 'robco', 'viam', 'diligentrobotics', 'braincorp', 'serverobotics', 'cocorobotics', 'picklerobot', 'gecko-robotics', 'reflexrobotics', 'tutorintelligence', 'mujin', 'nimblerobotics', 'autostore', 'formic', 'machinalabs', 'bedrock-robotics', 'simberobotics', 'personaai', 'dreame',
     ),
     AI: (
         "anthropic", "openai", "mistral", "cohere", "databricks", "scaleai", "togetherai", "nebius",

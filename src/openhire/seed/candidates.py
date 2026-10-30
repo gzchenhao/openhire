@@ -108,6 +108,18 @@ _GREENHOUSE = [
     ("aift", "AIFT"),                       # Hong Kong insurtech AI: 27 postings, 10 in Hong Kong
     ("lynxanalytics", "Lynx Analytics"),    # AI / graph analytics: 7 postings
     ("cssmerge", "Atoms", "atoms"),         # the board is named "ATOMS Careers page": robotics (Lab37), autonomous haulage (Pronto) and food-tech brands; 333 postings, Sheung Wan office
+    # 2026-10-30, the AV / embodied survey (reports/119): found on the employers' own careers
+    # pages and read live with this adapter the same day.
+    ('stackav', 'Stack AV'),  # 13 live
+    ('maymobility', 'May Mobility'),  # 38 live
+    ('avride', 'Avride'),  # 46 live
+    ('andurilindustries', 'Anduril', 'anduril'),  # 2555 live
+    ('wing', 'Wing'),  # 56 live
+    ('viamrobotics', 'Viam', 'viam'),  # 8 live
+    ('diligentrobotics', 'Diligent Robotics'),  # 10 live
+    ('braincorporation', 'Brain Corp', 'braincorp'),  # 10 live
+    ('nimblerobotics', 'Nimble Robotics'),  # 40 live
+    ('formic', 'Formic'),  # 41 live
 ]
 
 # --- Lever --------------------------------------------------------------------
@@ -124,6 +136,15 @@ _LEVER = [
     ("field-ai", "Field AI", "fieldai"),  # 2026-10-08, see reports/060
     ("ambirobotics", "Ambi Robotics"),
     ("outsight", "Outsight"),  # 2026-10-21 (reports/086): lidar perception software, France; 11 postings
+    # 2026-10-30, the AV / embodied survey (reports/119): found on the employers' own careers
+    # pages and read live with this adapter the same day.
+    ('plus-2', 'PlusAI', 'plusai'),  # 45 live
+    ('aeva', 'Aeva'),  # 45 live
+    ('picklerobot', 'Pickle Robot'),  # 9 live
+    ('tutorintelligence', 'Tutor Intelligence'),  # 59 live
+    ('mujininc', 'Mujin', 'mujin'),  # 88 live
+    ('MachinaLabs', 'Machina Labs', 'machinalabs'),  # 28 live
+    ('SimbeRobotics', 'Simbe Robotics', 'simberobotics'),  # 17 live
 ]
 
 # --- Ashby --------------------------------------------------------------------
@@ -189,6 +210,19 @@ _ASHBY = [
     ("uipath", "UiPath"),                    # agentic automation: 107 postings, 3 in Hong Kong
     ("ekarobotics", "Eka"),                  # robotics, Boston: 11 postings
     ("generalrobotics", "General Robotics"), # robot intelligence platform, Redmond + Singapore: 14 postings
+    # 2026-10-30, the AV / embodied survey (reports/119): found on the employers' own careers
+    # pages and read live with this adapter the same day.
+    ('applied', 'Applied Intuition', 'appliedintuition'),  # 327 live
+    ('skydio', 'Skydio'),  # 185 live
+    ('thebotcompany', 'The Bot Company'),  # 7 live
+    ('humanoid', 'Humanoid'),  # 96 live
+    ('robco', 'RobCo'),  # 32 live
+    ('serverobotics', 'Serve Robotics'),  # 27 live
+    ('cocodelivery', 'Coco Robotics', 'cocorobotics'),  # 7 live
+    ('gecko-robotics', 'Gecko Robotics'),  # 21 live
+    ('ReflexRobotics', 'Reflex Robotics', 'reflexrobotics'),  # 8 live
+    ('bedrock-robotics', 'Bedrock Robotics'),  # 58 live
+    ('persona.ai', 'Persona AI', 'personaai'),  # 27 live
 ]
 
 # --- Beisen 北森 (`<tenant>.zhiye.com`) — domestic CN autonomous-driving / embodied AI ---
@@ -224,6 +258,9 @@ _BEISEN = [
     ("bsthr", "黑芝麻智能 Black Sesame", "blacksesame"),  # 100 live, ADAS / autonomous-driving chips, HK-listed
     ("kunlunxin1", "昆仑芯 Kunlunxin", "kunlunxin"),      # 32 live, AI chips
     ("estun1", "埃斯顿 Estun", "estun"),                  # 43 live, industrial robots
+    # 2026-10-30, the AV / embodied survey (reports/119): found on the employers' own careers
+    # pages and read live with this adapter the same day.
+    ('dreame', '追觅 Dreame'),  # 2000 live
 ]
 
 
@@ -327,6 +364,14 @@ _SMARTRECRUITERS = [
 # The door for employers whose own system we cannot read (reports/060). Derived from the
 # adapter's registry so an employer is declared in exactly one place, after the maintainer
 # verified the corporate identity behind the roster. The tenant is our own slug.
+# --- Workday (`<account>.wdN.myworkdayjobs.com/<site>`) ------------------------
+# 2026-10-30 (reports/119): the first Workday tenants in the seed, read live that day from
+# an unrestricted network (the cloud default network cannot reach myworkdayjobs.com).
+_WORKDAY = [
+    ('bostondynamics.wd1/Boston_Dynamics', 'Boston Dynamics', 'bostondynamics'),  # 87 live
+    ('autostore.wd3/autostore', 'AutoStore', 'autostore'),  # 33 live
+]
+
 _SELF_REPORTED = [(e.slug, e.name) for e in SELF_REPORTED_EMPLOYERS.values()]
 
 
@@ -342,6 +387,7 @@ def all_candidates() -> list[Candidate]:
         ("nio", _NIO),
         ("workable", _WORKABLE),
         ("smartrecruiters", _SMARTRECRUITERS),
+        ("workday", _WORKDAY),
         ("self_reported", _SELF_REPORTED),
     ):
         for row in rows:
@@ -360,5 +406,6 @@ def candidate_count() -> int:
         + len(_NIO)
         + len(_WORKABLE)
         + len(_SMARTRECRUITERS)
+        + len(_WORKDAY)
         + len(_SELF_REPORTED)
     )
