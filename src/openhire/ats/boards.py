@@ -39,7 +39,7 @@ CLOSED_PORTALS = {
     "zhipin.com": "BOSS 直聘是招聘网站不是雇主自己的系统，这个索引只读雇主自己的招聘系统。",
 }
 
-SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)、Workable (apply.workable.com/<subdomain>)、SmartRecruiters (jobs.smartrecruiters.com/<company>)、Workday (<account>.wd5.myworkdayjobs.com/<site>)"
+SUPPORTED = "Greenhouse (job-boards.greenhouse.io/<board>)、Lever (jobs.lever.co/<site>)、Ashby (jobs.ashbyhq.com/<board>)、Moka (app.mokahr.com/apply/<org>/<siteId>)、北森 (<tenant>.zhiye.com)、Workable (apply.workable.com/<subdomain>)、SmartRecruiters (jobs.smartrecruiters.com/<company>)、Workday (<account>.wd5.myworkdayjobs.com/<site>)、Rippling (ats.rippling.com/<board>/jobs)"
 
 _WORKDAY_SUFFIX = ".myworkdayjobs.com"
 _WORKDAY_CLUSTER = re.compile(r"^wd\d+$")
@@ -48,6 +48,7 @@ _LOCALE = re.compile(r"^[a-z]{2}(-[A-Za-z]{2})?$")   # en-US, zh-CN, fr: path pr
 _WORKABLE_HOSTS = {"apply.workable.com"}
 # Workable's own sites on the same domain, never a tenant.
 _WORKABLE_NOT_TENANTS = {"www", "apply", "jobs", "help", "resources", "careers", "api", "app"}
+_RIPPLING_HOSTS = {"ats.rippling.com"}
 _SMARTRECRUITERS_HOSTS = {"jobs.smartrecruiters.com", "careers.smartrecruiters.com", "api.smartrecruiters.com"}
 
 _SLUG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -137,6 +138,11 @@ def detect_board(url: str) -> tuple[str, str]:
         else:
             tenant = _first_segment(path)
         return _checked("smartrecruiters", tenant, "jobs.smartrecruiters.com/<company>")
+
+    if host in _RIPPLING_HOSTS:
+        m = re.match(r"^/api/v2/board/([^/]+)", path)
+        tenant = m.group(1) if m else _first_segment(path)
+        return _checked("rippling", tenant, "ats.rippling.com/<board>/jobs")
 
     if host.endswith(_WORKDAY_SUFFIX):
         # <account>.<wdN>.myworkdayjobs.com/<locale?>/<site>/... ; the tenant this index keys
