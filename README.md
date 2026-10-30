@@ -25,6 +25,9 @@ open     Physical Intelligence  Mechanical Design Engineer          还在雇主
 
 It tells you whether the posting is still there, never whether the employer read you: no index can see an inbox. 只说岗位在不在，不说雇主看没看：谁也看不到雇主的收件箱。投的时候也不交简历给任何服务器。
 
+**In Claude Code, the plugin is a whole local job-search workflow**: find postings, check the company, tailor your CV, build interview stories, follow what you applied to. Your CV stays in your own folder (`cv.md`) and is read by your own assistant; OpenHire tools only ever get a job id. `/plugin marketplace add gzchenhao/openhire`, then `/plugin install openhire@openhire`.
+在 Claude Code 里装上插件，就是一套完整的本机求职工作流：找岗、查公司、改简历、备面试故事、盯投递，简历留在你自己的文件夹里，OpenHire 的工具只拿到岗位编号。
+
 <p align="center"><img src="docs/quickstart.svg" alt="30-second quickstart: pipx install openhire, ohp bootstrap, ohp search" width="880"></p>
 <p align="center"><sub>Real terminal output — install from PyPI, download the public index, search. No account, no signup.</sub></p>
 
@@ -188,9 +191,10 @@ Which of the postings I applied to have closed, so I can stop waiting?
 ```
 
 Clients that show MCP prompts (Claude Desktop's "+" menu, a slash command in Claude Code or
-VS Code) also list eight ready-made ones: 求职清单 · Job-search checklist, 找工作雷达 · Job radar,
+VS Code) also list twelve ready-made ones: 求职清单 · Job-search checklist, 找工作雷达 · Job radar,
 盯一家公司 · Track one employer, 查这家公司靠不靠谱 · Check an employer, 投之前查一遍 · Check before
-you apply, 海投改精投 · Shortlist, don't mass-apply, 看看我的雷达 · What's new on my radar, and 本周新岗 · New this week. Each one renders in Chinese when you type Chinese into it.
+you apply, 海投改精投 · Shortlist, don't mass-apply, 评估这个岗位 · How a posting fits me, 按岗位改简历 · Tailor my CV,
+面试故事库 · Interview story bank, 打招呼草稿 · Outreach draft, 看看我的雷达 · What's new on my radar, and 本周新岗 · New this week. Each one renders in Chinese when you type Chinese into it.
 
 **New graduates (应届生) start here.** Say what year you graduate and which sector; the
 assistant passes `entry_level: true`, which keeps only postings that say campus hiring,

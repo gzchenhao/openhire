@@ -260,6 +260,96 @@ def shortlist(
     ])
 
 
+LOCAL_CV_ZH = ("简历在我本机的 cv.md（没有就先问我要），你在本机读；简历内容、我的名字、电话、邮箱一律不进任何工具参数，"
+               "工具只传 job_id 或公司名。写出的文件存在我本机的 openhire/ 目录。")
+LOCAL_CV_EN = ("My CV is in cv.md on this machine (ask me for it if it is missing); read it here. Its text, my name, phone and "
+               "email never go into any tool argument: tools get only a job_id or a company name. Write files to openhire/ on this machine.")
+NO_VERDICT_ZH = "不要给「别投」的结论或总分，不要把岗位叫假岗或僵尸岗；只给事实和匹配情况，我自己决定。"
+NO_VERDICT_EN = "No 'do not apply' verdict or single score, and never call a posting fake or a ghost; give facts and fit, I decide."
+
+
+def evaluate_fit(
+    job: Annotated[str, Field(description="An OpenHire job id, or the employer and title, e.g. unitree:123 or Waymo perception engineer")],
+) -> str:
+    """How a posting fits you: facts from the employer's system against your CV, read on your machine."""
+    if _zh(job):
+        return "\n".join([
+            f"帮我评估这个岗位：{job}",
+            "1. 用 search_jobs 找到这条，抄下 dates_in_words、check_before_apply、requirements；用 get_company_info 看 hiring_trend。",
+            "2. 在本机对照我的简历：启事要求里哪些我的简历有证据、哪些没有、哪些只是「优先」。",
+            "3. 写进 openhire/evaluations.md，三段：雇主系统里的事实（原句）、和我简历的匹配、投之前要问清的问题。",
+            NO_VERDICT_ZH, LOCAL_CV_ZH, PRIVACY_ZH,
+        ])
+    return "\n".join([
+        f"Evaluate this posting for me: {job}",
+        "1. Find it with search_jobs and quote dates_in_words, check_before_apply and requirements; get_company_info for hiring_trend.",
+        "2. On this machine, compare with my CV: which stated requirements it shows evidence for, which it does not, which are only preferred.",
+        "3. Write openhire/evaluations.md with three parts: facts from the employer's system (quoted), fit against my CV, questions to ask before applying.",
+        NO_VERDICT_EN, LOCAL_CV_EN, PRIVACY_EN,
+    ])
+
+
+def tailor_cv(
+    job: Annotated[str, Field(description="An OpenHire job id, or the employer and title")],
+) -> str:
+    """Reword your CV for one posting on your machine: reorder and rephrase, never invent."""
+    if _zh(job):
+        return "\n".join([
+            f"按这个岗位改我的简历：{job}",
+            "1. 用 search_jobs 找到它看 requirements；能读的板用 read_board 的 ats_job_id 取全文职位描述。",
+            "2. 只用我本机 cv.md 里的真实内容，调整顺序和措辞，让岗位要的证据排在前面；只改写不编造：不加公司、头衔、日期、数字和技能。",
+            "3. 岗位要求而我简历里没有的，不要硬加，单独告诉我。",
+            "4. 写成 openhire/cv-<job_id>.md，并列出改了哪些地方。",
+            LOCAL_CV_ZH, PRIVACY_ZH,
+        ])
+    return "\n".join([
+        f"Tailor my CV to this posting: {job}",
+        "1. Find it with search_jobs for requirements; for boards read_board reads, use ats_job_id for the full description.",
+        "2. Using only what is true in cv.md on this machine, reorder and reword so the evidence it asks for comes first; reformulate, never fabricate: no new employers, titles, dates, numbers or skills.",
+        "3. If it asks for something my CV does not show, leave it out and tell me.",
+        "4. Write openhire/cv-<job_id>.md and list what changed.",
+        LOCAL_CV_EN, PRIVACY_EN,
+    ])
+
+
+def story_bank(
+    focus: Annotated[str, Field(description="Optional: a role or a posting to prepare for, e.g. 感知算法 or unitree:123")] = "",
+) -> str:
+    """Build STAR + reflection interview stories from your real experience, kept on your machine."""
+    if _zh(focus) or not focus:
+        return "\n".join([
+            f"帮我准备面试故事{('，针对：' + focus) if focus else ''}。",
+            "从我本机 cv.md 和我告诉你的经历里，整理成 STAR 加反思（情境、任务、行动、结果、下次会怎么做），每条标上它回答哪类岗位要求，写进 openhire/stories.md。",
+            "只用真实发生的事；缺数字或细节就问我，不要猜。" + (" 有岗位的话先用 search_jobs 看它的 requirements，再挑故事。" if focus else ""),
+            LOCAL_CV_ZH, PRIVACY_ZH,
+        ])
+    return "\n".join([
+        f"Help me prepare interview stories for: {focus}.",
+        "From cv.md on this machine and what I tell you, write STAR + reflection stories (situation, task, action, result, what I would do differently), each tagged with the requirement it answers, into openhire/stories.md.",
+        "Only real events; ask me for missing numbers or details instead of guessing. If a posting is named, check its requirements with search_jobs first.",
+        LOCAL_CV_EN, PRIVACY_EN,
+    ])
+
+
+def outreach_draft(
+    job: Annotated[str, Field(description="An OpenHire job id, or the employer and title")],
+) -> str:
+    """Draft a short note to a recruiter or hiring manager for one posting; you send it yourself."""
+    if _zh(job):
+        return "\n".join([
+            f"帮我给这个岗位写一段打招呼：{job}",
+            "用 search_jobs 找到岗位；从我本机 cv.md 里挑一个和岗位要求最对得上的具体经历，写一段 300 字以内的打招呼，语气平实，不夸大。",
+            "写进 openhire/outreach.md。你只起草，不替我发，不打开任何招聘平台，不登录任何账号。",
+            LOCAL_CV_ZH, PRIVACY_ZH,
+        ])
+    return "\n".join([
+        f"Draft a short outreach note for this posting: {job}",
+        "Find it with search_jobs; pick one concrete experience from cv.md on this machine that matches a stated requirement, and write a plain note under 300 characters.",
+        "Write it to openhire/outreach.md. Draft only: never send it, never open a job platform, never log in anywhere.",
+        LOCAL_CV_EN, PRIVACY_EN,
+    ])
+
+
 CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
 CHECKLIST_URL_CN = "https://openhire-vlny.onrender.com/checklist"
 
@@ -308,6 +398,10 @@ PROMPTS = (
     ("vet_employer", "查这家公司靠不靠谱 · Check an employer", vet_employer),
     ("before_apply", "投之前查一遍 · Check before you apply", before_apply),
     ("shortlist", "海投改精投 · Shortlist, don't mass-apply", shortlist),
+    ("evaluate_fit", "评估这个岗位 · How a posting fits me", evaluate_fit),
+    ("tailor_cv", "按岗位改简历 · Tailor my CV", tailor_cv),
+    ("story_bank", "面试故事库 · Interview story bank", story_bank),
+    ("outreach_draft", "打招呼草稿 · Outreach draft", outreach_draft),
     ("radar_check", "看看我的雷达 · What's new on my radar", radar_check),
     ("new_this_week", "本周新岗 · New this week", new_this_week),
 )

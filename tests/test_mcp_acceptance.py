@@ -92,7 +92,7 @@ async def test_all_five_acceptance_scripts(seeded):
         assert "does not read, store, date or watch" in portals["note"]
         # 0.8.14: one-click templates for clients that show MCP prompts.
         prompts = {p.name for p in (await client.list_prompts()).prompts}
-        assert prompts == {"job_checklist", "job_radar", "track_employer", "vet_employer", "before_apply", "shortlist", "radar_check", "new_this_week"}
+        assert prompts == {"job_checklist", "job_radar", "track_employer", "vet_employer", "before_apply", "shortlist", "evaluate_fit", "tailor_cv", "story_bank", "outreach_draft", "radar_check", "new_this_week"}
 
         # --- Script 1: search remote Rust/K8s infra jobs ----------------------
         r = _payload(await client.call_tool(

@@ -16,7 +16,7 @@ import pytest
 from openhire import prompts
 from openhire.mcp_server import mcp
 
-NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "before_apply", "shortlist", "radar_check", "new_this_week"]
+NAMES = ["job_checklist", "job_radar", "track_employer", "vet_employer", "before_apply", "shortlist", "evaluate_fit", "tailor_cv", "story_bank", "outreach_draft", "radar_check", "new_this_week"]
 
 # Identifiers a template may mention that are argument names or field values, not tools.
 NOT_TOOLS = {
@@ -28,6 +28,8 @@ NOT_TOOLS = {
     "ghost_reason", "message_text", "outsourcing_words", "apply_channel", "apply_channel_blocked",
     # 0.8.37 (reports/112): shortlist quotes these.
     "min_years", "min_degree", "entry_level", "add_job_ids",
+    # 0.8.39: the local workflow quotes these, and names files and fields on the user's machine.
+    "hiring_trend", "ats_job_id", "job_id",
 }
 
 ZH_ARGS = {
@@ -39,6 +41,10 @@ ZH_ARGS = {
     "job_checklist": {"stage": "刚开始"},
     "before_apply": {"job": "宇树 运动控制工程师", "message": "加我微信，先交 500 元培训费"},
     "shortlist": {"role": "机器人算法", "years": "应届", "location": "上海"},
+    "evaluate_fit": {"job": "宇树 运动控制工程师"},
+    "tailor_cv": {"job": "宇树 运动控制工程师"},
+    "story_bank": {"focus": "感知算法"},
+    "outreach_draft": {"job": "宇树 运动控制工程师"},
 }
 EN_ARGS = {
     "job_radar": {"role": "robotics software engineer", "location": "remote"},
@@ -49,6 +55,10 @@ EN_ARGS = {
     "job_checklist": {"stage": "starting"},
     "before_apply": {"job": "unitree:123"},
     "shortlist": {"role": "robotics software engineer"},
+    "evaluate_fit": {"job": "unitree:123"},
+    "tailor_cv": {"job": "unitree:123"},
+    "story_bank": {"focus": "robotics software engineer"},
+    "outreach_draft": {"job": "unitree:123"},
 }
 
 
@@ -61,7 +71,7 @@ def _tools() -> set[str]:
     return {t.name for t in asyncio.run(mcp.list_tools())}
 
 
-def test_the_eight_templates_are_listed_with_titles_and_argument_help():
+def test_the_twelve_templates_are_listed_with_titles_and_argument_help():
     listed = {p.name: p for p in asyncio.run(mcp.list_prompts())}
     assert list(listed) == NAMES
     for p in listed.values():
@@ -156,3 +166,30 @@ def test_shortlist_drops_with_reasons_and_follows_what_was_sent():
     zh = _render("shortlist", {"role": "机器人算法", "years": "应届"})
     for word in ("entry_level", "min_years", "min_degree", "check_applications", "剔掉"):
         assert word in zh
+
+
+LOCAL = ["evaluate_fit", "tailor_cv", "story_bank", "outreach_draft"]
+
+
+@pytest.mark.parametrize("name", LOCAL)
+@pytest.mark.parametrize("lang", ["zh", "en"])
+def test_local_workflow_keeps_the_cv_on_the_machine_and_gives_no_verdict(name, lang):
+    """0.8.39 (reports/117): the career-ops style workflow, done the OpenHire way. The CV is
+    read on the user's machine and never becomes a tool argument; no template takes it as an
+    argument either (prompt arguments reach the server)."""
+    text = _render(name, (ZH_ARGS if lang == "zh" else EN_ARGS)[name])
+    assert (prompts.LOCAL_CV_ZH in text) or (prompts.LOCAL_CV_EN in text)
+    for banned in ("僵尸岗别投", "假岗位", "ghost job"):
+        assert banned not in text
+    listed = {p.name: p for p in asyncio.run(mcp.list_prompts())}
+    for a in listed[name].arguments or []:
+        assert a.name in ("job", "focus"), f"{name} takes {a.name}: a template must never take CV text"
+
+
+def test_the_plugin_skill_carries_the_same_rule():
+    from pathlib import Path
+    skill = (Path(__file__).resolve().parents[1] / "skills" / "openhire-job-search" / "SKILL.md").read_text(encoding="utf-8")
+    assert skill.startswith("---\nname: openhire-job-search\n")
+    assert "Never pass the CV" in skill and "never fabricate" in skill.lower()
+    assert "never send" in skill.lower() or "never you" in skill.lower()
+    assert "—" not in skill
