@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.43 · 2026-10-31；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.44 · 2026-10-31；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.44（2026-10-31，云端会话，`reports/124`）：** **签证一项**（领导「直接做」，起因赵杭铨的 ChatGPT 截图）：`extract.visa_sponsorship_from_text` 只读启事原文，offered / not_offered（含要求美国公民、U.S. person、安全许可）/ null，带原话 `visa_quote`（后接 However/But 的转折一起带）；`requirements` 多两项，`check_before_apply` 多一项（英文启事没写才提示 not_stated，中文启事不提示）；服务器指令禁止替雇主猜签证。10-26 快照：能办 939、不办 363、英文没写 14,531。**红线测试禁止源码出现 sponsored 一词，不放宽，写法绕开。** 1102 tests。
 - **v0.8.43（2026-10-31，云端会话，`reports/123`）：** 模拟求职者 10-30 夜（US$6.25，累计 17.85，62 条发现）修 7 条：管理年限不算岗位年限（high）；「校招运营专家」不是校招轨；junior 标题 entry_level 写 true；**光写 Remote 改报 unknown 不报 worldwide**；中文名比 OFAC 没命中改 not_applicable；域名说明中性化；隐私说明按实际发送。ghost 字段名属协议不改。1087 tests。
 - **v0.8.42（2026-10-31，云端会话，`reports/122`）：** **Comeet 读取器**（career-ops 移植，MIT）：键 `<slug>/<uid>/<token>`，uid 与 token 取自雇主招聘页明文；`time_updated` 存为更新时间、不当发布日；Imagry 进种子表（7 条），候选 214 家。**Dover 不读**（robots.txt 禁 `/api/`），Weave、Scythe 进门户目录；Innoviz 全站人机验证，停下进门户目录；Mentee 的 Comeet 页 404。1081 tests。
 - **v0.8.41（2026-10-30，云端会话，`reports/121`）：** **Rippling 与 Personio 读取器**（从 career-ops 移植，MIT）：Rippling 列表不给发布日（`not_reported_by_ats`），Personio XML 带 `createdAt`；6 家进种子表（Forterra 自动驾驶；Foundation Robotics、Mytra、Bonsai Robotics、Wandelbots、Franka Robotics 具身），Default 环境现读 146 条全通。候选 213 家。下一步 Comeet、Dover。1079 tests。

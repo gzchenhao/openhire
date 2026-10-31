@@ -576,8 +576,34 @@ def dates_in_words(posted_day: dt.date | None, days_open: int | None, source: st
     return {"zh": zh, "en": en}
 
 
+_CJK = re.compile(r"[\u4e00-\u9fff]")
+
+
+def _visa_item(requirements: dict | None, description: str | None) -> dict | None:
+    """Visa sponsorship as the posting states it (reports/124). Not stated is only said for
+    a posting written in English: a Chinese posting for a role in China does not discuss
+    visas, and flagging every one of them would be noise."""
+    req = requirements or {}
+    visa, quote = req.get("visa_sponsorship"), req.get("visa_quote")
+    if visa == "not_offered":
+        return {"code": "visa_sponsorship_not_offered",
+                "zh": f"启事写明不办工作签证或要求本国身份（原话：{quote}）。需要签证的话，这个岗位大概率走不通。",
+                "en": f"The posting says it does not sponsor a work visa or requires citizenship (its words: \"{quote}\")."}
+    if visa == "offered":
+        return {"code": "visa_sponsorship_offered",
+                "zh": f"启事写明可以办签证（原话：{quote}）。具体能不能转 H-1B、能不能用你现在的身份，仍要问招聘方。",
+                "en": f"The posting says it sponsors visas (its words: \"{quote}\"). Whether that covers an H-1B transfer or your current status is still a question for the recruiter."}
+    desc = description or ""
+    if len(desc) >= 300 and len(_CJK.findall(desc)) < len(desc) * 0.05:
+        return {"code": "visa_sponsorship_not_stated",
+                "zh": "启事没写是否办工作签证。需要签证的话，投递前先问招聘方。",
+                "en": "The posting does not say whether it sponsors a work visa; ask the recruiter before applying if you need one."}
+    return None
+
+
 def check_before_apply(*, date_source: str, days_open: int | None, salary_stated: bool,
-                       remote_scope: str | None, apply_ok: bool, correction: dict | None) -> list[dict]:
+                       remote_scope: str | None, apply_ok: bool, correction: dict | None,
+                       visa: dict | None = None) -> list[dict]:
     """What a reader should confirm before applying, each item from a measured fact.
     An empty list means nothing on this row stood out, not that the posting is vetted."""
     out: list[dict] = []
@@ -613,6 +639,8 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
         out.append({"code": "date_is_requisition_created",
                     "zh": "雇主说明日期是内部立项日，不是上线日。",
                     "en": "The employer says the date is the internal requisition date, not the go-live date."})
+    if visa:
+        out.append(visa)
     return out
 
 
@@ -764,6 +792,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             date_source=_date_source(job, company), days_open=age_days,
             salary_stated=bool(_sal_lo or _sal_hi), remote_scope=_rs, apply_ok=_apply_ok,
             correction=_corr,
+            visa=_visa_item(requirements_from_text(job.title, job.description_raw), job.description_raw),
         ),
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
         # WHICH requested skills this row actually carries. A reviewer searched `rust`,

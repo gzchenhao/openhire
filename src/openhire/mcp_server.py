@@ -75,6 +75,9 @@ mcp = FastMCP(
         "is still downloading: say so and try again in a minute, never \"no jobs\". "
         "For a new graduate (应届生, new grad, 校招) pass search_jobs' entry_level and quote each row's "
         "requirements (lowest required degree, fewest years; null means the posting does not say). "
+        "For a seeker who needs a work visa, quote requirements.visa_sponsorship with its visa_quote: "
+        "offered or not_offered is the posting's own sentence, null means it does not say, so they ask "
+        "the recruiter; never guess an employer's visa policy. "
         "When the user is about to apply, check both questions before they click: is the posting "
         "still open (dates_in_words, check_before_apply) and is the company real (check_employer "
         "with the job_id); the before_apply prompt walks it. When the user says they applied and "
@@ -292,7 +295,9 @@ def search_jobs(
             the text says campus hiring, internship or no experience required, or the title
             names an intern or junior level. Postings that say nothing either way are left
             out. Every row carries `requirements` {min_degree, min_years, hire_track,
-            entry_level}, read from the posting's own words with free rules: min_degree is
+            entry_level, visa_sponsorship, visa_quote}, read from the posting's own words with
+            free rules (visa_sponsorship is offered / not_offered / null and visa_quote is the
+            posting's own sentence; check_before_apply repeats it): min_degree is
             the lowest degree it REQUIRES (a degree it only prefers does not count), and null
             means the posting did not say, never "not required". Quote it as what the posting
             says, not as a rule the employer will enforce.

@@ -103,3 +103,59 @@ def test_sector_thermometer_counts_two_windows_by_posting_date(session):
     assert t["window_end"] == "2026-10-30"
     assert t["by_sector"]["autonomous_driving"] == {"last_30d": 3, "prior_30d": 1, "change_pct": 200}
     assert t["by_sector"]["embodied_ai"]["change_pct"] is None
+
+
+# --- visa sponsorship as the posting states it (reports/124) ------------------------------
+from openhire.pipeline.extract import visa_sponsorship_from_text as visa
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("You must be independently authorized to work in the U.S. We are unable to sponsor or take over "
+     "sponsorship of an employment visa for this role, at this time.", "not_offered"),
+    ("Please note that visa sponsorship is not available for this position.", "not_offered"),
+    ("Must be eligible to work in the United States; no H1-B visa sponsorship available.", "not_offered"),
+    ("Applicants must have work authorization that does not require sponsorship from the company now or in the future.", "not_offered"),
+    ("Due to federal contract requirements, U.S. citizenship is required.", "not_offered"),
+    ("We do sponsor and take over sponsorship of employment visas for this role.", "offered"),
+    ("If applicable, Kodiak may provide visa sponsorship for eligible candidates.", "offered"),
+    ("Relocation support with visa sponsorship", "offered"),
+    ("本岗位可办理工作签证。", "offered"),
+    ("本岗位不提供工作签证。", "not_offered"),
+    ("Partner with executive sponsors to scope projects. Company-paid 401(k).", None),
+    ("Comply with export laws without sponsorship for an export license.", None),
+    ("Build perception models in C++.", None),
+])
+def test_visa_sponsorship_reads_only_the_postings_own_sentence(text, expected):
+    found, quote = visa(text)
+    assert found == expected
+    assert (quote is None) == (expected is None)
+
+
+def test_a_caveat_in_the_next_sentence_stays_with_the_quote():
+    found, quote = visa("Visa sponsorship: We do sponsor visas! However, we aren't able to successfully "
+                        "sponsor visas for every role and every candidate. Apply anyway.")
+    assert found == "offered" and "for every role" in quote and "Apply anyway" not in quote
+
+
+def test_check_before_apply_carries_the_visa_line(session):
+    now = dt.datetime(2026, 10, 31, tzinfo=dt.timezone.utc)
+    session.add(Company(id="aeva", name="Aeva", ats_vendor="greenhouse", ats_tenant="aeva"))
+    filler = " Build lidar perception pipelines for autonomous vehicles in Python and C++." * 8
+    for i, jd in enumerate([
+        "Visa sponsorship is not available for this role." + filler,
+        "We do sponsor visas for this role." + filler,
+        filler,
+        "负责点云感知算法研发，本科及以上学历，3年以上经验，熟悉C++与ROS。" * 6,
+    ]):
+        session.add(Job(id=f"aeva:{i}", company_id="aeva", title="Perception Engineer", description_raw=jd,
+                        source="ats_public_api", first_seen_at=now, verified_at=now, posted_at=now,
+                        skills=[], location="Mountain View, CA", content_hash=f"v{i}", ghost_score=0.0,
+                        remote_policy="onsite", apply_channel=f"https://boards.greenhouse.io/aeva/jobs/{i}"))
+    session.flush()
+    rows = {r["job_id"]: r for r in service.search_jobs(session, now=now)}
+    codes = {jid: {c["code"] for c in r["check_before_apply"]} for jid, r in rows.items()}
+    assert "visa_sponsorship_not_offered" in codes["aeva:0"]
+    assert "visa_sponsorship_offered" in codes["aeva:1"]
+    assert "visa_sponsorship_not_stated" in codes["aeva:2"]
+    assert not any(c.startswith("visa_") for c in codes["aeva:3"]), "a Chinese posting is not flagged"
+    assert rows["aeva:0"]["requirements"]["visa_quote"].startswith("Visa sponsorship is not available")

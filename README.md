@@ -201,7 +201,9 @@ assistant passes `entry_level: true`, which keeps only postings that say campus 
 internship or no experience required, or whose title says intern or junior. Every result
 carries `requirements`: the lowest degree the posting requires (a degree it only prefers does
 not count), the fewest years it asks for, and whether it is a campus or intern track, read from
-the posting's own words. On the 2026-10-26 index that is 671 live postings
+the posting's own words. It also carries `visa_sponsorship` (offered / not_offered / null) with
+the posting's own sentence, so a seeker who needs a work visa sees what the posting says and
+asks the recruiter when it says nothing. On the 2026-10-26 index that is 671 live postings
 ([numbers.json](https://gzchenhao.github.io/openhire/numbers.json), `live_postings_open_to_new_grads`).
 应届生直接说「我是 2027 届，找收应届的具身岗位」：助手会只留写明校招、实习、经验不限，或岗位名带实习 / 初级的岗位，
 每条都写出启事里要求的最低学历（只写「优先」的不算要求）和最少年限，不用一条条点开 JD 找「3 年以上」。
@@ -231,7 +233,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.43.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.44.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -267,7 +269,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.43.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.44.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — paste the one-block prompt from the Quickstart
@@ -320,7 +322,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.43", "serve"]`.
+matters: `"args": ["openhire==0.8.44", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.

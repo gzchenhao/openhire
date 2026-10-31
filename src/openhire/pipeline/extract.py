@@ -1056,6 +1056,75 @@ def _is_preference(text: str, start: int, end: int) -> bool:
     return bool(_PREFERENCE_AFTER.match(text[end:end + 60]) or _PREFERENCE_BEFORE.search(text[max(0, start - 40):start]))
 
 
+# --- visa sponsorship as the posting states it (reports/124) ------------------------------
+# An overseas seeker's first question is whether the employer will sponsor a work visa. Only
+# the posting's own sentence counts: offered, not_offered, or None when it says nothing. The
+# sentence is returned with the label so a reader sees the wording ("we do sponsor visas,
+# but not for every role") instead of trusting a label. "Executive sponsor", a company-paid
+# 401(k) and "export licence sponsorship" are not about visas and are skipped.
+_VISA_HIT = re.compile(r"sponsor\w*|签证|工作许可|\bh-?1-?b\b|\bu\.?s\.? citizen|\bu\.?s\.? person|security clearance|secret clearance", re.I)
+_VISA_CONTEXT = re.compile(r"visa|\bh-?1-?b\b|work (authori[sz]ation|permit|rights)|immigration|employment (visa|authori)|"
+                           r"authori[sz]ed to work|right to work|citizen|u\.?s\.? person|clearance|签证|工作许可", re.I)
+_NOT_VISA = re.compile(r"export licen|executive (technical )?sponsor|sponsorship program|(company|employer|state|nation-state|ceo)[- ]sponsor(?:e)d|"
+                       r"sponsor(?:e)d (by|from|event|health|401|benefit|group|retirement)|c-suite|exec sponsor|customer executive", re.I)
+_VISA_NO = re.compile(
+    r"\b(not|unable|cannot|can't|can not|won't|will not|don't|do not|does not|doesn't|aren't|isn't|no longer|never)\b[^.;\n]{0,50}"
+    r"(sponsor|support visa|offer visa|provide visa|visa transfer)|sponsorship (is |are )?(currently )?not (available|offered|provided|possible)|"
+    r"\bno (h-?1-?b |visa |employment |work )*sponsorship|not eligible for (visa |employment )?sponsorship|"
+    r"(without|not requir\w*|doesn't require|does not require|no need for)[^.;\n]{0,40}sponsorship|"
+    r"must be (a )?(u\.?s\.?|us) (citizen|person)|(u\.?s\.?|us) citizenship (is )?required|requires? (an )?(active )?(security|secret|ts/sci) clearance|"
+    r"不提供(工作)?签证|不办理(工作)?签证|不支持(工作)?签证|无法办理(工作)?签证", re.I)
+# "we aren't able to successfully sponsor visas for every role": a caveat, not a refusal.
+_VISA_NO_CAVEAT = re.compile(r"^[^.;\n]{0,30}(for every|for all|in every|in all cases|for each)", re.I)
+_VISA_YES = re.compile(
+    r"\b(we|will|can|able to|do|does|may|happy to|glad to)\b[^.;\n]{0,25}(sponsor|provide visa|offer visa|support visa)|"
+    r"(visa|employment|work) sponsorship (is |may be )?(available|offered|provided|support)|sponsorship (is )?available|"
+    r"(relocation|immigration)[^.;\n]{0,25}(visa|permit) sponsorship|with visa sponsorship|sponsorship support|"
+    r"提供(工作)?签证|办理(工作)?签证|协助办理签证|可办理签证", re.I)
+
+
+# A sentence ends at . ! ? ; or a line break, but not inside "U.S." / "U.K.".
+_SENTENCE_END = re.compile(r"(?<!\bU\.S)(?<!\bU\.K)(?<!\bU)(?<!\be\.g)(?<!\bi\.e)[.!?;。；！？](?=\s|$)|\n")
+
+
+def _visa_window(text: str, start: int, end: int) -> str:
+    """The sentence holding the hit: the posting's own words, whole."""
+    lo = 0
+    for m in _SENTENCE_END.finditer(text, 0, start):
+        lo = m.end()
+    m = _SENTENCE_END.search(text, end)
+    hi = m.end() if m else len(text)
+    # Keep a caveat that follows in the next sentence: "We do sponsor visas! However, we
+    # aren't able to ... for every role" must not read as an unconditional yes.
+    nxt = re.match(r"\s*(however|but|that said|please note|note:|不过|但)", text[hi:hi + 20], re.I)
+    if nxt:
+        m2 = _SENTENCE_END.search(text, hi + nxt.end())
+        hi = m2.end() if m2 else len(text)
+    return text[lo:hi]
+
+
+def visa_sponsorship_from_text(text: str | None) -> tuple[str | None, str | None]:
+    """("offered" | "not_offered" | None, the posting's own sentence or None)."""
+    if not text:
+        return None, None
+    yes = no = None
+    for m in _VISA_HIT.finditer(text):
+        win = _visa_window(text, m.start(), m.end())
+        if not _VISA_CONTEXT.search(win) or _NOT_VISA.search(win):
+            continue
+        for n in _VISA_NO.finditer(win):
+            if not _VISA_NO_CAVEAT.match(win[n.end():]):
+                no = no or win
+                break
+        if _VISA_YES.search(win):
+            yes = yes or win
+    found, sentence = ("not_offered", no) if no else (("offered", yes) if yes else (None, None))
+    if sentence is None:
+        return None, None
+    quote = re.sub(r"\s+", " ", sentence).strip(" •-*·")
+    return found, (quote[:300] + "…") if len(quote) > 300 else quote
+
+
 def requirements_from_text(title: str | None, description: str | None) -> dict:
     """{min_degree, min_years, hire_track, entry_level} as the posting itself states them.
 
@@ -1107,4 +1176,6 @@ def requirements_from_text(title: str | None, description: str | None) -> dict:
         entry = True
     else:
         entry = None
-    return {"min_degree": min_degree, "min_years": min_years, "hire_track": track, "entry_level": entry}
+    visa, visa_quote = visa_sponsorship_from_text(description)
+    return {"min_degree": min_degree, "min_years": min_years, "hire_track": track, "entry_level": entry,
+            "visa_sponsorship": visa, "visa_quote": visa_quote}
