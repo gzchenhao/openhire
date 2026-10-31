@@ -231,7 +231,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.41.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.42.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -267,7 +267,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.41.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.42.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — paste the one-block prompt from the Quickstart
@@ -320,7 +320,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.41", "serve"]`.
+matters: `"args": ["openhire==0.8.42", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -710,7 +710,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## FAQ
 
 **Where does the job data come from?**
-Directly from 172 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, Workable, SmartRecruiters, Workday, Rippling, Personio, plus
+Directly from 172 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, Workable, SmartRecruiters, Workday, Rippling, Personio, Comeet, plus
 first-party employer career sites such as Li Auto's), the same endpoints that power their careers
 pages. No third-party job boards. `source` is
 always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.

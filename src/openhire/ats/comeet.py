@@ -26,6 +26,10 @@ API_HOST = "www.comeet.co"
 BOARD_HOST = "www.comeet.com"
 
 
+# Comeet's own workplace_type, as its hosted page shows it (On-site / Hybrid / Remote).
+_WORKPLACE = {"on-site": "onsite", "onsite": "onsite", "hybrid": "hybrid", "remote": "remote"}
+
+
 def split_tenant(tenant: str) -> tuple[str, str, str]:
     """`imagry/B7.00F/<token>` -> ("imagry", "B7.00F", "<token>")."""
     slug, uid, token = tenant.split("/", 2)
@@ -63,7 +67,7 @@ class ComeetClient(ATSClient):
                 if not location or "remote" not in location.lower():
                     location = f"{location}, Remote" if location else "Remote"
             else:
-                remote = "unknown"
+                remote = _WORKPLACE.get(str(j.get("workplace_type") or "").lower().replace("_", "-").replace(" ", "-"), "unknown")
             parts = []
             for d in j.get("details") or []:
                 if isinstance(d, dict) and (d.get("value") or "").strip():

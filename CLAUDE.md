@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.41 · 2026-10-30；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.42 · 2026-10-31；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.42（2026-10-31，云端会话，`reports/122`）：** **Comeet 读取器**（career-ops 移植，MIT）：键 `<slug>/<uid>/<token>`，uid 与 token 取自雇主招聘页明文；`time_updated` 存为更新时间、不当发布日；Imagry 进种子表（7 条），候选 214 家。**Dover 不读**（robots.txt 禁 `/api/`），Weave、Scythe 进门户目录；Innoviz 全站人机验证，停下进门户目录；Mentee 的 Comeet 页 404。1081 tests。
 - **v0.8.41（2026-10-30，云端会话，`reports/121`）：** **Rippling 与 Personio 读取器**（从 career-ops 移植，MIT）：Rippling 列表不给发布日（`not_reported_by_ats`），Personio XML 带 `createdAt`；6 家进种子表（Forterra 自动驾驶；Foundation Robotics、Mytra、Bonsai Robotics、Wandelbots、Franka Robotics 具身），Default 环境现读 146 条全通。候选 213 家。下一步 Comeet、Dover。1079 tests。
 - **v0.8.40（2026-10-30，云端会话，`reports/120`）：** **第 13 个工具 `salary_benchmark`**：只用雇主自己公开标的薪资范围，币种必填不混算，下限与上限分开报 p25 / 中位 / p75，不足 20 条只报数，宽到 2 倍以上单独计，按标题级别 + 启事年限分档（不按公司职级），月薪 ×12 不加第 13、14 薪，说明禁止「低于市场别投」；`numbers.json` 加 `live_postings_with_employer_published_pay`（10-26 快照 10,568，人民币 676）。**服务器现在 13 个工具、12 个提示词。** 1076 tests。
 - **v0.8.39（2026-10-30，云端会话，`reports/116`–`119`）：** **飞书按规矩重新评估（Default 环境，智元 / 加速进化 / Momenta）：我们自己的 UA、无签名请求列表接口一律 405，career-ops 靠伪装苹果 Chrome 过 UA 规则，属特征探测，维持不读。** 大扫描 99 家：**31 家进种子表**（Anduril、Applied Intuition、Skydio、Boston Dynamics、追觅等，现读合计 6,023 条；种子表首次有 `_WORKDAY`：Boston Dynamics、AutoStore），候选 207 家；被拦 21 家**不交本机换 IP 复查**（红线），连不上 4 家交本机待办 35；还读不了的系统排名：自建 9、Rippling 4、Comeet 3、Personio 2、Dover 2。**本机求职工作流**：插件技能 `skills/openhire-job-search` + 四个提示词（evaluate_fit / tailor_cv / story_bank / outreach_draft，共 12 个），简历只在用户本机 `cv.md`、工具只收 job_id、提示词参数只许 job / focus。117 career-ops 能力吸纳、118 薪资模块（雇主自标范围为主，Levels.fyi / 对标网只放链接、不收 Offer）领导已批。1073 tests。

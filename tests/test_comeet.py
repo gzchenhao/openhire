@@ -11,7 +11,7 @@ TENANT = "imagry/B7.00F/7BF2E7A1EFC1EFCF7E7BF36393DF826BB2E7A"
 PAYLOAD = [
     {"name": "CO-143 Algo and Control Engineer", "uid": "DD.C68", "department": "R&D",
      "location": {"name": "San Jose, CA", "country": "US", "is_remote": False},
-     "time_updated": "2026-06-18T19:39:34Z",
+     "time_updated": "2026-06-18T19:39:34Z", "workplace_type": "On-site",
      "url_active_page": "https://imagry.co/jobs-at-imagry/co/san-jose-ca/DD.C68/co-143/all/",
      "url_comeet_hosted_page": "https://www.comeet.com/jobs/imagry/B7.00F/co-143-algo-and-control-engineer/DD.C68",
      "details": [{"name": "Description", "value": "<p>Plan and control for autonomous buses</p>"},
@@ -39,7 +39,7 @@ def test_parse_reads_details_and_stores_time_updated_as_an_update_not_a_posting_
     assert first.posted_at is None and first.updated_at.isoformat().startswith("2026-06-18")
     assert "autonomous buses" in first.description_raw and "5+ years" in first.description_raw
     assert first.apply_channel == PAYLOAD[0]["url_comeet_hosted_page"]
-    assert first.location == "San Jose, CA" and first.remote_hint == "unknown"
+    assert first.location == "San Jose, CA" and first.remote_hint == "onsite"
     second = rows[1]
     assert second.location == "Haifa, Israel, Remote" and second.remote_hint == "remote"
     # A link off Comeet's host is never stored; the fallback is the employer's board, not a guess.

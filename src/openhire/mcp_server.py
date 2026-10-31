@@ -27,7 +27,7 @@ mcp = FastMCP(
     "openhire",
     instructions=(
         "OpenHire searches job postings pulled straight from employers' own ATS APIs "
-        "(Greenhouse, Lever, Ashby, Beisen 北森, Moka, Workable, SmartRecruiters, Workday, Rippling, Personio, plus first-party employer career "
+        "(Greenhouse, Lever, Ashby, Beisen 北森, Moka, Workable, SmartRecruiters, Workday, Rippling, Personio, Comeet, plus first-party employer career "
         "sites): employers in AI infra, autonomous driving and embodied AI (the live count is "
         "in docs/numbers.json), every "
         "posting with the employer's own posting date where its ATS reports one, otherwise "
