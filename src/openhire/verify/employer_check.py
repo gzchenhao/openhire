@@ -12,6 +12,8 @@ sentence at the bottom says what this is and is not.
 
 from __future__ import annotations
 
+import re
+
 import datetime as dt
 from typing import Callable
 
@@ -35,6 +37,19 @@ HK_SCAMETER = "https://cyberdefender.hk/scameter/"
 OPENCORPORATES = "https://opencorporates.com/companies?q={name}"
 CHECKLIST_URL = "https://gzchenhao.github.io/openhire/checklist.html"
 CHECKLIST_URL_CN = "https://openhire-vlny.onrender.com/checklist"  # the same page, for mainland China
+
+
+def _privacy_note(items: list[dict]) -> str:
+    """Say only what this run sent: the domain checks run only when there was a domain."""
+    ids = {i["id"] for i in items}
+    sent = []
+    if "domain_age" in ids:
+        sent.append("the domain to RDAP, the Internet Archive and the company's own site")
+    if any(i["id"] == "registry_record" and i["status"] in ("verified", "not_verified") for i in items):
+        sent.append("the company's name to 天眼查 with your own key")
+    head = ("This check sent " + " and ".join(sent) + ". ") if sent else "This check sent the company's name and domain nowhere. "
+    return head + ("The OFAC lists and the EarlyTip events file were downloaded whole and matched on this machine, "
+                   "so neither learned the name. Nothing about you was sent anywhere.")
 
 
 def _now() -> str:
@@ -134,7 +149,7 @@ def build_checklist(
         items.append(_item("domain", "官网域名", "not_applicable", "公司已停止运营，域名检查无意义", source="OpenHire registry"))
     elif not domain:
         items.append(_item("domain", "官网域名", "not_applicable",
-                           "没有这家公司自己的域名可查：招聘页托管在招聘系统的域名上。把官网域名作为 domain 参数传进来可以补查",
+                           "没有这家公司的官网域名可查。把官网域名作为 domain 参数传进来可以补查",
                            source="n/a"))
     elif not run_network:
         items.append(_item("domain", "官网域名", "unavailable", "本次没有联网检查", source="n/a", domain=domain))
@@ -171,8 +186,14 @@ def build_checklist(
         items.append(_item("sanctions_screen", "制裁名单", "not_applicable", "没有公司名可比对", source="n/a"))
     else:
         s = sanctions_fn(name, aliases=(), allow_network=run_network)
+        status, note = s.get("status", "unavailable"), s.get("note", "")
+        if status == "verified" and not re.search(r"[A-Za-z]", name):
+            # The OFAC lists are written in Latin letters; a Chinese name finding nothing
+            # there is not evidence of anything, and must not count as verified
+            # (persona run 2026-10-30).
+            status, note = "not_applicable", "OFAC 名单按拉丁字母登记，中文名比对不出结果；用公司的英文名再查一次才有意义"
         items.append(_item("sanctions_screen", "制裁名单（OFAC SDN 与综合名单，下载到本机后本机比对）",
-                           s.get("status", "unavailable"), s.get("note", ""),
+                           status, note,
                            source=s.get("source", sanctions.SOURCE), matches=s.get("matches", []),
                            reason=s.get("reason"), lists_downloaded=s.get("downloaded")))
 
@@ -238,8 +259,6 @@ def build_checklist(
         "checklist_url_cn": CHECKLIST_URL_CN,
         "checklist_note": "求职清单（找工作每一步该做什么、OpenHire 替你做哪些、其余去哪里做，含反诈骗步骤）："
                           "找工作的人第一次用，先把这页给他。The job-search checklist, with the anti-scam steps.",
-        "privacy": "This check sent the company's name or domain to RDAP, the Internet Archive and the company's own site, "
-                   "and to 天眼查 only if you set your own key. The OFAC lists and the EarlyTip events file were downloaded "
-                   "whole and matched on this machine, so neither learned the name. Nothing about you was sent anywhere.",
+        "privacy": _privacy_note(items),
         "checked_at": _now(),
     }

@@ -1,6 +1,6 @@
 [project]
 name = "openhire"
-version = "0.8.42"
+version = "0.8.43"
 description = "Companies screen you with AI; screen them back. Let your AI assistant find jobs straight from employers' own systems; is the job still open, is the company real, check both before you apply. MCP server + CLI: job postings with the employer's real posting date, pulled from Greenhouse, Lever, Ashby, Beisen, Moka and other ATS APIs. AI infra, autonomous driving and embodied AI employers; HR roles have their own family. Works from mainland China (CNB mirror). Résumés never leave your device."
 readme = "README.md"
 requires-python = ">=3.11"

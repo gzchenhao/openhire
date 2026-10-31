@@ -143,7 +143,8 @@ def test_half_matched_search_reports_the_dropped_word(session):
     ("Remote, U.S", ("country_locked", ["US"])),
     ("Remote - US, Ann Arbor, MI", ("country_locked", ["US"])),
     ("Remote, United States", ("country_locked", ["US"])),
-    ("Remote", ("worldwide", [])),
+    ("Remote", ("unknown", [])),          # a bare "Remote" says nothing about who may apply (2026-10-31)
+    ("Remote - Worldwide", ("worldwide", [])),
     ("Remote - Ann Arbor, MI", ("unknown", [])),
 ])
 def test_remote_scope_reads_us_spellings_and_admits_ignorance(location, expected):
@@ -395,3 +396,48 @@ def test_a_short_fingerprint_is_flagged_before_it_collides_not_refused(session):
     fine = service.watch_intent(session, "#a3f9-k2p7-x8q1", {"skills": ["bev"]}, now=NOW)
     assert "short_fingerprint" not in fine
     assert "12 or more" not in fine["fingerprint_notice"]
+
+
+# --- persona run 2026-10-30 (reports/123) -------------------------------------------------
+def test_management_years_are_not_the_years_asked_for():
+    from openhire.pipeline.extract import requirements_from_text as req
+    r = req("自动驾驶测试经理", "2年以上智驾行业相关工作经验，1年以上团队管理经验")
+    assert r["min_years"] == 2 and r["entry_level"] is False
+    assert req("Engineering Manager", "8+ years of experience, 3+ years of people management experience")["min_years"] == 8
+
+
+def test_a_campus_hiring_role_is_not_a_campus_track():
+    from openhire.pipeline.extract import requirements_from_text as req
+    r = req("校招运营专家", "5年以上招聘经验")
+    assert r["hire_track"] == "experienced" and r["entry_level"] is False
+    assert req("2027届校招-运动控制算法工程师", "本科及以上学历")["hire_track"] == "campus"
+
+
+def test_a_junior_title_reads_entry_level_true_like_the_filter():
+    from openhire.pipeline.extract import requirements_from_text as req
+    assert req("Junior Backend Engineer", "")["entry_level"] is True
+    assert service.is_entry_level("Junior Backend Engineer", "")
+
+
+def _checklist(company, domain=None):
+    from openhire.verify import employer_check
+    return employer_check.build_checklist(
+        query={"company": company}, index_facts=None, known_not_indexed=None, domain=domain,
+        sanctions_fn=lambda *a, **k: {"status": "verified", "note": "no match", "matches": []},
+        org_events_fn=lambda *a, **k: {"status": "unavailable", "note": "", "events": []},
+        register_fn=lambda *a, **k: {"status": "pending_user", "note": ""},
+        domain_age_fn=lambda d: {"status": "verified"}, wayback_fn=lambda d: {"status": "verified"},
+        homepage_fn=lambda *a, **k: {"status": "verified"})
+
+
+def test_a_chinese_name_finding_nothing_on_ofac_is_not_verified():
+    zh = {i["id"]: i for i in _checklist("星海科技")["checks"]}
+    assert zh["sanctions_screen"]["status"] == "not_applicable"
+    en = {i["id"]: i for i in _checklist("Galaxea AI")["checks"]}
+    assert en["sanctions_screen"]["status"] == "verified"
+
+
+def test_the_privacy_note_says_only_what_this_run_sent():
+    no_domain = _checklist("Galaxea AI")
+    assert "RDAP" not in no_domain["privacy"] and "nowhere" in no_domain["privacy"]
+    assert "RDAP" in _checklist("Galaxea AI", domain="galaxea.ai")["privacy"]

@@ -1033,6 +1033,12 @@ _YEARS_EN = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d{1,2}\s*)?(?:years?|yrs?)\b[
 _NO_EXPERIENCE = re.compile(r"经验不限|不限经验|无需经验|应届|\bno (prior )?experience (required|needed)\b|\bnew grad", re.I)
 _CAMPUS = re.compile(r"校招|校园招聘|应届|\b20\d\d\s*届|届毕业生|\bnew grad(uate)?s?\b|\bgraduate (program|programme|scheme)\b|\bcampus\b|\buniversity grad", re.I)
 _INTERN = re.compile(r"实习|\binterns?(hip)?\b|\bco-?op\b", re.I)
+# Years of managing people are not the years of experience a posting asks for: "2年以上智驾行业
+# 相关工作经验，1年以上团队管理经验" asks for 2 (persona run 2026-10-30 read it as 1).
+_MANAGEMENT_YEARS = re.compile(r"管理|带团队|带人|团队管理|\bmanag|\bleadership\b|\bleading\b|\bpeople\b|\bsupervis", re.I)
+# "校招运营专家", "校园招聘专员": the campus word names the job's function (an HR role that runs
+# campus hiring), not a campus-hire track.
+_CAMPUS_AS_FUNCTION = re.compile(r"(校招|校园招聘|campus recruit\w*)\s*[-_/]?\s*(运营|专员|专家|经理|主管|负责人|招聘|hr|bp|项目|coordinator|lead|manager|specialist|partner)", re.I)
 
 
 # "from new graduates to domain experts" describes a team, not who may apply (Skild AI's
@@ -1074,15 +1080,18 @@ def requirements_from_text(title: str | None, description: str | None) -> dict:
         for m in pat.finditer(text):
             if _is_preference(text, m.start(), m.end()):
                 continue
+            if _MANAGEMENT_YEARS.search(m.group(0)):
+                continue
             n = int(m.group(1))
             if 0 <= n <= 20:
                 years.append(n)
     no_exp = _invites(_NO_EXPERIENCE, text)
     min_years = 0 if no_exp and not years else (min(years) if years else None)
 
+    campus_title = bool(_CAMPUS.search(title)) and not _CAMPUS_AS_FUNCTION.search(title)
     if _INTERN.search(title):
         track = "intern"
-    elif _CAMPUS.search(title) or (_invites(_CAMPUS, text) and not years):
+    elif campus_title or (_invites(_CAMPUS, text) and not years and not _CAMPUS_AS_FUNCTION.search(title)):
         track = "campus"
     elif min_years and min_years >= 1:
         track = "experienced"
@@ -1092,6 +1101,10 @@ def requirements_from_text(title: str | None, description: str | None) -> dict:
         entry = True
     elif track == "experienced":
         entry = False
+    elif seniority_from_title(title) in ("intern", "junior"):
+        # A junior / 初级 title with no years stated: the same rule the entry_level filter
+        # uses, so a row it returns never reads entry_level: null (persona run 2026-10-30).
+        entry = True
     else:
         entry = None
     return {"min_degree": min_degree, "min_years": min_years, "hire_track": track, "entry_level": entry}

@@ -49,7 +49,8 @@ MAX_PAGE_SIZE = 100
 # --- remote scope classification (protocol truthfulness) ----------------------
 # "remote" alone hides whether a role is open worldwide or geo-fenced. We classify the
 # ATS location text into a coarse, honest bucket + surface the matched regions. Heuristic
-# and best-effort (v0.1): unqualified remote → worldwide; a named macro-region →
+# and best-effort: only an explicit worldwide / global / anywhere → worldwide (a bare
+# "Remote" → unknown, 2026-10-31); a named macro-region →
 # region_locked; a named single country → country_locked.
 _REGION_TOKENS = {
     "emea": "EMEA", "apac": "APAC", "americas": "Americas", "latam": "LATAM",
@@ -78,8 +79,13 @@ def classify_remote(remote_policy: str | None, location: str | None) -> tuple[st
     if remote_policy != "remote":
         return None, []
     loc = (location or "").lower()
-    if not loc or any(t in loc for t in _WORLDWIDE_TOKENS) or loc.strip() in ("remote", "fully remote"):
+    if any(t in loc for t in _WORLDWIDE_TOKENS):
         return "worldwide", []
+    # A bare "Remote" (or no location at all) does not say who may apply: most US employers
+    # mean remote within the US. A reader in Hong Kong took it as open to them (persona run
+    # 2026-10-30, Agility and Path Robotics), so only a posting that says worldwide is.
+    if not loc.strip() or loc.strip() in ("remote", "fully remote"):
+        return "unknown", []
     regions = sorted({label for tok, label in _REGION_TOKENS.items() if tok in loc})
     if regions:
         return "region_locked", regions
