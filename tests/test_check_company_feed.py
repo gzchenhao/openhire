@@ -69,7 +69,7 @@ def test_sanitizer_drops_everything_outside_the_whitelist(hostile):
 def test_sha256_moves_when_the_content_moves():
     page = PAGE.read_text(encoding="utf-8")
     a = feed.build(page)["sha256"]
-    b = feed.build(page.replace("裁判文书网", "裁判文书网（示例）"))["sha256"]
+    b = feed.build(page.replace("法院记录", "法院记录（示例）"))["sha256"]
     assert a != b and feed.build(page)["sha256"] == a
 
 
