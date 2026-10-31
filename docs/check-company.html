@@ -12,7 +12,8 @@
 body{background:var(--bg);color:var(--fg);margin:0;
      font:17px/1.8 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",system-ui,sans-serif}
 main{max-width:44rem;margin:0 auto;padding:2.5rem 16px 3rem}
-a{color:var(--accent);overflow-wrap:anywhere;text-decoration-thickness:1px;text-underline-offset:3px}
+a{color:#1a5fb4;overflow-wrap:anywhere;text-decoration-thickness:1px;text-underline-offset:3px}
+@media(prefers-color-scheme:dark){a{color:#7fb0f0}}
 .kicker{color:var(--dim);font-size:.85rem;letter-spacing:.08em;margin:0}
 h1{font-size:2rem;line-height:1.3;margin:.3rem 0 .6rem}
 .dim{color:var(--dim)}
@@ -23,7 +24,9 @@ ul.cards>li{background:var(--card);border:1px solid var(--line);border-left:3px 
             border-radius:6px;padding:.85rem 1rem;margin:.75rem 0}
 ul.cards>li p{margin:.25rem 0}
 .lead{font-weight:600;font-size:1.02rem}
-.stop{color:var(--accent);font-size:.93rem}
+.stop{color:var(--accent);font-size:.93rem;font-weight:600}
+.if{color:var(--accent);font-size:.93rem;margin-top:.5rem!important}
+.c{color:var(--accent);font-size:.93rem;padding-left:1em}
 ul.log li{color:var(--dim);font-size:.9rem;margin:.3rem 0}
 footer{border-top:1px solid var(--line);margin-top:2.5rem;padding-top:1rem;font-size:.9rem}
 @media(max-width:640px){body{font-size:16px}h1{font-size:1.7rem}main{padding-top:1.6rem}h2{margin-top:2rem}}
@@ -38,42 +41,42 @@ footer{border-top:1px solid var(--line);margin-top:2.5rem;padding-top:1rem;font-
 <h2>不开会员，五分钟查一家公司</h2>
 <p>按顺序做。每一步都免费。</p>
 <ul class="cards">
-<li><p class="lead">第 1 步　查工商登记</p><p>问对方要公司全称。在 <a href="https://www.gsxt.gov.cn/">gsxt.gov.cn</a> 搜全称。打开「企业年报」，看社保参保人数。</p><p class="stop">停下，如果：对方不给全称；查不到公司；状态不是「存续」或「在业」；参保人数远少于对方说的人数。</p></li>
-<li><p class="lead">第 2 步　查官网备案</p><p>在 <a href="https://beian.miit.gov.cn/">beian.miit.gov.cn</a> 输入对方官网的域名。看主办单位。</p><p class="stop">停下，如果：没有备案；主办单位是另一家公司；对方没有官网。</p></li>
-<li><p class="lead">第 3 步　查法院记录</p><p>在 <a href="https://wenshu.court.gov.cn/">wenshu.court.gov.cn</a> 搜全称。</p><p class="stop">停下，如果：有很多劳动争议或欠薪判决。</p></li>
-<li><p class="lead">第 4 步　查信用记录</p><p>在 <a href="https://www.creditchina.gov.cn/">creditchina.gov.cn</a> 搜全称。</p><p class="stop">停下，如果：有失信被执行或行政处罚。</p></li>
-<li><p class="lead">第 5 步　对比联系方式</p><p>对比对方的电话、邮箱和官网上的电话、邮箱。</p><p class="stop">停下，如果：官网上没有这个电话或邮箱；邮箱是个人邮箱。</p></li>
+<li><p class="lead">第 1 步　查工商登记</p><p>问对方要公司全称。在<a href="https://www.gsxt.gov.cn/">国家企业信用信息公示系统</a>搜全称。打开「企业年报」，看社保参保人数。</p><p class="if">如果：</p><p class="c">1. 对方不给全称</p><p class="c">2. 查不到公司</p><p class="c">3. 状态不是「存续」或「在业」</p><p class="c">4. 参保人数远少于对方说的人数</p><p class="stop">停下！</p></li>
+<li><p class="lead">第 2 步　查官网备案</p><p>在<a href="https://beian.miit.gov.cn/">工信部 ICP 备案查询</a>输入对方官网的域名。看主办单位。</p><p class="if">如果：</p><p class="c">1. 没有备案</p><p class="c">2. 主办单位是另一家公司</p><p class="c">3. 对方没有官网</p><p class="stop">停下！</p></li>
+<li><p class="lead">第 3 步　查法院记录</p><p>在<a href="https://wenshu.court.gov.cn/">中国裁判文书网</a>搜全称。</p><p class="if">如果：</p><p class="c">1. 有很多劳动争议或欠薪判决</p><p class="stop">停下！</p></li>
+<li><p class="lead">第 4 步　查信用记录</p><p>在<a href="https://www.creditchina.gov.cn/">信用中国</a>搜全称。</p><p class="if">如果：</p><p class="c">1. 有失信被执行或行政处罚</p><p class="stop">停下！</p></li>
+<li><p class="lead">第 5 步　对比联系方式</p><p>对比对方的电话、邮箱和官网上的电话、邮箱。</p><p class="if">如果：</p><p class="c">1. 官网上没有这个电话或邮箱</p><p class="c">2. 邮箱是个人邮箱</p><p class="stop">停下！</p></li>
 </ul>
 <p>合同和另一家公司签（外包、劳务派遣）时，按五步查那一家。劳务派遣公司必须有《劳务派遣经营许可证》。打 12333 核实。</p>
 
 <h2>一、核一家公司，去这些地方</h2>
 <p>用全称查，不用品牌名。合同主体、发 offer 的主体、发工资的主体必须是同一家。</p>
 <ul class="cards">
-<li><p class="lead">工商登记</p><p>官方：<a href="https://www.gsxt.gov.cn/">gsxt.gov.cn</a>。也可以用 <a href="https://aiqicha.baidu.com/">aiqicha.baidu.com</a>、<a href="https://ai.tianyancha.com/">ai.tianyancha.com</a>（境外网络不能用）。</p><p class="stop">看：状态、成立日期、经营异常。</p></li>
-<li><p class="lead">官网备案</p><p><a href="https://beian.miit.gov.cn/">beian.miit.gov.cn</a></p><p class="stop">看：主办单位和全称一致。</p></li>
-<li><p class="lead">法院记录</p><p><a href="https://wenshu.court.gov.cn/">wenshu.court.gov.cn</a></p><p class="stop">看：劳动争议和欠薪判决。</p></li>
-<li><p class="lead">信用记录</p><p><a href="https://www.creditchina.gov.cn/">creditchina.gov.cn</a></p><p class="stop">看：失信和行政处罚。</p></li>
-<li><p class="lead">香港公司</p><p><a href="https://www.e-services.cr.gov.hk/">e-services.cr.gov.hk</a>（查公司名称免费）</p><p class="stop">看：公司是否仍在注册册上。</p></li>
-<li><p class="lead">其他境外公司</p><p><a href="https://opencorporates.com/">opencorporates.com</a></p><p class="stop">看：名称、注册地、状态。</p></li>
+<li><p class="lead">工商登记</p><p>官方：<a href="https://www.gsxt.gov.cn/">国家企业信用信息公示系统</a>。也可以用<a href="https://aiqicha.baidu.com/">爱企查</a>、<a href="https://ai.tianyancha.com/">天眼查个人免费入口</a>（境外网络不能用）。</p><p class="stop">看：状态、成立日期、经营异常。</p></li>
+<li><p class="lead">官网备案</p><p><a href="https://beian.miit.gov.cn/">工信部 ICP 备案查询</a></p><p class="stop">看：主办单位和全称一致。</p></li>
+<li><p class="lead">法院记录</p><p><a href="https://wenshu.court.gov.cn/">中国裁判文书网</a></p><p class="stop">看：劳动争议和欠薪判决。</p></li>
+<li><p class="lead">信用记录</p><p><a href="https://www.creditchina.gov.cn/">信用中国</a></p><p class="stop">看：失信和行政处罚。</p></li>
+<li><p class="lead">香港公司</p><p><a href="https://www.e-services.cr.gov.hk/">公司註冊處電子服務</a>（查公司名称免费）</p><p class="stop">看：公司是否仍在注册册上。</p></li>
+<li><p class="lead">其他境外公司</p><p><a href="https://opencorporates.com/">OpenCorporates</a></p><p class="stop">看：名称、注册地、状态。</p></li>
 <li><p class="lead">联系方式</p><p>公司官网。</p><p class="stop">看：只在聊天里出现的电话和邮箱，不算。</p></li>
 </ul>
 
 <h2>二、识别骗局，三步</h2>
 <ul class="cards">
-<li><p class="lead">① 看到这些，停下</p><p>要你交钱（培训费、保证金、设备费、服装费、体检费）；要你贷款；要你装指定软件或共享屏幕；要你先出境面试或交护照；包机票的境外高薪；不要经验的高薪；打字、刷单、点赞兼职；只用聊天软件，不给公司全称。</p><p class="stop">然后：按第一节查这家公司。</p></li>
+<li><p class="lead">① 看到这些，停下</p><p class="if">如果：</p><p class="c">1. 要你交钱（培训费、保证金、设备费、服装费、体检费）</p><p class="c">2. 要你贷款</p><p class="c">3. 要你装指定软件或共享屏幕</p><p class="c">4. 要你先出境面试或交护照</p><p class="c">5. 包机票的境外高薪</p><p class="c">6. 不要经验的高薪</p><p class="c">7. 打字、刷单、点赞兼职</p><p class="c">8. 只用聊天软件，不给公司全称</p><p class="stop">停下！按第一节查这家公司。</p></li>
 <li><p class="lead">② 只用对方官网和它的正式系统</p><p>在官网上填资料、传材料、签合同。不点别人发来的链接、二维码、表格。</p></li>
-<li><p class="lead">③ 不确定时，先查</p><p>大陆：用国家反诈中心 App 查电话、网址、收款账户；在 <a href="https://www.12321.cn/">12321.cn</a> 举报；报警打 110。</p><p>香港：用防騙視伏器 <a href="https://cyberdefender.hk/scameter/">cyberdefender.hk/scameter</a>；打 18222。</p></li>
+<li><p class="lead">③ 不确定时，先查</p><p>大陆：用国家反诈中心 App 查电话、网址、收款账户；在<a href="https://www.12321.cn/">网络不良与垃圾信息举报受理中心</a>举报；报警打 110。</p><p>香港：用警务处<a href="https://cyberdefender.hk/scameter/">防騙視伏器</a>；打防騙易热线 18222。</p></li>
 </ul>
 
 <h2>三、入职前再核一次</h2>
 <ul class="cards">
 <li><p class="lead">合同主体</p><p>用第一节的网站，再查合同上的全称。</p></li>
-<li><p class="lead">劳动规则</p><p>打 12333 或看 <a href="https://www.12333.gov.cn/">12333.gov.cn</a>。香港：<a href="https://www.labour.gov.hk/">labour.gov.hk</a>。</p></li>
+<li><p class="lead">劳动规则</p><p>打 12333 或看<a href="https://www.12333.gov.cn/">人社部 12333</a>。香港：<a href="https://www.labour.gov.hk/">劳工处</a>。</p></li>
 </ul>
 
 <h2>更新记录</h2>
 <ul class="log">
-<li>2026-10-31：版面重排，一步一张卡片；文字按简化技术语言（ASD-STE100）的规则改短：一句一个动作，用命令句，同一件事只用一个词。</li>
+<li>2026-10-31：条件改成「如果：1. 2. 3. 停下！」的格式；网址改成机构名称的链接。版面重排，一步一张卡片；文字按简化技术语言（ASD-STE100）的规则改短：一句一个动作，用命令句，同一件事只用一个词。</li>
 <li>2026-10-30：开头加「不开会员，五分钟查一家公司」五步（含看企业年报里的参保人数）和外包、劳务派遣怎么查；骗局信号补体检费、培训贷、要你装软件或共享屏幕。</li>
 <li>2026-10-21：首版。</li>
 </ul>
