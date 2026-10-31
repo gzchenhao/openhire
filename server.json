@@ -7,13 +7,13 @@
     "url": "https://github.com/gzchenhao/openhire",
     "source": "github"
   },
-  "version": "0.8.44",
+  "version": "0.8.45",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "openhire",
-      "version": "0.8.44",
+      "version": "0.8.45",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

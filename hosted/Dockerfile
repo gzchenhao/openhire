@@ -20,10 +20,10 @@ RUN useradd -m -u 1000 user && mkdir -p /data && chown user:user /data
 # "no matching distribution" (seven failed Render builds on 2026-10-21). Retry for up to
 # 15 minutes, then prove the pinned version is what got installed.
 RUN for i in $(seq 1 30); do \
-      pip install --no-cache-dir "openhire==0.8.44" && break; \
-      echo "openhire==0.8.44 is not on this PyPI edge yet (attempt $i); retrying in 30 s"; sleep 30; \
+      pip install --no-cache-dir "openhire==0.8.45" && break; \
+      echo "openhire==0.8.45 is not on this PyPI edge yet (attempt $i); retrying in 30 s"; sleep 30; \
     done \
- && ohp version | grep -q "0.8.44"
+ && ohp version | grep -q "0.8.45"
 # The trust store the server verifies GitHub (the snapshot) and employer sites against.
 # Render's 2026-10-23 advisory: eight eMudhra intermediate certificates were compromised
 # (disclosed 2026-10-19); certifi 2026.10.19 and 2026.10.23 followed. httpx reads certifi,
