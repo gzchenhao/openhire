@@ -35,7 +35,7 @@ def test_feed_keeps_earlytips_conditions():
         assert banned not in body, banned
     assert "openhire" not in body.lower(), "no product name in what EarlyTip renders"
     assert "gsxt.gov.cn" in body and "beian.miit.gov.cn" in body and "cyberdefender.hk" in body
-    assert "<h2>二、识别骗局，三步</h2>" in body
+    assert "<h2>识别骗局，三步</h2>" in body
     assert d["feedback_url"] == "https://github.com/gzchenhao/openhire/issues"
 
 
