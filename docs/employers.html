@@ -6,24 +6,54 @@
 <title>OpenHire · 给雇主</title>
 <meta name="description" content="让候选人的 AI 助手直接读到贵公司自己系统里的岗位。免费、只读、十分钟；排序谁也买不到。给没有可公开读取招聘系统的雇主的三条进入路径。">
 <style>
-:root{--bg:#fff;--fg:#1a1d1a;--dim:#5e6b62;--line:#e3e7e3;--accent:#1f7a4d}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1211;--fg:#e9eee9;--dim:#9aa69d;--line:#252b27;--accent:#4ade87}}
-body{background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,"Segoe UI",system-ui,sans-serif;
-     margin:0 auto;max-width:44rem;padding:16px;padding-block:3rem}
-a{color:var(--accent)}
-h1{font-size:1.5rem;margin:0 0 .4rem}
-h2{font-size:1.15rem;margin:2rem 0 .6rem}
-.dim{color:var(--dim)}
-ul,ol{padding-left:1.1rem}
-li{margin:.6rem 0}
-hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
-code{font-size:.92em}
-pre{background:rgba(127,127,127,.08);padding:12px;overflow:auto;border-radius:6px;font-size:.88em;line-height:1.5}
-table{border-collapse:collapse;width:100%;font-size:.95em}
-td,th{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left;vertical-align:top}
+/* house style: EarlyTip layout spec (2026-11-01); edit src/openhire/house_style.py, then run scripts/apply_house_style.py */
+:root{--bg:#f6f6f0;--bg2:#ffffff;--fg:#1a1a1a;--fg-dim:#888;--accent:#c0392b;--link:#1a6496;--border:#e0e0d8;--max-w:860px}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"PingFang SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;line-height:1.75}
+nav.house{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+nav.house .brand{font-size:14px;font-weight:700;color:var(--fg);letter-spacing:.05em;text-decoration:none}
+nav.house .brand span{color:var(--accent)}
+nav.house .links{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:11px}
+nav.house .links a{color:var(--accent);text-decoration:none}
+nav.house .links .here{color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:3px 11px;background:var(--bg2)}
+main{max-width:var(--max-w);margin:0 auto;padding:48px 24px 80px}
+h1{font-size:26px;font-weight:700;line-height:1.3;margin:0 0 8px}
+h2{font-size:15px;font-weight:700;margin:40px 0 14px;padding-left:10px;border-left:3px solid var(--accent);line-height:1.6}
+h3{font-size:13px;font-weight:700;color:var(--accent);margin:18px 0 8px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{font-size:14px;line-height:1.7;margin:4px 0}
+a{color:var(--link);text-decoration:none;overflow-wrap:anywhere}
+a:hover{text-decoration:underline}
+b,strong{font-weight:700}
+.dim{color:var(--fg-dim)}
+hr{border:0;border-top:1px solid var(--border);margin:32px 0}
+code{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0 4px}
+pre{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
+pre code{background:none;border:0;padding:0;font-size:inherit}
+table{width:100%;border-collapse:collapse;margin:0 0 20px;background:var(--bg2);font-size:14px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--fg-dim);padding:10px 12px;border-bottom:2px solid var(--border);background:var(--bg)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:none}
+button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
+footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
+@media (max-width:600px){
+  nav.house{padding:10px 16px}
+  main{padding:28px 16px 60px}
+  h1{font-size:20px}
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tr{border-bottom:1px solid var(--border);padding:6px 0}
+  td{border:0;padding:4px 12px}
+  td:first-child{font-weight:700}
+}
 </style>
 </head>
 <body>
+<nav class="house"><a class="brand" href="./">Open<span>Hire</span></a><span class="links"><a href="./">首页</a><a href="connect.html">连接向导</a><a href="checklist.html">求职清单</a><a href="check-company.html">查公司</a><a href="portals.html">读不到的门户</a><span class="here">给雇主</span></span></nav>
+<main>
 <h1>让候选人的 AI 助手直接读到贵公司自己系统里的岗位</h1>
 <p class="dim">给雇主的一页说明。免费、只读、十分钟。排序谁也买不到。</p>
 
@@ -106,5 +136,6 @@ td,th{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left;ve
 
 <hr>
 <p class="dim"><a href="./">返回公开数据首页</a> · <a href="PRIVACY.md">隐私说明</a> · <a href="https://github.com/gzchenhao/openhire">源码</a></p>
+</main>
 </body>
 </html>

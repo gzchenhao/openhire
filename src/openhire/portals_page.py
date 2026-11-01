@@ -10,22 +10,10 @@ from __future__ import annotations
 
 import html
 
+from . import house_style
 from .seed import not_indexed
 
-_STYLE = """:root{--bg:#fff;--fg:#1a1d1a;--dim:#5e6b62;--line:#e3e7e3;--accent:#1f7a4d}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1211;--fg:#e9eee9;--dim:#9aa69d;--line:#252b27;--accent:#4ade87}}
-body{background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,"Segoe UI",system-ui,sans-serif;
-     margin:0 auto;max-width:52rem;padding:16px;padding-block:3rem}
-a{color:var(--accent);overflow-wrap:anywhere}
-h1{font-size:1.5rem;margin:0 0 .4rem}
-h2{font-size:1.15rem;margin:2rem 0 .6rem}
-.dim{color:var(--dim)}
-table{border-collapse:collapse;width:100%;font-size:.93em}
-td,th{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left;vertical-align:top}
-th{font-weight:600}
-code{font-size:.92em}
-@media(max-width:640px){thead{display:none}tr{display:block;border-bottom:1px solid var(--line);padding:.4rem 0}
-  td{display:block;border:0;padding:.15rem 0}td:first-child{font-weight:600}}"""
+_STYLE = house_style.CSS
 
 
 def _e(text: str | None) -> str:
@@ -47,6 +35,8 @@ def render() -> str:
         f"<style>\n{_STYLE}\n</style>",
         "</head>",
         "<body>",
+        house_style.nav("portals"),
+        "<main>",
         "<h1>读不到的招聘门户</h1>",
         f'<p class="dim">{len(entries)} 家公司 · 最近核对 {_e(as_of)} · 由 '
         '<a href="https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py">登记表</a> 生成</p>',
@@ -102,6 +92,7 @@ def render() -> str:
         '<p>是这些公司的招聘负责人？想让贵公司的岗位在这里可读，见 <a href="employers.html">给雇主的一页说明</a>：'
         "免费、只读，排序谁也买不到。</p>",
         '<p class="dim"><a href="./">OpenHire 首页</a> · <a href="https://github.com/gzchenhao/openhire">GitHub</a></p>',
+        "</main>",
         "</body>",
         "</html>",
         "",

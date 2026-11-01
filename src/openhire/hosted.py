@@ -33,7 +33,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
-from . import __version__
+from . import __version__, house_style
 
 ENV_FLAG = "OPENHIRE_HOSTED"
 REPO_URL = "https://github.com/gzchenhao/openhire"
@@ -193,9 +193,13 @@ def landing_html() -> str:
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>OpenHire hosted endpoint</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>body{{font:16px/1.55 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;color:#1a1a1a}}
-code{{background:#f3f3f3;padding:.1em .3em;border-radius:3px}} h1{{font-size:1.5rem}} li{{margin:.25rem 0}}</style></head>
+<style>
+{house_style.CSS}
+main>ul>li{{margin:10px 0}}
+</style></head>
 <body>
+{house_style.nav("index")}
+<main>
 <h1>OpenHire · hosted MCP endpoint</h1>
 <p><b>Companies screen you with AI. Screen them back. 已读不回？先看岗位还在不在。</b></p>
 <p>Let an AI assistant find jobs for you straight from employers' own systems, with your résumé never leaving your computer.
@@ -229,6 +233,7 @@ URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new cha
 </ul>
 <hr>
 <p>数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
+</main>
 </body></html>
 """
 
