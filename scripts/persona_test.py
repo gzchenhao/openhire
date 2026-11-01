@@ -634,6 +634,12 @@ def main(argv: list[str] | None = None) -> int:
     ledger.add_run(run_id, meter.usd, len(results))
     report = render_report(run_id, results, meter.usd, ledger.total, stopped)
     (run_dir / "report.md").write_text(report, encoding="utf-8")
+    # A Windows console runs in GBK and cannot print some characters in the report;
+    # report.md and the ledger are already written, so never fail on the echo.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
     print(report)
     return 2 if stopped else 0
 
