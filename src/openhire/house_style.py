@@ -62,13 +62,17 @@ td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
 button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
-.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.switch{display:inline-flex;gap:4px;margin-left:6px;padding-left:12px;border-left:1px solid var(--border)}
+.switch button{font-size:11px;padding:2px 8px}
+p.lead a{color:inherit}
+.page-date{font-size:11px;color:var(--fg-dim);letter-spacing:.15em;margin:0 0 12px}
 .lang-en{display:none}
 html[data-lang="en"] .lang-zh{display:none}
 html[data-lang="en"] .lang-en{display:block}
 footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
 @media (max-width:600px){
   nav.house{padding:10px 16px}
+  .switch{border-left:0;padding-left:0;margin-left:0}
   main{padding:28px 16px 60px}
   h1{font-size:20px}
   thead{display:none}
@@ -91,8 +95,11 @@ NAV = (
 )
 
 
-def nav(current: str, home: str = "./") -> str:
-    """The top bar, with `current` shown as the pill. `home` is where the brand links."""
+def nav(current: str, home: str = "./", switch: bool = False) -> str:
+    """The top bar, with `current` shown as the pill. `home` is where the brand links.
+
+    With `switch`, the 中文 / English buttons sit at the right end of the bar, as EarlyTip's
+    daily brief keeps everything but the page itself in the bar (reports/134)."""
     items = []
     for label, href, key in NAV:
         if key == "index":
@@ -101,6 +108,8 @@ def nav(current: str, home: str = "./") -> str:
             items.append(f'<span class="here">{html.escape(label)}</span>')
         else:
             items.append(f'<a href="{html.escape(href, quote=True)}">{html.escape(label)}</a>')
+    if switch:
+        items.append(SWITCH)
     return (f'<nav class="house"><a class="brand" href="{html.escape(home, quote=True)}">Open<span>Hire</span></a>'
             f'<span class="links">{"".join(items)}</span></nav>')
 
@@ -109,10 +118,10 @@ def nav(current: str, home: str = "./") -> str:
 # the portal directory, the employer page and the home pages had none). The choice is kept
 # under the same localStorage key as the checklist and the connect guide, so picking English
 # once carries across every page. Without JavaScript both blocks show and the switch hides.
-SWITCH = ('<div class="switch" role="group" aria-label="语言 · Language">\n'
-          '<button type="button" data-set="zh" aria-pressed="true">中文</button>\n'
-          '<button type="button" data-set="en" aria-pressed="false">English</button>\n'
-          '</div>')
+SWITCH = ('<span class="switch" role="group" aria-label="语言 · Language">'
+          '<button type="button" data-set="zh" aria-pressed="true">中文</button>'
+          '<button type="button" data-set="en" aria-pressed="false">EN</button>'
+          '</span>')
 NOSCRIPT = '<noscript><style>.lang-en{display:block}.switch{display:none}</style></noscript>'
 
 

@@ -50,13 +50,17 @@ td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
 button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
-.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.switch{display:inline-flex;gap:4px;margin-left:6px;padding-left:12px;border-left:1px solid var(--border)}
+.switch button{font-size:11px;padding:2px 8px}
+p.lead a{color:inherit}
+.page-date{font-size:11px;color:var(--fg-dim);letter-spacing:.15em;margin:0 0 12px}
 .lang-en{display:none}
 html[data-lang="en"] .lang-zh{display:none}
 html[data-lang="en"] .lang-en{display:block}
 footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
 @media (max-width:600px){
   nav.house{padding:10px 16px}
+  .switch{border-left:0;padding-left:0;margin-left:0}
   main{padding:28px 16px 60px}
   h1{font-size:20px}
   thead{display:none}
@@ -69,13 +73,10 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <noscript><style>.lang-en{display:block}.switch{display:none}</style></noscript>
 </head>
 <body>
-<nav class="house"><a class="brand" href="./">Open<span>Hire</span></a><span class="links"><a href="./">首页</a><a href="connect.html">连接向导</a><a href="checklist.html">求职清单</a><a href="check-company.html">查公司</a><span class="here">读不到的门户</span><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a></span></nav>
+<nav class="house"><a class="brand" href="./">Open<span>Hire</span></a><span class="links"><a href="./">首页</a><a href="connect.html">连接向导</a><a href="checklist.html">求职清单</a><a href="check-company.html">查公司</a><span class="here">读不到的门户</span><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a><span class="switch" role="group" aria-label="语言 · Language"><button type="button" data-set="zh" aria-pressed="true">中文</button><button type="button" data-set="en" aria-pressed="false">EN</button></span></span></nav>
 <main>
-<div class="switch" role="group" aria-label="语言 · Language">
-<button type="button" data-set="zh" aria-pressed="true">中文</button>
-<button type="button" data-set="en" aria-pressed="false">English</button>
-</div>
 <div class="lang-zh">
+<p class="page-date">2026-10-30</p>
 <h1>读不到的招聘门户</h1>
 <p class="dim">32 家公司 · 最近核对 2026-10-30 · 由 <a href="https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py">登记表</a> 生成</p>
 <p>这些公司在自动驾驶、具身智能、大模型方向招人。岗位放在 OpenHire 读不到的地方：飞书招聘、BOSS 直聘，或没有岗位列表的官网。</p>
@@ -140,6 +141,7 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <p class="dim"><a href="./">OpenHire 首页</a> · <a href="https://github.com/gzchenhao/openhire">GitHub</a></p>
 </div>
 <div class="lang-en">
+<p class="page-date">2026-10-30</p>
 <h1>Hiring portals we cannot read</h1>
 <p class="dim">32 companies · last checked 2026-10-30 · generated from <a href="https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py">the registry</a></p>
 <p>These companies hire in autonomous driving, embodied AI and foundation models. Their postings are where OpenHire cannot read them: Feishu Hire, BOSS Zhipin, or a site with no list.</p>

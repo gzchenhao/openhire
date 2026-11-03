@@ -50,13 +50,17 @@ td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
 button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
-.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.switch{display:inline-flex;gap:4px;margin-left:6px;padding-left:12px;border-left:1px solid var(--border)}
+.switch button{font-size:11px;padding:2px 8px}
+p.lead a{color:inherit}
+.page-date{font-size:11px;color:var(--fg-dim);letter-spacing:.15em;margin:0 0 12px}
 .lang-en{display:none}
 html[data-lang="en"] .lang-zh{display:none}
 html[data-lang="en"] .lang-en{display:block}
 footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
 @media (max-width:600px){
   nav.house{padding:10px 16px}
+  .switch{border-left:0;padding-left:0;margin-left:0}
   main{padding:28px 16px 60px}
   h1{font-size:20px}
   thead{display:none}
@@ -69,13 +73,10 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <noscript><style>.lang-en{display:block}.switch{display:none}</style></noscript>
 </head>
 <body>
-<nav class="house"><a class="brand" href="./">Open<span>Hire</span></a><span class="links"><span class="here">首页</span><a href="connect.html">连接向导</a><a href="checklist.html">求职清单</a><a href="check-company.html">查公司</a><a href="portals.html">读不到的门户</a><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a></span></nav>
+<nav class="house"><a class="brand" href="./">Open<span>Hire</span></a><span class="links"><span class="here">首页</span><a href="connect.html">连接向导</a><a href="checklist.html">求职清单</a><a href="check-company.html">查公司</a><a href="portals.html">读不到的门户</a><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a><span class="switch" role="group" aria-label="语言 · Language"><button type="button" data-set="zh" aria-pressed="true">中文</button><button type="button" data-set="en" aria-pressed="false">EN</button></span></span></nav>
 <main>
-<div class="switch" role="group" aria-label="语言 · Language">
-<button type="button" data-set="zh" aria-pressed="true">中文</button>
-<button type="button" data-set="en" aria-pressed="false">English</button>
-</div>
 <div class="lang-zh">
+<p class="page-date">2026-11-03</p>
 <h1>OpenHire</h1>
 <p class="dim">已读不回？先看岗位还在不在。公司用 AI 筛你，你也用 AI 筛公司。</p>
 <p>让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</p>
@@ -105,6 +106,7 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 免费，也可以直接要求我们把贵公司从索引中移除。</p>
 </div>
 <div class="lang-en">
+<p class="page-date">2026-11-03</p>
 <h1>OpenHire</h1>
 <p class="dim">Companies screen you with AI. Screen them back. Ghosted? Check whether the job is still open first.</p>
 <p>Let an AI assistant find jobs for you in employers' own systems. Your résumé stays on your computer. Is the job still open? Is the company real? Check both before you apply.</p>

@@ -42,6 +42,7 @@ EXTRA = {
         'html[data-os="win"] .os-mac{display:none}',
         ]),
 }
+PAGE_DATE = "2026-11-03"  # last content change; bump it when a page's text changes
 PAGES = {"index": "index.html", "employers": "employers.html", "checklist": "checklist.html", "connect": "connect.html"}
 PACKAGED = ("checklist", "connect")
 
@@ -53,7 +54,11 @@ def style_block(key: str) -> str:
 
 def apply(page: str, key: str) -> str:
     page = re.sub(r"<style>.*?</style>", lambda _m: style_block(key), page, count=1, flags=re.S)
-    bar = house_style.nav(key)
+    bar = house_style.nav(key, switch=True)
+    # The language switch lives in the top bar now (reports/134); drop the old one in <main>.
+    page = re.sub(r'<div class="switch"[^>]*>.*?</div>\n', "", page, flags=re.S)
+    # EarlyTip's daily brief opens with a date line above the title.
+    page = re.sub(r'(?<!</p>\n)<h1>', f'<p class="page-date">{PAGE_DATE}</p>\n<h1>', page)
     if '<nav class="house"' in page:
         page = re.sub(r'<nav class="house".*?</nav>', lambda _m: bar, page, count=1, flags=re.S)
     else:

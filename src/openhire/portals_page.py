@@ -104,7 +104,8 @@ def _entry(t: dict, name: str, url: str, see: str, why_label: str, why: str, che
 def _block(lang: str, entries, seconds, as_of: str) -> list[str]:
     t = _TEXT[lang]
     zh = lang == "zh"
-    out = [f"<h1>{t['h1']}</h1>",
+    out = [f'<p class="page-date">{_e(as_of)}</p>',
+           f"<h1>{t['h1']}</h1>",
            '<p class="dim">' + t["meta"].format(n=len(entries), d=_e(as_of), src=_SRC) + "</p>",
            *t["intro"]]
     for sector in not_indexed.SECTORS:
@@ -149,9 +150,8 @@ def render() -> str:
         house_style.NOSCRIPT,
         "</head>",
         "<body>",
-        house_style.nav("portals"),
+        house_style.nav("portals", switch=True),
         "<main>",
-        house_style.SWITCH,
         '<div class="lang-zh">',
         *_block("zh", entries, seconds, as_of),
         "</div>",

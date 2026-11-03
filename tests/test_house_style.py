@@ -27,16 +27,16 @@ def test_static_pages_are_what_the_script_writes(name):
     page = (ROOT / "docs" / name).read_text(encoding="utf-8")
     key = name.removesuffix(".html")
     assert _apply_script().apply(page, key) == page, f"docs/{name} drifted: run python scripts/apply_house_style.py"
-    assert house_style.CSS in page and house_style.nav(key) in page
+    assert house_style.CSS in page and house_style.nav(key, switch=True) in page and '<p class="page-date">' in page
     assert page.count("<main>") == 1 and page.count("</main>") == 1
 
 
 def test_generated_pages_embed_the_house_style():
     from openhire import hosted, portals_page
     portals = portals_page.render()
-    assert house_style.CSS in portals and house_style.nav("portals") in portals
+    assert house_style.CSS in portals and house_style.nav("portals", switch=True) in portals
     landing = hosted.landing_html()
-    assert house_style.CSS in landing and house_style.nav("index") in landing
+    assert house_style.CSS in landing and house_style.nav("index", switch=True) in landing
 
 
 def test_the_house_style_follows_earlytips_spec():

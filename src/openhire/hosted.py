@@ -193,7 +193,8 @@ def landing_html() -> str:
     endpoint = f"{e(url)}{MCP_PATH}"
     companies, jobs = stats.get("companies", 0), stats.get("jobs", 0)
     claim = "https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml"
-    zh = f"""<h1>OpenHire · 托管 MCP 端点</h1>
+    date_line = f'<p class="page-date">{e(as_of_raw)}</p>\n' if as_of_raw else ""
+    zh = f"""{date_line}<h1>OpenHire · 托管 MCP 端点</h1>
 <p class="dim">已读不回？先看岗位还在不在。公司用 AI 筛你，你也用 AI 筛公司。</p>
 <p>让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</p>
 <p>MCP 地址：<code>{endpoint}</code>（streamable HTTP，不用登录）</p>
@@ -222,7 +223,7 @@ def landing_html() -> str:
 </ul>
 <hr>
 <p class="dim">数据有误或想更正贵公司的岗位状态？<a href="{claim}">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>"""
-    en = f"""<h1>OpenHire · hosted MCP endpoint</h1>
+    en = f"""{date_line}<h1>OpenHire · hosted MCP endpoint</h1>
 <p class="dim">Companies screen you with AI. Screen them back. Ghosted? Check whether the job is still open first.</p>
 <p>Let an AI assistant find jobs for you in employers' own systems. Your résumé stays on your computer. Is the job still open? Is the company real? Check both before you apply.</p>
 <p>MCP endpoint: <code>{endpoint}</code> (streamable HTTP, no authentication)</p>
@@ -260,9 +261,8 @@ def landing_html() -> str:
 {house_style.NOSCRIPT}
 </head>
 <body>
-{house_style.nav("index")}
+{house_style.nav("index", switch=True)}
 <main>
-{house_style.SWITCH}
 <div class="lang-zh">
 {zh}
 </div>
