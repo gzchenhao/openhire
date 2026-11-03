@@ -1,6 +1,9 @@
 """Lever public postings API.
 
 GET https://api.lever.co/v0/postings/{site}?mode=json
+
+Lever also runs an EU instance (jobs.eu.lever.co / api.eu.lever.co). A board there is keyed
+`eu.<site>`; Mobileye is one (reports/135: the US address answered 404 for it).
 """
 
 from __future__ import annotations
@@ -8,14 +11,26 @@ from __future__ import annotations
 from .base import ATSClient, JobRecord, _epoch_ms_to_dt
 
 
+EU_PREFIX = "eu."
+
+
+def split_tenant(tenant: str) -> tuple[str, str]:
+    """(region, site): region is "" for the US instance, "eu." for the EU one."""
+    if tenant.startswith(EU_PREFIX):
+        return EU_PREFIX, tenant[len(EU_PREFIX):]
+    return "", tenant
+
+
 class LeverClient(ATSClient):
     vendor = "lever"
 
     def endpoint(self, tenant: str) -> str:
-        return f"https://api.lever.co/v0/postings/{tenant}?mode=json"
+        region, site = split_tenant(tenant)
+        return f"https://api.{region}lever.co/v0/postings/{site}?mode=json"
 
     def careers_url(self, tenant: str) -> str:
-        return f"https://jobs.lever.co/{tenant}"
+        region, site = split_tenant(tenant)
+        return f"https://jobs.{region}lever.co/{site}"
 
     @staticmethod
     def _has_jobs_array(payload) -> bool:

@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, urlparse
 # Hosts a seeker may paste, each mapped to the vendor and to how the tenant is read off the
 # URL. Order matters only for readability.
 _GREENHOUSE_HOSTS = {"job-boards.greenhouse.io", "boards.greenhouse.io", "boards-api.greenhouse.io"}
-_LEVER_HOSTS = {"jobs.lever.co", "api.lever.co", "jobs.eu.lever.co"}
+_LEVER_HOSTS = {"jobs.lever.co", "api.lever.co", "jobs.eu.lever.co", "api.eu.lever.co"}
 _ASHBY_HOSTS = {"jobs.ashbyhq.com", "api.ashbyhq.com"}
 _MOKA_HOSTS = {"app.mokahr.com"}
 
@@ -96,12 +96,15 @@ def detect_board(url: str) -> tuple[str, str]:
         return _checked("greenhouse", tenant, "job-boards.greenhouse.io/<board>")
 
     if host in _LEVER_HOSTS:
-        if host == "api.lever.co":
+        if host.startswith("api."):
             m = re.match(r"^/v0/postings/([^/]+)", path)
             tenant = m.group(1) if m else None
         else:
             tenant = _first_segment(path)
-        return _checked("lever", tenant, "jobs.lever.co/<site>")
+        vendor, tenant = _checked("lever", tenant, "jobs.lever.co/<site>")
+        if ".eu." in f".{host}":
+            tenant = "eu." + tenant  # Lever's EU instance (reports/135)
+        return vendor, tenant
 
     if host in _ASHBY_HOSTS:
         if host == "api.ashbyhq.com":

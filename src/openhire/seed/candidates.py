@@ -37,6 +37,7 @@ class Candidate:
 # --- Greenhouse ---------------------------------------------------------------
 _GREENHOUSE = [
     ("anthropic", "Anthropic"),
+    ("gatikaiinc", "Gatik", "gatik"),  # 2026-11-03 (reports/135): 67 live, all dated
     ("databricks", "Databricks"),
     ("datadog", "Datadog"),
     ("mongodb", "MongoDB"),
@@ -125,6 +126,8 @@ _GREENHOUSE = [
 # --- Lever --------------------------------------------------------------------
 _LEVER = [
     ("shieldai", "Shield AI"),
+    # 2026-11-03 (reports/135): Lever's EU instance, keyed eu.<site>; 182 live, all dated.
+    ("eu.mobileye", "Mobileye", "mobileye"),
     ("palantir", "Palantir"),
     ("mistral", "Mistral AI"),
     ("matchgroup", "Match Group"),
@@ -369,6 +372,8 @@ _SMARTRECRUITERS = [
 # an unrestricted network (the cloud default network cannot reach myworkdayjobs.com).
 _WORKDAY = [
     ('bostondynamics.wd1/Boston_Dynamics', 'Boston Dynamics', 'bostondynamics'),  # 87 live
+    # 2026-11-03 (reports/135): read live from the default network; the list stops at 2,000.
+    ('nvidia.wd5/NVIDIAExternalCareerSite', 'NVIDIA', 'nvidia'),
     ('autostore.wd3/autostore', 'AutoStore', 'autostore'),  # 33 live
 ]
 

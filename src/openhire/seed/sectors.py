@@ -28,7 +28,7 @@ _BY_SECTOR: dict[str, tuple[str, ...]] = {
         "aurorainnovation", "wayve", "robosense", "deeproute", "minieye", "freetech", "yushi", "rino",
         "trunk", "zvision", "motovis", "inceptio", "lixiang", "xiaopeng", "seyond", "blacksesame",
         "outsight", "aerovect", "saronic", "shieldai",
-        'appliedintuition', 'plusai', 'stackav', 'maymobility', 'avride', 'aeva', 'skydio', 'anduril', 'wing', 'forterra', 'imagry',
+        'appliedintuition', 'plusai', 'stackav', 'maymobility', 'avride', 'aeva', 'skydio', 'anduril', 'wing', 'forterra', 'imagry', 'mobileye', 'gatik',
     ),
     EMB: (
         "figureai", "agilityrobotics", "skildai", "apptronik", "pathrobotics", "dexterity", "fieldai",
@@ -46,7 +46,7 @@ _BY_SECTOR: dict[str, tuple[str, ...]] = {
         "tavus", "poolside", "lightning", "pika", "ideogram", "browserbase", "lancedb", "runway",
         "weaviate", "elevenlabs", "sierra", "decagon", "harvey", "abridge", "assemblyai", "stabilityai",
         "labelbox", "cresta", "gleanwork", "striveworks", "moonshot", "stepfun", "deepseek", "mthreads",
-        "kunlunxin", "biren", "iluvatar", "iflytek", "4paradigm", "smartmore", "uipath",
+        "kunlunxin", "biren", "iluvatar", "iflytek", "4paradigm", "smartmore", "uipath", "nvidia",
     ),
     OTHER: (
         "datadog", "mongodb", "samsara", "verkada", "brex", "cloudflare", "elastic", "reddit", "affirm",

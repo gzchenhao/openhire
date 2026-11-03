@@ -61,12 +61,13 @@ OWN_PAGE_IDS = ["deeprobotics", "ai2robotics", "qcraft", "phigent", "noetix",
 OTHER_IDS = ["rokae", "horizon", "baai"]
 # 2026-10-30 (reports/122): Dover boards (robots.txt closes /api/) and a bot-challenge site.
 SURVEY_1030_IDS = ["weave-robotics", "scythe-robotics", "innoviz"]
+SURVEY_1103_IDS = ("tesla", "baidu-apollo", "huawei", "xpeng-motors", "byd", "xiaomi-ev", "didi-autonomous", "meituan", "deepmind")
 CEASED_IDS = ["haomo"]
 
 
 def test_registry_holds_the_feishu_employers_nio_the_own_page_ones_and_haomo():
     ids = [e.id for e in not_indexed.NOT_INDEXED]
-    assert ids == [*FEISHU_IDS, "nio", *OWN_PAGE_IDS, *OTHER_IDS, *SURVEY_1030_IDS, *CEASED_IDS]
+    assert ids == [*FEISHU_IDS, "nio", *OWN_PAGE_IDS, *OTHER_IDS, *SURVEY_1030_IDS, *SURVEY_1103_IDS, *CEASED_IDS]
     assert len(set(ids)) == len(ids)
     for e in not_indexed.NOT_INDEXED:
         assert e.aliases, e.id
@@ -206,7 +207,7 @@ def test_registry_urls_are_the_confirmed_ones_and_say_what_confirmed_them():
     assert "bot-challenge" in not_indexed.by_id("innoviz").reason
     by_title = {e.id for e in not_indexed.NOT_INDEXED if e.confirmed_by == "title"}
     assert by_title == (set(urls) - {"sensetime", "nio", "deeprobotics", "haomo"} - survey_1020 - survey_1021
-                        - set(SURVEY_1030_IDS))
+                        - set(SURVEY_1030_IDS) - (set(SURVEY_1103_IDS) - {"xpeng-motors"}))
     assert "zhipin.com" in not_indexed.by_id("deeprobotics").confirmed_by
     sensetime = not_indexed.by_id("sensetime")
     assert "feishucdn" in sensetime.confirmed_by and "title not retrieved" in sensetime.confirmed_by

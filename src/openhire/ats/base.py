@@ -70,7 +70,7 @@ _MULTINL_RE = re.compile(r"\n{3,}")
 # respects the protocol rule that apply_channel is always the employer's own endpoint.
 ATS_APPLY_HOSTS: dict[str, set[str]] = {
     "greenhouse": {"boards.greenhouse.io", "job-boards.greenhouse.io"},
-    "lever": {"jobs.lever.co"},
+    "lever": {"jobs.lever.co", "jobs.eu.lever.co"},
     "ashby": {"jobs.ashbyhq.com"},
     "moka": {"app.mokahr.com"},
     "workable": {"apply.workable.com"},
@@ -172,7 +172,8 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
     if vendor == "greenhouse":
         return f"https://boards.greenhouse.io/embed/job_app?for={tenant}&token={ats_job_id}"
     if vendor == "lever":
-        return f"https://jobs.lever.co/{tenant}/{ats_job_id}"
+        region, site = ("eu.", tenant[3:]) if tenant.startswith("eu.") else ("", tenant)
+        return f"https://jobs.{region}lever.co/{site}/{ats_job_id}"
     if vendor == "ashby":
         return f"https://jobs.ashbyhq.com/{tenant}/{ats_job_id}"
     if vendor == "beisen":
