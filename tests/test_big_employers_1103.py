@@ -22,6 +22,9 @@ def test_new_seeds_and_sectors():
     assert slugs["nvidia"].vendor == "workday"
     assert sectors.COMPANY_SECTOR["mobileye"] == "autonomous_driving"
     assert sectors.COMPANY_SECTOR["nvidia"] == "ai_infra"
+    # reports/136: Mentee Robotics on Comeet, keyed <slug>/<uid>/<token> from its public careers page.
+    assert slugs["mentee-robotics"].vendor == "comeet" and slugs["mentee-robotics"].tenant.startswith("mentee_robotics/6A.002/")
+    assert sectors.COMPANY_SECTOR["mentee-robotics"] == "embodied_ai"
 
 
 def test_unreadable_big_employers_are_in_the_portal_directory():

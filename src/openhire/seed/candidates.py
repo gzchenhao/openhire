@@ -398,6 +398,9 @@ _PERSONIO = [
 # (Imagry: imagry.co/careers, inline `comeetvar`). 7 live that day.
 _COMEET = [
     ('imagry/B7.00F/7BF2E7A1EFC1EFCF7E7BF36393DF826BB2E7A', 'Imagry', 'imagry'),
+    # 2026-11-03 (reports/136): found through Mobileye's careers page; the page we tried on
+    # 10-31 was a dead address. 11 live, no posting date (time_updated only).
+    ('mentee_robotics/6A.002/A6248AE298853101F2614C45D7214C433EA5310', 'Mentee Robotics', 'mentee-robotics'),
 ]
 
 _SELF_REPORTED = [(e.slug, e.name) for e in SELF_REPORTED_EMPLOYERS.values()]

@@ -37,7 +37,7 @@ _BY_SECTOR: dict[str, tuple[str, ...]] = {
         "ubtrobot", "dobot", "jaka", "mechmind", "megarobo", "pudutech", "hairobotics", "siasun",
         "yijiahe", "paxini", "magiclab", "galbot", "robotera", "fftai", "geekplus", "keenon", "astribot",
         "estun", "palrobotics", "flexion-robotics", "andromeda-robotics", "agile-robots", "robotec-ai",
-        'bostondynamics', 'thebotcompany', 'humanoid', 'robco', 'viam', 'diligentrobotics', 'braincorp', 'serverobotics', 'cocorobotics', 'picklerobot', 'gecko-robotics', 'reflexrobotics', 'tutorintelligence', 'mujin', 'nimblerobotics', 'autostore', 'formic', 'machinalabs', 'bedrock-robotics', 'simberobotics', 'personaai', 'dreame', 'foundation-robotics', 'mytra', 'bonsai-robotics', 'wandelbots', 'franka-robotics',
+        'bostondynamics', 'thebotcompany', 'humanoid', 'robco', 'viam', 'diligentrobotics', 'braincorp', 'serverobotics', 'cocorobotics', 'picklerobot', 'gecko-robotics', 'reflexrobotics', 'tutorintelligence', 'mujin', 'nimblerobotics', 'autostore', 'formic', 'machinalabs', 'bedrock-robotics', 'simberobotics', 'personaai', 'dreame', 'foundation-robotics', 'mytra', 'bonsai-robotics', 'wandelbots', 'franka-robotics', 'mentee-robotics',
     ),
     AI: (
         "anthropic", "openai", "mistral", "cohere", "databricks", "scaleai", "togetherai", "nebius",
