@@ -148,6 +148,7 @@ MOKA_CAMPUS_ATS = "Moka campus portal (campus portals not read yet)"
 DOVER_ATS = "Dover (app.dover.com; robots.txt closes its API to crawlers)"
 SECURITY_BLOCK_ATS = "first-party site (behind a bot challenge)"
 UNREACHED_ATS = "first-party site (did not answer our client; not yet assessed)"
+OWN_SITE_UNASSESSED_ATS = "first-party site (reachable; its job list not yet assessed)"
 GOOGLE_CAREERS_ATS = "Google Careers (not a system OpenHire reads)"
 DAYEE_ATS = "Dayee wecruit 大易 (hotjob.cn, not yet assessed)"
 DAYEE_REASON = (
@@ -683,10 +684,10 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         id="byd", name="比亚迪 BYD",
         aliases=("byd", "比亚迪"),
         careers_url="https://job.byd.com/",
-        confirmed_by="not confirmed: on 2026-11-03 the connection was reset on two identical tries",
-        ats=UNREACHED_ATS,
-        reason="the employer's careers site did not answer our client; not yet assessed",
-        reason_zh="雇主招聘站没有回应我们的客户端；还没评估",
+        confirmed_by="title: 比亚迪人力资源服务平台 (from the maintainer's machine on 2026-11-03; the cloud network had the connection reset twice)",
+        ats=OWN_SITE_UNASSESSED_ATS,
+        reason="the employer runs its own careers site, which this index has no reader for yet",
+        reason_zh="雇主招聘站是自建系统，我们还没有它的读取器",
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
         sector="autonomous_driving", last_checked="2026-11-03",
         portal_view="Not checked in a browser yet.",
@@ -696,10 +697,10 @@ NOT_INDEXED: tuple[NotIndexedEmployer, ...] = (
         id="xiaomi-ev", name="小米汽车 Xiaomi EV",
         aliases=("xiaomi ev", "xiaomi auto", "小米汽车", "小米"),
         careers_url="https://hr.xiaomi.com/",
-        confirmed_by="not confirmed: on 2026-11-03 the job page timed out on two identical tries",
-        ats=UNREACHED_ATS,
-        reason="the employer's careers site did not answer our client; not yet assessed",
-        reason_zh="雇主招聘站没有回应我们的客户端；还没评估",
+        confirmed_by="title: 小米招聘 (from the maintainer's machine on 2026-11-03; the cloud network timed out twice)",
+        ats=OWN_SITE_UNASSESSED_ATS,
+        reason="the employer runs its own careers site, which this index has no reader for yet",
+        reason_zh="雇主招聘站是自建系统，我们还没有它的读取器",
         employer_opt_in=dict(OWN_PAGE_OPT_IN),
         sector="autonomous_driving", last_checked="2026-11-03",
         portal_view="Not checked in a browser yet.",
