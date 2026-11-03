@@ -51,3 +51,20 @@ def test_nav_marks_only_the_current_page():
     bar = house_style.nav("checklist")
     assert bar.count('class="here"') == 1 and ">求职清单</span>" in bar
     assert 'href="connect.html"' in bar and 'href="checklist.html"' not in bar
+
+
+@pytest.mark.parametrize("name", ("index.html", "employers.html", "portals.html", "checklist.html", "connect.html"))
+def test_every_page_but_check_company_switches_language(name):
+    """The maintainer found the portal directory, the employer page and the home pages had no
+    中文 / English switch (2026-11-02). Every page carries one now; 查公司 stays Chinese only by
+    EarlyTip's terms."""
+    page = (ROOT / "docs" / name).read_text(encoding="utf-8")
+    assert 'data-set="zh"' in page and 'data-set="en"' in page
+    assert 'class="lang-zh"' in page and 'class="lang-en"' in page
+    assert "openhire-lang" in page, "one remembered choice across pages"
+
+
+def test_hosted_home_switches_language():
+    from openhire import hosted
+    page = hosted.landing_html()
+    assert house_style.SWITCH in page and 'class="lang-zh"' in page and 'class="lang-en"' in page

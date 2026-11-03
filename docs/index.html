@@ -38,6 +38,10 @@ td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
 button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
+.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+html[data-lang="en"] .lang-en{display:block}
 footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
 @media (max-width:600px){
   nav.house{padding:10px 16px}
@@ -52,10 +56,16 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 main>ul{padding-left:1.1em}
 main>ul>li{margin:12px 0}
 </style>
+<noscript><style>.lang-en{display:block}.switch{display:none}</style></noscript>
 </head>
 <body>
 <nav class="house"><a class="brand" href="./">Open<span>Hire</span></a><span class="links"><span class="here">首页</span><a href="connect.html">连接向导</a><a href="checklist.html">求职清单</a><a href="check-company.html">查公司</a><a href="portals.html">读不到的门户</a><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a></span></nav>
 <main>
+<div class="switch" role="group" aria-label="语言 · Language">
+<button type="button" data-set="zh" aria-pressed="true">中文</button>
+<button type="button" data-set="en" aria-pressed="false">English</button>
+</div>
+<div class="lang-zh">
 <h1>OpenHire</h1>
 <p><b>已读不回？先看岗位还在不在。Companies screen you with AI. Screen them back.</b></p>
 <p><b>让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</b></p>
@@ -91,6 +101,70 @@ main>ul>li{margin:12px 0}
 <p class="dim">数据有误或想更正贵公司的岗位状态？
 <a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，
 免费，也可以直接要求我们把贵公司从索引中移除。</p>
+</div>
+<div class="lang-en">
+<h1>OpenHire</h1>
+<p><b>Companies screen you with AI. Screen them back. Ghosted? Check whether the job is still open first.</b></p>
+<p><b>Let an AI assistant find jobs for you straight from employers' own systems, with your résumé never leaving your computer. Is the job still open? Is the company real? Check both before you apply.</b></p>
+<p class="dim">A hiring protocol built for agents. Every posting comes from the public API behind the employer's own careers page,
+with the time it was last verified and the original apply link, so each one can be checked. Résumés and personal data never touch the server.</p>
+
+<hr>
+
+<ul>
+<li><a href="report/"><b>Monthly report on how long postings stay up</b></a><br>
+    <span class="dim">How long each company's postings have been up, by the real posting date in the employer's own hiring system. Named, checkable, updated monthly.</span></li>
+<li><a href="numbers.json"><b>numbers.json</b></a><br>
+    <span class="dim">The source of every number we quote, with how it is counted and when it was measured.</span></li>
+<li><a href="report-data.json"><b>report-data.json</b></a><br>
+    <span class="dim">All the raw data behind the monthly report, to recompute it yourself.</span></li>
+<li><a href="connect.html"><b>Connect guide</b></a><br>
+    <span class="dim">Pick the AI assistant you use (ChatGPT, Claude, Doubao, DeepSeek, Cursor, Tencent WorkBuddy, VS Code) and see only its setup steps and the one block to paste.</span></li>
+<li><a href="checklist.html"><b>Job-search checklist</b></a><br>
+    <span class="dim">What to do at each step of a job search, which steps an AI can do for you, and which official sites to use to check a company and avoid scams. One page, free, no sign-up, in Chinese and English. Worth a bookmark: addresses move and scams change, and the page changes with them.</span></li>
+<li><a href="check-company.html"><b>Check a company (in Chinese)</b></a><br>
+    <span class="dim">Which official sites to use to check a company before you join, and how to spot scams that pose as employers. Official addresses only, free.</span></li>
+<li><a href="employers.html"><b>For employers</b></a><br>
+    <span class="dim">Let candidates' AI assistants read the postings in your own hiring system. Free, read-only, ten minutes; three ways in for employers without a readable hiring system.</span></li>
+<li><a href="portals.html"><b>Hiring portals we cannot read</b></a><br>
+    <span class="dim">Companies whose postings are on Feishu, BOSS Zhipin or a careers site with no readable list: links to their own careers pages, to open directly.</span></li>
+<li><a href="PRIVACY.md"><b>Privacy policy</b></a><br>
+    <span class="dim">Three red lines enforced in CI: no personal data through the server, ranking cannot be bought, employers pay only for authorised results.</span></li>
+<li><a href="https://github.com/gzchenhao/openhire"><b>Source code</b></a><br>
+    <span class="dim">All open source. Run <code>uvx openhire@latest serve</code> yourself and get the same numbers we do.</span></li>
+</ul>
+
+<hr>
+<p class="dim">Something wrong, or want to correct the status of your company's postings?
+<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">Employer claim</a>,
+free; you can also ask us to remove your company from the index.</p>
+</div>
 </main>
+<script>
+(function(){
+  var html=document.documentElement;
+  var titles={zh:"OpenHire",en:"OpenHire"};
+  function apply(l,save){
+    html.setAttribute("data-lang",l);
+    html.setAttribute("lang",l==="en"?"en":"zh-CN");
+    document.title=titles[l];
+    var bs=document.querySelectorAll(".switch button");
+    for(var i=0;i<bs.length;i++){bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-set")===l?"true":"false");}
+    if(save){try{localStorage.setItem("openhire-lang",l);}catch(e){}}
+  }
+  var q=null;
+  try{q=new URLSearchParams(location.search).get("lang");}catch(e){}
+  var saved=null;
+  try{saved=localStorage.getItem("openhire-lang");}catch(e){}
+  var nav=(navigator.language||"").toLowerCase();
+  var l=(q==="en"||q==="zh")?q:(saved==="en"||saved==="zh")?saved:(/^(zh|yue)/.test(nav)?"zh":"en");
+  apply(l,false);
+  var sw=document.querySelector(".switch");
+  if(sw){sw.addEventListener("click",function(ev){
+    var b=ev.target.closest?ev.target.closest("button"):null;
+    if(b&&b.getAttribute("data-set")){apply(b.getAttribute("data-set"),true);}
+  });}
+})();
+</script>
 </body>
 </html>

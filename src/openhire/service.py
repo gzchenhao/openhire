@@ -74,10 +74,29 @@ _COUNTRY_TOKENS = {
 _WORLDWIDE_TOKENS = ("worldwide", "global", "anywhere", "any location")
 
 
-def classify_remote(remote_policy: str | None, location: str | None) -> tuple[str | None, list[str]]:
+# A location of just "Remote" says nothing about who may apply, but the description often does:
+# "All of our roles are U.S.-based. Applicants must have current authorization to work in the
+# United States." (Agility Robotics; persona run 2026-11-02 told a Hong Kong reader it was
+# unclear). Only these plain US-only statements are read; anything else stays unknown.
+_US_ONLY = re.compile(
+    r"\broles? (?:are|is) u\.?s\.?[- ]based\b|\bu\.?s\.?[- ]based (?:role|position|remote)\b"
+    r"|authori[sz](?:ation|ed) to work in the (?:usa|u\.s\.a?\.?|us|united states)\b"
+    r"|must (?:be )?(?:located|reside|live|based) in the (?:u\.s\.|us|united states)\b"
+    r"|remote within the (?:u\.s\.|us|united states)\b|\b(?:us|u\.s\.)[- ]only\b", re.I)
+
+
+def classify_remote(remote_policy: str | None, location: str | None,
+                    description: str | None = None) -> tuple[str | None, list[str]]:
     """Return (remote_scope, eligible_regions) for a posting. Non-remote → (None, [])."""
     if remote_policy != "remote":
         return None, []
+    scope, regions = _classify_remote_location(location)
+    if scope == "unknown" and description and _US_ONLY.search(description):
+        return "country_locked", ["US"]
+    return scope, regions
+
+
+def _classify_remote_location(location: str | None) -> tuple[str, list[str]]:
     loc = (location or "").lower()
     if any(t in loc for t in _WORLDWIDE_TOKENS):
         return "worldwide", []
@@ -660,7 +679,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
     # by one on every row, "days_open 848" beside "open 847d".
     posted = _aware(job.posted_at or job.first_seen_at)
     age_days = (now.date() - posted.date()).days if posted else None
-    _rs, _regions = classify_remote(job.remote_policy, job.location)
+    _rs, _regions = classify_remote(job.remote_policy, job.location, job.description_raw)
     _sal_lo, _sal_hi, _sal_note = usable_salary(
         job.salary_min, job.salary_max, getattr(job, "salary_period", None)
     )
@@ -941,7 +960,7 @@ def _filter_and_rank(
         if required_sets and not all(aliases & job_skills for aliases in required_sets):
             continue  # AND — every required skill must be present
         if remote_scope:
-            scope, _ = classify_remote(job.remote_policy, job.location)
+            scope, _ = classify_remote(job.remote_policy, job.location, job.description_raw)
             if scope != remote_scope:
                 continue
         # A row whose role_family is still null has not been classified yet; the newest
@@ -2453,7 +2472,7 @@ def role_excerpt(text: str | None, n: int = EXCERPT_CHARS) -> str:
 def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
     posted = _aware(rec.posted_at) if rec.posted_at else None
     updated = _aware(rec.updated_at) if rec.updated_at else None
-    scope, regions = classify_remote(rec.remote_hint, rec.location)
+    scope, regions = classify_remote(rec.remote_hint, rec.location, rec.description_raw)
     out = {
         "ats_job_id": rec.ats_job_id,
         "title": rec.title,

@@ -188,41 +188,64 @@ def checklist_html() -> str:
 def landing_html() -> str:
     stats = index_stats()
     url = public_url()
-    as_of = (stats.get("data_as_of") or "")[:10] or "not loaded yet"
+    as_of_raw = (stats.get("data_as_of") or "")[:10]
     e = html.escape
-    return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>OpenHire hosted endpoint</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-{house_style.CSS}
-main>ul>li{{margin:10px 0}}
-</style></head>
-<body>
-{house_style.nav("index")}
-<main>
-<h1>OpenHire · hosted MCP endpoint</h1>
-<p><b>Companies screen you with AI. Screen them back. 已读不回？先看岗位还在不在。</b></p>
-<p>Let an AI assistant find jobs for you straight from employers' own systems, with your résumé never leaving your computer.
-Is the job still open? Is the company real? Check both before you apply.<br>
-让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</p>
-<p>MCP endpoint: <code>{e(url)}{MCP_PATH}</code> (streamable HTTP, no authentication) · version {e(__version__)} ·
-index: {stats.get('companies', 0)} employers, {stats.get('jobs', 0):,} postings, data as of {e(as_of)}.</p>
-<h2>Connect</h2>
-<p><b>Not sure which steps are yours?</b> The <a href="{e(url)}/connect">connect guide · 连接向导</a> asks which assistant you use and shows only that one's steps, with the one block to paste. 选你用的助手，只看那一种的步骤。</p>
+    endpoint = f"{e(url)}{MCP_PATH}"
+    companies, jobs = stats.get("companies", 0), stats.get("jobs", 0)
+    claim = "https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml"
+    zh = f"""<h1>OpenHire · 托管 MCP 端点</h1>
+<p><b>已读不回？先看岗位还在不在。公司用 AI 筛你，你也用 AI 筛公司。</b></p>
+<p>让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</p>
+<p>MCP 地址：<code>{endpoint}</code>（streamable HTTP，不用登录）· 版本 {e(__version__)} ·
+索引：{companies} 家雇主、{jobs:,} 条岗位，数据日期 {e(as_of_raw or "尚未加载")}。</p>
+<h2>接入</h2>
+<p><b>不确定自己该走哪几步？</b><a href="{e(url)}/connect">连接向导</a>先问你用哪个 AI 助手，只给那一种的步骤和一段整段粘贴的话。</p>
 <ul>
-<li><b>ChatGPT</b> (paid plans): Settings → Connectors → Advanced → turn on Developer mode → Create → name <code>OpenHire</code>,
-URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new chat with the connector enabled, for example:
-<i>which embodied-AI companies are hiring perception engineers, with the employer's own posting date and days open?</i></li>
-<li><b>Any MCP client that takes a URL</b> (豆包 custom connector, Cherry Studio, Cline, Cursor…): add <code>{e(url)}{MCP_PATH}</code> as a streamable-HTTP server.</li>
-<li><b>Prefer it on your own machine</b> (recommended): <code>uvx openhire serve</code>, one line of config in Claude, 豆包, DeepSeek (via Cherry Studio / Chatbox), Cursor or 腾讯 WorkBuddy. Then nothing of a search leaves your computer.</li>
+<li><b>ChatGPT</b>（付费档）：设置 → 连接器 → 高级 → 打开开发者模式 → 新建，名称填 <code>OpenHire</code>，
+地址填 <code>{endpoint}</code>，认证选无。然后在开着这个连接器的新对话里问，比如：
+<i>哪些具身智能公司在招感知工程师？给我雇主自己的发布日期和在架天数。</i></li>
+<li><b>任何能填网址的 MCP 客户端</b>（豆包自定义连接器、Cherry Studio、Cline、Cursor 等）：把 <code>{endpoint}</code> 加成 streamable-HTTP 服务器。</li>
+<li><b>想放在自己电脑上</b>（推荐）：<code>uvx openhire serve</code>，在 Claude、豆包、DeepSeek（经 Cherry Studio / Chatbox）、Cursor 或腾讯 WorkBuddy 里加一行配置。这样搜索的任何内容都不出你的电脑。</li>
 </ul>
-<h2>Pages · 页面</h2>
+<h2>页面</h2>
 <ul>
 <li><a href="{e(url)}/connect">连接向导</a>：选你用的 AI 助手（ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy、VS Code），只看那一种的接入步骤和一段整段粘贴的话。</li>
 <li><a href="{e(url)}/checklist">求职清单</a>：找工作每一步该做什么、哪步能让 AI 替你做、查公司和防骗去哪个官网，一页写全，免费，不用注册，中英文可切换。</li>
 <li><a href="{e(url)}/check-company">查公司</a>：入职前核一家公司去哪些官方网站，怎么识别冒充用人方的骗局。</li>
 <li><a href="{e(url)}/portals">读不到的招聘门户</a>：岗位放在飞书、BOSS 直聘或没有可读列表的官网上的公司，它们自己的招聘页链接。</li>
 <li><a href="https://gzchenhao.github.io/openhire/employers.html">给雇主</a> · <a href="{e(PRIVACY_URL)}">隐私说明</a> · <a href="{e(REPO_URL)}">源码</a>（GitHub 不通时：<a href="https://cnb.cool/gzchenhao/openhire">cnb.cool 镜像</a>）</li>
+</ul>
+<h2>这台主机看得到什么</h2>
+<ul>
+<li>只有工具收的参数：搜索条件、公司名或域名、招聘页网址、客户端生成的匿名指纹。按协议，永远不收简历、姓名、邮箱、电话。</li>
+<li>不记查询日志。盯岗和投递记录按指纹存在这台主机的索引里，索引刷新时会带过去；主机重建就没了。想长期盯岗，请在自己电脑上运行 OpenHire。</li>
+<li>每个地址有限流；索引是每周公开的快照，原地刷新。</li>
+<li>完整条款：<a href="{e(PRIVACY_URL)}">隐私说明</a> · 源码与数字：<a href="{e(REPO_URL)}">{e(REPO_URL)}</a></li>
+</ul>
+<hr>
+<p>数据有误或想更正贵公司的岗位状态？<a href="{claim}">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>"""
+    en = f"""<h1>OpenHire · hosted MCP endpoint</h1>
+<p><b>Companies screen you with AI. Screen them back. Ghosted? Check whether the job is still open first.</b></p>
+<p>Let an AI assistant find jobs for you straight from employers' own systems, with your résumé never leaving your computer.
+Is the job still open? Is the company real? Check both before you apply.</p>
+<p>MCP endpoint: <code>{endpoint}</code> (streamable HTTP, no authentication) · version {e(__version__)} ·
+index: {companies} employers, {jobs:,} postings, data as of {e(as_of_raw or "not loaded yet")}.</p>
+<h2>Connect</h2>
+<p><b>Not sure which steps are yours?</b> The <a href="{e(url)}/connect">connect guide</a> asks which assistant you use and shows only that one's steps, with the one block to paste.</p>
+<ul>
+<li><b>ChatGPT</b> (paid plans): Settings → Connectors → Advanced → turn on Developer mode → Create → name <code>OpenHire</code>,
+URL <code>{endpoint}</code>, authentication none. Then ask, in a new chat with the connector enabled, for example:
+<i>which embodied-AI companies are hiring perception engineers, with the employer's own posting date and days open?</i></li>
+<li><b>Any MCP client that takes a URL</b> (Doubao custom connector, Cherry Studio, Cline, Cursor…): add <code>{endpoint}</code> as a streamable-HTTP server.</li>
+<li><b>Prefer it on your own machine</b> (recommended): <code>uvx openhire serve</code>, one line of config in Claude, Doubao, DeepSeek (via Cherry Studio / Chatbox), Cursor or Tencent WorkBuddy. Then nothing of a search leaves your computer.</li>
+</ul>
+<h2>Pages</h2>
+<ul>
+<li><a href="{e(url)}/connect">Connect guide</a>: pick your AI assistant (ChatGPT, Claude, Doubao, DeepSeek, Cursor, Tencent WorkBuddy, VS Code) and see only its setup steps and the one block to paste.</li>
+<li><a href="{e(url)}/checklist">Job-search checklist</a>: what to do at each step, which steps an AI can do for you, and which official sites to use to check a company and avoid scams. Free, no sign-up, Chinese and English.</li>
+<li><a href="{e(url)}/check-company">Check a company</a> (in Chinese): the official sites for checking a company before you join, and how to spot scams posing as employers.</li>
+<li><a href="{e(url)}/portals">Hiring portals we cannot read</a>: companies whose postings are on Feishu, BOSS Zhipin or a careers site with no readable list, with links to their own careers pages.</li>
+<li><a href="https://gzchenhao.github.io/openhire/employers.html">For employers</a> · <a href="{e(PRIVACY_URL)}">Privacy policy</a> · <a href="{e(REPO_URL)}">Source</a> (if GitHub is unreachable: <a href="https://cnb.cool/gzchenhao/openhire">cnb.cool mirror</a>)</li>
 </ul>
 <h2>What this host sees</h2>
 <ul>
@@ -232,8 +255,28 @@ URL <code>{e(url)}{MCP_PATH}</code>, authentication none. Then ask, in a new cha
 <li>Full terms: <a href="{e(PRIVACY_URL)}">privacy policy</a> · source and numbers: <a href="{e(REPO_URL)}">{e(REPO_URL)}</a></li>
 </ul>
 <hr>
-<p>数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
+<p>Something wrong, or want to correct the status of your company's postings? <a href="{claim}">Employer claim</a>, free; you can also ask us to remove your company from the index.</p>"""
+    return f"""<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>OpenHire</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+{house_style.CSS}
+main>ul>li{{margin:10px 0}}
+</style>
+{house_style.NOSCRIPT}
+</head>
+<body>
+{house_style.nav("index")}
+<main>
+{house_style.SWITCH}
+<div class="lang-zh">
+{zh}
+</div>
+<div class="lang-en">
+{en}
+</div>
 </main>
+{house_style.lang_script("OpenHire · 托管端点", "OpenHire · hosted endpoint")}
 </body></html>
 """
 

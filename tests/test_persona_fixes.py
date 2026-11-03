@@ -441,3 +441,27 @@ def test_the_privacy_note_says_only_what_this_run_sent():
     no_domain = _checklist("Galaxea AI")
     assert "RDAP" not in no_domain["privacy"] and "nowhere" in no_domain["privacy"]
     assert "RDAP" in _checklist("Galaxea AI", domain="galaxea.ai")["privacy"]
+
+
+# --- persona run 2026-11-02 (reports/131) -------------------------------------------------
+def test_years_with_a_long_field_name_before_experience():
+    from openhire.pipeline.extract import requirements_from_text as req
+    r = req("强化学习算法工程师-运控方向", "职位要求：\n-3年以上机器人或强化学习相关领域的研发经验，有完整的强化学习项目落地经验者优先。")
+    assert r["min_years"] == 3 and r["entry_level"] is False
+    # a comma still ends the clause: the years do not reach an unrelated 经验 further on
+    assert req("x", "本科及以上，3年以上，熟悉C++，有机器人项目经验")["min_years"] is None
+
+
+def test_a_us_only_description_locks_a_bare_remote_to_the_us():
+    desc = "All of our roles are U.S.-based. Applicants must have current authorization to work in the United States."
+    assert service.classify_remote("remote", "Remote", desc) == ("country_locked", ["US"])
+    assert service.classify_remote("remote", "Remote", "Authorization to work in the USA.") == ("country_locked", ["US"])
+    assert service.classify_remote("remote", "Remote", "We hire across Europe and Asia.") == ("unknown", [])
+    # a location that already says where wins over the description
+    assert service.classify_remote("remote", "Remote, Germany", desc) == ("country_locked", ["Germany"])
+
+
+def test_a_plain_supervisor_title_is_a_lead_but_a_grade_option_is_not():
+    from openhire.pipeline.extract import seniority_from_title
+    assert seniority_from_title("感知算法主管") == "lead"
+    assert seniority_from_title("感知融合算法工程师/主管") != "lead"

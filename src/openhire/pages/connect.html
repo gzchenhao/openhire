@@ -38,6 +38,10 @@ td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
 button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
+.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+html[data-lang="en"] .lang-en{display:block}
 footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
 @media (max-width:600px){
   nav.house{padding:10px 16px}
@@ -49,7 +53,6 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
   td{border:0;padding:4px 12px}
   td:first-child{font-weight:700}
 }
-.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
 .pick{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 20px}
 .client{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:4px 18px 16px;margin:16px 0}
 .client pre{background:var(--bg);box-shadow:none}
@@ -60,9 +63,6 @@ html[data-picked] .client[data-show="1"]{display:block}
 .os-win,.os-mac{display:inline}
 html[data-os="mac"] .os-win{display:none}
 html[data-os="win"] .os-mac{display:none}
-.lang-en{display:none}
-html[data-lang="en"] .lang-zh{display:none}
-html[data-lang="en"] .lang-en{display:block}
 </style>
 <noscript><style>.lang-en{display:block}.switch,.pick,.copy{display:none}</style></noscript>
 </head>

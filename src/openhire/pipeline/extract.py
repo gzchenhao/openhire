@@ -572,7 +572,8 @@ def seniority_from_title(title: str | None) -> str:
     if _SEN_MANAGER.search(text):
         return "manager"
     if _SEN_LEAD.search(text):
-        if "主管" in text and not re.search(r"\blead", text, re.I) and _SEN_SUPERVISOR_IS_GRADE.search(text):
+        if ("主管" in text and not re.search(r"\blead", text, re.I) and _SEN_SUPERVISOR_IS_GRADE.search(text)
+                and re.search(r"[/／、或]\s*主管|主管\s*[/／、或]", text)):
             pass  # "感知融合算法工程师/主管": an engineer posting with a supervisor grade
         else:
             return "lead"
@@ -1027,7 +1028,9 @@ _DEGREE_PATTERNS = (
 # The preference word must sit in the same clause: "硕士及以上学历，博士优先" requires a master's.
 _PREFERENCE_AFTER = re.compile(r"^[^，,。.;；\n]{0,40}?(优先|加分|更佳|preferred|a plus|is a plus|bonus|nice to have|desired)", re.I)
 _PREFERENCE_BEFORE = re.compile(r"(preferred|ideally|bonus|nice to have|plus)[^，,.。;；\n]{0,25}$", re.I)
-_YEARS_ZH = re.compile(r"(\d{1,2})\s*(?:[-~～至到]\s*\d{1,2}\s*)?年(?:以上|及以上)?[^。；;\n]{0,12}?(?:工作|相关|行业|开发|研发)?经验")
+# Up to 24 characters inside one clause between the years and 经验: "3年以上机器人或强化学习相关领域的研发经验"
+# is 17 (persona run 2026-11-02 read it as no requirement); a comma ends the clause.
+_YEARS_ZH = re.compile(r"(\d{1,2})\s*(?:[-~～至到]\s*\d{1,2}\s*)?年(?:以上|及以上)?[^。；;，,\n]{0,24}?(?:工作|相关|行业|开发|研发)?经验")
 _YEARS_ZH_AFTER = re.compile(r"经验\s*(\d{1,2})\s*年")
 _YEARS_EN = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d{1,2}\s*)?(?:years?|yrs?)\b[^.\n]{0,40}?experience", re.I)
 _NO_EXPERIENCE = re.compile(r"经验不限|不限经验|无需经验|应届|\bno (prior )?experience (required|needed)\b|\bnew grad", re.I)

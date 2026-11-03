@@ -50,6 +50,10 @@ td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
 button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
+.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+html[data-lang="en"] .lang-en{display:block}
 footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
 @media (max-width:600px){
   nav.house{padding:10px 16px}
@@ -87,3 +91,45 @@ def nav(current: str, home: str = "./") -> str:
             items.append(f'<a href="{html.escape(href, quote=True)}">{html.escape(label)}</a>')
     return (f'<nav class="house"><a class="brand" href="{html.escape(home, quote=True)}">Open<span>Hire</span></a>'
             f'<span class="links">{"".join(items)}</span></nav>')
+
+
+# The 中文 / English switch every bilingual page carries (reports/131: the maintainer found
+# the portal directory, the employer page and the home pages had none). The choice is kept
+# under the same localStorage key as the checklist and the connect guide, so picking English
+# once carries across every page. Without JavaScript both blocks show and the switch hides.
+SWITCH = ('<div class="switch" role="group" aria-label="语言 · Language">\n'
+          '<button type="button" data-set="zh" aria-pressed="true">中文</button>\n'
+          '<button type="button" data-set="en" aria-pressed="false">English</button>\n'
+          '</div>')
+NOSCRIPT = '<noscript><style>.lang-en{display:block}.switch{display:none}</style></noscript>'
+
+
+def lang_script(title_zh: str, title_en: str) -> str:
+    """?lang= first, then the reader's last choice, then the browser language."""
+    titles = '{zh:"%s",en:"%s"}' % (title_zh.replace('"', ""), title_en.replace('"', ""))
+    return """<script>
+(function(){
+  var html=document.documentElement;
+  var titles=%s;
+  function apply(l,save){
+    html.setAttribute("data-lang",l);
+    html.setAttribute("lang",l==="en"?"en":"zh-CN");
+    document.title=titles[l];
+    var bs=document.querySelectorAll(".switch button");
+    for(var i=0;i<bs.length;i++){bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-set")===l?"true":"false");}
+    if(save){try{localStorage.setItem("openhire-lang",l);}catch(e){}}
+  }
+  var q=null;
+  try{q=new URLSearchParams(location.search).get("lang");}catch(e){}
+  var saved=null;
+  try{saved=localStorage.getItem("openhire-lang");}catch(e){}
+  var nav=(navigator.language||"").toLowerCase();
+  var l=(q==="en"||q==="zh")?q:(saved==="en"||saved==="zh")?saved:(/^(zh|yue)/.test(nav)?"zh":"en");
+  apply(l,false);
+  var sw=document.querySelector(".switch");
+  if(sw){sw.addEventListener("click",function(ev){
+    var b=ev.target.closest?ev.target.closest("button"):null;
+    if(b&&b.getAttribute("data-set")){apply(b.getAttribute("data-set"),true);}
+  });}
+})();
+</script>""" % titles

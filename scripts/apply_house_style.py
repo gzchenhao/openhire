@@ -21,9 +21,6 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from openhire import house_style  # noqa: E402
 
-LANG = ('.lang-en{display:none}\nhtml[data-lang="en"] .lang-zh{display:none}\n'
-        'html[data-lang="en"] .lang-en{display:block}')
-SWITCH = ".switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}"
 
 EXTRA = {
     "index": "main>ul{padding-left:1.1em}\nmain>ul>li{margin:12px 0}",
@@ -31,9 +28,8 @@ EXTRA = {
     "checklist": "\n".join([
         ".tag{display:inline-block;font-size:11px;padding:0 6px;border:1px solid var(--border);border-radius:4px;"
         "color:var(--fg-dim);background:var(--bg2);margin-right:4px}",
-        SWITCH, LANG]),
+        ]),
     "connect": "\n".join([
-        SWITCH,
         ".pick{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 20px}",
         ".client{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;"
         "box-shadow:0 1px 3px rgba(0,0,0,.06);padding:4px 18px 16px;margin:16px 0}",
@@ -45,7 +41,7 @@ EXTRA = {
         ".os-win,.os-mac{display:inline}",
         'html[data-os="mac"] .os-win{display:none}',
         'html[data-os="win"] .os-mac{display:none}',
-        LANG]),
+        ]),
 }
 PAGES = {"index": "index.html", "employers": "employers.html", "checklist": "checklist.html", "connect": "connect.html"}
 PACKAGED = ("checklist", "connect")

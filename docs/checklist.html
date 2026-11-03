@@ -38,6 +38,10 @@ td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
 button[aria-pressed="true"]{border-color:var(--accent);font-weight:600}
+.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
+.lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+html[data-lang="en"] .lang-en{display:block}
 footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:11px;color:var(--fg-dim);line-height:2}
 @media (max-width:600px){
   nav.house{padding:10px 16px}
@@ -50,10 +54,6 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
   td:first-child{font-weight:700}
 }
 .tag{display:inline-block;font-size:11px;padding:0 6px;border:1px solid var(--border);border-radius:4px;color:var(--fg-dim);background:var(--bg2);margin-right:4px}
-.switch{display:flex;justify-content:flex-end;gap:8px;margin:0 0 16px}
-.lang-en{display:none}
-html[data-lang="en"] .lang-zh{display:none}
-html[data-lang="en"] .lang-en{display:block}
 </style>
 <noscript><style>.lang-en{display:block}.switch{display:none}</style></noscript>
 </head>
