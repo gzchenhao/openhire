@@ -35,7 +35,7 @@ h1+p,h1+p.dim{font-size:13px;font-weight:400;color:var(--fg-dim);line-height:1.7
 h2{font-size:15px;font-weight:700;margin:48px 0 16px;line-height:1.6}
 h2::before{counter-increment:sec;content:counter(sec,decimal-leading-zero);font-size:11px;color:var(--accent);letter-spacing:.1em;font-weight:600;margin-right:10px}
 h2.log::before{content:none}
-h3{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
+h3,p.lead{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
 p{margin:0 0 12px}
 ul{list-style:none;margin:0 0 16px;padding:0}
 ul>li{padding:8px 0;border-bottom:1px solid var(--border)}
@@ -49,6 +49,9 @@ a:hover{text-decoration:underline}
 b,strong{font-weight:700}
 .dim{color:var(--fg-dim)}
 p.dim{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border)}
+.if,.c,.stop{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border);margin:0}
+.if{margin-top:5px}
+.stop{font-size:13px;font-weight:700;color:var(--accent);padding-bottom:2px;margin-bottom:12px}
 hr{border:0;border-top:1px solid var(--border);margin:32px 0}
 code{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0 4px}
 pre{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}

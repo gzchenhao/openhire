@@ -30,27 +30,30 @@ _TEXT = {
         "h1": "读不到的招聘门户",
         "meta": "{n} 家公司 · 最近核对 {d} · 由 <a href=\"{src}\">登记表</a> 生成",
         "intro": [
-            "<p>这些公司在自动驾驶、具身智能、大模型方向招人，岗位却放在 OpenHire 读不了的地方："
-            "飞书招聘的列表接口要请求签名（我们视为访问控制，不绕过），有的只在 BOSS 直聘上发，"
-            "有的官网没有可读的岗位列表。岗位是真的，人用浏览器就能看。下面是它们自己的招聘页，点开直接看。</p>",
-            "<p>OpenHire 不读、不存、不标日期、不盯这些页面。在 AI 助手里，"
-            "<code>list_portals</code> 工具给的是同一份清单；带浏览器的助手可以替你打开。</p>",
-            "<p>想让 AI 助手替你看，把下面这句连同招聘页链接发给它。飞书这类页面要浏览器执行脚本才显示岗位，"
-            "只会抓网页文字的助手可能看不到，那就自己点开看。</p>",
+            "<p>这些公司在自动驾驶、具身智能、大模型方向招人。岗位放在 OpenHire 读不到的地方：飞书招聘、BOSS 直聘，或没有岗位列表的官网。</p>",
+            "<p>岗位是真的。用浏览器打开公司自己的招聘页，就能看到。</p>",
+            "<p class=\"dim\">飞书的列表接口要请求签名。我们把它当作访问控制，不绕过。OpenHire 不读、不存、不标日期、不盯这些页面。助手里的 <code>list_portals</code> 给同一份清单。</p>",
+            "<p>要助手替你看，把这句话和招聘页链接发给它：</p>",
             "<pre>用浏览器打开这个招聘页，把在招岗位的名称、城市和链接列给我；不用登录，打不开就告诉我：（贴上招聘页链接）</pre>",
+            "<p class=\"if\">如果：</p>",
+            "<p class=\"c\">1. 助手只能读网页文字</p>",
+            "<p class=\"c\">2. 它说页面上没有岗位</p>",
+            "<p class=\"stop\">自己点开招聘页看。</p>",
         ],
-        "cols": ("公司", "招聘页", "不登录能看到什么", "为什么不在索引里", "核对"),
-        "cols2": ("公司", "读不到的门户", "不登录能看到什么", "说明", "核对"),
+        "link": "打开招聘页",
+        "see": "看得到：",
+        "why": "不在索引里：",
+        "note": "说明：",
+        "checked": "核对：",
         "second_h2": "已收录、但另有一个读不到的门户（{n}）",
-        "second_p": "<p>索引读得到这些公司的一个招聘页，但它们在另一个门户上还挂着岗位，只在那里的岗位搜不到。</p>",
+        "second_p": "<p>索引读得到这些公司的一个招聘页。它们在另一个门户上也有岗位，那里的岗位搜不到。</p>",
         "count": "{name}（{n}）",
         "outro": [
             "<h2>不在这张表上的公司</h2>",
-            "<p>它的招聘页如果在 Greenhouse、Lever、Ashby、Moka、北森、Workable、SmartRecruiters、Workday、Rippling 或 Personio 上，"
-            "对助手说「读一下这家公司的招聘页」并贴上网址，OpenHire 现读给你；想以后一直盯着，"
-            "再说「把它加进我的索引」。</p>",
-            '<p>是这些公司的招聘负责人？想让贵公司的岗位在这里可读，见 <a href="employers.html">给雇主的一页说明</a>：'
-            "免费、只读，排序谁也买不到。</p>",
+            "<p>招聘页在 Greenhouse、Lever、Ashby、Moka、北森、Workable、SmartRecruiters、Workday、Rippling 或 Personio 上时：</p>",
+            "<ol><li>对助手说「读一下这家公司的招聘页」，贴上网址。OpenHire 现读。</li>"
+            "<li>要一直盯着，说「把它加进我的索引」。</li></ol>",
+            '<p>是这些公司的招聘负责人？看<a href="employers.html">给雇主</a>。免费，只读，排序谁也买不到。</p>',
             '<p class="dim"><a href="./">OpenHire 首页</a> · <a href="https://github.com/gzchenhao/openhire">GitHub</a></p>',
         ],
     },
@@ -58,32 +61,44 @@ _TEXT = {
         "h1": "Hiring portals we cannot read",
         "meta": "{n} companies · last checked {d} · generated from <a href=\"{src}\">the registry</a>",
         "intro": [
-            "<p>These companies hire in autonomous driving, embodied AI and foundation models, but post their jobs where OpenHire cannot read them: "
-            "Feishu Hire's list API requires signed requests (we treat that as access control and do not work around it), some post only on BOSS Zhipin, "
-            "and some careers sites have no readable list. The jobs are real and a person with a browser can see them. Below are their own careers pages, to open directly.</p>",
-            "<p>OpenHire does not read, store, date or watch these pages. In an AI assistant, "
-            "the <code>list_portals</code> tool returns the same list; an assistant with a browser can open them for you.</p>",
-            "<p>To have an AI assistant look for you, send it the sentence below with the careers page link. Pages like Feishu's need a browser that runs scripts to show the jobs, "
-            "so an assistant that only fetches page text may see nothing; then open it yourself.</p>",
+            "<p>These companies hire in autonomous driving, embodied AI and foundation models. Their postings are where OpenHire cannot read them: Feishu Hire, BOSS Zhipin, or a site with no list.</p>",
+            "<p>The jobs are real. Open the company's own careers page in a browser to see them.</p>",
+            "<p class=\"dim\">Feishu's list API needs signed requests. We treat that as access control and do not work around it. OpenHire does not read, store, date or watch these pages. In an assistant, <code>list_portals</code> gives the same list.</p>",
+            "<p>To have an assistant look for you, send it this sentence with the careers page link:</p>",
             "<pre>Open this careers page in a browser and list the open jobs with title, city and link; no login needed, and tell me if it will not open: (paste the careers page link)</pre>",
+            "<p class=\"if\">If:</p>",
+            "<p class=\"c\">1. The assistant reads only page text</p>",
+            "<p class=\"c\">2. It says the page has no jobs</p>",
+            "<p class=\"stop\">Open the careers page yourself.</p>",
         ],
-        "cols": ("Company", "Careers page", "What you see without logging in", "Why it is not in the index", "Checked"),
-        "cols2": ("Company", "Portal we cannot read", "What you see without logging in", "Note", "Checked"),
+        "link": "Open the careers page",
+        "see": "You see: ",
+        "why": "Not in the index: ",
+        "note": "Note: ",
+        "checked": "Checked: ",
         "second_h2": "In the index, but with a second portal we cannot read ({n})",
-        "second_p": "<p>The index reads one careers page for these companies, but they also post on another portal; only the jobs there are missing from search.</p>",
+        "second_p": "<p>The index reads one careers page for these companies. They also post on another portal. The jobs there are not in search.</p>",
         "count": "{name} ({n})",
         "outro": [
             "<h2>A company not on this list</h2>",
-            "<p>If its careers page is on Greenhouse, Lever, Ashby, Moka, Beisen, Workable, SmartRecruiters, Workday, Rippling or Personio, "
-            "ask the assistant to \"read this company's careers page\" and paste the address, and OpenHire reads it live; to keep watching it, "
-            "say \"add it to my index\".</p>",
-            '<p>Hiring at one of these companies? To make your postings readable here, see <a href="employers.html">the page for employers</a>: '
-            "free, read-only, and nobody can buy ranking.</p>",
+            "<p>If its careers page is on Greenhouse, Lever, Ashby, Moka, Beisen, Workable, SmartRecruiters, Workday, Rippling or Personio:</p>",
+            "<ol><li>Tell the assistant \"read this company's careers page\" and paste the address. OpenHire reads it live.</li>"
+            "<li>To keep watching it, say \"add it to my index\".</li></ol>",
+            '<p>Hiring at one of these companies? Read <a href="employers.html">For employers</a>. Free. Read-only. Nobody can buy ranking.</p>',
             '<p class="dim"><a href="./">OpenHire home</a> · <a href="https://github.com/gzchenhao/openhire">GitHub</a></p>',
         ],
     },
 }
 _SRC = "https://github.com/gzchenhao/openhire/blob/main/src/openhire/seed/not_indexed.py"
+
+
+def _entry(t: dict, name: str, url: str, see: str, why_label: str, why: str, checked: str) -> str:
+    """One company, laid out like a step on the 查公司 page: name, link, then grey notes."""
+    return (f'<li><p class="lead">{_e(name)}</p>'
+            f'<p><a href="{_e(url)}" rel="nofollow noopener">{t["link"]}</a></p>'
+            f'<p class="dim">{t["see"]}{_e(see)}</p>'
+            f'<p class="dim">{why_label}{_e(why)}</p>'
+            f'<p class="dim">{t["checked"]}{_e(checked)}</p></li>')
 
 
 def _block(lang: str, entries, seconds, as_of: str) -> list[str]:
@@ -98,35 +113,21 @@ def _block(lang: str, entries, seconds, as_of: str) -> list[str]:
             continue
         name = not_indexed.SECTOR_NAMES_ZH[sector] if zh else SECTOR_NAMES_EN[sector]
         out.append(f"<h2>{_e(t['count'].format(name=name, n=len(rows)))}</h2>")
-        out.append("<table>")
-        out.append("<thead><tr>" + "".join(f"<th>{c}</th>" for c in t["cols"]) + "</tr></thead>")
-        out.append("<tbody>")
+        out.append("<ul>")
         for e in rows:
-            url = _e(e.careers_url)
-            out.append(
-                f"<tr><td>{_e(e.name)}</td>"
-                f'<td><a href="{url}" rel="nofollow noopener">{url}</a></td>'
-                f"<td>{_e(e.visible_without_login_zh if zh else e.visible_without_login)}</td>"
-                f"<td>{_e(e.reason_zh if zh else e.reason)}</td>"
-                f"<td>{_e(e.last_checked)}</td></tr>"
-            )
-        out.append("</tbody></table>")
+            out.append(_entry(t, e.name, e.careers_url,
+                              e.visible_without_login_zh if zh else e.visible_without_login,
+                              t["why"], e.reason_zh if zh else e.reason, e.last_checked))
+        out.append("</ul>")
     if seconds:
         out.append(f"<h2>{_e(t['second_h2'].format(n=len(seconds)))}</h2>")
         out.append(t["second_p"])
-        out.append("<table>")
-        out.append("<thead><tr>" + "".join(f"<th>{c}</th>" for c in t["cols2"]) + "</tr></thead>")
-        out.append("<tbody>")
+        out.append("<ul>")
         for p in seconds:
-            url = _e(p.careers_url)
-            out.append(
-                f"<tr><td>{_e(p.name)}</td>"
-                f'<td><a href="{url}" rel="nofollow noopener">{url}</a></td>'
-                f"<td>{_e(p.visible_without_login_zh if zh else p.visible_without_login)}</td>"
-                f"<td>{_e(p.note_zh if zh else p.note)}</td>"
-                f"<td>{_e(p.last_checked)}</td></tr>"
-            )
-        out.append("</tbody></table>")
+            out.append(_entry(t, p.name, p.careers_url,
+                              p.visible_without_login_zh if zh else p.visible_without_login,
+                              t["note"], p.note_zh if zh else p.note, p.last_checked))
+        out.append("</ul>")
     out += t["outro"]
     return out
 

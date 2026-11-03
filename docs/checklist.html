@@ -23,7 +23,7 @@ h1+p,h1+p.dim{font-size:13px;font-weight:400;color:var(--fg-dim);line-height:1.7
 h2{font-size:15px;font-weight:700;margin:48px 0 16px;line-height:1.6}
 h2::before{counter-increment:sec;content:counter(sec,decimal-leading-zero);font-size:11px;color:var(--accent);letter-spacing:.1em;font-weight:600;margin-right:10px}
 h2.log::before{content:none}
-h3{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
+h3,p.lead{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
 p{margin:0 0 12px}
 ul{list-style:none;margin:0 0 16px;padding:0}
 ul>li{padding:8px 0;border-bottom:1px solid var(--border)}
@@ -37,6 +37,9 @@ a:hover{text-decoration:underline}
 b,strong{font-weight:700}
 .dim{color:var(--fg-dim)}
 p.dim{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border)}
+.if,.c,.stop{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border);margin:0}
+.if{margin-top:5px}
+.stop{font-size:13px;font-weight:700;color:var(--accent);padding-bottom:2px;margin-bottom:12px}
 hr{border:0;border-top:1px solid var(--border);margin:32px 0}
 code{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0 4px}
 pre{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
@@ -75,68 +78,56 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 </div>
 
 <div class="lang-zh">
-<h1>求职清单：每一步该做什么，谁来做，去哪里做</h1>
-<p class="dim">这页打不开或很慢（国内网络常见），用国内能开的同一页：<a href="https://openhire-vlny.onrender.com/checklist">openhire-vlny.onrender.com/checklist</a>。免费，不用注册。<span class="tag">OpenHire 做</span>的项让 AI 助手直接做；<span class="tag">你自己做</span>的项给你官方网址。最后更新 2026-10-21。</p>
-<p>已读不回？先看岗位还在不在。OpenHire 让 AI 助手直接从雇主自己的招聘系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。它不是全部：查公司、防骗、投递、谈 offer 有几步要你自己做。这页把整条路列出来，不藏着。</p>
-<p><b>值得收藏的原因：</b>官方网址会搬家，骗子的套路每季度翻新，这页跟着改，每次改动都记在页尾的「更新记录」里。收藏一次，下次找工作、帮朋友把关、收到可疑 offer 的时候回来看最新的一版，不用再到处搜。</p>
-
+<h1>求职清单</h1>
+<p class="dim">找工作的七步。每一步写明谁做、去哪里做。全部免费，不用注册。这页打不开时，用<a href="https://openhire-vlny.onrender.com/checklist">国内镜像</a>。最后更新 2026-11-03。</p>
+<p>已读不回？先看岗位还在不在。OpenHire 让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。</p>
+<p>有几步要你自己做。这页全部列出。收藏这页：网址变了、骗局变了，这页跟着改，改动记在页尾。</p>
 <h2>定方向</h2>
-<table>
-<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
-<tr><td>写清目标城市、岗位方向、个人贡献者还是带团队、年限、三到五个技能、不考虑的方向</td><td><span class="tag">你自己做</span></td><td>一句话就行，贴给助手。装好 OpenHire 后在助手里选「求职清单」提示词，它会按这页带你走。还没接好 OpenHire？看<a href="connect.html">连接向导</a>：选你用的助手，只看那一种的步骤。</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">写下你的条件</p><p>写下目标城市、岗位方向、个人贡献者还是带团队、年限、三到五个技能、不考虑的方向。贴给助手。</p><p>在助手里选「求职清单」提示词。它按这页带你走。还没接好 OpenHire？看<a href="connect.html">连接向导</a>。</p><p class="dim">谁做：你</p></li>
+</ul>
 <h2>搜岗位</h2>
-<table>
-<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
-<tr><td>在架岗位，每条带公司、地点、雇主系统里的原始发布日期、在架天数、投递链接</td><td><span class="tag">OpenHire 做</span></td><td>助手调 <code>search_jobs</code>。HR、招聘岗有单独的分类（<code>hr</code>）。在架时间长的岗位只说量到的事实，不替你判断它是不是不招了。</td></tr>
-<tr><td>岗位放在飞书、BOSS 直聘或没有可读列表的官网上的公司</td><td><span class="tag">OpenHire 给链接</span></td><td><a href="portals.html">读不到的招聘门户</a>：它们自己的招聘页，点开直接看；助手里用 <code>list_portals</code>。</td></tr>
-<tr><td>某家公司不在索引里</td><td><span class="tag">OpenHire 做</span></td><td>把它的招聘页网址给助手，<code>read_board</code> 现读，<code>add_employer</code> 加进你这台电脑的索引。</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">搜在架岗位</p><p>让助手调 <code>search_jobs</code>。每条带公司、地点、雇主系统里的原始发布日期、在架天数、投递链接。HR 和招聘岗用分类 <code>hr</code>。</p><p class="dim">谁做：OpenHire。在架时间长的岗位只报天数，不判断它招不招。</p></li>
+<li><p class="lead">看读不到的公司</p><p>岗位放在飞书、BOSS 直聘或没有列表的官网上时，打开<a href="portals.html">读不到的招聘门户</a>。点公司自己的招聘页。助手里用 <code>list_portals</code>。</p><p class="dim">谁做：OpenHire 给链接，你打开</p></li>
+<li><p class="lead">加一家不在索引里的公司</p><p>把它的招聘页网址给助手。<code>read_board</code> 现读，<code>add_employer</code> 加进你电脑上的索引。</p><p class="dim">谁做：OpenHire</p></li>
+</ul>
 <h2>查公司</h2>
-<p class="dim">只要这一步的，单独一页：<a href="check-company.html">查公司</a>（只有官方网址和防骗三步，没有别的）。</p>
-<table>
-<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
-<tr><td>索引里的在架数、在架中位天数、发布日来源、是否认领过；官网域名注册日期、档案馆首次抓取、首页备案号；招聘文案里的骗局特征词；OFAC 制裁名单比对；近期公司事件</td><td><span class="tag">OpenHire 做</span></td><td>助手调 <code>check_employer</code>，拿到一张查证清单，每项写明来源和时间，不打分、不下结论。</td></tr>
-<tr><td>工商登记：成立日期、经营状态、注册资本、法定代表人</td><td><span class="tag">你自己做</span></td><td>国家企业信用信息公示系统 <a href="https://www.gsxt.gov.cn/">gsxt.gov.cn</a>（官方，免费，有验证码，按全称查）；爱企查 <a href="https://aiqicha.baidu.com/">aiqicha.baidu.com</a>（免费）；天眼查自己的免费服务，入口 <a href="https://ai.tianyancha.com/">ai.tianyancha.com</a>（个人账号可查，境外 IP 不支持）。你把结果告诉助手就行，OpenHire 不代查、不存你查了谁。</td></tr>
-<tr><td>网站备案主办单位是不是这家公司</td><td><span class="tag">你自己做</span></td><td>工信部 ICP 备案查询 <a href="https://beian.miit.gov.cn/">beian.miit.gov.cn</a>，用官网域名查，主办单位要和招聘方一致。</td></tr>
-<tr><td>法院记录、失信信息</td><td><span class="tag">你自己做</span></td><td>中国裁判文书网 <a href="https://wenshu.court.gov.cn/">wenshu.court.gov.cn</a>；信用中国 <a href="https://www.creditchina.gov.cn/">creditchina.gov.cn</a>。</td></tr>
-<tr><td>香港公司</td><td><span class="tag">你自己做</span></td><td>公司註冊處電子服務 <a href="https://www.e-services.cr.gov.hk/">e-services.cr.gov.hk</a>（免费查公司名称，无需账户）。</td></tr>
-<tr><td>其他境外公司</td><td><span class="tag">你自己做</span></td><td>OpenCorporates <a href="https://opencorporates.com/">opencorporates.com</a>。</td></tr>
-</table>
-
+<p class="dim">只要这一步时，用单独一页：<a href="check-company.html">查公司</a>。</p>
+<ul>
+<li><p class="lead">让助手先查一遍</p><p>让助手调 <code>check_employer</code>。它给一张查证清单：在架数、在架天数、域名注册日期、备案号、骗局字样、制裁名单比对、近期公司事件。每项写明来源和时间。</p><p class="dim">谁做：OpenHire。不打分，不下结论。</p></li>
+<li><p class="lead">查工商登记</p><p>在<a href="https://www.gsxt.gov.cn/">国家企业信用信息公示系统</a>搜公司全称。看成立日期、经营状态、注册资本、法定代表人。也可以用<a href="https://aiqicha.baidu.com/">爱企查</a>或<a href="https://ai.tianyancha.com/">天眼查个人免费入口</a>（境外网络不能用）。把结果告诉助手。</p><p class="dim">谁做：你。OpenHire 不代查，不存你查了谁。</p></li>
+<li><p class="lead">查官网备案</p><p>在<a href="https://beian.miit.gov.cn/">工信部 ICP 备案查询</a>输入官网域名。主办单位必须是这家公司。</p><p class="dim">谁做：你</p></li>
+<li><p class="lead">查法院和信用记录</p><p>在<a href="https://wenshu.court.gov.cn/">中国裁判文书网</a>和<a href="https://www.creditchina.gov.cn/">信用中国</a>搜全称。</p><p class="dim">谁做：你</p></li>
+<li><p class="lead">查香港和境外公司</p><p>香港：<a href="https://www.e-services.cr.gov.hk/">公司註冊處電子服務</a>（查公司名称免费）。其他地方：<a href="https://opencorporates.com/">OpenCorporates</a>。</p><p class="dim">谁做：你</p></li>
+</ul>
 <h2>反诈骗三步</h2>
-<p>骗子招聘的套路很固定。三步，每一步都不用花钱。</p>
-<table>
-<tr><th>步骤</th><th>谁做</th><th>怎么做</th></tr>
-<tr><td>① 看见这些先停下来：要你先交钱（培训费、保证金、设备费）、先出境面试、先交护照、包机票的境外高薪、不限经验的高薪、打字员和刷单</td><td><span class="tag">OpenHire 提醒</span></td><td><code>check_employer</code> 会标出招聘文案里的这些特征词（含繁体和香港警方总结的骗局特征）。标出来只是提醒，决定是你的。</td></tr>
-<tr><td>② 只从雇主自己的域名或招聘系统投递</td><td><span class="tag">OpenHire 做</span></td><td>索引里的投递链接只信 https、只信雇主自己的租户或域名；别的来源发来的链接、二维码、群聊里的表格一律不点。</td></tr>
-<tr><td>③ 拿不准的电话、网址、收款账户，先查再回</td><td><span class="tag">你自己做</span></td><td>大陆：国家反诈中心 App（各应用商店搜「国家反诈中心」），或 12321 网络不良与垃圾信息举报 <a href="https://www.12321.cn/">12321.cn</a>，报警 110；香港：警务处防騙視伏器 <a href="https://cyberdefender.hk/scameter/">cyberdefender.hk/scameter</a>，防騙易热线 18222。</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">① 看到这些，停下</p><p class="if">如果：</p><p class="c">1. 要你先交钱（培训费、保证金、设备费）</p><p class="c">2. 要你先出境面试或交护照</p><p class="c">3. 包机票的境外高薪</p><p class="c">4. 不要经验的高薪</p><p class="c">5. 打字员、刷单</p><p class="stop">停下！</p><p class="dim">谁做：OpenHire 标出这些字样（含繁体和香港警方列的骗局特征）。决定由你做。</p></li>
+<li><p class="lead">② 只在雇主自己的系统投递</p><p>只点雇主自己域名或招聘系统的链接。不点群聊、私信里的链接、二维码、表格。</p><p class="dim">谁做：OpenHire 只给 https 的雇主自有链接</p></li>
+<li><p class="lead">③ 不确定时，先查</p><p>大陆：用国家反诈中心 App 查电话、网址、收款账户；在<a href="https://www.12321.cn/">网络不良与垃圾信息举报受理中心</a>举报；报警打 110。香港：用警务处<a href="https://cyberdefender.hk/scameter/">防騙視伏器</a>；打防騙易热线 18222。</p><p class="dim">谁做：你</p></li>
+</ul>
 <h2>投递</h2>
-<table>
-<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
-<tr><td>打开投递链接，自己投</td><td><span class="tag">你自己做</span></td><td>OpenHire 不替你投，也不碰你的简历：协议里没有简历字段，助手把简历和岗位放一起比对也只在你电脑上。</td></tr>
-<tr><td>记一条「我授权投这家」</td><td><span class="tag">OpenHire 做</span></td><td><code>authorize_application</code> 只记你的授权和一个匿名指纹，同一岗位记一次；什么都不发给雇主。</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">自己投</p><p>打开投递链接。自己投。</p><p class="dim">谁做：你。OpenHire 不替你投，不收简历。助手比对简历只在你电脑上做。</p></li>
+<li><p class="lead">记下授权</p><p>让助手调 <code>authorize_application</code>。它只记你的授权和匿名指纹。同一岗位只记一次。</p><p class="dim">谁做：OpenHire。不发任何东西给雇主。</p></li>
+</ul>
 <h2>盯岗</h2>
-<table>
-<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
-<tr><td>把这个求职意向设成雷达，以后一句「看看我的雷达」就知道新出了什么、哪些关了</td><td><span class="tag">OpenHire 做</span></td><td><code>watch_intent</code> 登记，<code>check_watches</code> 查。雷达记在你自己电脑的索引里，按一个你自己生成的随机指纹存。</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">设雷达</p><p>让助手调 <code>watch_intent</code> 登记这个求职意向。以后说「看看我的雷达」，助手调 <code>check_watches</code>，告诉你新出了什么、关了什么。</p><p class="dim">谁做：OpenHire。雷达存在你电脑上，用你自己生成的随机指纹。</p></li>
+</ul>
 <h2>面试与 offer</h2>
-<table>
-<tr><th>做什么</th><th>谁做</th><th>怎么做</th></tr>
-<tr><td>劳动合同、社保、试用期、工资支付的规矩</td><td><span class="tag">你自己做</span></td><td>人社部 12333 热线与 <a href="https://www.12333.gov.cn/">12333.gov.cn</a>；香港：劳工处 <a href="https://www.labour.gov.hk/">labour.gov.hk</a>。</td></tr>
-<tr><td>入职前再核一次公司名、合同主体、收款方是不是同一家</td><td><span class="tag">你自己做</span></td><td>第 3 步的网址再查一遍合同上的主体全称。</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">查劳动规则</p><p>合同、社保、试用期、工资：打 12333 或看<a href="https://www.12333.gov.cn/">人社部 12333</a>。香港：看<a href="https://www.labour.gov.hk/">劳工处</a>。</p><p class="dim">谁做：你</p></li>
+<li><p class="lead">入职前再核一次</p><p>用「查公司」里的网站，查合同上的全称。公司名、合同主体、发工资的主体必须是同一家。</p><p class="dim">谁做：你</p></li>
+</ul>
 <h2>把这页装进你的助手</h2>
-<p>ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy 都能接。能动手的助手，把下面整段贴给它；只能聊天的，看 <a href="https://github.com/gzchenhao/openhire#quickstart--under-a-minute">README 的一行配置</a>。ChatGPT 在 设置 → 连接器 → 高级 → 开发者模式 里新建连接器，地址填 <code>https://openhire-vlny.onrender.com/mcp</code>，不用装任何东西。</p>
+<p>ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy 都能接。</p>
+<ul>
+<li><p class="lead">能运行命令的助手</p><p>贴入下面整段。</p></li>
+<li><p class="lead">只能聊天的助手</p><p>用 <a href="https://github.com/gzchenhao/openhire#quickstart--under-a-minute">README 里的一行配置</a>。</p></li>
+<li><p class="lead">ChatGPT</p><p>打开 设置 → 连接器 → 高级 → 开发者模式。新建连接器，地址填 <code>https://openhire-vlny.onrender.com/mcp</code>。</p></li>
+</ul>
 <pre>帮我装一个 MCP 服务：名字 openhire，启动命令 uvx openhire@latest serve。如果电脑上没有 uv，先帮我装 uv。
 
 装好后检查：你现在能不能调用 openhire 的工具（比如 search_jobs）？
@@ -151,6 +142,7 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <ul class="dim">
 <li>2026-10-21：首版七步上线；加国内地址 openhire-vlny.onrender.com/checklist；第 3 步单独成页「查公司」；加英文版，右上角切换语言。</li>
 <li>2026-10-28：第 1 步加「个人贡献者还是带团队」；加连接向导链接（按你用的助手只看那一种的接入步骤）。</li>
+<li>2026-11-03：版式与查公司页一致；文字改短，一句一个动作；表格改成分步列表；网址改成机构名称链接。内容不变。</li>
 </ul>
 
 <hr>
@@ -159,68 +151,56 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 </div>
 
 <div class="lang-en">
-<h1>Job-search checklist: what to do at each step, who does it, and where</h1>
-<p class="dim">If this page is slow or blocked (common on mainland Chinese networks), the same page is at <a href="https://openhire-vlny.onrender.com/checklist?lang=en">openhire-vlny.onrender.com/checklist</a>. Free, no sign-up. Items tagged <span class="tag">OpenHire does</span> are done by your AI assistant; items tagged <span class="tag">You do</span> come with the official address. Last updated 2026-10-21.</p>
-<p>Companies screen you with AI. Screen them back. OpenHire lets an AI assistant find jobs for you straight from employers' own hiring systems, and your résumé never leaves your computer. Is the job still open? Is the company real? Check both before you apply. That is not the whole job: checking a company, avoiding scams, applying and negotiating the offer take a few steps you do yourself. This page lays out the whole path, nothing hidden.</p>
-<p><b>Why bookmark it:</b> official addresses move and scam scripts change every quarter; this page changes with them, and every change is listed in the change log at the bottom. Bookmark it once and come back the next time you look for a job, help a friend check an offer, or receive one that looks odd, instead of searching all over again.</p>
-
+<h1>Job-search checklist: what to do at each step</h1>
+<p class="dim">Seven steps. Each step says who does it and where. Free. No sign-up. If this page is slow, use the <a href="https://openhire-vlny.onrender.com/checklist?lang=en">mirror in mainland China</a>. Last updated 2026-11-03.</p>
+<p>Companies screen you with AI. Screen them back. OpenHire lets an AI assistant find jobs for you in employers' own hiring systems. Your résumé stays on your computer.</p>
+<p>You do some steps yourself. This page lists all of them. Bookmark it: when an address or a scam changes, this page changes, and the change log at the bottom records it.</p>
 <h2>Set the target</h2>
-<table>
-<tr><th>What</th><th>Who</th><th>How</th></tr>
-<tr><td>Write down the target city, the role direction, individual contributor or management, years of experience, three to five skills, and what you rule out</td><td><span class="tag">You do</span></td><td>One sentence is enough; paste it to the assistant. Once OpenHire is installed, pick the "Job-search checklist" prompt in the assistant and it walks you through this page. Not connected yet? The <a href="connect.html?lang=en">connect guide</a> shows only your assistant's steps.</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">Write down your target</p><p>Write the city, the role, individual contributor or management, years of experience, three to five skills, and what you rule out. Paste it to the assistant.</p><p>In the assistant, select the "Job-search checklist" prompt. It follows this page. Not connected yet? Read the <a href="connect.html?lang=en">connect guide</a>.</p><p class="dim">Who: you</p></li>
+</ul>
 <h2>Search postings</h2>
-<table>
-<tr><th>What</th><th>Who</th><th>How</th></tr>
-<tr><td>Live postings, each with the company, location, the original posting date from the employer's own system, days on the board, and the apply link</td><td><span class="tag">OpenHire does</span></td><td>The assistant calls <code>search_jobs</code>. HR and recruiting roles have their own family (<code>hr</code>). For a posting that has been up a long time it reports only what it measured; it does not decide for you whether the role is still being filled.</td></tr>
-<tr><td>Companies whose postings live on Feishu, BOSS Zhipin, or a site with no readable list</td><td><span class="tag">OpenHire gives the link</span></td><td><a href="portals.html">Hiring portals we cannot read</a>: their own careers pages, open them and read directly; in the assistant, <code>list_portals</code>.</td></tr>
-<tr><td>A company that is not in the index</td><td><span class="tag">OpenHire does</span></td><td>Give the assistant the address of its careers page: <code>read_board</code> reads it live, <code>add_employer</code> adds it to the index on your own computer.</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">Search live postings</p><p>Ask the assistant to call <code>search_jobs</code>. Each result has the company, location, the original posting date from the employer's system, days on the board, and the apply link. For HR and recruiting roles, use the family <code>hr</code>.</p><p class="dim">Who: OpenHire. For an old posting, it reports the days only. It does not say if the role is still open.</p></li>
+<li><p class="lead">Find companies we cannot read</p><p>If the postings are on Feishu, BOSS Zhipin or a site with no list, open <a href="portals.html">Hiring portals we cannot read</a>. Click the company's own careers page. In the assistant, use <code>list_portals</code>.</p><p class="dim">Who: OpenHire gives the link; you open it</p></li>
+<li><p class="lead">Add a company that is not in the index</p><p>Give the assistant the address of its careers page. <code>read_board</code> reads it live. <code>add_employer</code> adds it to the index on your computer.</p><p class="dim">Who: OpenHire</p></li>
+</ul>
 <h2>Check the company</h2>
-<p class="dim">Only need this step? It has its own page in Chinese: <a href="check-company.html">查公司</a> (official addresses and the three anti-scam checks, nothing else). The same addresses are in the rows below.</p>
-<table>
-<tr><th>What</th><th>Who</th><th>How</th></tr>
-<tr><td>Live postings in the index, median days on the board, where the posting date comes from, whether the employer has claimed its listing; domain registration date, first capture in the Internet Archive, the ICP record on the homepage; scam red flags in the posting text; a match against the OFAC sanctions lists; recent company events</td><td><span class="tag">OpenHire does</span></td><td>The assistant calls <code>check_employer</code> and gets a verification checklist: every item names its source and time, with no score and no verdict.</td></tr>
-<tr><td>Company register: founding date, status, registered capital, legal representative</td><td><span class="tag">You do</span></td><td>Mainland China: the National Enterprise Credit Information Publicity System <a href="https://www.gsxt.gov.cn/">gsxt.gov.cn</a> (official, free, has a captcha, search by the full registered name); Aiqicha <a href="https://aiqicha.baidu.com/">aiqicha.baidu.com</a> (free); Tianyancha's own free service at <a href="https://ai.tianyancha.com/">ai.tianyancha.com</a> (personal account; overseas IP addresses are not supported). Tell the assistant what you found. OpenHire does not look companies up for you and does not store whom you checked.</td></tr>
-<tr><td>Is the website's ICP filing held by this company?</td><td><span class="tag">You do</span></td><td>MIIT ICP filing lookup <a href="https://beian.miit.gov.cn/">beian.miit.gov.cn</a>: search the domain of the official site; the filing holder must match the hiring entity.</td></tr>
-<tr><td>Court records and dishonesty lists</td><td><span class="tag">You do</span></td><td>China Judgements Online <a href="https://wenshu.court.gov.cn/">wenshu.court.gov.cn</a>; Credit China <a href="https://www.creditchina.gov.cn/">creditchina.gov.cn</a>.</td></tr>
-<tr><td>Hong Kong companies</td><td><span class="tag">You do</span></td><td>Companies Registry e-Services <a href="https://www.e-services.cr.gov.hk/">e-services.cr.gov.hk</a> (company name search is free, no account needed).</td></tr>
-<tr><td>Companies elsewhere</td><td><span class="tag">You do</span></td><td>OpenCorporates <a href="https://opencorporates.com/">opencorporates.com</a>.</td></tr>
-</table>
-
+<p class="dim">For this step only, use its own page (in Chinese): <a href="check-company.html">查公司</a>.</p>
+<ul>
+<li><p class="lead">Let the assistant check first</p><p>Ask the assistant to call <code>check_employer</code>. It gives a checklist: live postings, days on the board, domain registration date, ICP record, scam phrases, sanctions match, recent company events. Each item names its source and time.</p><p class="dim">Who: OpenHire. No score. No verdict.</p></li>
+<li><p class="lead">Check the company register</p><p>Search the full registered name in the <a href="https://www.gsxt.gov.cn/">National Enterprise Credit Information Publicity System</a>. Read the founding date, status, registered capital and legal representative. You can also use <a href="https://aiqicha.baidu.com/">Aiqicha</a> or <a href="https://ai.tianyancha.com/">Tianyancha's free personal service</a> (not from overseas networks). Tell the assistant what you found.</p><p class="dim">Who: you. OpenHire does not look companies up for you and does not store whom you checked.</p></li>
+<li><p class="lead">Check the ICP filing</p><p>Enter the domain of the official site in the <a href="https://beian.miit.gov.cn/">MIIT ICP filing lookup</a>. The filing holder must be this company.</p><p class="dim">Who: you</p></li>
+<li><p class="lead">Check court and credit records</p><p>Search the full name in <a href="https://wenshu.court.gov.cn/">China Judgements Online</a> and <a href="https://www.creditchina.gov.cn/">Credit China</a>.</p><p class="dim">Who: you</p></li>
+<li><p class="lead">Check companies in Hong Kong and elsewhere</p><p>Hong Kong: <a href="https://www.e-services.cr.gov.hk/">Companies Registry e-Services</a> (name search is free). Elsewhere: <a href="https://opencorporates.com/">OpenCorporates</a>.</p><p class="dim">Who: you</p></li>
+</ul>
 <h2>Three anti-scam checks</h2>
-<p>Recruitment scams follow a fixed script. Three checks, and none of them costs money.</p>
-<table>
-<tr><th>Check</th><th>Who</th><th>How</th></tr>
-<tr><td>① Stop when you see any of these: pay first (training fee, deposit, equipment fee), interview abroad first, hand over your passport first, high pay abroad with flights included, high pay with no experience required, typist and order-brushing jobs</td><td><span class="tag">OpenHire flags</span></td><td><code>check_employer</code> marks these red-flag phrases in the posting text (including traditional Chinese spellings and the scam patterns summarised by the Hong Kong Police). A flag is a reminder; the decision is yours.</td></tr>
-<tr><td>② Apply only through the employer's own domain or hiring system</td><td><span class="tag">OpenHire does</span></td><td>Apply links in the index are accepted only over https and only on the employer's own tenant or domain. Links, QR codes and forms that arrive from anywhere else, group chats included, are never opened.</td></tr>
-<tr><td>③ Unsure about a phone number, an address or a payment account? Check before you reply</td><td><span class="tag">You do</span></td><td>Mainland China: the National Anti-Fraud Center app (search 国家反诈中心 in your app store), or the 12321 reporting centre <a href="https://www.12321.cn/">12321.cn</a>; police 110. Hong Kong: the Police Scameter <a href="https://cyberdefender.hk/scameter/">cyberdefender.hk/scameter</a>, Anti-Scam Helpline 18222.</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">① Stop when you see these</p><p class="if">If:</p><p class="c">1. You must pay first (training fee, deposit, equipment fee)</p><p class="c">2. You must interview abroad or hand over your passport first</p><p class="c">3. High pay abroad with flights included</p><p class="c">4. High pay with no experience required</p><p class="c">5. Typist or order-brushing jobs</p><p class="stop">Stop.</p><p class="dim">Who: OpenHire marks these phrases (with traditional Chinese spellings and the Hong Kong Police scam patterns). You decide.</p></li>
+<li><p class="lead">② Apply only in the employer's own system</p><p>Click only links on the employer's own domain or hiring system. Do not open links, QR codes or forms from group chats or private messages.</p><p class="dim">Who: OpenHire gives only https links on the employer's own system</p></li>
+<li><p class="lead">③ Not sure? Check first</p><p>Mainland China: check the phone number, address or payment account in the National Anti-Fraud Center app (search 国家反诈中心 in your app store). Report to the <a href="https://www.12321.cn/">12321 reporting centre</a>. Police: 110. Hong Kong: use the Police <a href="https://cyberdefender.hk/scameter/">Scameter</a>. Anti-Scam Helpline: 18222.</p><p class="dim">Who: you</p></li>
+</ul>
 <h2>Apply</h2>
-<table>
-<tr><th>What</th><th>Who</th><th>How</th></tr>
-<tr><td>Open the apply link and apply yourself</td><td><span class="tag">You do</span></td><td>OpenHire does not apply for you and never touches your résumé: the protocol has no résumé field, and when the assistant compares your résumé with a posting, that happens only on your computer.</td></tr>
-<tr><td>Record "I authorised an application to this employer"</td><td><span class="tag">OpenHire does</span></td><td><code>authorize_application</code> records only your authorisation and an anonymous fingerprint, once per posting; nothing is sent to the employer.</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">Apply yourself</p><p>Open the apply link. Apply yourself.</p><p class="dim">Who: you. OpenHire does not apply for you and does not take your résumé. The assistant compares your résumé with a posting only on your computer.</p></li>
+<li><p class="lead">Record your authorisation</p><p>Ask the assistant to call <code>authorize_application</code>. It records only your authorisation and an anonymous fingerprint, once per posting.</p><p class="dim">Who: OpenHire. It sends nothing to the employer.</p></li>
+</ul>
 <h2>Watch</h2>
-<table>
-<tr><th>What</th><th>Who</th><th>How</th></tr>
-<tr><td>Turn this job target into a radar; later, one line such as "check my radar" tells you what is new and what has closed</td><td><span class="tag">OpenHire does</span></td><td><code>watch_intent</code> registers it, <code>check_watches</code> reads it. The radar lives in the index on your own computer, stored under a random fingerprint you generate yourself.</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">Set a radar</p><p>Ask the assistant to call <code>watch_intent</code> for this target. Later, say "check my radar". The assistant calls <code>check_watches</code> and tells you what is new and what has closed.</p><p class="dim">Who: OpenHire. The radar stays on your computer, under a random fingerprint you make yourself.</p></li>
+</ul>
 <h2>Interview and offer</h2>
-<table>
-<tr><th>What</th><th>Who</th><th>How</th></tr>
-<tr><td>The rules on labour contracts, social insurance, probation and wage payment</td><td><span class="tag">You do</span></td><td>Mainland China: the 12333 hotline and <a href="https://www.12333.gov.cn/">12333.gov.cn</a>; Hong Kong: the Labour Department <a href="https://www.labour.gov.hk/">labour.gov.hk</a>.</td></tr>
-<tr><td>Before you start, check once more that the company name, the contracting entity and the payer are the same company</td><td><span class="tag">You do</span></td><td>Run the full registered name on the contract through the step 3 addresses again.</td></tr>
-</table>
-
+<ul>
+<li><p class="lead">Check the labour rules</p><p>Contracts, social insurance, probation, wages: call 12333 or read <a href="https://www.12333.gov.cn/">12333.gov.cn</a>. Hong Kong: read the <a href="https://www.labour.gov.hk/">Labour Department</a> site.</p><p class="dim">Who: you</p></li>
+<li><p class="lead">Check again before you start</p><p>Use the sites under "Check the company". Search the full name on the contract. The company, the contracting entity and the payer must be the same company.</p><p class="dim">Who: you</p></li>
+</ul>
 <h2>Put this page into your assistant</h2>
-<p>ChatGPT, Claude, Doubao, DeepSeek, Cursor and Tencent WorkBuddy can all connect. If your assistant can run commands, paste the whole block below to it; if it can only chat, use <a href="https://github.com/gzchenhao/openhire#quickstart--under-a-minute">the one-line config in the README</a>. In ChatGPT, go to Settings → Connectors → Advanced → Developer mode, create a connector with the address <code>https://openhire-vlny.onrender.com/mcp</code>, and there is nothing to install.</p>
+<p>ChatGPT, Claude, Doubao, DeepSeek, Cursor and Tencent WorkBuddy can all connect.</p>
+<ul>
+<li><p class="lead">Assistants that run commands</p><p>Paste the whole block below.</p></li>
+<li><p class="lead">Assistants that only chat</p><p>Use <a href="https://github.com/gzchenhao/openhire#quickstart--under-a-minute">the one-line config in the README</a>.</p></li>
+<li><p class="lead">ChatGPT</p><p>Open Settings → Connectors → Advanced → Developer mode. Create a connector with the address <code>https://openhire-vlny.onrender.com/mcp</code>.</p></li>
+</ul>
 <pre>Install an MCP server for me: name openhire, command uvx openhire@latest serve. If uv is missing on this machine, install uv first.
 
 Then check: can you call openhire's tools right now (search_jobs, for example)?
@@ -231,10 +211,11 @@ Job-search task: walk me through the job-search checklist at https://gzchenhao.g
 
 My résumé stays on my machine; never send it to any server. I apply by clicking the links myself.</pre>
 
-<h2>Change log</h2>
+<h2 class="log">Change log</h2>
 <ul class="dim">
 <li>2026-10-21: first version with seven steps; mainland China address openhire-vlny.onrender.com/checklist; step 3 split into its own page (查公司, in Chinese); English version with the language switch at the top right.</li>
 <li>2026-10-28: step 1 asks "individual contributor or management"; link to the connect guide (your assistant's steps only).</li>
+<li>2026-11-03: same layout as the 查公司 page; shorter sentences, one action each; tables became step lists; addresses became named links. Same content.</li>
 </ul>
 
 <hr>

@@ -23,7 +23,7 @@ h1+p,h1+p.dim{font-size:13px;font-weight:400;color:var(--fg-dim);line-height:1.7
 h2{font-size:15px;font-weight:700;margin:48px 0 16px;line-height:1.6}
 h2::before{counter-increment:sec;content:counter(sec,decimal-leading-zero);font-size:11px;color:var(--accent);letter-spacing:.1em;font-weight:600;margin-right:10px}
 h2.log::before{content:none}
-h3{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
+h3,p.lead{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
 p{margin:0 0 12px}
 ul{list-style:none;margin:0 0 16px;padding:0}
 ul>li{padding:8px 0;border-bottom:1px solid var(--border)}
@@ -37,6 +37,9 @@ a:hover{text-decoration:underline}
 b,strong{font-weight:700}
 .dim{color:var(--fg-dim)}
 p.dim{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border)}
+.if,.c,.stop{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border);margin:0}
+.if{margin-top:5px}
+.stop{font-size:13px;font-weight:700;color:var(--accent);padding-bottom:2px;margin-bottom:12px}
 hr{border:0;border-top:1px solid var(--border);margin:32px 0}
 code{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0 4px}
 pre{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
@@ -73,166 +76,121 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <button type="button" data-set="en" aria-pressed="false">English</button>
 </div>
 <div class="lang-zh">
-<h1>让候选人的 AI 助手直接读到贵公司自己系统里的岗位</h1>
-<p class="dim">给雇主的一页说明。免费、只读、十分钟。排序谁也买不到。</p>
-
+<h1>给雇主</h1>
+<p class="dim">让候选人的 AI 助手直接读到贵公司系统里的岗位。免费，只读，十分钟。排序谁也买不到。</p>
 <h2>这是什么</h2>
-<p>OpenHire 是一个开源的求职工具（MCP server）。候选人把它装进 Claude、豆包、DeepSeek（经支持 MCP 的客户端）、Cursor、腾讯 WorkBuddy 这类 AI 助手，
-助手就直接从<b>雇主自己的招聘系统</b>（Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio）的公开接口里读岗位，
-不经过招聘平台。候选人的简历只在他自己的电脑和贵公司的投递页之间，永远不经过我们。</p>
-<p>索引里的每条岗位都带贵公司系统里记的<b>原始发布日</b>、在架天数和直达贵公司投递页的链接。
-数字可以自己核：<a href="numbers.json">numbers.json</a>（含口径和实测日期）。</p>
-
-<h2>贵公司得到什么，永远得不到什么</h2>
-<table>
-<tr><th>得到</th><th>永远得不到（谁也买不到）</th></tr>
-<tr><td>
+<p>OpenHire 是开源的求职工具（MCP server）。候选人把它装进 ChatGPT、Claude、豆包、DeepSeek（经支持 MCP 的客户端）、Cursor、腾讯 WorkBuddy 这类 AI 助手。</p>
+<p>助手直接读<b>雇主自己的招聘系统</b>（Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio）的公开接口。不经过招聘平台。候选人的简历只在他的电脑和贵公司的投递页之间，不经过我们。</p>
+<p>每条岗位带贵公司系统里的<b>原始发布日</b>、在架天数和贵公司投递页的链接。数字的出处和口径在 <a href="numbers.json">numbers.json</a>。</p>
+<h2>贵公司得到什么</h2>
 <ul>
-<li>贵公司的岗位出现在候选人的 AI 助手里，带贵公司自己系统的发布日，直达贵公司投递页；</li>
-<li>认领后：署贵公司名的说明，显示在贵公司指定的岗位旁边；「常年开放 / 难招但在招 / 已停止招聘」的标注；日期语义更正（贵公司系统记的是需求创建日而不是上线日时）；可选的回复时限承诺。</li>
-</ul></td><td>
-<ul>
-<li>排序位置。排序是（匹配度，新鲜度）的纯函数，被仓库里的测试锁死；</li>
-<li>更低的在架评分。它是（重挂次数，在架天数）的纯函数，贵公司的说明显示在它旁边，不改它；</li>
-<li>任何付费档位。到今天没有一行计费代码。</li>
-</ul></td></tr>
-</table>
-
-<h2>贵公司的岗位已经在索引里吗</h2>
-<p>用 Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio 的雇主，多半已经在了；去
-<a href="https://github.com/gzchenhao/openhire#employers">仓库的雇主一节</a>认领即可。</p>
-<p>用<b>飞书招聘</b>、只在 <b>BOSS 直聘</b>发布、或者<b>官网自建页面</b>的雇主，现在不在索引里。
-不是我们挑的，是读不到：飞书的岗位接口要请求签名，我们视为访问控制、不绕；平台不是贵公司自己的系统，我们不读；
-自建页面多数没有机器可读的岗位数据。下面三条路，任选一条，都是只读、免费，十分钟。</p>
-
-<h2>三条路，最简单的放第一条</h2>
-<ol>
-<li><b>填一张表，用企业邮箱发给我们（不需要 IT 人员，两分钟）。</b>
-下载 <a href="openhire-岗位表.xlsx">岗位表（Excel）</a>，每行一个岗位，六列：职位名称、工作城市、发布日期、投递链接或投递邮箱、薪资范围（可空）、岗位描述。
-用贵公司企业邮箱把文件发到 <b>gdchenhao@qq.com</b>，主题写「岗位表 + 公司名」，正文留一个官网招聘页网址。
-企业邮箱是第一步，不是全部：我们还会查工商登记和 ICP 备案、看域名年龄和网站历史、回拨官网上公开的电话，贵公司只要把这些信息填在表的「公司信息」页，核对由我们做（见第六节）。不需要营业执照。3 个工作日内上线。<br>
-<span class="dim">三条规矩，先说在前面：每条岗位带「雇主自报」标记，发布日期按贵公司填的算，在架天数从它起算；每条岗位 90 天后自动下架，还在招就把表再发一次；
-投递链接只认贵公司自己网站上的 https 页面，没有的话我们把候选人送到贵公司招聘页，并在岗位里写明投递邮箱。</span></li>
-<li><b>飞书招聘：授权两个只读 scope（十分钟）。</b>在飞书开放平台给我们的应用授权
-<code>hire:site:readonly</code> 和 <code>hire:site_job_post:readonly</code>。它们只暴露贵公司已经公开的招聘站和岗位，
-不涉及任何候选人数据，撤销只要一下。走这条路的岗位带的是贵公司系统里的真实发布日，不用再续期。</li>
-<li><b>有网站开发人员的话：在官网放机器可读的岗位数据。</b>在招聘页里加一段 schema.org <code>JobPosting</code> 的 JSON-LD
-（Google 招聘用的同一个标准），或者挂一个静态 JSON 文件，把网址告诉我们。模板和字段说明我们按需提供；
-这条路的好处是岗位更新不用再发表，我们定期读页面。</li>
-</ol>
-<p>用 Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio 的雇主不用走这三条，多半已经在索引里，去
-<a href="https://github.com/gzchenhao/openhire#employers">仓库的雇主一节</a>认领即可。</p>
-
-<h2>怎么联系，多久回复</h2>
-<ul>
-<li>最简单：把 <a href="openhire-岗位表.xlsx">岗位表</a>（两页都填）用企业邮箱发到 <b>gdchenhao@qq.com</b>，主题「岗位表 + 公司名」；</li>
-<li>GitHub 表单：<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml">雇主认领（中文）</a>，
-里面有一项「贵公司的岗位目前发布在哪里」，选了我们就按那条路回；</li>
-<li>没有 GitHub 账号：发邮件到 <b>gdchenhao@qq.com</b>，主题写「雇主认领 + 公司名」，用贵公司企业域名邮箱发出来本身就完成了身份核验；</li>
-<li>3 个工作日内给结论。身份材料只用于核验，不公开、不留存、不转作他用。</li>
+<li><p class="lead">岗位进候选人的助手</p><p>带贵公司系统的发布日，链接直达贵公司投递页。</p></li>
+<li><p class="lead">认领后可以加说明</p><p>署贵公司名的说明，显示在指定岗位旁边。可标「常年开放」「难招但在招」「已停止招聘」。可更正日期含义（系统记的是需求创建日时）。可承诺回复时限。</p></li>
 </ul>
-
-<h2>我们怎么核实，贵公司要给什么</h2>
-<p>企业邮箱证明的只是「发件人控制这个域名」，十块钱就能买一个域名，所以它只是第一步。我们核的是申请者自己给不出的证据，叠在一起，加一个人工决定：</p>
-<table>
-<tr><th>证据</th><th>谁提供</th><th>证明什么</th></tr>
-<tr><td>工商登记（国家企业信用信息公示系统）</td><td>政府</td><td>公司存在、成立日期、经营状态、经营范围</td></tr>
-<tr><td>ICP 备案（工信部备案查询）</td><td>政府</td><td>域名绑定到哪个法人主体</td></tr>
-<tr><td>域名注册日期、网站历史（互联网档案馆）</td><td>第三方</td><td>这个站存在了多久；上线不满半年的不收</td></tr>
-<tr><td>回拨官网上公开的电话</td><td>我们</td><td>发表的人确实是这家公司的人（用官网上的号码，不用邮件里的）</td></tr>
-<tr><td>两个早于申请日的行业足迹（产品页、GitHub、论文、报道）</td><td>公开记录</td><td>它真在智驾 / 具身 / AI 基础设施里</td></tr>
-<tr><td>岗位本身</td><td>我们</td><td>境外高薪、包机票、不限经验、客服 / 打字员这类骗局招聘的形态，命中即拒</td></tr>
-</table>
-<p>贵公司要做的只是把「公司信息」页填全：公司全称、统一社会信用代码（海外公司填注册号和注册地）、官网域名、ICP 备案号、官网上公开电话所在的页面和号码、两个行业足迹链接、经办人职务。核对由我们做，大部分自动完成，剩下的是查两个政府网站和打一个电话。</p>
-<p>说清楚我们核的是什么：<b>公司存在，而且在我们的三个方向里。</b> 我们不替贵公司担保，候选人看到的每条岗位都带「雇主自报」标记，一有举报先下架再说。</p>
-
-<h2>边界，先说在前面</h2>
+<h2>谁也买不到什么</h2>
 <ul>
-<li>我们量得到一个岗位挂了多久，量不到贵公司想不想招。认领就是让贵公司用自己的话解释前者；</li>
-<li>我们不在任何文案里点名「某家公司查不到」来催雇主开门。走不走这三条路，是贵公司的决定；</li>
-<li>贵公司随时可以要求把贵公司从索引里移除，我们照做，不争辩。</li>
+<li><p class="lead">排序位置</p><p>排序只看匹配度和新鲜度。仓库里的测试锁死这一条。</p></li>
+<li><p class="lead">更低的在架评分</p><p>评分只看重挂次数和在架天数。贵公司的说明显示在评分旁边，不改评分。</p></li>
+<li><p class="lead">付费档位</p><p>没有。代码里没有一行计费。</p></li>
 </ul>
-
+<h2>贵公司在索引里吗</h2>
+<p>用 Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio 的雇主，多半已经在。到<a href="https://github.com/gzchenhao/openhire#employers">仓库的雇主一节</a>认领。</p>
+<p>用<b>飞书招聘</b>、只在 <b>BOSS 直聘</b>发布、或用<b>官网自建页面</b>的雇主，现在不在。原因：</p>
+<ul>
+<li><p>飞书的岗位接口要请求签名。我们把它当作访问控制，不绕过。</p></li>
+<li><p>招聘平台不是贵公司自己的系统。我们不读。</p></li>
+<li><p>自建页面多数没有机器可读的岗位数据。</p></li>
+</ul>
+<p>用下面三条路的任何一条。都是只读、免费、十分钟。</p>
+<h2>三条路</h2>
+<ul>
+<li><p class="lead">① 发一张表（两分钟，不用 IT）</p><p>下载<a href="openhire-岗位表.xlsx">岗位表（Excel）</a>。每行一个岗位，填六列：职位名称、工作城市、发布日期、投递链接或投递邮箱、薪资范围（可空）、岗位描述。填「公司信息」页。</p><p>用企业邮箱发到 <b>gdchenhao@qq.com</b>。主题写「岗位表 + 公司名」。正文写官网招聘页网址。3 个工作日内上线。不用营业执照。</p><p class="dim">每条岗位带「雇主自报」标记，在架天数从贵公司填的日期算。90 天后自动下架，还在招就再发一次表。投递链接只认贵公司网站上的 https 页面。</p></li>
+<li><p class="lead">② 飞书招聘：授权两个只读权限（十分钟）</p><p>在飞书开放平台给我们的应用授权 <code>hire:site:readonly</code> 和 <code>hire:site_job_post:readonly</code>。</p><p class="dim">只读贵公司已公开的招聘站和岗位。不读候选人数据。随时可以撤销。岗位带系统里的真实发布日，不用续期。</p></li>
+<li><p class="lead">③ 官网放机器可读的岗位数据（要网站开发人员）</p><p>在招聘页加 schema.org <code>JobPosting</code> 的 JSON-LD（Google 招聘用的标准），或放一个静态 JSON 文件。把网址告诉我们。</p><p class="dim">我们定期读页面。岗位更新时不用再发表。模板按需提供。</p></li>
+</ul>
+<h2>怎么联系</h2>
+<ul>
+<li><p class="lead">发表</p><p>把<a href="openhire-岗位表.xlsx">岗位表</a>（两页都填）用企业邮箱发到 <b>gdchenhao@qq.com</b>。主题写「岗位表 + 公司名」。</p></li>
+<li><p class="lead">GitHub 表单</p><p>填<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml">雇主认领（中文）</a>。选「贵公司的岗位目前发布在哪里」，我们按那条路回。</p></li>
+<li><p class="lead">没有 GitHub 账号</p><p>用企业邮箱发到 <b>gdchenhao@qq.com</b>。主题写「雇主认领 + 公司名」。</p></li>
+</ul>
+<p class="dim">3 个工作日内给结论。身份材料只用于核验，不公开，不留存，不作他用。</p>
+<h2>我们怎么核实</h2>
+<p>企业邮箱只证明发件人控制这个域名。域名十块钱就能买，所以它只是第一步。我们还查这些：</p>
+<ul>
+<li><p class="lead">工商登记</p><p>在国家企业信用信息公示系统查。公司存在，看成立日期、经营状态、经营范围。</p></li>
+<li><p class="lead">ICP 备案</p><p>在工信部备案查询查。域名属于哪个法人。</p></li>
+<li><p class="lead">域名年龄和网站历史</p><p>查注册日期和互联网档案馆。网站上线不满半年，不收。</p></li>
+<li><p class="lead">回拨电话</p><p>我们打官网上公开的电话，不打邮件里的号码。</p></li>
+<li><p class="lead">行业足迹</p><p>两个早于申请日的产品页、GitHub、论文或报道。证明公司在智驾、具身或 AI 基础设施里。</p></li>
+<li><p class="lead">岗位本身</p><p class="if">如果：</p><p class="c">1. 境外高薪</p><p class="c">2. 包机票</p><p class="c">3. 不限经验</p><p class="c">4. 客服、打字员这类骗局形态</p><p class="stop">拒收！</p></li>
+</ul>
+<p>贵公司只填「公司信息」页：公司全称、统一社会信用代码（海外公司填注册号和注册地）、官网域名、ICP 备案号、官网公开电话所在页面和号码、两个行业足迹链接、经办人职务。核对由我们做。</p>
+<p class="dim">我们核的是：公司存在，而且在我们的三个方向里。我们不替贵公司担保。每条岗位带「雇主自报」标记。一有举报，先下架。</p>
+<h2>边界</h2>
+<ul>
+<li><p>我们量得到岗位挂了多久，量不到贵公司想不想招。认领让贵公司用自己的话解释。</p></li>
+<li><p>我们不在任何文案里点名「某家公司查不到」。走不走这三条路，由贵公司决定。</p></li>
+<li><p>贵公司随时可以要求移出索引。我们照做。</p></li>
+</ul>
 </div>
 <div class="lang-en">
-<h1>Let candidates' AI assistants read the postings in your own hiring system</h1>
-<p class="dim">A one-page note for employers. Free, read-only, ten minutes. Nobody can buy ranking.</p>
-
+<h1>For employers</h1>
+<p class="dim">Let candidates' AI assistants read the postings in your own hiring system. Free. Read-only. Ten minutes. Nobody can buy ranking.</p>
 <h2>What this is</h2>
-<p>OpenHire is an open-source job-search tool (an MCP server). Candidates add it to AI assistants such as ChatGPT, Claude, Doubao, DeepSeek (through an MCP-capable client), Cursor or Tencent WorkBuddy,
-and the assistant reads postings straight from the public API of <b>the employer's own hiring system</b> (Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling or Personio),
-not from a job board. A candidate's résumé travels only between their own computer and your apply page; it never passes through us.</p>
-<p>Every posting in the index carries the <b>original posting date</b> recorded in your system, how long it has been up, and a link straight to your apply page.
-You can check the numbers yourself: <a href="numbers.json">numbers.json</a> (with how each is counted and when it was measured).</p>
-
-<h2>What your company gets, and what it can never get</h2>
-<table>
-<tr><th>You get</th><th>You never get (nobody can buy it)</th></tr>
-<tr><td>
+<p>OpenHire is an open-source job-search tool (an MCP server). Candidates add it to AI assistants such as ChatGPT, Claude, Doubao, DeepSeek (in an MCP client), Cursor and Tencent WorkBuddy.</p>
+<p>The assistant reads the public API of the <b>employer's own hiring system</b> (Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling, Personio). No job board sits in between. The candidate's résumé goes only between their computer and your apply page. It does not go through us.</p>
+<p>Each posting has the <b>original posting date</b> from your system, days on the board, and a link to your apply page. The sources and counting rules of our numbers are in <a href="numbers.json">numbers.json</a>.</p>
+<h2>What your company gets</h2>
 <ul>
-<li>Your postings in candidates' AI assistants, with the posting date from your own system and a direct link to your apply page;</li>
-<li>After you claim: a note in your company's name next to the postings you choose; an "always open / hard to fill but hiring / no longer hiring" label; a date correction (when your system records the requisition date rather than the go-live date); an optional reply-time commitment.</li>
-</ul></td><td>
-<ul>
-<li>Ranking position. Ranking is a pure function of (match, freshness), locked by tests in the repository;</li>
-<li>A lower time-on-board score. It is a pure function of (relist count, days open); your note is shown next to it and does not change it;</li>
-<li>Any paid tier. To this day there is not one line of billing code.</li>
-</ul></td></tr>
-</table>
-
-<h2>Are your postings already in the index?</h2>
-<p>Employers on Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling or Personio are most likely in already; claim your company in
-<a href="https://github.com/gzchenhao/openhire#employers">the employers section of the repository</a>.</p>
-<p>Employers on <b>Feishu Hire</b>, posting only on <b>BOSS Zhipin</b>, or on <b>a self-built careers page</b> are not in the index today.
-That is not our choice; we cannot read them: Feishu's postings API requires signed requests, which we treat as access control and do not work around; a job board is not your own system, so we do not read it;
-most self-built pages carry no machine-readable posting data. Any of the three ways below works: read-only, free, ten minutes.</p>
-
-<h2>Three ways in, the simplest first</h2>
-<ol>
-<li><b>Fill in a spreadsheet and send it from your company email (no IT needed, two minutes).</b>
-Download the <a href="openhire-岗位表.xlsx">postings sheet (Excel)</a>, one posting per row, six columns: job title, city, posting date, apply link or apply email, salary range (optional), job description.
-Send the file from your company email domain to <b>gdchenhao@qq.com</b> with the subject "Postings sheet + company name", and include your careers page address in the body.
-A company email is the first step, not the whole check: we also check the business registration and ICP filing, the domain's age and site history, and call back the phone number published on your website. Fill these in on the sheet's "Company" tab and we do the checking (see section 6). No business licence needed. Live within 3 working days.<br>
-<span class="dim">Three rules up front: every posting carries an "employer self-reported" label, and days open count from the date you entered; every posting comes down automatically after 90 days, so send the sheet again if you are still hiring;
-apply links are accepted only on https pages of your own website; otherwise we send candidates to your careers page and show the apply email in the posting.</span></li>
-<li><b>Feishu Hire: grant two read-only scopes (ten minutes).</b> In the Feishu Open Platform, grant our app
-<code>hire:site:readonly</code> and <code>hire:site_job_post:readonly</code>. They expose only the careers site and postings you already publish,
-touch no candidate data, and can be revoked in one click. Postings that come this way carry the real posting date from your system and need no renewal.</li>
-<li><b>If you have a web developer: put machine-readable posting data on your site.</b> Add schema.org <code>JobPosting</code> JSON-LD to your careers page
-(the same standard Google for Jobs uses), or publish a static JSON file, and send us the address. We provide the template and field notes on request;
-the advantage is that updates need no new sheet: we read the page regularly.</li>
-</ol>
-<p>Employers on Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling or Personio do not need any of these three; you are most likely in the index already. Claim your company in
-<a href="https://github.com/gzchenhao/openhire#employers">the employers section of the repository</a>.</p>
-
-<h2>How to reach us, and how fast we reply</h2>
-<ul>
-<li>Simplest: send the <a href="openhire-岗位表.xlsx">postings sheet</a> (both tabs filled in) from your company email to <b>gdchenhao@qq.com</b>, subject "Postings sheet + company name";</li>
-<li>GitHub form: <a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">Employer claim</a>.
-It asks where your postings are published today; pick one and we reply along that path;</li>
-<li>No GitHub account: email <b>gdchenhao@qq.com</b> with the subject "Employer claim + company name"; sending it from your company domain is itself the identity check;</li>
-<li>A decision within 3 working days. Identity material is used only for the check: not published, not kept, not used for anything else.</li>
+<li><p class="lead">Postings in candidates' assistants</p><p>With the posting date from your system and a direct link to your apply page.</p></li>
+<li><p class="lead">Notes after you claim your listing</p><p>A note signed with your company name, next to the postings you choose. Labels: "always open", "hard to fill, still hiring", "no longer hiring". A date correction (when your system records the requisition date). An optional reply-time commitment.</p></li>
 </ul>
-
-<h2>How we verify, and what we need from you</h2>
-<p>A company email proves only that the sender controls the domain, and a domain costs very little, so it is only the first step. We check evidence an applicant cannot produce themselves, stacked together, plus a human decision:</p>
-<table>
-<tr><th>Evidence</th><th>From</th><th>What it proves</th></tr>
-<tr><td>Business registration (National Enterprise Credit Information Publicity System)</td><td>Government</td><td>The company exists; founding date, status, business scope</td></tr>
-<tr><td>ICP filing (MIIT filing lookup)</td><td>Government</td><td>Which legal entity the domain belongs to</td></tr>
-<tr><td>Domain registration date, site history (Internet Archive)</td><td>Third party</td><td>How long the site has existed; under six months is refused</td></tr>
-<tr><td>A call back to the phone number on your website</td><td>Us</td><td>The sender really works for the company (we use the number on the website, not the one in the email)</td></tr>
-<tr><td>Two industry footprints older than the request (product pages, GitHub, papers, press)</td><td>Public record</td><td>It is really in autonomous driving, embodied AI or AI infrastructure</td></tr>
-<tr><td>The postings themselves</td><td>Us</td><td>Scam shapes such as high overseas pay, flights included, no experience needed, customer service or typist roles are refused on sight</td></tr>
-</table>
-<p>All you do is complete the "Company" tab: full registered name, unified social credit code (overseas companies give registration number and place), website domain, ICP filing number, the page and number of the phone published on your website, two industry footprint links, and the contact's job title. We do the checking, mostly automatically; what remains is two government sites and one phone call.</p>
-<p>To be clear about what we check: <b>the company exists and is in our three sectors.</b> We do not vouch for your company; every posting candidates see carries the "employer self-reported" label, and on any report we take it down first and ask afterwards.</p>
-
-<h2>Limits, stated up front</h2>
+<h2>What nobody can buy</h2>
 <ul>
-<li>We can measure how long a posting has been up; we cannot measure whether you want to fill it. Claiming lets you explain the first in your own words;</li>
-<li>We never name a company as "unreadable" in any copy to push employers to open up. Whether to take any of these paths is your decision;</li>
-<li>You can ask at any time to have your company removed from the index; we do it, no argument.</li>
+<li><p class="lead">Ranking position</p><p>Ranking uses match and freshness only. Tests in the repository lock this.</p></li>
+<li><p class="lead">A lower time-on-board score</p><p>The score uses relists and days on the board only. Your note shows next to the score. It does not change the score.</p></li>
+<li><p class="lead">Paid tiers</p><p>There are none. The code has no billing.</p></li>
+</ul>
+<h2>Is your company in the index?</h2>
+<p>If you use Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling or Personio, you are probably in it. Claim your listing in <a href="https://github.com/gzchenhao/openhire#employers">the employers section of the repository</a>.</p>
+<p>If you use <b>Feishu Hire</b>, post only on <b>BOSS Zhipin</b>, or use a <b>self-built careers page</b>, you are not in it now. The reasons:</p>
+<ul>
+<li><p>Feishu's job API needs signed requests. We treat that as access control and do not work around it.</p></li>
+<li><p>A job board is not your own system. We do not read it.</p></li>
+<li><p>Most self-built pages have no machine-readable job data.</p></li>
+</ul>
+<p>Use any one of the three ways below. All are read-only, free and take ten minutes.</p>
+<h2>Three ways in</h2>
+<ul>
+<li><p class="lead">① Send a spreadsheet (two minutes, no IT)</p><p>Download the <a href="openhire-岗位表.xlsx">job sheet (Excel)</a>. Fill one row per posting, six columns: title, city, posting date, apply link or apply email, pay range (optional), description. Fill the "company information" sheet.</p><p>Send it from your company email to <b>gdchenhao@qq.com</b>. Subject: "Job sheet + company name". In the body, give your careers page address. Live within 3 working days. No business licence needed.</p><p class="dim">Each posting carries an "employer self-reported" label. Days on the board count from the date you give. Postings close after 90 days. If you are still hiring, send the sheet again. Apply links must be https pages on your own site.</p></li>
+<li><p class="lead">② Feishu Hire: grant two read-only scopes (ten minutes)</p><p>On the Feishu open platform, grant our app <code>hire:site:readonly</code> and <code>hire:site_job_post:readonly</code>.</p><p class="dim">These read only your public careers site and postings. No candidate data. You can revoke them at any time. Postings carry the real posting date. No renewal.</p></li>
+<li><p class="lead">③ Put machine-readable job data on your site (needs a web developer)</p><p>Add schema.org <code>JobPosting</code> JSON-LD to your careers page (the standard Google uses for jobs), or publish a static JSON file. Send us the address.</p><p class="dim">We read the page on a schedule. No sheet to send when postings change. Templates on request.</p></li>
+</ul>
+<h2>How to reach us</h2>
+<ul>
+<li><p class="lead">Send the sheet</p><p>Send the <a href="openhire-岗位表.xlsx">job sheet</a> (both sheets filled) from your company email to <b>gdchenhao@qq.com</b>. Subject: "Job sheet + company name".</p></li>
+<li><p class="lead">GitHub form</p><p>Fill in <a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">Employer claim</a>. Select where your postings are now. We reply on that path.</p></li>
+<li><p class="lead">No GitHub account</p><p>Email <b>gdchenhao@qq.com</b> from your company domain. Subject: "Employer claim + company name".</p></li>
+</ul>
+<p class="dim">Answer within 3 working days. We use identity documents only to verify. We do not publish, keep or reuse them.</p>
+<h2>How we verify</h2>
+<p>A company email proves only that the sender controls the domain. A domain costs a few dollars, so this is only the first step. We also check these:</p>
+<ul>
+<li><p class="lead">Company register</p><p>National Enterprise Credit Information Publicity System: the company exists; founding date, status, scope.</p></li>
+<li><p class="lead">ICP filing</p><p>MIIT filing lookup: which legal entity holds the domain.</p></li>
+<li><p class="lead">Domain age and site history</p><p>Registration date and the Internet Archive. A site younger than six months is refused.</p></li>
+<li><p class="lead">Call-back</p><p>We call the phone number on your public website, not the one in the email.</p></li>
+<li><p class="lead">Industry footprint</p><p>Two product pages, GitHub repositories, papers or news items older than the application. They show the company works in autonomous driving, embodied AI or AI infrastructure.</p></li>
+<li><p class="lead">The postings</p><p class="if">If:</p><p class="c">1. High pay abroad</p><p class="c">2. Flights included</p><p class="c">3. No experience required</p><p class="c">4. Customer-service or typist scam patterns</p><p class="stop">Refused.</p></li>
+</ul>
+<p>You fill in only the "company information" sheet: full legal name, unified social credit code (overseas: registration number and place), domain, ICP number, the page and number of your public phone, two footprint links, and the job title of the contact person. We do the checks.</p>
+<p class="dim">We verify that the company exists and works in our three sectors. We do not vouch for your company. Every posting carries the "employer self-reported" label. On any report, we take postings down first.</p>
+<h2>Limits</h2>
+<ul>
+<li><p>We measure how long a posting has been up. We cannot measure whether you want to hire. A claim lets you explain in your own words.</p></li>
+<li><p>We never name a company as "not readable" in any text to push it. Using these three ways is your decision.</p></li>
+<li><p>You can ask us to remove your company from the index at any time. We do it.</p></li>
 </ul>
 </div>
 <hr>

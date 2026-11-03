@@ -23,7 +23,7 @@ h1+p,h1+p.dim{font-size:13px;font-weight:400;color:var(--fg-dim);line-height:1.7
 h2{font-size:15px;font-weight:700;margin:48px 0 16px;line-height:1.6}
 h2::before{counter-increment:sec;content:counter(sec,decimal-leading-zero);font-size:11px;color:var(--accent);letter-spacing:.1em;font-weight:600;margin-right:10px}
 h2.log::before{content:none}
-h3{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
+h3,p.lead{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
 p{margin:0 0 12px}
 ul{list-style:none;margin:0 0 16px;padding:0}
 ul>li{padding:8px 0;border-bottom:1px solid var(--border)}
@@ -37,6 +37,9 @@ a:hover{text-decoration:underline}
 b,strong{font-weight:700}
 .dim{color:var(--fg-dim)}
 p.dim{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border)}
+.if,.c,.stop{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border);margin:0}
+.if{margin-top:5px}
+.stop{font-size:13px;font-weight:700;color:var(--accent);padding-bottom:2px;margin-bottom:12px}
 hr{border:0;border-top:1px solid var(--border);margin:32px 0}
 code{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0 4px}
 pre{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
@@ -74,36 +77,28 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 </div>
 <div class="lang-zh">
 <h1>OpenHire</h1>
-<p><b>已读不回？先看岗位还在不在。Companies screen you with AI. Screen them back.</b></p>
-<p><b>让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</b></p>
-<p class="dim">一个面向 agent 的招聘协议。岗位数据全部取自雇主自己官网招聘页背后的公开接口，
-每条都带核验时间与原始申请链接，可逐条复核。简历与任何个人信息永不经过服务端。</p>
-
-<hr>
-
+<p class="dim">已读不回？先看岗位还在不在。公司用 AI 筛你，你也用 AI 筛公司。</p>
+<p>让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。</p>
+<p>每条岗位来自雇主招聘页背后的公开接口，带核验时间和原始投递链接。简历和个人信息不经过服务端。</p>
+<h2>开始</h2>
 <ul>
-<li><a href="report/"><b>岗位在架时长月报</b></a><br>
-    <span class="dim">按雇主招聘系统里的真实发布日，统计每家公司的岗位挂了多久。点名，可复核，每月更新。</span></li>
-<li><a href="numbers.json"><b>numbers.json</b></a><br>
-    <span class="dim">我们对外引用的每一个数字的原始出处，含口径说明与实测日期。</span></li>
-<li><a href="report-data.json"><b>report-data.json</b></a><br>
-    <span class="dim">月报页的全部原始数据，可自行重算。</span></li>
-<li><a href="connect.html"><b>连接向导</b></a><br>
-    <span class="dim">选你用的 AI 助手（ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy、VS Code），只看那一种的接入步骤和一段整段粘贴的话。</span></li>
-<li><a href="checklist.html"><b>求职清单</b></a><br>
-    <span class="dim">找工作每一步该做什么、哪步能让 AI 替你做、查公司和防骗去哪个官网，一页写全，免费，不用注册，中英文可切换。值得收藏：网址会搬家，骗局会翻新，这页跟着改。</span></li>
-<li><a href="check-company.html"><b>查公司</b></a><br>
-    <span class="dim">入职前核一家公司去哪些官方网站，怎么识别冒充用人方的骗局。只有官方网址，免费。</span></li>
-<li><a href="employers.html"><b>给雇主</b></a><br>
-    <span class="dim">让候选人的 AI 助手直接读到贵公司自己系统里的岗位。免费、只读、十分钟；没有可读招聘系统的雇主有三条路。</span></li>
-<li><a href="portals.html"><b>读不到的招聘门户</b></a><br>
-    <span class="dim">岗位放在飞书、BOSS 直聘或没有可读列表的官网上的公司：它们自己的招聘页链接，点开直接看。</span></li>
-<li><a href="PRIVACY.md"><b>隐私说明</b></a><br>
-    <span class="dim">三条 CI 强制的红线：PII 不过服务端、排序不可购买、雇主只为已授权结果付费。</span></li>
-<li><a href="https://github.com/gzchenhao/openhire"><b>源码</b></a><br>
-    <span class="dim">全部开源。<code>uvx openhire@latest serve</code> 可自行跑一遍，得到和我们一样的数。</span></li>
+<li><p class="lead"><a href="connect.html">连接向导</a></p><p>选你用的 AI 助手（ChatGPT、Claude、豆包、DeepSeek、Cursor、腾讯 WorkBuddy、VS Code）。只看它的步骤。</p></li>
+<li><p class="lead"><a href="checklist.html">求职清单</a></p><p>找工作的七步。每一步写明谁做、去哪里做。免费，不用注册，中英文切换。</p></li>
+<li><p class="lead"><a href="check-company.html">查公司</a></p><p>入职前核对公司。只有官方网站，免费。</p></li>
+<li><p class="lead"><a href="portals.html">读不到的招聘门户</a></p><p>岗位放在飞书、BOSS 直聘或没有列表的官网上的公司。点它们自己的招聘页。</p></li>
 </ul>
-
+<h2>数据</h2>
+<ul>
+<li><p class="lead"><a href="report/">岗位在架时长月报</a></p><p>按雇主系统里的发布日，统计每家公司的岗位挂了多久。每月更新。</p></li>
+<li><p class="lead"><a href="numbers.json">numbers.json</a></p><p>我们引用的每个数字的出处、口径和测量日期。</p></li>
+<li><p class="lead"><a href="report-data.json">report-data.json</a></p><p>月报的原始数据。可以自己重算。</p></li>
+</ul>
+<h2>其他</h2>
+<ul>
+<li><p class="lead"><a href="employers.html">给雇主</a></p><p>让候选人的 AI 助手读到贵公司系统里的岗位。免费，只读，十分钟。</p></li>
+<li><p class="lead"><a href="PRIVACY.md">隐私说明</a></p><p>三条红线，CI 强制：个人信息不过服务端，排序不能买，雇主只为已授权的结果付费。</p></li>
+<li><p class="lead"><a href="https://github.com/gzchenhao/openhire">源码</a></p><p>全部开源。运行 <code>uvx openhire@latest serve</code>，得到和我们一样的数。</p></li>
+</ul>
 <hr>
 <p class="dim">数据有误或想更正贵公司的岗位状态？
 <a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，
@@ -111,36 +106,28 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 </div>
 <div class="lang-en">
 <h1>OpenHire</h1>
-<p><b>Companies screen you with AI. Screen them back. Ghosted? Check whether the job is still open first.</b></p>
-<p><b>Let an AI assistant find jobs for you straight from employers' own systems, with your résumé never leaving your computer. Is the job still open? Is the company real? Check both before you apply.</b></p>
-<p class="dim">A hiring protocol built for agents. Every posting comes from the public API behind the employer's own careers page,
-with the time it was last verified and the original apply link, so each one can be checked. Résumés and personal data never touch the server.</p>
-
-<hr>
-
+<p class="dim">Companies screen you with AI. Screen them back. Ghosted? Check whether the job is still open first.</p>
+<p>Let an AI assistant find jobs for you in employers' own systems. Your résumé stays on your computer. Is the job still open? Is the company real? Check both before you apply.</p>
+<p>Each posting comes from the public API behind the employer's careers page, with the time it was verified and the original apply link. Résumés and personal data do not touch the server.</p>
+<h2>Start</h2>
 <ul>
-<li><a href="report/"><b>Monthly report on how long postings stay up</b></a><br>
-    <span class="dim">How long each company's postings have been up, by the real posting date in the employer's own hiring system. Named, checkable, updated monthly.</span></li>
-<li><a href="numbers.json"><b>numbers.json</b></a><br>
-    <span class="dim">The source of every number we quote, with how it is counted and when it was measured.</span></li>
-<li><a href="report-data.json"><b>report-data.json</b></a><br>
-    <span class="dim">All the raw data behind the monthly report, to recompute it yourself.</span></li>
-<li><a href="connect.html"><b>Connect guide</b></a><br>
-    <span class="dim">Pick the AI assistant you use (ChatGPT, Claude, Doubao, DeepSeek, Cursor, Tencent WorkBuddy, VS Code) and see only its setup steps and the one block to paste.</span></li>
-<li><a href="checklist.html"><b>Job-search checklist</b></a><br>
-    <span class="dim">What to do at each step of a job search, which steps an AI can do for you, and which official sites to use to check a company and avoid scams. One page, free, no sign-up, in Chinese and English. Worth a bookmark: addresses move and scams change, and the page changes with them.</span></li>
-<li><a href="check-company.html"><b>Check a company (in Chinese)</b></a><br>
-    <span class="dim">Which official sites to use to check a company before you join, and how to spot scams that pose as employers. Official addresses only, free.</span></li>
-<li><a href="employers.html"><b>For employers</b></a><br>
-    <span class="dim">Let candidates' AI assistants read the postings in your own hiring system. Free, read-only, ten minutes; three ways in for employers without a readable hiring system.</span></li>
-<li><a href="portals.html"><b>Hiring portals we cannot read</b></a><br>
-    <span class="dim">Companies whose postings are on Feishu, BOSS Zhipin or a careers site with no readable list: links to their own careers pages, to open directly.</span></li>
-<li><a href="PRIVACY.md"><b>Privacy policy</b></a><br>
-    <span class="dim">Three red lines enforced in CI: no personal data through the server, ranking cannot be bought, employers pay only for authorised results.</span></li>
-<li><a href="https://github.com/gzchenhao/openhire"><b>Source code</b></a><br>
-    <span class="dim">All open source. Run <code>uvx openhire@latest serve</code> yourself and get the same numbers we do.</span></li>
+<li><p class="lead"><a href="connect.html">Connect guide</a></p><p>Select your AI assistant (ChatGPT, Claude, Doubao, DeepSeek, Cursor, Tencent WorkBuddy, VS Code). See only its steps.</p></li>
+<li><p class="lead"><a href="checklist.html">Job-search checklist</a></p><p>Seven steps. Each step says who does it and where. Free. No sign-up. Chinese and English.</p></li>
+<li><p class="lead"><a href="check-company.html">Check a company (in Chinese)</a></p><p>Check a company before you join. Official sites only. Free.</p></li>
+<li><p class="lead"><a href="portals.html">Hiring portals we cannot read</a></p><p>Companies that post on Feishu, BOSS Zhipin or a site with no list. Click their own careers pages.</p></li>
 </ul>
-
+<h2>Data</h2>
+<ul>
+<li><p class="lead"><a href="report/">Monthly report on how long postings stay up</a></p><p>How long each company's postings have been up, by the posting date in the employer's system. Updated monthly.</p></li>
+<li><p class="lead"><a href="numbers.json">numbers.json</a></p><p>The source, the counting rule and the date of every number we quote.</p></li>
+<li><p class="lead"><a href="report-data.json">report-data.json</a></p><p>The raw data behind the report. Recompute it yourself.</p></li>
+</ul>
+<h2>More</h2>
+<ul>
+<li><p class="lead"><a href="employers.html">For employers</a></p><p>Let candidates' AI assistants read the postings in your hiring system. Free. Read-only. Ten minutes.</p></li>
+<li><p class="lead"><a href="PRIVACY.md">Privacy policy</a></p><p>Three red lines, enforced in CI: no personal data through the server, ranking cannot be bought, employers pay only for authorised results.</p></li>
+<li><p class="lead"><a href="https://github.com/gzchenhao/openhire">Source code</a></p><p>All open source. Run <code>uvx openhire@latest serve</code> and get the same numbers.</p></li>
+</ul>
 <hr>
 <p class="dim">Something wrong, or want to correct the status of your company's postings?
 <a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">Employer claim</a>,
