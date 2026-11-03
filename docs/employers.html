@@ -17,23 +17,32 @@ nav.house .brand span{color:var(--accent)}
 nav.house .links{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:11px}
 nav.house .links a{color:var(--accent);text-decoration:none}
 nav.house .links .here{color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:3px 11px;background:var(--bg2)}
-main{max-width:var(--max-w);margin:0 auto;padding:48px 24px 80px}
+main{max-width:var(--max-w);margin:0 auto;padding:48px 24px 80px;counter-reset:sec}
 h1{font-size:26px;font-weight:700;line-height:1.3;margin:0 0 8px}
-h2{font-size:15px;font-weight:700;margin:40px 0 14px;padding-left:10px;border-left:3px solid var(--accent);line-height:1.6}
-h3{font-size:13px;font-weight:700;color:var(--accent);margin:18px 0 8px}
+h1+p,h1+p.dim{font-size:13px;font-weight:400;color:var(--fg-dim);line-height:1.75;margin:0 0 36px;padding:0 0 28px;border:0;border-bottom:1px solid var(--border)}
+h2{font-size:15px;font-weight:700;margin:48px 0 16px;line-height:1.6}
+h2::before{counter-increment:sec;content:counter(sec,decimal-leading-zero);font-size:11px;color:var(--accent);letter-spacing:.1em;font-weight:600;margin-right:10px}
+h2.log::before{content:none}
+h3{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
 p{margin:0 0 12px}
-ul,ol{margin:0 0 16px;padding-left:1.3em}
-li{font-size:14px;line-height:1.7;margin:4px 0}
+ul{list-style:none;margin:0 0 16px;padding:0}
+ul>li{padding:8px 0;border-bottom:1px solid var(--border)}
+ul>li:last-child{border-bottom:none}
+ol{margin:0 0 16px;padding-left:1.3em}
+ol>li{margin:4px 0}
+li{font-size:14px;line-height:1.7}
+li p{margin:0 0 4px}
 a{color:var(--link);text-decoration:none;overflow-wrap:anywhere}
 a:hover{text-decoration:underline}
 b,strong{font-weight:700}
 .dim{color:var(--fg-dim)}
+p.dim{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border)}
 hr{border:0;border-top:1px solid var(--border);margin:32px 0}
 code{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0 4px}
-pre{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
+pre{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
 pre code{background:none;border:0;padding:0;font-size:inherit}
-table{width:100%;border-collapse:collapse;margin:0 0 20px;background:var(--bg2);font-size:14px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-th{text-align:left;font-size:12px;font-weight:600;color:var(--fg-dim);padding:10px 12px;border-bottom:2px solid var(--border);background:var(--bg)}
+table{width:100%;border-collapse:collapse;margin:0 0 20px;font-size:14px;line-height:1.6}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--fg-dim);padding:10px 12px;border-bottom:1px solid var(--border)}
 td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}
@@ -67,14 +76,14 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <h1>让候选人的 AI 助手直接读到贵公司自己系统里的岗位</h1>
 <p class="dim">给雇主的一页说明。免费、只读、十分钟。排序谁也买不到。</p>
 
-<h2>一、这是什么</h2>
+<h2>这是什么</h2>
 <p>OpenHire 是一个开源的求职工具（MCP server）。候选人把它装进 Claude、豆包、DeepSeek（经支持 MCP 的客户端）、Cursor、腾讯 WorkBuddy 这类 AI 助手，
 助手就直接从<b>雇主自己的招聘系统</b>（Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio）的公开接口里读岗位，
 不经过招聘平台。候选人的简历只在他自己的电脑和贵公司的投递页之间，永远不经过我们。</p>
 <p>索引里的每条岗位都带贵公司系统里记的<b>原始发布日</b>、在架天数和直达贵公司投递页的链接。
 数字可以自己核：<a href="numbers.json">numbers.json</a>（含口径和实测日期）。</p>
 
-<h2>二、贵公司得到什么，永远得不到什么</h2>
+<h2>贵公司得到什么，永远得不到什么</h2>
 <table>
 <tr><th>得到</th><th>永远得不到（谁也买不到）</th></tr>
 <tr><td>
@@ -89,14 +98,14 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 </ul></td></tr>
 </table>
 
-<h2>三、贵公司的岗位已经在索引里吗</h2>
+<h2>贵公司的岗位已经在索引里吗</h2>
 <p>用 Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio 的雇主，多半已经在了；去
 <a href="https://github.com/gzchenhao/openhire#employers">仓库的雇主一节</a>认领即可。</p>
 <p>用<b>飞书招聘</b>、只在 <b>BOSS 直聘</b>发布、或者<b>官网自建页面</b>的雇主，现在不在索引里。
 不是我们挑的，是读不到：飞书的岗位接口要请求签名，我们视为访问控制、不绕；平台不是贵公司自己的系统，我们不读；
 自建页面多数没有机器可读的岗位数据。下面三条路，任选一条，都是只读、免费，十分钟。</p>
 
-<h2>四、三条路，最简单的放第一条</h2>
+<h2>三条路，最简单的放第一条</h2>
 <ol>
 <li><b>填一张表，用企业邮箱发给我们（不需要 IT 人员，两分钟）。</b>
 下载 <a href="openhire-岗位表.xlsx">岗位表（Excel）</a>，每行一个岗位，六列：职位名称、工作城市、发布日期、投递链接或投递邮箱、薪资范围（可空）、岗位描述。
@@ -114,7 +123,7 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <p>用 Greenhouse、Lever、Ashby、北森、Moka、Workable、SmartRecruiters、Rippling、Personio 的雇主不用走这三条，多半已经在索引里，去
 <a href="https://github.com/gzchenhao/openhire#employers">仓库的雇主一节</a>认领即可。</p>
 
-<h2>五、怎么联系，多久回复</h2>
+<h2>怎么联系，多久回复</h2>
 <ul>
 <li>最简单：把 <a href="openhire-岗位表.xlsx">岗位表</a>（两页都填）用企业邮箱发到 <b>gdchenhao@qq.com</b>，主题「岗位表 + 公司名」；</li>
 <li>GitHub 表单：<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim_zh.yml">雇主认领（中文）</a>，
@@ -123,7 +132,7 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <li>3 个工作日内给结论。身份材料只用于核验，不公开、不留存、不转作他用。</li>
 </ul>
 
-<h2>六、我们怎么核实，贵公司要给什么</h2>
+<h2>我们怎么核实，贵公司要给什么</h2>
 <p>企业邮箱证明的只是「发件人控制这个域名」，十块钱就能买一个域名，所以它只是第一步。我们核的是申请者自己给不出的证据，叠在一起，加一个人工决定：</p>
 <table>
 <tr><th>证据</th><th>谁提供</th><th>证明什么</th></tr>
@@ -137,7 +146,7 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <p>贵公司要做的只是把「公司信息」页填全：公司全称、统一社会信用代码（海外公司填注册号和注册地）、官网域名、ICP 备案号、官网上公开电话所在的页面和号码、两个行业足迹链接、经办人职务。核对由我们做，大部分自动完成，剩下的是查两个政府网站和打一个电话。</p>
 <p>说清楚我们核的是什么：<b>公司存在，而且在我们的三个方向里。</b> 我们不替贵公司担保，候选人看到的每条岗位都带「雇主自报」标记，一有举报先下架再说。</p>
 
-<h2>七、边界，先说在前面</h2>
+<h2>边界，先说在前面</h2>
 <ul>
 <li>我们量得到一个岗位挂了多久，量不到贵公司想不想招。认领就是让贵公司用自己的话解释前者；</li>
 <li>我们不在任何文案里点名「某家公司查不到」来催雇主开门。走不走这三条路，是贵公司的决定；</li>
@@ -149,14 +158,14 @@ footer.house{border-top:1px solid var(--border);padding:24px;text-align:center;f
 <h1>Let candidates' AI assistants read the postings in your own hiring system</h1>
 <p class="dim">A one-page note for employers. Free, read-only, ten minutes. Nobody can buy ranking.</p>
 
-<h2>1. What this is</h2>
+<h2>What this is</h2>
 <p>OpenHire is an open-source job-search tool (an MCP server). Candidates add it to AI assistants such as ChatGPT, Claude, Doubao, DeepSeek (through an MCP-capable client), Cursor or Tencent WorkBuddy,
 and the assistant reads postings straight from the public API of <b>the employer's own hiring system</b> (Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling or Personio),
 not from a job board. A candidate's résumé travels only between their own computer and your apply page; it never passes through us.</p>
 <p>Every posting in the index carries the <b>original posting date</b> recorded in your system, how long it has been up, and a link straight to your apply page.
 You can check the numbers yourself: <a href="numbers.json">numbers.json</a> (with how each is counted and when it was measured).</p>
 
-<h2>2. What your company gets, and what it can never get</h2>
+<h2>What your company gets, and what it can never get</h2>
 <table>
 <tr><th>You get</th><th>You never get (nobody can buy it)</th></tr>
 <tr><td>
@@ -171,14 +180,14 @@ You can check the numbers yourself: <a href="numbers.json">numbers.json</a> (wit
 </ul></td></tr>
 </table>
 
-<h2>3. Are your postings already in the index?</h2>
+<h2>Are your postings already in the index?</h2>
 <p>Employers on Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling or Personio are most likely in already; claim your company in
 <a href="https://github.com/gzchenhao/openhire#employers">the employers section of the repository</a>.</p>
 <p>Employers on <b>Feishu Hire</b>, posting only on <b>BOSS Zhipin</b>, or on <b>a self-built careers page</b> are not in the index today.
 That is not our choice; we cannot read them: Feishu's postings API requires signed requests, which we treat as access control and do not work around; a job board is not your own system, so we do not read it;
 most self-built pages carry no machine-readable posting data. Any of the three ways below works: read-only, free, ten minutes.</p>
 
-<h2>4. Three ways in, the simplest first</h2>
+<h2>Three ways in, the simplest first</h2>
 <ol>
 <li><b>Fill in a spreadsheet and send it from your company email (no IT needed, two minutes).</b>
 Download the <a href="openhire-岗位表.xlsx">postings sheet (Excel)</a>, one posting per row, six columns: job title, city, posting date, apply link or apply email, salary range (optional), job description.
@@ -196,7 +205,7 @@ the advantage is that updates need no new sheet: we read the page regularly.</li
 <p>Employers on Greenhouse, Lever, Ashby, Beisen, Moka, Workable, SmartRecruiters, Rippling or Personio do not need any of these three; you are most likely in the index already. Claim your company in
 <a href="https://github.com/gzchenhao/openhire#employers">the employers section of the repository</a>.</p>
 
-<h2>5. How to reach us, and how fast we reply</h2>
+<h2>How to reach us, and how fast we reply</h2>
 <ul>
 <li>Simplest: send the <a href="openhire-岗位表.xlsx">postings sheet</a> (both tabs filled in) from your company email to <b>gdchenhao@qq.com</b>, subject "Postings sheet + company name";</li>
 <li>GitHub form: <a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">Employer claim</a>.
@@ -205,7 +214,7 @@ It asks where your postings are published today; pick one and we reply along tha
 <li>A decision within 3 working days. Identity material is used only for the check: not published, not kept, not used for anything else.</li>
 </ul>
 
-<h2>6. How we verify, and what we need from you</h2>
+<h2>How we verify, and what we need from you</h2>
 <p>A company email proves only that the sender controls the domain, and a domain costs very little, so it is only the first step. We check evidence an applicant cannot produce themselves, stacked together, plus a human decision:</p>
 <table>
 <tr><th>Evidence</th><th>From</th><th>What it proves</th></tr>
@@ -219,7 +228,7 @@ It asks where your postings are published today; pick one and we reply along tha
 <p>All you do is complete the "Company" tab: full registered name, unified social credit code (overseas companies give registration number and place), website domain, ICP filing number, the page and number of the phone published on your website, two industry footprint links, and the contact's job title. We do the checking, mostly automatically; what remains is two government sites and one phone call.</p>
 <p>To be clear about what we check: <b>the company exists and is in our three sectors.</b> We do not vouch for your company; every posting candidates see carries the "employer self-reported" label, and on any report we take it down first and ask afterwards.</p>
 
-<h2>7. Limits, stated up front</h2>
+<h2>Limits, stated up front</h2>
 <ul>
 <li>We can measure how long a posting has been up; we cannot measure whether you want to fill it. Claiming lets you explain the first in your own words;</li>
 <li>We never name a company as "unreadable" in any copy to push employers to open up. Whether to take any of these paths is your decision;</li>

@@ -42,7 +42,8 @@ def test_generated_pages_embed_the_house_style():
 def test_the_house_style_follows_earlytips_spec():
     css = house_style.CSS
     for token in ("--bg:#f6f6f0", "--accent:#c0392b", "--link:#1a6496", "--border:#e0e0d8", "--max-w:860px",
-                  '"PingFang SC","Microsoft YaHei"', "font-size:15px;line-height:1.75", "0 1px 3px rgba(0,0,0,.06)"):
+                  '"PingFang SC","Microsoft YaHei"', "font-size:15px;line-height:1.75", "counter(sec,decimal-leading-zero)",
+                  "border-left:3px solid var(--accent)", "border-left:2px solid var(--border)"):
         assert token in css, token
     assert "prefers-color-scheme" not in css and "@import" not in css, "no dark mode, no web fonts"
 

@@ -29,23 +29,32 @@ nav.house .brand span{color:var(--accent)}
 nav.house .links{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:11px}
 nav.house .links a{color:var(--accent);text-decoration:none}
 nav.house .links .here{color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:3px 11px;background:var(--bg2)}
-main{max-width:var(--max-w);margin:0 auto;padding:48px 24px 80px}
+main{max-width:var(--max-w);margin:0 auto;padding:48px 24px 80px;counter-reset:sec}
 h1{font-size:26px;font-weight:700;line-height:1.3;margin:0 0 8px}
-h2{font-size:15px;font-weight:700;margin:40px 0 14px;padding-left:10px;border-left:3px solid var(--accent);line-height:1.6}
-h3{font-size:13px;font-weight:700;color:var(--accent);margin:18px 0 8px}
+h1+p,h1+p.dim{font-size:13px;font-weight:400;color:var(--fg-dim);line-height:1.75;margin:0 0 36px;padding:0 0 28px;border:0;border-bottom:1px solid var(--border)}
+h2{font-size:15px;font-weight:700;margin:48px 0 16px;line-height:1.6}
+h2::before{counter-increment:sec;content:counter(sec,decimal-leading-zero);font-size:11px;color:var(--accent);letter-spacing:.1em;font-weight:600;margin-right:10px}
+h2.log::before{content:none}
+h3{font-size:13px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}
 p{margin:0 0 12px}
-ul,ol{margin:0 0 16px;padding-left:1.3em}
-li{font-size:14px;line-height:1.7;margin:4px 0}
+ul{list-style:none;margin:0 0 16px;padding:0}
+ul>li{padding:8px 0;border-bottom:1px solid var(--border)}
+ul>li:last-child{border-bottom:none}
+ol{margin:0 0 16px;padding-left:1.3em}
+ol>li{margin:4px 0}
+li{font-size:14px;line-height:1.7}
+li p{margin:0 0 4px}
 a{color:var(--link);text-decoration:none;overflow-wrap:anywhere}
 a:hover{text-decoration:underline}
 b,strong{font-weight:700}
 .dim{color:var(--fg-dim)}
+p.dim{font-size:12px;color:#555;line-height:1.7;padding-left:8px;border-left:2px solid var(--border)}
 hr{border:0;border-top:1px solid var(--border);margin:32px 0}
 code{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0 4px}
-pre{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
+pre{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 18px;margin:0 0 16px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow:auto;position:relative}
 pre code{background:none;border:0;padding:0;font-size:inherit}
-table{width:100%;border-collapse:collapse;margin:0 0 20px;background:var(--bg2);font-size:14px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-th{text-align:left;font-size:12px;font-weight:600;color:var(--fg-dim);padding:10px 12px;border-bottom:2px solid var(--border);background:var(--bg)}
+table{width:100%;border-collapse:collapse;margin:0 0 20px;font-size:14px;line-height:1.6}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--fg-dim);padding:10px 12px;border-bottom:1px solid var(--border)}
 td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
 button{font:inherit;font-size:12px;color:var(--accent);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;cursor:pointer}

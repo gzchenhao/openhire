@@ -23,7 +23,7 @@ from openhire import house_style  # noqa: E402
 
 
 EXTRA = {
-    "index": "main>ul{padding-left:1.1em}\nmain>ul>li{margin:12px 0}",
+    "index": "",
     "employers": "",
     "checklist": "\n".join([
         ".tag{display:inline-block;font-size:11px;padding:0 6px;border:1px solid var(--border);border-radius:4px;"
@@ -31,10 +31,9 @@ EXTRA = {
         ]),
     "connect": "\n".join([
         ".pick{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 20px}",
-        ".client{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;"
-        "box-shadow:0 1px 3px rgba(0,0,0,.06);padding:4px 18px 16px;margin:16px 0}",
-        ".client pre{background:var(--bg);box-shadow:none}",
-        ".client h2{border-left:none;padding-left:0;margin-top:16px}",
+        ".client{border-bottom:1px solid var(--border);padding:0 0 12px;margin:0 0 8px}",
+        ".client h2{font-size:13px;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:18px 0 8px;line-height:1.7}",
+        ".client h2::before{content:none;counter-increment:none}",
         "html[data-picked] .client{display:none}",
         'html[data-picked] .client[data-show="1"]{display:block}',
         ".copy{position:absolute;top:8px;right:8px;padding:0 8px}",
