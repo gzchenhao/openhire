@@ -169,7 +169,7 @@ def test_watch_can_be_scoped_to_one_employer(session):
     assert w["status"] == "active"
     out = service.check_watches(session, "#t3st", now=NOW)
     res = out["results"][0]
-    assert {m["job_id"] for m in res["new_matches"]} == {"minieye:new"}
+    assert {m["job_id"] for m in res["baseline_postings"]} == {"minieye:new"}
     assert res["total_matching"] == 1 and res["truncated"] is False
 
 
@@ -187,9 +187,9 @@ def test_first_pull_reports_the_whole_standing_set_size(session):
     res = service.check_watches(session, "#bulk", now=NOW)["results"][0]
     assert res["total_matching"] == service.MAX_PAGE_SIZE + 5
     assert res["truncated"] is True and res["truncation_note"]
-    assert len(res["new_matches"]) == service.MAX_PAGE_SIZE
+    assert len(res["baseline_postings"]) == service.MAX_PAGE_SIZE
     # The best-ranked rows are the freshest, not an alphabetical slice.
-    assert res["new_matches"][0]["job_id"] == "minieye:bulk0"
+    assert res["baseline_postings"][0]["job_id"] == "minieye:bulk0"
 
 
 # --- 6. get_company_info takes what search_jobs takes ------------------------------------
@@ -274,7 +274,7 @@ def test_a_watch_can_be_scoped_to_a_location(session):
     w = service.watch_intent(session, "#gz-k2p7-x8q1", {"skills": ["bev"], "location": "广州"}, now=NOW)
     assert w["status"] == "active"
     res = service.check_watches(session, "#gz-k2p7-x8q1", now=NOW)["results"][0]
-    assert {m["job_id"] for m in res["new_matches"]} == {"minieye:th"}
+    assert {m["job_id"] for m in res["baseline_postings"]} == {"minieye:th"}
     assert res["total_matching"] == 1
     # The stored filter is the text as typed; the aliases apply at match time.
     with_loc = session.execute(select(Watch).where(Watch.watch_id == w["watch_id"])).scalar_one()

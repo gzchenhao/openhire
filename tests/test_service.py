@@ -188,7 +188,7 @@ def test_check_watches_applies_required_skills_and_role_family(session):
         now=NOW,
     )
     res = service.check_watches(session, "#eng", now=NOW + dt.timedelta(hours=1))
-    ids = {m["job_id"] for r in res["results"] for m in r["new_matches"]}
+    ids = {m["job_id"] for r in res["results"] for m in r["baseline_postings"]}  # a first pull
     assert "acme:1" in ids       # rust+k8s engineering
     assert "acme:s1" not in ids  # sales, and lacks k8s → excluded
 
@@ -204,7 +204,7 @@ def test_check_watches_returns_increment(session):
     service.watch_intent(session, "#a3f9", {"skills": ["rust"], "remote": True}, now=NOW)
     # First pull sees existing matches and advances the marker.
     first = service.check_watches(session, "#a3f9", now=NOW + dt.timedelta(hours=1))
-    assert first["new_matches"] >= 1
+    assert first["baseline_count"] >= 1 and first["new_matches"] == 0  # a baseline, not an increment
 
     # A brand-new matching job appears later.
     later = NOW + dt.timedelta(days=1)

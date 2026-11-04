@@ -23,6 +23,7 @@ NOT_TOOLS = {
     "job_id", "posting_text", "board_url", "date_signal", "not_reported_by_ats", "pending_user",
     # 0.8.30 (reports/100): result fields and a prompt name the templates now point at.
     "check_before_apply", "dates_in_words", "matched_skills", "is_first_pull", "radar_check",
+    "new_matches", "baseline_postings",
     "date_source", "what_happens_next", "matching_now",
     # 0.8.36 (reports/111): before_apply quotes these result fields.
     "ghost_reason", "message_text", "outsourcing_words", "apply_channel", "apply_channel_blocked",

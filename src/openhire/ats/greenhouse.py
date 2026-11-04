@@ -42,6 +42,11 @@ class GreenhouseClient(ATSClient):
 
     @staticmethod
     def _remote_hint(j, loc: str | None) -> str:
+        # The location the employer shows candidates wins over the "Location Type" custom
+        # field: Anthropic's board carried "Remote-Friendly" locations with on-site metadata
+        # on every row (persona test, 2026-11-03).
+        if loc and "remote" in loc.lower():
+            return "remote"
         # Greenhouse exposes a "Location Type" custom field in `metadata`.
         for m in j.get("metadata") or []:
             if str(m.get("name", "")).lower() == "location type":
@@ -52,6 +57,4 @@ class GreenhouseClient(ATSClient):
                     return "hybrid"
                 if val in ("on-site", "onsite", "in office", "in-office"):
                     return "onsite"
-        if loc and "remote" in loc.lower():
-            return "remote"
         return "unknown"

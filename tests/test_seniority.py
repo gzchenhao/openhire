@@ -169,7 +169,7 @@ def test_watch_accepts_seniority_and_applies_it_on_every_pull(zoox):
     stored = zoox.get(service.Watch, w["watch_id"]).filters
     assert stored["seniority"] == ["ic"]
     pulled = service.check_watches(zoox, "#seniority-k2p7x8q1", now=NOW)
-    titles = {m["title"] for r in pulled["results"] for m in r["new_matches"]}
+    titles = {m["title"] for r in pulled["results"] for m in r["baseline_postings"]}
     assert "Senior Manager, Perception Data" not in titles and len(titles) == 3
     with pytest.raises(OpenHireError) as e:
         service.watch_intent(zoox, "#seniority-k2p7x8q1", {"seniority": ["boss"]}, now=NOW)

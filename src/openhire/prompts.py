@@ -152,9 +152,9 @@ def radar_check(
         "看看我的 OpenHire 雷达有没有新岗。 / Check my OpenHire radar for new postings.",
         f"指纹 / Fingerprint: {fp}",
         "",
-        "用 check_watches 查，先把结果里的 summary 原句告诉我；列出新岗（公司、岗位名、地点、发布日期、投递链接）和上次之后已经关闭的岗位；没有新岗就直说没有。is_first_pull 为真时，列出的是已有岗位的基线，不要说成新出现的。",
-        "Call check_watches and start with its summary sentence; list the new postings (company, title, location, posting date, apply link) and the ones "
-        "closed since the last check; if nothing is new, say so. When is_first_pull is true, the list is the baseline of postings already live: never present it as new.",
+        "用 check_watches 查，先把结果里的 summary 原句告诉我；列出新岗（new_matches：公司、岗位名、地点、发布日期、投递链接）和上次之后已经关闭的岗位；没有新岗就直说没有。is_first_pull 为真时，岗位在 baseline_postings 里，是已有岗位的基线，不要说成新出现的。",
+        "Call check_watches and start with its summary sentence; list the new postings (new_matches: company, title, location, posting date, apply link) and the ones "
+        "closed since the last check; if nothing is new, say so. When is_first_pull is true, the postings are under baseline_postings, the baseline of postings already live: never present it as new.",
         "再用同一个指纹调 check_applications，告诉我投过的岗位里哪些已经下架、不用再等。 / Then call check_applications with the same fingerprint and tell me which postings I applied to have closed, so I can stop waiting.",
         "用我写字的语言回答。 / Answer in the language I write in.",
     ])

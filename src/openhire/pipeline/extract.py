@@ -523,9 +523,17 @@ _SEN_FUNCTION_MANAGER = re.compile(
     r"\b(technical program|program|programme|product marketing|product|project|account|community"
     r"|customer success|partner(?:ship)?s?|relationship|portfolio|release|delivery|campaign|events?"
     r"|content|brand|growth|marketing|channel|key account|engagement|solutions?|category|office"
-    r"|payroll|scrum|alliances?|deal desk|bid|proposal|tender|training|quality assurance) managers?\b",
+    r"|payroll|scrum|alliances?|deal desk|bid|proposal|tender|training|quality assurance"
+    # Persona test 2026-11-03: "Policy Design Manager" (Anthropic) owns a policy, not a team,
+    # and was told to a user as a people-management job. Same family as product / program.
+    r"|(?:public )?policy(?: design)?|compliance|communications?|comms|government affairs|public affairs"
+    r"|strategy|insights?|locali[sz]ation|documentation|knowledge|curriculum|learning|enablement"
+    r"|revenue operations|editorial|trust (?:and|&) safety|integrity) managers?\b",
     re.I,
 )
+# 门店产品专家 is a shop-floor sales title (persona test, 2026-11-03): 专家 names a grade only
+# outside retail.
+_SEN_RETAIL = re.compile(r"店|导购|门市|柜台")  # 静安大融城店, 门店, 旗舰店, 店员 ...
 _SEN_MTS = re.compile(r"\bmembers? of technical staff\b|\bchief of staff\b", re.I)
 _SEN_TEAM_LEAD = re.compile(r"团队负责人|组长|\bteam lead(er)?\b|\btech(nical)? lead\b", re.I)
 _SEN_TOP_IC = re.compile(r"首席[一-鿿]{0,4}(科学家|专家|工程师|架构师|研究员|设计师)|\bchief (scientist|architect|engineer|researcher|designer)\b", re.I)
@@ -561,6 +569,8 @@ def seniority_from_title(title: str | None) -> str:
     # as a word character, so \bleader\b never matched after 测试 (persona test, 2026-10-30).
     text = _CJK_LATIN_SEAM.sub(" ", title or "")
     text = _SEN_MTS.sub(" ", _SEN_FUNCTION_MANAGER.sub(" ", text))
+    if _SEN_RETAIL.search(text):
+        text = text.replace("专家", " ")
     if _SEN_INTERN.search(text):
         return "intern"
     if _SEN_TEAM_LEAD.search(text) and not _SEN_MANAGER.search(text):
@@ -584,6 +594,32 @@ def seniority_from_title(title: str | None) -> str:
     if _SEN_JUNIOR.search(text):
         return "junior"
     return "unknown"
+
+
+# What a description says about leading people, for titles that name no level (persona test,
+# 2026-11-03: 福瑞泰克「测试策略岗」, duties "负责测试团队管理", was unknown and so absent from a
+# management search, while "Policy Design Manager" was a manager on the word alone). Strict
+# phrases only: "协助团队管理" or "experience leading a team is a plus" must not promote an
+# individual-contributor posting.
+_PEOPLE_MANAGEMENT = re.compile(
+    r"(?<!协助)(?<!参与)(?<!配合)(?<!支持)负责[^，。；,;\n]{0,10}团队(?:的)?(?:日常)?(?:管理|搭建|建设|组建)"
+    r"|(?<!协助)(?<!参与)(?<!配合)带领[一-鿿]{0,8}团队|(?<!协助)(?<!参与)管理[一-鿿]{0,6}团队"
+    r"|组建(?:并)?(?:管理|带领)[一-鿿]{0,6}团队|直接下属|下属(?:的)?(?:培养|管理|考核)|团队(?:的)?绩效(?:管理|考核)"
+    r"|\bdirect reports?\b|\byou(?:'|’| wi)ll (?:manage|lead|build and lead|hire and manage|grow and lead)\b[^.]{0,40}\bteam\b"
+    r"|\bresponsible for (?:managing|leading|building|hiring and managing)\b[^.]{0,30}\bteam\b"
+    r"|\bmanage a team of\b|\blead a team of\b|\bpeople manager\b",
+    re.I,
+)
+
+
+def seniority_for(title: str | None, description: str | None) -> str:
+    """The level of a posting: the title's level when it names one, else "manager" when the
+    description plainly gives the role a team to run, else "unknown". Title first, always: a
+    description is boilerplate-heavy and only ever promotes a title that names nothing."""
+    level = seniority_from_title(title)
+    if level == "unknown" and description and _PEOPLE_MANAGEMENT.search(description):
+        return "manager"
+    return level
 
 
 def expand_seniority(values: list[str] | None) -> set[str] | None:

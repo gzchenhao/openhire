@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.58 · 2026-11-03；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.59 · 2026-11-04；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.59（2026-11-04，云端会话，`reports/138`）：** 模拟求职者 11-03 夜（US$6.54，累计 31.97，62 条）核对后修 15 条 medium 含两条 high：**薪资写了但读不出来报 `salary_unclear` 并带 `salary_raw`**（原来说「没写薪资」）；**职级 `seniority_for(title, description)`**：policy / compliance / strategy 等「管事不管人」的 Manager 不算管理岗，标题没级别、正文明写带人（负责团队管理 / direct reports）才标 manager，门店「专家」不算 senior，应届生筛选（只含 intern / junior / unknown）排除正文要求 3 年以上的无级别行；**`title_exclude`**（搜索、盯岗、CLI）；**check_watches 首次拉取改为 `baseline_postings` / `baseline_count`、`new_matches` 只数增量、行用 `COMPACT_KEYS` 精简**；`filters_applied` 全回显（remote_scope 等）；空结果 `relax` 逐项计数（seniority 另报标题没级别的条数）；地区词 APAC 当地点报 unknown_location；盯岗登记说明 unknown 与无城市行不计入；dates_in_words 加「保存不等于改动」；校招标题挂 /social/ 提示；read_board days_open 日历日、`_iso_to_dt` 转 UTC 存；Greenhouse 地点 Remote 优先于元数据；check_employer 禁止按 ATS 账号猜域名。**不改**：ghost 字段名（10-31 裁定）、match_quality 加权（排序函数另议）、结果默认精简 / 统一外层（协议形状，先改说明）；**请领导定**：update_watch / delete_watch 第 14 个工具。Glama 报 0.8.58 Build failed，本地复现正常，日志要登录（本机待办 38）。1135 tests。
 - **v0.8.58（2026-11-03，云端会话，`reports/137`）：** 比亚迪、小米汽车本机原样连通（200，页面标题核到；云端连不上是网络不是拦截），门户目录改成「自建招聘站，还没有读取器」。本机同日投了 11-02 周表两条知乎回答（待办 36）。1121 tests。
 - **v0.8.57（2026-11-03，云端会话，`reports/136`）：** **Mentee Robotics 进种子表**（Comeet，键取自公开招聘页明文，11 条，无发布日期只有 `time_updated`，具身智能）；122 号「Mentee 的 Comeet 页 404」作废，正确地址经 Mobileye 招聘页找到。1121 tests。
 - **v0.8.56（2026-11-03，云端会话，`reports/135`）：** **12 家大雇主逐家评估**（Default 环境子会话只读查，守红线）：**Lever 欧洲站读取器修复**（租户键 `eu.<site>`，原来一律调美国站 404）；种子表 +3：NVIDIA（Workday，列表 2,000 封顶）、Gatik、Mobileye；门户目录 +9：特斯拉（403 停）、百度 Apollo、华为、滴滴、美团（自建脚本站）、小鹏汽车（飞书）、比亚迪与小米汽车（连不上，未评估）、DeepMind（Google Careers）。1121 tests。

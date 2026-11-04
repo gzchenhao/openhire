@@ -123,6 +123,7 @@ def search_jobs(
     sector: str | None = None,
     entry_level: bool = False,
     posted_within_days: int | None = None,
+    title_exclude: list[str] | None = None,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
 
@@ -134,8 +135,9 @@ def search_jobs(
 
     Four fields are written for the person reading your answer (0.8.30): `seniority` is the
     level the title names (intern | junior | senior | staff | lead | manager | director |
-    unknown; a product / project / account manager is an individual contributor, so it is
-    never "manager"; the `seniority` filter's alias `ic` means every individual-contributor
+    unknown; a product / project / account / policy / program manager is an individual
+    contributor, so it is never "manager" on the word alone, while a title that names no level
+    becomes "manager" when the posting's text plainly gives the role a team to run; the `seniority` filter's alias `ic` means every individual-contributor
     level (intern, junior, senior, staff, and unknown, because most titles name no level), so
     for a new graduate pass ["intern", "junior", "unknown"] and for an experienced IC
     ["senior", "staff", "unknown"]; listing levels leaves `unknown` out unless you name it. If you do not yet know
@@ -148,7 +150,11 @@ def search_jobs(
     unclear, unrecognised apply host, employer says closed), with an empty list meaning
     nothing stood out, not that the posting is vetted. Show at most 5 postings first, as six
     items each (title; company and location; salary, saying when none is stated; why it
-    matches; what to confirm; apply link), then offer more.
+    matches; what to confirm; apply link), then offer more. Each row is about 2,000
+    characters: ask for `limit` 10 or fewer per call and page with `offset`; a 50-row page is
+    cut off by most clients before the end. A row whose employer published figures we could
+    not read as pay (an hourly rate in an annual field) carries `salary_raw` with the
+    employer's own numbers and a `salary_unclear` item instead of "no salary stated".
 
     An empty result carries `status` and a fixed bilingual `headline` saying which kind of
     nothing it is: index_empty, known_not_indexed, unknown_company, unknown_tag, unknown_location
@@ -276,6 +282,9 @@ def search_jobs(
             人力 / 人事 / 招聘 reaches all the others, so title=["招聘"] also finds an
             English "Senior Technical Recruiter". Combine with `company` to ask "does
             <employer> have any HR openings?" instead of paging their whole list.
+        title_exclude: title words to keep OUT, ANY-of, matched like `title`: ["专家"] drops
+            产品专家 rows, ["manager"] drops every manager title. Use it when the user says
+            "not X"; a watch accepts the same key, so the exclusion holds on every pull.
         seniority: keep only rows whose title names one of these levels, ANY-of: intern,
             junior, senior, staff, lead, manager, director, unknown; plus the aliases "ic"
             (intern, junior, senior, staff, unknown: everyone who leads no team, including
@@ -284,7 +293,10 @@ def search_jobs(
             or a management role and roughly how many years they have, then pass it: an
             engineer searching Zoox for perception otherwise gets "Senior Manager, Perception
             Data" first because it is the newest. A hard filter, never a ranking input; an
-            unknown value is refused (ERR_UNKNOWN_SENIORITY).
+            unknown value is refused (ERR_UNKNOWN_SENIORITY). Listing only intern / junior /
+            unknown also drops a title that names no level when its text asks for three years
+            or more. An empty result's `relax` says how many rows each filter alone hides, and
+            how many of those name no level in the title.
         sector: only employers in one sector: autonomous_driving (自动驾驶 / 智驾, including
             the lidar, chip and truck companies built for it), embodied_ai (具身 / 机器人),
             ai_infra (大模型 / AI labs, chips, AI tools) or other. Use it when the user says
@@ -364,6 +376,7 @@ def search_jobs(
                 company=company, collapse_role_group=collapse_role_group,
                 location=location, title=title, seniority=seniority, sector=sector,
                 entry_level=entry_level, posted_within_days=posted_within_days,
+                title_exclude=title_exclude,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
@@ -372,6 +385,8 @@ def search_jobs(
                     role_family=role_family, currency=currency, company=company,
                     title=title, location=location, seniority=seniority, sector=sector,
                     entry_level=entry_level, posted_within_days=posted_within_days,
+                    remote=remote, min_salary=min_salary, require_stated_salary=require_stated_salary,
+                    remote_scope=remote_scope, title_exclude=title_exclude,
                 ))
             if limit > service.MAX_PAGE_SIZE:
                 # You asked for more than one page holds. Returning the first page and
@@ -495,9 +510,12 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     `location` (substring of the location text, alias-aware like search_jobs: 广州 also
     reaches 广东·天河区 rows, Beijing reaches 北京市, "remote" reaches 远程), `title`
     (list of title substrings, ANY-of, synonym-expanded for HR terms like search_jobs —
-    the way to watch for recruiting or other roles no skill tag names), `seniority` (list of
+    the way to watch for recruiting or other roles no skill tag names), `title_exclude`
+    (title words to keep out on every pull, as in search_jobs: the user who wants "no 专家
+    roles" gets that enforced by the watch, not by you), `seniority` (list of
     levels or the aliases "ic" / "management", as in search_jobs, so a watch for an engineer
-    never fires on a Senior Manager), `sector` (autonomous_driving / embodied_ai / ai_infra /
+    never fires on a Senior Manager; `what_happens_next` says when titles naming no level are
+    left out), `sector` (autonomous_driving / embodied_ai / ai_infra /
     other, as in search_jobs: one watch for "robotics companies in Shenzhen" instead of one
     per employer), `entry_level` (true: only postings open to a new graduate, as in
     search_jobs), `posted_within_days` (only postings published in the last N days, as in
@@ -892,9 +910,15 @@ def check_watches(fingerprint: str) -> dict:
     `board_error` and nothing is marked closed on its account.
 
     The FIRST pull on a watch returns everything matching it, not an increment: nothing
-    has been reported for that watch before, so the whole standing set is new to the user.
-    Each result says which it is via `is_first_pull`; do not present a first pull to the
-    user as "postings that appeared since last time".
+    has been reported for that watch before. On that pull the postings are under
+    `baseline_postings` with `baseline_count`, `new_matches` is empty and `is_first_pull` is
+    true; the top-level `new_matches` counts only increments and `baseline_count` the
+    baselines. Never present a baseline to the user as "postings that appeared since last
+    time".
+
+    Rows are compact (title, company, location, pay, dates_in_words, check_before_apply,
+    apply link and the protocol fields; see `fields`): a full first pull used to run to 68,000
+    characters and get cut off. search_jobs with the job_id or company gives the full row.
 
     Each result also carries `total_matching` and `truncated`: a broad watch can match
     hundreds of postings and only the 100 best-ranked are returned. Tell the user when
@@ -907,7 +931,8 @@ def check_watches(fingerprint: str) -> dict:
     if (preparing := _preparing()):
         # Pulling now would mark the watches as notified on an index that is still
         # downloading, and the whole snapshot would then never be reported as new.
-        return {"fingerprint": fingerprint, "watches": None, "new_matches": 0, "results": [], **preparing}
+        return {"fingerprint": fingerprint, "watches": None, "new_matches": 0, "baseline_count": 0,
+                "results": [], **preparing}
     with session_scope() as s:
         try:
             return service.check_watches(s, fingerprint)

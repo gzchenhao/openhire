@@ -175,6 +175,12 @@ def annualise(value: int | None, period: str | None) -> int | None:
 # vocabulary pass later (report 028) can change the canonical form without a migration.
 # Defined next to match_quality so the filter and the score can never drift apart.
 from .pipeline.ranking import expand_skill, normalize_skill  # noqa: E402  (placed with its explanation)
+from .pipeline.extract import seniority_for  # noqa: E402
+
+# A title that names no level but a text asking for this many years is not the junior end
+# (persona test, 2026-11-03: a 3-year SLAM role passed a new graduate's intern / junior /
+# unknown filter because its title said nothing).
+EXPERIENCED_YEARS = 3
 
 
 # --- salary plausibility ------------------------------------------------------
@@ -565,7 +571,8 @@ def _date_source(job: Job, company: Company | None) -> str:
 
 
 def dates_in_words(posted_day: dt.date | None, days_open: int | None, source: str,
-                   verified_day: dt.date | None, correction: dict | None = None) -> dict:
+                   verified_day: dt.date | None, correction: dict | None = None,
+                   updated_day: dt.date | None = None) -> dict:
     """One sentence per language about the dates on a posting, safe to show verbatim.
     Never says a posting is fake, dead or not hiring: it reports what was measured."""
     if posted_day is None or days_open is None:
@@ -589,6 +596,12 @@ def dates_in_words(posted_day: dt.date | None, days_open: int | None, source: st
     if correction and correction.get("date_semantics") == "requisition_created":
         zh += "雇主说明这个日期是内部立项日，不是上线日，所以在架天数会偏大。"
         en += " The employer says this date is when the requisition was opened internally, not when it went live, so days open overstates."
+    if updated_day is not None and updated_day != posted_day:
+        # The sentence refresh_index already carries, now on the row itself: an assistant read
+        # days_since_update as "someone edited this recently" (persona test, 2026-11-03).
+        u = updated_day.isoformat()
+        zh += f"雇主系统最后保存于 {u}，保存不等于内容有改动。"
+        en += f" The employer's system last saved it on {u}; saved does not mean edited."
     if days_open > LONG_OPEN_DAYS:
         zh += "在架较久，投递前建议先确认仍在招。"
         en += " Open for a while now; worth confirming it is still being filled before you apply."
@@ -622,7 +635,8 @@ def _visa_item(requirements: dict | None, description: str | None) -> dict | Non
 
 def check_before_apply(*, date_source: str, days_open: int | None, salary_stated: bool,
                        remote_scope: str | None, apply_ok: bool, correction: dict | None,
-                       visa: dict | None = None) -> list[dict]:
+                       visa: dict | None = None, salary_note: str | None = None,
+                       requirements: dict | None = None, apply_url: str | None = None) -> list[dict]:
     """What a reader should confirm before applying, each item from a measured fact.
     An empty list means nothing on this row stood out, not that the posting is vetted."""
     out: list[dict] = []
@@ -639,9 +653,18 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
                     "zh": f"在架 {days_open} 天，投递前先确认仍在招。",
                     "en": f"Open {days_open} days; confirm it is still being filled before applying."})
     if not salary_stated:
-        out.append({"code": "salary_not_stated",
-                    "zh": "雇主没有写薪资。",
-                    "en": "The employer states no salary."})
+        if salary_note == "ats_range_below_plausible_floor":
+            # The employer DID publish figures; we declined to show them as annual or monthly
+            # pay. Saying "no salary stated" here contradicted salary_note on the same row and
+            # the assistant repeated the wrong half (persona test, 2026-11-03: a Figure intern
+            # role with an hourly rate in an "annual" field).
+            out.append({"code": "salary_unclear",
+                        "zh": "雇主写了薪资，但数值看起来不像年薪或月薪（可能是时薪、日薪或单位写错），原始数字在 salary_raw，请到原页面确认。",
+                        "en": "The employer published a pay range, but the figures do not look like annual or monthly pay (possibly hourly, daily or a unit error); the raw numbers are in salary_raw, confirm on the original page."})
+        else:
+            out.append({"code": "salary_not_stated",
+                        "zh": "雇主没有写薪资。",
+                        "en": "The employer states no salary."})
     if remote_scope == "unknown":
         out.append({"code": "remote_scope_unknown",
                     "zh": "标了远程，但哪些地区能申请没有写清。",
@@ -658,6 +681,12 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
         out.append({"code": "date_is_requisition_created",
                     "zh": "雇主说明日期是内部立项日，不是上线日。",
                     "en": "The employer says the date is the internal requisition date, not the go-live date."})
+    if (requirements or {}).get("hire_track") == "campus" and apply_url and "/social/" in apply_url:
+        # Beisen's zhiye portals file campus and experienced hires under /campus/ and /social/;
+        # a title saying 校招 under /social/ is worth a question (persona test, 2026-11-03).
+        out.append({"code": "campus_posting_in_social_channel",
+                    "zh": "雇主系统把这条放在社招栏目下（链接含 /social/），请确认是否收应届生。",
+                    "en": "The employer's system files this under experienced hires (the link contains /social/); confirm it takes new graduates."})
     if visa:
         out.append(visa)
     return out
@@ -684,6 +713,8 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         job.salary_min, job.salary_max, getattr(job, "salary_period", None)
     )
     _apply_ok = apply_url_is_trusted(job.apply_channel, extra_hosts=_extra_apply_hosts(company))
+    _req = requirements_from_text(job.title, job.description_raw)
+    _touched = _touch_is_reported(job, company)
     return {
         "@type": "JobPosting",
         "job_id": job.id,
@@ -716,6 +747,11 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # caller can tell "the employer did not say" from "their ATS said something
         # impossible".
         **({"salary_note": _sal_note} if _sal_note else {}),
+        # The employer's own figures when we declined to publish them as pay: the reader can
+        # still see "22 to 27 USD, period annual" and judge it an hourly rate.
+        **({"salary_raw": {"min": job.salary_min, "max": job.salary_max, "currency": job.salary_currency,
+                           "period": getattr(job, "salary_period", None) or "annual"}}
+           if _sal_note == "ats_range_below_plausible_floor" else {}),
         # The period the employer published the figure in — without it a monthly CNY
         # number is indistinguishable from an annual one.
         "salary_period": getattr(job, "salary_period", None) or "annual",
@@ -747,7 +783,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
                     (now - _aware(job.updated_at)).total_seconds() // 86400
                 ),
             }
-            if _touch_is_reported(job, company)
+            if _touched
             else {"updated_at": None, "days_since_update": None,
                   "update_signal": "not_reported_by_ats"}
         ),
@@ -797,21 +833,25 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # ---- plain language (0.8.30): the level the title names, where the date comes
         # from, the dates as a sentence, and what to confirm before applying. _ds and _corr
         # were bound by the walrus expressions above; a dict display evaluates in order.
-        "seniority": seniority_from_title(job.title),
+        # The title's level, or "manager" when the title names none and the text plainly gives
+        # the role a team to run (pipeline.extract.seniority_for).
+        "seniority": seniority_for(job.title, job.description_raw),
         # What the posting itself asks for: lowest required degree, fewest years, campus /
         # intern track (pipeline.extract.requirements_from_text). Read from the text with free
         # rules at read time; null means the posting did not say, not "none required".
-        "requirements": requirements_from_text(job.title, job.description_raw),
+        "requirements": _req,
         "date_source": _date_source(job, company),
         "dates_in_words": dates_in_words(
             posted.date() if posted else None, age_days, _date_source(job, company),
             _aware(job.verified_at).date() if job.verified_at else None, _corr,
+            updated_day=_aware(job.updated_at).date() if _touched else None,
         ),
         "check_before_apply": check_before_apply(
             date_source=_date_source(job, company), days_open=age_days,
             salary_stated=bool(_sal_lo or _sal_hi), remote_scope=_rs, apply_ok=_apply_ok,
             correction=_corr,
-            visa=_visa_item(requirements_from_text(job.title, job.description_raw), job.description_raw),
+            visa=_visa_item(_req, job.description_raw),
+            salary_note=_sal_note, requirements=_req, apply_url=job.apply_channel,
         ),
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
         # WHICH requested skills this row actually carries. A reviewer searched `rust`,
@@ -891,14 +931,21 @@ def _filter_and_rank(
     sector: str | None = None,
     entry_level: bool = False,
     posted_within_days: int | None = None,
+    title_exclude: str | list[str] | None = None,
 ) -> list[tuple[Job, float]]:
     """Server-side HARD FILTER (skills ∩/∀, remote, salary, freshness window) + FIXED sort.
     Precise re-ranking is intentionally left to the client agent."""
     terms = title_terms(title)
-    # The level the title names (pipeline.extract.seniority_from_title). A hard filter like
+    # Title words to keep OUT ("not 专家", "no manager titles"): a user asked for exactly this
+    # and the assistant had to filter by hand on every pull (persona test, 2026-11-03).
+    ex_terms = title_terms(title_exclude)
+    # The level the title names (pipeline.extract.seniority_for). A hard filter like
     # the others and never a ranking input: "Senior Manager, Perception Data" outranked every
     # engineer on a perception search because it was the newest, and nothing could keep it out.
     keep_levels = expand_seniority(seniority)
+    # The junior end only (a new graduate's intern / junior / unknown): a title naming no level
+    # whose text asks for EXPERIENCED_YEARS or more is not it.
+    junior_only = keep_levels is not None and keep_levels <= {"intern", "junior", "unknown"}
     # Live = not delisted AND returned by the employer's system within 30 days (reports/101).
     stmt = select(Job).where(live_clause(verified_cutoff(session)))
 
@@ -978,8 +1025,16 @@ def _filter_and_rank(
             continue
         if terms and not title_matches(job.title, terms):
             continue
-        if keep_levels is not None and seniority_from_title(job.title) not in keep_levels:
+        if ex_terms and title_matches(job.title, ex_terms):
             continue
+        if keep_levels is not None:
+            level = seniority_for(job.title, job.description_raw)
+            if level not in keep_levels:
+                continue
+            if junior_only and level == "unknown":
+                years = requirements_from_text(job.title, job.description_raw)["min_years"]
+                if years is not None and years >= EXPERIENCED_YEARS:
+                    continue
         if entry_level and not is_entry_level(job.title, job.description_raw):
             continue
         mq = match_quality(list(skills or []) or list(required_skills or []), job.skills)
@@ -1011,6 +1066,7 @@ def search_jobs(
     sector: str | None = None,
     entry_level: bool = False,
     posted_within_days: int | None = None,
+    title_exclude: str | list[str] | None = None,
 ) -> list[dict]:
     now = _now(now)
     posted_within_days = check_posted_within_days(posted_within_days)
@@ -1039,6 +1095,7 @@ def search_jobs(
         role_family=role_family, offset=offset, company_ids=company_ids,
         location=location, title=title, seniority=seniority, sector=sector,
         entry_level=bool(entry_level), posted_within_days=posted_within_days,
+        title_exclude=title_exclude,
     )
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
@@ -1196,6 +1253,12 @@ def diagnose_empty_search(
     sector: str | None = None,
     entry_level: bool = False,
     posted_within_days: int | None = None,
+    remote: bool | None = None,
+    min_salary: int | None = None,
+    require_stated_salary: bool = False,
+    remote_scope: str | None = None,
+    title_exclude: str | list[str] | None = None,
+    now: dt.datetime | None = None,
 ) -> dict:
     """Explain an empty result set so the caller can tell a typo from a genuine miss.
 
@@ -1215,11 +1278,18 @@ def diagnose_empty_search(
         return {k: v for k, v in {
             "company": company, "skills": skills, "required_skills": required_skills,
             "role_family": role_family, "currency": currency,
-            "title": title_terms(title) or None, "location": (location or "").strip() or None,
+            "title": title_terms(title) or None, "title_exclude": title_terms(title_exclude) or None,
+            "location": (location or "").strip() or None,
             "seniority": ([seniority] if isinstance(seniority, str) else seniority) or None,
             "sector": sector or None,
             "entry_level": True if entry_level else None,
             "posted_within_days": posted_within_days or None,
+            # The persona test of 2026-11-03 sent remote_scope=worldwide and got it echoed
+            # nowhere, so nobody could tell whether the filter had been applied.
+            "remote": True if remote else None,
+            "remote_scope": remote_scope or None,
+            "min_salary": min_salary or None,
+            "require_stated_salary": True if require_stated_salary else None,
         }.items() if v}
 
     # An empty INDEX explains an empty result on its own, and every other diagnosis below
@@ -1350,7 +1420,17 @@ def diagnose_empty_search(
     status = "unknown_tag" if unknown else "no_match"
     if not unknown and (location or "").strip():
         cutoff_l = verified_cutoff(session)
-        if cutoff_l is not None and not session.scalar(
+        if _REGION_WORD.fullmatch(location.strip()):
+            # "APAC" is a region, not anything an employer types into a location field; the
+            # generic "no match" sent an assistant round in circles (persona test, 2026-11-03).
+            status = "unknown_location"
+            hint = (
+                f"{location.strip()!r} is a region, not a place employers write in a location field, so "
+                "no row can match it. Search city by city (Singapore, Hong Kong, Tokyo, Sydney), or for "
+                "remote roles filter with remote_scope and read eligible_regions on each row. "
+                "地区词不是地点字段里的写法：按城市逐个搜，或远程岗位用 remote_scope 筛、看每条的 eligible_regions。"
+            )
+        elif cutoff_l is not None and not session.scalar(
                 select(func.count()).where(live_clause(cutoff_l), _location_clause(location))):
             status = "unknown_location"
             hint = (
@@ -1359,6 +1439,20 @@ def diagnose_empty_search(
                 "the other language (上海 / Shanghai), a single city rather than a province, or a region "
                 "the index knows (China / 全国, Bay Area). 地点对不上：换中文或英文城市名，或写具体城市。"
             )
+    relax: dict = {}
+    if status == "no_match":
+        # Which filter alone is hiding the matches, counted rather than guessed: the old hint
+        # named required_skills as the strictest even when none was sent, and could not say
+        # that a seniority filter had excluded every title that names no level.
+        relax = _relax_counts(
+            session, now=now, skills=skills, required_skills=required_skills, remote=remote,
+            min_salary=min_salary, currency=currency, require_stated_salary=require_stated_salary,
+            remote_scope=remote_scope, role_family=role_family, company=company, location=location,
+            title=title, title_exclude=title_exclude, seniority=seniority, sector=sector,
+            entry_level=entry_level, posted_within_days=posted_within_days,
+        )
+        if relax:
+            hint = (hint + " " if company else "") + _relax_hint(relax)
     if company and not unknown:
         # Every posting we hold for this employer has gone unconfirmed for 30 days: its board
         # most likely moved. Say that instead of "no match", which reads as "not hiring".
@@ -1385,7 +1479,73 @@ def diagnose_empty_search(
         "unknown_skills": unknown,
         "suggestions": suggestions,
         "filters_applied": _applied(),
+        **({"relax": relax} if relax else {}),
     }
+
+
+# A region word in the location filter: nothing an employer writes into a location field.
+_REGION_WORD = re.compile(
+    r"apac|emea|asia|asia[- ]pacific|europe|eu|north america|latam|americas|亚太|亞太|欧洲|歐洲|北美|亚洲|亞洲|东南亚|東南亞",
+    re.I,
+)
+
+# The filters a no_match diagnosis re-counts without, one at a time, in the order they are
+# most often the culprit.
+_RELAXABLE = ("seniority", "location", "title", "title_exclude", "role_family", "sector", "entry_level",
+              "posted_within_days", "remote_scope", "remote", "required_skills", "skills", "min_salary",
+              "currency", "require_stated_salary")
+
+
+def _relax_counts(session: Session, now: dt.datetime | None = None, **f) -> dict:
+    """For each filter the caller set, how many live postings match with THAT filter alone
+    dropped; for seniority, also how many of those name no level in the title (the rows a
+    seniority filter without "unknown" hides). Counted on the index, never guessed."""
+    now = _now(now)
+    company_ids = None
+    if f.get("company"):
+        company_ids = [c.id for c in resolve_company(session, f["company"])]
+
+    def run(**drop):
+        g = {**f, **drop}
+        return _filter_and_rank(
+            session, g.get("skills"), g.get("remote") or None, g.get("min_salary"), None, 100_000, now,
+            required_skills=g.get("required_skills"), currency=g.get("currency"),
+            require_stated_salary=bool(g.get("require_stated_salary")), remote_scope=g.get("remote_scope"),
+            role_family=check_role_family(g.get("role_family")), company_ids=company_ids,
+            location=g.get("location"), title=g.get("title"), title_exclude=g.get("title_exclude"),
+            seniority=check_seniority(g.get("seniority")), sector=check_sector(g.get("sector")),
+            entry_level=bool(g.get("entry_level")), posted_within_days=g.get("posted_within_days"),
+        )
+
+    out: dict = {}
+    for key in _RELAXABLE:
+        if not f.get(key):
+            continue
+        rows = run(**{key: None})
+        entry = {"matches_without_it": len(rows)}
+        if key == "seniority" and rows:
+            entry["of_which_title_names_no_level"] = sum(
+                1 for j, _ in rows if seniority_for(j.title, j.description_raw) == "unknown")
+        out[key] = entry
+    return out
+
+
+def _relax_hint(relax: dict) -> str:
+    parts_en, parts_zh = [], []
+    for key, e in relax.items():
+        n = e["matches_without_it"]
+        extra_en = extra_zh = ""
+        if key == "seniority" and e.get("of_which_title_names_no_level"):
+            m = e["of_which_title_names_no_level"]
+            extra_en = (f" ({m} of them name no level in the title and were excluded by the seniority "
+                        "filter; add \"unknown\" to seniority to see them)")
+            extra_zh = f"（其中 {m} 条标题没写级别，被职级条件排除，seniority 里加上 unknown 就能看到）"
+        parts_en.append(f"without {key}: {n}{extra_en}")
+        parts_zh.append(f"去掉 {key} 有 {n} 条{extra_zh}")
+    return ("Every tag you asked for exists in the index, so the tags are fine: this combination of filters "
+            "genuinely has no live match right now. Dropping one filter at a time: " + "; ".join(parts_en)
+            + ("; required_skills is AND, every one of them must be on the row" if "required_skills" in relax else "")
+            + ". 条件都认得，只是没有岗位同时满足；逐个去掉一项：" + "；".join(parts_zh) + "。")
 
 
 # The first line to show the user when a search returns nothing: which of the different
@@ -1700,7 +1860,7 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
 
 _WATCH_FILTER_KEYS = (
     "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
-    "title", "board_url", "seniority", "sector", "entry_level", "posted_within_days",
+    "title", "board_url", "seniority", "sector", "entry_level", "posted_within_days", "title_exclude",
 )
 # A board watch (reports/070) reads one employer's public board live on every pull, so the
 # only filters that mean anything on it are the ones a live read can apply.
@@ -1742,6 +1902,8 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
     if filters.get("title"):
         # Stored as typed; the synonym expansion happens at match time like location.
         allowed["title"] = title_terms(filters["title"])
+    if filters.get("title_exclude"):
+        allowed["title_exclude"] = title_terms(filters["title_exclude"])
     if filters.get("seniority"):
         # Validated now, expanded at match time, so a watch on "ic" also keeps a level
         # added to the alias later.
@@ -1834,6 +1996,7 @@ def watch_intent(
             company_ids=clean.get("company_ids"), location=clean.get("location"),
             title=clean.get("title"), seniority=clean.get("seniority"), sector=clean.get("sector"),
             entry_level=bool(clean.get("entry_level")), posted_within_days=clean.get("posted_within_days"),
+            title_exclude=clean.get("title_exclude"),
         ))
     watch_id = _new_id(session, Watch, "watch_id", "w_")
     session.add(
@@ -1860,11 +2023,29 @@ def watch_intent(
                    "task in your assistant that calls check_watches (or uses the built-in radar_check prompt).")
     else:
         n = matching_now or 0
-        next_zh = (f"已保存条件，现在匹配 {n} 条，都是已有岗位，不是新发。OpenHire 不会主动推送；下次对我说「检查一下」，"
+        if n:
+            open_zh = f"已保存条件，现在匹配 {n} 条，都是已有岗位，不是新发。"
+            open_en = f"Saved. {n} posting{'s' if n != 1 else ''} match right now, all of them already live, none new."
+        else:
+            # "0 postings, all of them already live" read oddly (persona test, 2026-11-03).
+            open_zh = "已保存条件，现在没有匹配的岗位；以后出现的会在检查时列出。"
+            open_en = "Saved. Nothing matches right now; postings that appear later are listed when you check."
+        next_zh = (open_zh + "OpenHire 不会主动推送；下次对我说「检查一下」，"
                    "我只列新出现的岗位（第一次检查会把现在这些先列一遍作为基线）。要定时提醒，在助手里另设定时任务，到点调用 check_watches（或用内置提示词 radar_check）。")
-        next_en = (f"Saved. {n} postings match right now, all of them already live, none new. OpenHire does not push notifications; "
+        next_en = (open_en + " OpenHire does not push notifications; "
                    "next time, say \"check my radar\" and only postings that appeared since are listed (the first check shows the "
                    "current set once, as the baseline). For a scheduled reminder, set a recurring task in your assistant that calls check_watches (or uses the built-in radar_check prompt).")
+        # What this watch cannot see, said at registration rather than discovered on a pull
+        # (persona test, 2026-11-03: a management watch silently skipped every title that
+        # names no level; a 北京 watch silently skipped rows with no location text).
+        levels = expand_seniority(clean.get("seniority"))
+        if levels is not None and "unknown" not in levels:
+            next_zh += "标题没写级别的岗位（职级 unknown）不计入这个盯岗；想一并盯，把 unknown 加进 seniority。"
+            next_en += (" Postings whose title names no level (seniority unknown) are not counted by this watch; "
+                        "add \"unknown\" to seniority to include them.")
+        if clean.get("location"):
+            next_zh += "没写城市的岗位不计入地点条件。"
+            next_en += " Postings with no location text are not matched by the location filter."
     return {
         "watch_id": watch_id,
         "status": "active",
@@ -1900,6 +2081,25 @@ def watch_intent(
     }
 
 
+# The fields an assistant shows for one posting, without the long ones (skills, requirements,
+# ghost_reason, ranking internals): a first check_watches pull of 26 postings was 68,000
+# characters and the client cut it off before the second watch (persona test, 2026-11-03).
+# The five protocol fields stay; the full row is one search_jobs call away.
+COMPACT_KEYS = (
+    "job_id", "title", "company", "company_id", "location", "remote_policy", "remote_scope",
+    "salary_min", "salary_max", "salary_currency", "salary_period", "salary_note", "salary_raw",
+    "datePosted", "days_open", "date_signal", "date_source", "dates_in_words", "seniority",
+    "check_before_apply", "matched_skills", "match_quality", "verified_at", "source", "ghost_score",
+    "response_sla_days", "apply_channel", "apply_channel_blocked", "apply_channel_note", "employer_correction",
+)
+COMPACT_NOTE = ("compact rows: title, company, location, pay, dates_in_words, check_before_apply, apply link; "
+                "search_jobs with the job_id or company gives the full row")
+
+
+def compact_posting(row: dict) -> dict:
+    return {k: row[k] for k in COMPACT_KEYS if k in row}
+
+
 def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = None) -> dict:
     now = _now(now)
     _assert_anonymous(fingerprint)
@@ -1910,6 +2110,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
     )
     results = []
     total_new = 0
+    total_baseline = 0
     for w in watches:
         # Never notified → return the current baseline (all matches). Thereafter →
         # only jobs first seen strictly after the last notification (the increment).
@@ -1918,6 +2119,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         if f.get("board_url"):
             entry = _check_board_watch(session, w, f, since, now)
             total_new += len(entry["new_matches"])
+            total_baseline += len(entry.get("baseline_postings") or [])
             results.append(entry)
             continue
         # Rank the WHOLE standing set, then page it. The old call asked for 20 and then
@@ -1929,6 +2131,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             company_ids=f.get("company_ids"), location=f.get("location"),
             title=f.get("title"), seniority=f.get("seniority"), sector=f.get("sector"),
             entry_level=bool(f.get("entry_level")), posted_within_days=f.get("posted_within_days"),
+            title_exclude=f.get("title_exclude"),
         )
         total_matching = len(ranked_all)
         ranked = ranked_all[:MAX_PAGE_SIZE]
@@ -1943,19 +2146,24 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         # required_skills would otherwise report match_quality 1.0 and no matched_skills.
         scored_against = list(f.get("skills") or []) or list(f.get("required_skills") or [])
         matches = [
-            job_posting(j, companies.get(j.company_id), scored_against, now)
+            compact_posting(job_posting(j, companies.get(j.company_id), scored_against, now))
             for j, _ in ranked
         ]
-        total_new += len(matches)
+        first_pull = since is None
+        if first_pull:
+            total_baseline += len(matches)
+        else:
+            total_new += len(matches)
         results.append(
             {
                 "watch_id": w.watch_id,
                 "since": since.isoformat() if since else None,
                 # The first pull has no "since", so it returns the standing backlog rather
-                # than an increment. That is intended (nobody has seen any of it yet), but
-                # the field is called new_matches, and a caller should not have to infer
-                # which of the two it is holding from `since` being null.
-                "is_first_pull": since is None,
+                # than an increment. That is intended (nobody has seen any of it yet). It
+                # used to come back under new_matches with a count of 26 beside a summary
+                # saying "none new" (persona test, 2026-11-03); the baseline now has its own
+                # fields and new_matches is empty on a first pull.
+                "is_first_pull": first_pull,
                 "total_matching": total_matching,
                 "truncated": total_matching > MAX_PAGE_SIZE,
                 "truncation_note": (
@@ -1970,21 +2178,30 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
                 ) if since is None else None,
                 # The sentence to show the user: a first pull is a baseline of postings that
                 # were already live, never "N new jobs appeared" (a tester, reports/098).
-                "summary": _watch_summary(since is None, total_matching, len(matches), since),
-                "new_matches": matches,
+                "summary": _watch_summary(first_pull, total_matching, len(matches), since),
+                "baseline_count": total_matching if first_pull else 0,
+                "baseline_postings": matches if first_pull else [],
+                "new_matches": [] if first_pull else matches,
+                "fields": COMPACT_NOTE,
             }
         )
         w.last_notified_at = now
     first = any(r.get("is_first_pull") for r in results)
+    if first and total_new:
+        zh_tail = f"首次检查的雷达列出的是现在已有的岗位（baseline_postings），不是新发；其余雷达新出现 {total_new} 条。"
+        en_tail = (f"Watches checked for the first time list the postings already live (baseline_postings), not new ones; "
+                   f"the other watches report {total_new} new posting(s).")
+    elif first:
+        zh_tail = "首次检查：列出的是现在已有的匹配岗位（baseline_postings），作为基线，不是新发；以后只报新增。"
+        en_tail = ("First check: the postings listed (baseline_postings) are the ones already live, shown once as the "
+                   "baseline, not new ones; later checks report only additions.")
+    else:
+        zh_tail = f"新出现 {total_new} 条。" if total_new else "没有新岗位。"
+        en_tail = f"{total_new} new posting(s)." if total_new else "Nothing new."
     return {
-        "fingerprint": fingerprint, "watches": len(watches), "new_matches": total_new, "results": results,
-        "summary": {
-            "zh": (f"{len(watches)} 个雷达。" + ("首次检查：列出的是现在已有的匹配岗位，作为基线，不是新发；以后只报新增。"
-                                            if first else (f"新出现 {total_new} 条。" if total_new else "没有新岗位。"))),
-            "en": (f"{len(watches)} watch(es). " + ("First check: the postings listed are the ones already live, shown once as the "
-                                                  "baseline, not new ones; later checks report only additions."
-                                                  if first else (f"{total_new} new posting(s)." if total_new else "Nothing new."))),
-        },
+        "fingerprint": fingerprint, "watches": len(watches), "new_matches": total_new,
+        "baseline_count": total_baseline, "results": results,
+        "summary": {"zh": f"{len(watches)} 个雷达。" + zh_tail, "en": f"{len(watches)} watch(es). " + en_tail},
     }
 
 
@@ -2030,7 +2247,9 @@ def _check_board_watch(session: Session, w: Watch, f: dict, since: dt.datetime |
         **base,
         "is_first_pull": first,
         "total_matching": board["total_matching"],
-        "new_matches": new[:MAX_PAGE_SIZE],
+        "baseline_count": len(new) if first else 0,
+        "baseline_postings": new[:MAX_PAGE_SIZE] if first else [],
+        "new_matches": [] if first else new[:MAX_PAGE_SIZE],
         "truncated": len(new) > MAX_PAGE_SIZE,
         "closed_since_last": closed,
         "baseline": ("Everything on this board matching the watch right now; later pulls report only "
@@ -2473,20 +2692,23 @@ def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
     posted = _aware(rec.posted_at) if rec.posted_at else None
     updated = _aware(rec.updated_at) if rec.updated_at else None
     scope, regions = classify_remote(rec.remote_hint, rec.location, rec.description_raw)
+    # Calendar days, the same count job_posting uses: elapsed seconds floored to days read one
+    # less than the index on the same posting (persona test, 2026-11-03).
+    age_days = (now.date() - posted.date()).days if posted else None
     out = {
         "ats_job_id": rec.ats_job_id,
         "title": rec.title,
-        "seniority": seniority_from_title(rec.title),
+        "seniority": seniority_for(rec.title, rec.description_raw),
         "requirements": requirements_from_text(rec.title, rec.description_raw),
         "location": rec.location,
         "remote_policy": rec.remote_hint or "unknown",
         "remote_scope": scope,
         "eligible_regions": regions,
         "datePosted": posted.date().isoformat() if posted else None,
-        "days_open": (now - posted).days if posted else None,
+        "days_open": age_days,
         "date_signal": "ats_reported" if posted else "not_reported_by_ats",
         "dates_in_words": (
-            dates_in_words(posted.date(), (now - posted).days, "board_live", None)
+            dates_in_words(posted.date(), age_days, "board_live", None)
             if posted else
             {"zh": "这家的招聘页没有标发布日期；本次是现读，不是索引记录，所以也没有首次发现日期。",
              "en": "The employer's board shows no posting date; this was a live read, not an index record, so there is no first-seen date either."}

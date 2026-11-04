@@ -126,7 +126,7 @@ def test_a_watch_can_be_scoped_to_a_title(session):
     w = service.watch_intent(session, "#hr-k2p7-x8q1-b2", {"title": ["招聘"], "company": "dobot"}, now=NOW)
     assert w["status"] == "active"
     res = service.check_watches(session, "#hr-k2p7-x8q1-b2", now=NOW)["results"][0]
-    assert {m["job_id"] for m in res["new_matches"]} == {"dobot:hrbp", "dobot:zp"}
+    assert {m["job_id"] for m in res["baseline_postings"]} == {"dobot:hrbp", "dobot:zp"}
     stored = session.execute(select(Watch).where(Watch.watch_id == w["watch_id"])).scalar_one()
     assert stored.filters["title"] == ["招聘"], "stored as typed; expansion happens at match time"
 

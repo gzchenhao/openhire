@@ -149,7 +149,11 @@ def build_checklist(
         items.append(_item("domain", "官网域名", "not_applicable", "公司已停止运营，域名检查无意义", source="OpenHire registry"))
     elif not domain:
         items.append(_item("domain", "官网域名", "not_applicable",
-                           "没有这家公司的官网域名可查。把官网域名作为 domain 参数传进来可以补查",
+                           "没有这家公司的官网域名可查。把官网域名作为 domain 参数传进来可以补查；"
+                           "不要按招聘系统的账号名猜域名，猜错了查的就是别人的网站，问用户要官网地址。 "
+                           "No verified web domain for this employer; pass it as `domain` to add the "
+                           "checks. Do not guess it from the ATS account name (a wrong guess checks "
+                           "somebody else's site): ask the user for the official website.",
                            source="n/a"))
     elif not run_network:
         items.append(_item("domain", "官网域名", "unavailable", "本次没有联网检查", source="n/a", domain=domain))

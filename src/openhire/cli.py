@@ -259,6 +259,7 @@ def search(
     distinct: bool = typer.Option(False, "--distinct", help="One row per role instead of one per city."),
     location: str = typer.Option(None, "--location", help="Substring of the location text, e.g. 北京 / Beijing / Remote."),
     title: str = typer.Option(None, "--title", help="Comma-separated title words, ANY match, e.g. 招聘 / recruit,hrbp / 感知. The filter for roles no skill tag names."),
+    title_exclude: str = typer.Option(None, "--title-exclude", help="Comma-separated title words to keep OUT, e.g. 专家 / manager."),
     seniority: str = typer.Option(None, "--seniority", help="Comma-separated levels the title names: ic / management, or intern, junior, senior, staff, lead, manager, director, unknown."),
     sector: str = typer.Option(None, "--sector", help="autonomous_driving / embodied_ai / ai_infra / other (or 智驾 / 具身 / 大模型 / 其他)."),
     entry_level: bool = typer.Option(False, "--entry-level", help="Only postings open to a new graduate (校招 / 实习 / 无经验要求 / junior)."),
@@ -271,6 +272,7 @@ def search(
     skill_list = _parse_skills(skills)
     req_list = [s.strip().lower() for s in required_skills.split(",")] if required_skills else None
     title_list = [t.strip() for t in title.split(",") if t.strip()] if title else None
+    exclude_list = [t.strip() for t in title_exclude.split(",") if t.strip()] if title_exclude else None
     seniority_list = [t.strip() for t in seniority.split(",") if t.strip()] if seniority else None
     floor = _parse_salary_arg(min_salary)
     console.cmd(
@@ -289,6 +291,7 @@ def search(
         + (" --distinct" if distinct else "")
         + (f" --location {location}" if location else "")
         + (f" --title {title}" if title else "")
+        + (f" --title-exclude {title_exclude}" if title_exclude else "")
         + (f" --seniority {seniority}" if seniority else "")
         + (f" --sector {sector}" if sector else "")
         + (" --entry-level" if entry_level else "")
@@ -303,7 +306,7 @@ def search(
                 role_family=role_family, offset=offset, company=company,
                 collapse_role_group=distinct, location=location, title=title_list,
                 seniority=seniority_list, sector=sector, entry_level=entry_level,
-                posted_within_days=posted_within_days,
+                posted_within_days=posted_within_days, title_exclude=exclude_list,
             )
     except OpenHireError as e:
         # `--role-family recruiting` used to return Waymo engineers: the unknown value was
@@ -321,6 +324,8 @@ def search(
                 role_family=role_family, currency=currency, company=company,
                 title=title_list, location=location, seniority=seniority_list, sector=sector,
                 entry_level=entry_level, posted_within_days=posted_within_days,
+                remote=remote or None, min_salary=floor, require_stated_salary=require_stated_salary,
+                remote_scope=remote_scope, title_exclude=exclude_list,
             )
         console.out("无匹配结果。")
         known_rows = why.get("known_not_indexed") or []
@@ -522,6 +527,7 @@ def watch(
     role_family: str = typer.Option(None, "--role-family", help="Only this family, e.g. engineering (keeps sales/SA out)."),
     min_salary: str = typer.Option(None, "--min-salary", help="e.g. 600000 / 60w / 600k."),
     seniority: str = typer.Option(None, "--seniority", help="Comma-separated levels: ic / management, or intern, junior, senior, staff, lead, manager, director, unknown."),
+    title_exclude: str = typer.Option(None, "--title-exclude", help="Comma-separated title words to keep OUT on every pull, e.g. 专家 / manager."),
     daemon: bool = typer.Option(False, "--daemon", help="Poll every 30 min and notify."),
 ) -> None:
     """Register a standing intent — jobs come knocking, even with the terminal closed."""
@@ -553,6 +559,8 @@ def watch(
         filters["min_salary"] = sal
     if seniority:
         filters["seniority"] = [t.strip() for t in seniority.split(",") if t.strip()]
+    if title_exclude:
+        filters["title_exclude"] = [t.strip() for t in title_exclude.split(",") if t.strip()]
 
     with session_scope() as s:
         try:
@@ -576,7 +584,10 @@ def _watch_daemon(fp) -> None:
         ts = dt.datetime.now().strftime("%H:%M:%S")
         with session_scope() as s:
             res = service.check_watches(s, fp.id)
-        if res["new_matches"]:
+        if res.get("baseline_count"):
+            console.notif(f"[{ts}] 首次检查：现在匹配 {res['baseline_count']} 条，都是已有岗位，不是新发")
+            _print_check_results(res)
+        elif res["new_matches"]:
             console.notif(f"[{ts}] {res['new_matches']} 个新命中！")
             _print_check_results(res)
         else:
@@ -603,17 +614,20 @@ def check() -> None:
     if res["watches"] == 0:
         console.out("尚未注册常驻意向。先运行 ohp watch。")
         return
-    if res["new_matches"] == 0:
+    if res["new_matches"] == 0 and not res.get("baseline_count"):
         console.out(f"{res['watches']} 个常驻意向 · 暂无新命中。")
         return
-    console.notif(f"{res['new_matches']} 个新命中")
+    if res.get("baseline_count"):
+        console.notif(f"首次检查：现在匹配 {res['baseline_count']} 条，都是已有岗位，不是新发")
+    if res["new_matches"]:
+        console.notif(f"{res['new_matches']} 个新命中")
     _print_check_results(res)
 
 
 def _print_check_results(res: dict) -> None:
     printed = 0
     for r in res["results"]:
-        for m in r["new_matches"]:
+        for m in [*(r.get("baseline_postings") or []), *r["new_matches"]]:
             _print_job(m)
             printed += 1
     if printed:

@@ -47,8 +47,8 @@ def test_board_watch_reports_what_appeared_and_what_disappeared(session, monkeyp
     first = service.check_watches(session, FP, now=T0)
     e1 = first["results"][0]
     assert e1["is_first_pull"] and e1["board"] == {"vendor": "ashby", "tenant": "uipath"}
-    assert [p["ats_job_id"] for p in e1["new_matches"]] == ["1", "3"] and e1["closed_since_last"] == []
-    assert first["new_matches"] == 2
+    assert [p["ats_job_id"] for p in e1["baseline_postings"]] == ["1", "3"] and e1["closed_since_last"] == []
+    assert e1["new_matches"] == [] and first["baseline_count"] == 2 and first["new_matches"] == 0
     live["now"] = [_rec(1, "Partner Sales Manager"), _rec(4, "AI Enablement Lead")]
     service._BOARD_CACHE.clear()
     later = service.check_watches(session, FP, now=T0 + dt.timedelta(days=1))

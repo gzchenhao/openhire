@@ -74,7 +74,7 @@ def test_watch_and_apply_work_in_the_first_session_after_bootstrap(tmp_path, mon
     watch = ms.watch_intent(fp, {"skills": ["perception"]})
     assert watch.get("watch_id", "").startswith("w_"), watch
     pulled = ms.check_watches(fp)
-    assert pulled["watches"] == 1 and pulled["new_matches"] == 1, pulled
+    assert pulled["watches"] == 1 and pulled["baseline_count"] == 1, pulled
     receipt = ms.authorize_application("acme:1", fp, True)
     assert receipt.get("receipt_id", "").startswith("r_"), receipt
     assert receipt["resume_transmitted"] is False
@@ -104,5 +104,5 @@ def test_a_watch_registered_during_the_download_survives_the_install(tmp_path, m
     ms._do_bootstrap()
     assert ms._BOOTSTRAP_ERROR is None
     pulled = ms.check_watches("#during-download-k2p7")
-    assert pulled["watches"] == 1 and pulled["new_matches"] == 1
+    assert pulled["watches"] == 1 and pulled["baseline_count"] == 1
     assert pulled["results"][0]["watch_id"] == saved["watch_id"]

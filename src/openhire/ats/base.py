@@ -363,6 +363,10 @@ def _iso_to_dt(s) -> dt.datetime | None:
     if not s or not isinstance(s, str):
         return None
     try:
-        return dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+        d = dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
     except ValueError:
         return None
+    # Store the instant in UTC. SQLite keeps no offset, so "13:43:14-04:00" came back as
+    # 13:43:14 UTC, four hours early, and read_board and search_jobs then disagreed on the
+    # same posting's updated_at (persona test, 2026-11-03).
+    return d.astimezone(dt.timezone.utc) if d.tzinfo else d
