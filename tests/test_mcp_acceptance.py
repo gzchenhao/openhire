@@ -86,6 +86,8 @@ async def test_all_five_acceptance_scripts(seeded):
             "check_applications",
             # 0.8.40: employer-published pay ranges (reports/118).
             "salary_benchmark",
+            # 0.8.61: change or delete a watch instead of stacking a second one (Howard, 2026-11-05).
+            "manage_watch",
         }
         portals = _payload(await client.call_tool("list_portals", {"sector": "具身"}))
         assert portals["@type"] == "PortalDirectory" and portals["sector"] == "embodied_ai"

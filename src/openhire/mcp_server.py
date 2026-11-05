@@ -38,7 +38,7 @@ mcp = FastMCP(
         "(e.g. '#a3f9-k2p7-x8q1'; 12+ random characters, short tags collide). Matching happens on the client. Use search_jobs to hard-filter "
         "the live index (results carry verified_at, ghost_score and apply_channel); "
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
-        "intent; check_watches to pull new hits; authorize_application to record an "
+        "intent; check_watches to pull new hits; manage_watch to list, change or delete a watch; authorize_application to record an "
         "authorized, employer-direct application; read_board to read any employer's public "
         "board live (Greenhouse, Lever, Ashby, Moka, 北森, Workable, SmartRecruiters, Workday, Rippling, Personio, any sector) when the employer is not "
         "in the index, with nothing stored; add_employer to put such a board into the user's own "
@@ -71,7 +71,9 @@ mcp = FastMCP(
         "the row's dates_in_words sentence rather than field names; and when a watch is "
         "registered, relay its what_happens_next: OpenHire never pushes, the user asks you to "
         "check, and the first check_watches pull is a baseline of postings already live, never "
-        "\"new postings appeared\". A result carrying index_status \"preparing\" means the index "
+        "\"new postings appeared\". When the user changes a watch, use manage_watch (update or delete) rather than "
+        "registering a second one; when you will say how many postings there are, pass search_jobs' envelope=true "
+        "and quote its matched count. A result carrying index_status \"preparing\" means the index "
         "is still downloading: say so and try again in a minute, never \"no jobs\". "
         "For a new graduate (应届生, new grad, 校招) pass search_jobs' entry_level and quote each row's "
         "requirements (lowest required degree, fewest years; null means the posting does not say). "
@@ -124,8 +126,14 @@ def search_jobs(
     entry_level: bool = False,
     posted_within_days: int | None = None,
     title_exclude: list[str] | None = None,
+    envelope: bool = False,
 ) -> list[dict] | dict:
     """Search the live job index by hard filters; returns ranked JobPosting[].
+
+    Pass `envelope: true` to get an object instead of a bare list: {results, matched (every row
+    the filters match, before paging), returned, offset, has_more, next_offset, headline}.
+    Use it whenever you will tell the user how many postings there are: a page of 10 is not
+    the total, and an assistant once said "12 in all" when there were 15.
 
     The server does ONLY a hard filter plus a fixed ranking of match-quality × freshness —
     precise re-ranking is left to you, the client, which holds the user's context. Every
@@ -376,7 +384,7 @@ def search_jobs(
                 company=company, collapse_role_group=collapse_role_group,
                 location=location, title=title, seniority=seniority, sector=sector,
                 entry_level=entry_level, posted_within_days=posted_within_days,
-                title_exclude=title_exclude,
+                title_exclude=title_exclude, total_out=(total := {}) if envelope else None,
             )
             if not rows and not offset:
                 # A bare [] answers two different questions identically. Say which one.
@@ -416,6 +424,20 @@ def search_jobs(
                         "there is no next page to fetch."
                     ),
                 }
+            if envelope:
+                matched = total.get("matched", len(rows))
+                fetched = sum(r.get("role_group_size", 1) for r in rows)
+                nxt = offset + fetched
+                env = {
+                    "results": rows, "matched": matched, "returned": len(rows), "offset": offset,
+                    "has_more": nxt < matched, "next_offset": nxt if nxt < matched else None,
+                    "headline": {"zh": f"共 {matched} 条，本页 {len(rows)} 条" + ("，还有下一页。" if nxt < matched else "，已到底。"),
+                                 "en": f"{matched} in all, {len(rows)} on this page" + ("; more to fetch." if nxt < matched else "; that is all.")},
+                }
+                unknown, suggestions = service.skill_diagnostics(s, skills, required_skills)
+                if unknown:
+                    env.update(unknown_skills=unknown, suggestions=suggestions)
+                return env
             # A half-matched search used to return rows and say nothing about the words
             # it dropped: 感知 + bev returned 20 bev rows and the reader assumed 感知 had
             # matched too. Same shape as the empty-result diagnosis, only with results.
@@ -936,6 +958,29 @@ def check_watches(fingerprint: str) -> dict:
     with session_scope() as s:
         try:
             return service.check_watches(s, fingerprint)
+        except OpenHireError as e:
+            return e.as_dict()
+
+
+@mcp.tool(
+    title="Manage watches",
+    annotations=ToolAnnotations(title="Manage watches", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False),
+)
+def manage_watch(fingerprint: str, action: str, watch_id: str | None = None,
+                 filters: dict[str, Any] | None = None) -> dict:
+    """List, change or delete the user's watches (the fingerprint's standing intents).
+
+    action "list": every active watch with its watch_id and filters. "update": replace one
+    watch's filters (pass watch_id and the WHOLE new filter set, same keys as watch_intent);
+    it gets a new watch_id and its next check is a fresh baseline, the old one stops.
+    "delete": stop one watch for good. Use this when the user changes their mind instead of
+    registering a second watch beside the first. Only the fingerprint that registered a watch
+    can change it. Nothing personal is stored or accepted, as with watch_intent.
+    """
+    _await_index()
+    with session_scope() as s:
+        try:
+            return service.manage_watch(s, fingerprint, action, watch_id=watch_id, filters=filters)
         except OpenHireError as e:
             return e.as_dict()
 

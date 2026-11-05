@@ -1080,7 +1080,10 @@ def search_jobs(
     entry_level: bool = False,
     posted_within_days: int | None = None,
     title_exclude: str | list[str] | None = None,
+    total_out: dict | None = None,
 ) -> list[dict]:
+    """total_out: pass a dict to receive {"matched": N}, the count of every row the filters
+    match before paging (the envelope=true answer, 0.8.61)."""
     now = _now(now)
     posted_within_days = check_posted_within_days(posted_within_days)
     role_family = check_role_family(role_family)
@@ -1110,6 +1113,16 @@ def search_jobs(
         entry_level=bool(entry_level), posted_within_days=posted_within_days,
         title_exclude=title_exclude,
     )
+    if total_out is not None:
+        total_out["matched"] = len(_filter_and_rank(
+            session, skills, remote, min_salary, None, 10**9, now,
+            required_skills=required_skills, currency=currency,
+            require_stated_salary=require_stated_salary, remote_scope=remote_scope,
+            role_family=role_family, offset=0, company_ids=company_ids,
+            location=location, title=title, seniority=seniority, sector=sector,
+            entry_level=bool(entry_level), posted_within_days=posted_within_days,
+            title_exclude=title_exclude,
+        ))
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
         c.id: c
@@ -2123,6 +2136,59 @@ def compact_posting(row: dict) -> dict:
     2026-11-04)."""
     return {k: row[k] for k in COMPACT_KEYS
             if k in row and (k in _PROTOCOL_KEYS or row[k] not in (None, [], ""))}
+
+
+def manage_watch(session: Session, fingerprint: str, action: str, watch_id: str | None = None,
+                 filters: dict[str, Any] | None = None, now: dt.datetime | None = None) -> dict:
+    """List, change or delete this fingerprint's watches (Howard, 2026-11-05: a user who
+    tightened a watch could only add a second one, and the two kept reporting together).
+
+    list: every active watch with its filters. update: the watch's filters are replaced; it
+    becomes a new watch (new watch_id) whose first check is a fresh baseline, and the old one
+    stops. delete: the watch stops for good. Only the fingerprint that registered a watch can
+    touch it; a watch_id under another fingerprint reads as not found, never as someone
+    else's."""
+    now = _now(now)
+    _assert_anonymous(fingerprint)
+    act = (action or "").strip().lower()
+    if act not in ("list", "update", "delete"):
+        raise OpenHireError("ERR_BAD_QUERY", "action must be list, update or delete.")
+    mine = list(session.execute(
+        select(Watch).where(Watch.fingerprint == fingerprint, Watch.active.is_(True))).scalars())
+
+    def show(w: Watch) -> dict:
+        return {"watch_id": w.watch_id, "filters": {k: v for k, v in (w.filters or {}).items() if not k.startswith("_")},
+                "created_at": _aware(w.created_at).isoformat() if w.created_at else None,
+                "last_checked_at": _aware(w.last_notified_at).isoformat() if w.last_notified_at else None}
+
+    if act == "list":
+        return {"fingerprint": fingerprint, "watches": [show(w) for w in mine], "count": len(mine)}
+    target = next((w for w in mine if w.watch_id == (watch_id or "").strip()), None)
+    if target is None:
+        raise OpenHireError(
+            "ERR_WATCH_NOT_FOUND",
+            f"No active watch {watch_id!r} under this fingerprint. manage_watch(action=\"list\") shows the ones it has.")
+    if act == "delete":
+        target.active = False
+        return {"fingerprint": fingerprint, "deleted": target.watch_id, "remaining": len(mine) - 1,
+                "summary": {"zh": f"已删除盯岗 {target.watch_id}，以后的检查不再包含它。",
+                            "en": f"Watch {target.watch_id} deleted; later checks no longer include it."}}
+    if not filters:
+        raise OpenHireError("ERR_BAD_QUERY", "update needs the new filters (the whole set, as for watch_intent).")
+    _clean_filters(filters)  # refuse bad filters before the old watch is stopped
+    target.active = False
+    session.flush()
+    try:
+        out = watch_intent(session, fingerprint, filters, now=now)
+    except OpenHireError:
+        target.active = True
+        raise
+    out["replaced_watch_id"] = target.watch_id
+    out["what_happens_next"] = {
+        "zh": f"已用新条件替换盯岗 {target.watch_id}（新编号 {out['watch_id']}）。" + out["what_happens_next"]["zh"],
+        "en": f"Watch {target.watch_id} replaced with the new filters (new id {out['watch_id']}). " + out["what_happens_next"]["en"],
+    }
+    return out
 
 
 def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = None) -> dict:
