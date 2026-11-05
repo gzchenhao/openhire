@@ -467,7 +467,7 @@ def _print_job(r: dict) -> None:
     c.print(
         f"     [muted]id={r['job_id']} · datePosted={r.get('datePosted')} · "
         f"days_open={r.get('days_open')} · ghost_score={r['ghost_score']} · "
-        f"match={r['match_quality']}{hit_str}[/]"
+        f"match={r.get('match_quality', '-')}{hit_str}[/]"
     )
     c.print(f"     [out]▸ {r['apply_channel']}[/]")
     c.print(f"     [muted]# 投递：ohp apply {r['job_id']}[/]")

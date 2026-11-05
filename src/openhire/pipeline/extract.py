@@ -438,6 +438,9 @@ _OTHER_JOB_WORDS = re.compile(
 def is_hr_title(title: str) -> bool:
     """True when the title itself names an HR / recruiting / people job."""
     text = title or ""
+    if re.search(r"(?<![a-z])marketing(?![a-z])|市场营销|市场推广", text, re.I):
+        # "Senior Marketing Manager, Recruiting Events" is a marketing job (persona test, 2026-11-04).
+        return False
     if _HR_TITLE_STRONG.search(text):
         return True
     return bool(_HR_TITLE_WEAK.search(text)) and not _OTHER_JOB_WORDS.search(text)
@@ -612,14 +615,28 @@ _PEOPLE_MANAGEMENT = re.compile(
 )
 
 
+def seniority_basis(title: str | None, description: str | None) -> dict:
+    """{level, basis, quote}: the level and what it rests on, so an assistant quotes the reason
+    instead of inventing one (persona test, 2026-11-04). basis is "title" (the title names the
+    level), "description" (the title names none; quote is the posting's own words about leading
+    a team) or "none" (unknown)."""
+    level = seniority_from_title(title)
+    if level != "unknown":
+        return {"level": level, "basis": "title", "quote": None}
+    m = _PEOPLE_MANAGEMENT.search(description or "") if description else None
+    if m:
+        text = description or ""
+        lo = max(0, m.start() - 20)
+        hi = min(len(text), m.end() + 20)
+        return {"level": "manager", "basis": "description", "quote": re.sub(r"\s+", " ", text[lo:hi]).strip()}
+    return {"level": "unknown", "basis": "none", "quote": None}
+
+
 def seniority_for(title: str | None, description: str | None) -> str:
     """The level of a posting: the title's level when it names one, else "manager" when the
     description plainly gives the role a team to run, else "unknown". Title first, always: a
     description is boilerplate-heavy and only ever promotes a title that names nothing."""
-    level = seniority_from_title(title)
-    if level == "unknown" and description and _PEOPLE_MANAGEMENT.search(description):
-        return "manager"
-    return level
+    return seniority_basis(title, description)["level"]
 
 
 def expand_seniority(values: list[str] | None) -> set[str] | None:

@@ -246,6 +246,11 @@ def _update_job(
     if rec.updated_at:
         job.updated_at = _aware(rec.updated_at)
 
+    # The ATS's own workplace field is authoritative and cheap to re-read: a reader fix (Greenhouse
+    # "Remote-Friendly" locations, 0.8.59) must reach rows whose content did not change.
+    if getattr(rec, "remote_hint", None) in ("remote", "hybrid", "onsite") and job.remote_policy != rec.remote_hint:
+        job.remote_policy = rec.remote_hint
+
     if job.delisted_at is not None:
         # Same id reappeared at source → it is live again (not a relist).
         job.delisted_at = None

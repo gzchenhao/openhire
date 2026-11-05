@@ -175,7 +175,7 @@ def annualise(value: int | None, period: str | None) -> int | None:
 # vocabulary pass later (report 028) can change the canonical form without a migration.
 # Defined next to match_quality so the filter and the score can never drift apart.
 from .pipeline.ranking import expand_skill, normalize_skill  # noqa: E402  (placed with its explanation)
-from .pipeline.extract import seniority_for  # noqa: E402
+from .pipeline.extract import seniority_basis, seniority_for  # noqa: E402
 
 # A title that names no level but a text asking for this many years is not the junior end
 # (persona test, 2026-11-03: a 3-year SLAM role passed a new graduate's intern / junior /
@@ -636,7 +636,8 @@ def _visa_item(requirements: dict | None, description: str | None) -> dict | Non
 def check_before_apply(*, date_source: str, days_open: int | None, salary_stated: bool,
                        remote_scope: str | None, apply_ok: bool, correction: dict | None,
                        visa: dict | None = None, salary_note: str | None = None,
-                       requirements: dict | None = None, apply_url: str | None = None) -> list[dict]:
+                       requirements: dict | None = None, apply_url: str | None = None,
+                       title: str | None = None, seniority: str | None = None) -> list[dict]:
     """What a reader should confirm before applying, each item from a measured fact.
     An empty list means nothing on this row stood out, not that the posting is vetted."""
     out: list[dict] = []
@@ -681,6 +682,12 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
         out.append({"code": "date_is_requisition_created",
                     "zh": "雇主说明日期是内部立项日，不是上线日。",
                     "en": "The employer says the date is the internal requisition date, not the go-live date."})
+    if seniority == "unknown" and title and re.search(r"经理|(?<![a-z])managers?(?![a-z])", title, re.I):
+        # 招聘经理 / Project Manager: the word names a grade in some firms and a team in others
+        # (persona test, 2026-11-04: it slipped into an individual-contributor list unflagged).
+        out.append({"code": "manager_title_unclear",
+                    "zh": "标题带「经理」，但启事没写是否带团队，投递前问清是个人岗还是管理岗。",
+                    "en": "The title says manager, but the posting does not say whether the role leads a team; ask before applying."})
     if (requirements or {}).get("hire_track") == "campus" and apply_url and "/social/" in apply_url:
         # Beisen's zhiye portals file campus and experienced hires under /campus/ and /social/;
         # a title saying 校招 under /social/ is worth a question (persona test, 2026-11-03).
@@ -714,6 +721,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
     )
     _apply_ok = apply_url_is_trusted(job.apply_channel, extra_hosts=_extra_apply_hosts(company))
     _req = requirements_from_text(job.title, job.description_raw)
+    _sen = seniority_basis(job.title, job.description_raw)
     _touched = _touch_is_reported(job, company)
     return {
         "@type": "JobPosting",
@@ -835,7 +843,11 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # were bound by the walrus expressions above; a dict display evaluates in order.
         # The title's level, or "manager" when the title names none and the text plainly gives
         # the role a team to run (pipeline.extract.seniority_for).
-        "seniority": seniority_for(job.title, job.description_raw),
+        "seniority": _sen["level"],
+        # What the level rests on: "title", "description" (with the posting's own words in
+        # seniority_quote) or "none". Quote it; never supply a reason of your own.
+        "seniority_basis": _sen["basis"],
+        **({"seniority_quote": _sen["quote"]} if _sen["quote"] else {}),
         # What the posting itself asks for: lowest required degree, fewest years, campus /
         # intern track (pipeline.extract.requirements_from_text). Read from the text with free
         # rules at read time; null means the posting did not say, not "none required".
@@ -852,6 +864,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             correction=_corr,
             visa=_visa_item(_req, job.description_raw),
             salary_note=_sal_note, requirements=_req, apply_url=job.apply_channel,
+            title=job.title, seniority=_sen["level"],
         ),
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
         # WHICH requested skills this row actually carries. A reviewer searched `rust`,
@@ -2040,9 +2053,11 @@ def watch_intent(
         # names no level; a 北京 watch silently skipped rows with no location text).
         levels = expand_seniority(clean.get("seniority"))
         if levels is not None and "unknown" not in levels:
-            next_zh += "标题没写级别的岗位（职级 unknown）不计入这个盯岗；想一并盯，把 unknown 加进 seniority。"
-            next_en += (" Postings whose title names no level (seniority unknown) are not counted by this watch; "
-                        "add \"unknown\" to seniority to include them.")
+            next_zh += ("职级判为 unknown 的岗位不计入这个盯岗（职级先看标题；标题没写级别时，正文明写带团队才算管理岗）；"
+                        "想一并盯，把 unknown 加进 seniority。")
+            next_en += (" Postings whose level is unknown are not counted by this watch (the level comes from the title; a "
+                        "title naming none counts as a manager only when the text plainly gives it a team); add \"unknown\" "
+                        "to seniority to include them.")
         if clean.get("location"):
             next_zh += "没写城市的岗位不计入地点条件。"
             next_en += " Postings with no location text are not matched by the location filter."
@@ -2058,7 +2073,9 @@ def watch_intent(
         "existing_watches": int(existing),
         **({"short_fingerprint": True} if short else {}),
         "fingerprint_notice": (
-            "Persist this fingerprint yourself — the server cannot recover it. "
+            "Persist this fingerprint yourself — the server cannot recover it. Tell the user it is "
+            "their key for checking this radar later (it is not the watch_id, which only numbers this "
+            "one watch) and ask them to keep it; if they already have one from before, use theirs. "
             "check_watches needs the identical fingerprint to return your matches."
             + (
                 f" This fingerprint is only {len(fingerprint.strip())} characters, which is "
@@ -2086,18 +2103,26 @@ def watch_intent(
 # characters and the client cut it off before the second watch (persona test, 2026-11-03).
 # The five protocol fields stay; the full row is one search_jobs call away.
 COMPACT_KEYS = (
-    "job_id", "title", "company", "company_id", "location", "remote_policy", "remote_scope",
+    "job_id", "title", "company", "location", "remote_policy",
     "salary_min", "salary_max", "salary_currency", "salary_period", "salary_note", "salary_raw",
-    "datePosted", "days_open", "date_signal", "date_source", "dates_in_words", "seniority",
-    "check_before_apply", "matched_skills", "match_quality", "verified_at", "source", "ghost_score",
+    "datePosted", "days_open", "dates_in_words", "seniority", "seniority_basis",
+    "check_before_apply", "matched_skills", "verified_at", "source", "ghost_score",
     "response_sla_days", "apply_channel", "apply_channel_blocked", "apply_channel_note", "employer_correction",
 )
 COMPACT_NOTE = ("compact rows: title, company, location, pay, dates_in_words, check_before_apply, apply link; "
                 "search_jobs with the job_id or company gives the full row")
 
 
+_PROTOCOL_KEYS = frozenset({"verified_at", "source", "ghost_score", "response_sla_days", "apply_channel"})
+
+
 def compact_posting(row: dict) -> dict:
-    return {k: row[k] for k in COMPACT_KEYS if k in row}
+    """COMPACT_KEYS only, and of those only the ones that say something: a null salary, an
+    empty matched_skills or a missing note is left out (the five protocol fields always stay).
+    A 20-row first pull still ran to 28,000 characters with the empties in (persona test,
+    2026-11-04)."""
+    return {k: row[k] for k in COMPACT_KEYS
+            if k in row and (k in _PROTOCOL_KEYS or row[k] not in (None, [], ""))}
 
 
 def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = None) -> dict:
@@ -2698,7 +2723,9 @@ def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
     out = {
         "ats_job_id": rec.ats_job_id,
         "title": rec.title,
-        "seniority": seniority_for(rec.title, rec.description_raw),
+        "seniority": (_sb := seniority_basis(rec.title, rec.description_raw))["level"],
+        "seniority_basis": _sb["basis"],
+        **({"seniority_quote": _sb["quote"]} if _sb["quote"] else {}),
         "requirements": requirements_from_text(rec.title, rec.description_raw),
         "location": rec.location,
         "remote_policy": rec.remote_hint or "unknown",
@@ -2971,6 +2998,21 @@ def read_board(
     out["total_matching"] = len(rows)
     out["truncated"] = offset + len(page) < len(rows)
     out["postings"] = [_board_posting(rec, now, full=want is not None) for rec in page]
+    if from_cache:
+        # The board was read live within the last few minutes and this answer reuses that read
+        # (persona test, 2026-11-04: "read live just now" beside from_cache: true).
+        for p in out["postings"]:
+            p["dates_in_words"] = {
+                "zh": p["dates_in_words"]["zh"].replace("本次是现读", f"取自 {out['fetched_at']} 的现读"),
+                "en": p["dates_in_words"]["en"].replace("read live just now", f"read live at {out['fetched_at']}"),
+            }
+    if vendor == "beisen" and "/campus" in (url or "").lower():
+        # The 北森 reader takes the experienced-hire channel only; the persona asked for a campus
+        # page and got the social board with nothing said (persona test, 2026-11-04).
+        out["channel_note"] = {
+            "zh": "这里读的是北森门户的社招栏目；校招栏目这个工具不读，请直接打开你给的校招链接看。",
+            "en": "This read covers the Beisen portal's experienced-hire channel; the campus channel is not read by this tool, so open the campus link yourself.",
+        }
     if want is not None and not rows:
         out["hint"] = (f"No posting with ats_job_id {want!r} is on this board now: it may have closed. "
                        "Read the board without ats_job_id to see what is open.")
