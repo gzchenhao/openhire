@@ -431,6 +431,7 @@ def search_jobs(
                 env = {
                     "results": rows, "matched": matched, "returned": len(rows), "offset": offset,
                     "has_more": nxt < matched, "next_offset": nxt if nxt < matched else None,
+                    **({"entry_level_unstated": total["entry_level_unstated"]} if "entry_level_unstated" in total else {}),
                     "headline": {"zh": f"共 {matched} 条，本页 {len(rows)} 条" + ("，还有下一页。" if nxt < matched else "，已到底。"),
                                  "en": f"{matched} in all, {len(rows)} on this page" + ("; more to fetch." if nxt < matched else "; that is all.")},
                 }

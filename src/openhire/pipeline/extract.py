@@ -545,7 +545,7 @@ _SEN_DIRECTOR = re.compile(
     r"|general manager|head)\b|总监|总经理|副总裁|总裁|首席|合伙人|院长|所长|负责人",
     re.I,
 )
-_SEN_MANAGER = re.compile(r"\bmanagers?\b|\bmgr\b|(研发|技术|工程|团队|部门|车间|中心)经理", re.I)
+_SEN_MANAGER = re.compile(r"\bmanagers?\b|\bmgr\b|\btlm\b|(研发|技术|工程|团队|部门|车间|中心)经理", re.I)
 _SEN_LEAD = re.compile(r"\blead\b|\bleads\b|\bleader\b|主管", re.I)
 _SEN_SUPERVISOR_IS_GRADE = re.compile(r"工程师|专员|算法|助理|技师|技术员")  # 工程师/主管: a grade option, not a job
 _SEN_STAFF = re.compile(r"\bstaff\b|\bprincipal\b|\bdistinguished\b|\barchitects?\b|架构师", re.I)

@@ -544,6 +544,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--budget-usd", type=float, default=12.0, help="stop starting personas past this spend")
     ap.add_argument("--total-cap", type=float, default=80.0, help="refuse to run once the ledger holds this")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--index", choices=["public", "local"], default="public",
+                    help="public: a fresh download of the published snapshot (default, so the night runs on "
+                         "this week's data and the current reader fixes); local: a copy of ~/.openhire/openhire.db")
     args = ap.parse_args(argv)
 
     for m in (args.model, args.user_model, args.grader_model):
@@ -576,13 +579,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.backend == "local":
         home = Path(os.environ.get("OPENHIRE_HOME", Path.home() / ".openhire"))
         src = home / "openhire.db"
-        if not src.exists():
-            print(f"no local index at {src}; run `ohp bootstrap` first, or use --backend hosted", file=sys.stderr)
-            return 1
         # A throwaway copy outside drafts/ (it would otherwise be synced to the private repo):
         # the personas register watches, and agents never run against the real index (0.6.7).
         work = Path(tempfile.mkdtemp(prefix="openhire-persona-"))
-        shutil.copy2(src, work / "openhire.db")
+        if args.index == "public":
+            # The local index of 2026-11-05 was a week old (newest verification 10-28): a moved
+            # board still counted as live and the reader fixes of 0.8.59 to 0.8.60 were not in its
+            # rows. The published snapshot is refreshed every Monday.
+            from openhire import config as _cfg
+            from openhire.pipeline.snapshot import download_snapshot
+            res = download_snapshot(_cfg.SNAPSHOT_URL, work / "openhire.db")
+            if not (work / "openhire.db").exists():
+                print(f"could not download the public snapshot ({res}); rerun with --index local", file=sys.stderr)
+                return 1
+        else:
+            if not src.exists():
+                print(f"no local index at {src}; run `ohp bootstrap` first, or use --backend hosted", file=sys.stderr)
+                return 1
+            shutil.copy2(src, work / "openhire.db")
         os.environ["OPENHIRE_HOME"] = str(work)
         os.environ["OPENHIRE_DATABASE_URL"] = f"sqlite+pysqlite:///{(work / 'openhire.db').resolve().as_posix()}"
         args.local = LocalMCP()
@@ -641,7 +655,9 @@ def main(argv: list[str] | None = None) -> int:
     except (AttributeError, ValueError):
         pass
     print(report)
-    return 2 if stopped else 0
+    # 2 only when the cumulative cap stopped the run; a night's own budget running out is a
+    # normal finish (local session 2026-11-05 could not tell the two apart).
+    return 2 if stopped and ledger.total >= args.total_cap else 0
 
 
 if __name__ == "__main__":

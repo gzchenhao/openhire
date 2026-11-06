@@ -134,7 +134,7 @@ def test_first_pull_is_a_baseline_with_compact_rows(db):
     row = r["baseline_postings"][0]
     assert row["job_id"] == "acme:touched"
     assert "dates_in_words" in row and "check_before_apply" in row and "apply_channel" in row
-    for long_field in ("skills", "requirements", "ghost_reason", "rank_score", "freshness", "role_group"):
+    for long_field in ("skills", "ghost_reason", "rank_score", "freshness", "role_group"):
         assert long_field not in row
     assert "baseline_postings" in first["summary"]["zh"] and "baseline_postings" in first["summary"]["en"]
     # An increment later is under new_matches, and nothing is a baseline any more.

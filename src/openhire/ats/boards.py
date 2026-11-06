@@ -120,6 +120,16 @@ def detect_board(url: str) -> tuple[str, str]:
         # pages, 2026-10-20). The org slug and site id are what address it in every case.
         m = re.match(r"^/(?:apply|social-recruitment|campus-recruitment|campus_apply)/([^/]+)/(\d+)", path)
         if not m:
+            if re.match(r"^/campus[-_]", path):
+                # A campus link without its site number (persona test, 2026-11-05). Say what is
+                # missing and where it is, rather than only that the URL is malformed.
+                raise BoardNotSupported(
+                    "bad_url",
+                    "This Moka campus link has no site number. Open it in a browser: after the page loads the address "
+                    "becomes app.mokahr.com/campus-recruitment/<org>/<siteId> (a number); pass that. Some campus "
+                    "sites only open in a browser, so if the number never appears, read the page yourself. "
+                    "这个 Moka 校招链接缺站点编号：用浏览器打开，地址会变成 …/campus-recruitment/<机构>/<数字>，把它传进来；"
+                    "一直不出现数字的话，请直接打开页面看。")
             raise BoardNotSupported("bad_url", "A Moka portal URL looks like app.mokahr.com/apply/<org>/<siteId>.")
         return "moka", f"{m.group(1)}/{m.group(2)}"
 

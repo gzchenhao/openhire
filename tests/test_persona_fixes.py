@@ -187,7 +187,7 @@ def test_first_pull_reports_the_whole_standing_set_size(session):
     res = service.check_watches(session, "#bulk", now=NOW)["results"][0]
     assert res["total_matching"] == service.MAX_PAGE_SIZE + 5
     assert res["truncated"] is True and res["truncation_note"]
-    assert len(res["baseline_postings"]) == service.MAX_PAGE_SIZE
+    assert len(res["baseline_postings"]) == service.WATCH_PAGE
     # The best-ranked rows are the freshest, not an alphabetical slice.
     assert res["baseline_postings"][0]["job_id"] == "minieye:bulk0"
 

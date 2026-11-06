@@ -176,6 +176,9 @@ def annualise(value: int | None, period: str | None) -> int | None:
 # Defined next to match_quality so the filter and the score can never drift apart.
 from .pipeline.ranking import expand_skill, normalize_skill  # noqa: E402  (placed with its explanation)
 from .pipeline.extract import seniority_basis, seniority_for  # noqa: E402
+from .pipeline.extract import _SEN_FUNCTION_MANAGER as _FUNCTION_MANAGER_TITLE  # noqa: E402
+# Program / product / project managers run a thing, not a team: no "ask whether it leads people"
+# item for them (persona test, 2026-11-05: a Policy Program Manager was flagged).
 
 # A title that names no level but a text asking for this many years is not the junior end
 # (persona test, 2026-11-03: a 3-year SLAM role passed a new graduate's intern / junior /
@@ -682,7 +685,8 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
         out.append({"code": "date_is_requisition_created",
                     "zh": "雇主说明日期是内部立项日，不是上线日。",
                     "en": "The employer says the date is the internal requisition date, not the go-live date."})
-    if seniority == "unknown" and title and re.search(r"经理|(?<![a-z])managers?(?![a-z])", title, re.I):
+    if (seniority == "unknown" and title and re.search(r"经理|(?<![a-z])managers?(?![a-z])", title, re.I)
+            and not _FUNCTION_MANAGER_TITLE.search(title)):
         # 招聘经理 / Project Manager: the word names a grade in some firms and a team in others
         # (persona test, 2026-11-04: it slipped into an individual-contributor list unflagged).
         out.append({"code": "manager_title_unclear",
@@ -1045,8 +1049,10 @@ def _filter_and_rank(
             if level not in keep_levels:
                 continue
             if junior_only and level == "unknown":
-                years = requirements_from_text(job.title, job.description_raw)["min_years"]
-                if years is not None and years >= EXPERIENCED_YEARS:
+                req = requirements_from_text(job.title, job.description_raw)
+                # The posting asks for experience (2 years, experienced-hire track): not the junior end
+                # whatever its title says (persona test, 2026-11-05; the bar was 3 years before).
+                if req["hire_track"] == "experienced" or (req["min_years"] or 0) >= EXPERIENCED_YEARS:
                     continue
         if entry_level and not is_entry_level(job.title, job.description_raw):
             continue
@@ -1123,6 +1129,17 @@ def search_jobs(
             entry_level=bool(entry_level), posted_within_days=posted_within_days,
             title_exclude=title_exclude,
         ))
+        if entry_level:
+            wider = _filter_and_rank(
+                session, skills, remote, min_salary, None, 10**9, now,
+                required_skills=required_skills, currency=currency,
+                require_stated_salary=require_stated_salary, remote_scope=remote_scope,
+                role_family=role_family, offset=0, company_ids=company_ids,
+                location=location, title=title, seniority=seniority, sector=sector,
+                entry_level=False, posted_within_days=posted_within_days, title_exclude=title_exclude,
+            )
+            total_out["entry_level_unstated"] = sum(
+                1 for j, _ in wider if requirements_from_text(j.title, j.description_raw)["entry_level"] is None)
     company_ids = {j.company_id for j, _ in ranked}
     companies = {
         c.id: c
@@ -2071,6 +2088,10 @@ def watch_intent(
             next_en += (" Postings whose level is unknown are not counted by this watch (the level comes from the title; a "
                         "title naming none counts as a manager only when the text plainly gives it a team); add \"unknown\" "
                         "to seniority to include them.")
+        if not clean.get("seniority") and not clean.get("entry_level"):
+            next_zh += "这个盯岗没有级别条件：如果还没问用户想做个人岗还是管理岗、几年经验，现在问，再用 manage_watch 改。"
+            next_en += (" This watch has no level filter: if you have not asked whether the user wants an individual-"
+                        "contributor or management role and how many years they have, ask now and change it with manage_watch.")
         if clean.get("location"):
             next_zh += "没写城市的岗位不计入地点条件。"
             next_en += " Postings with no location text are not matched by the location filter."
@@ -2118,7 +2139,7 @@ def watch_intent(
 COMPACT_KEYS = (
     "job_id", "title", "company", "location", "remote_policy",
     "salary_min", "salary_max", "salary_currency", "salary_period", "salary_note", "salary_raw",
-    "datePosted", "days_open", "dates_in_words", "seniority", "seniority_basis",
+    "datePosted", "days_open", "date_source", "dates_in_words", "seniority", "seniority_basis", "requirements",
     "check_before_apply", "matched_skills", "verified_at", "source", "ghost_score",
     "response_sla_days", "apply_channel", "apply_channel_blocked", "apply_channel_note", "employer_correction",
 )
@@ -2127,6 +2148,9 @@ COMPACT_NOTE = ("compact rows: title, company, location, pay, dates_in_words, ch
 
 
 _PROTOCOL_KEYS = frozenset({"verified_at", "source", "ghost_score", "response_sla_days", "apply_channel"})
+
+
+WATCH_PAGE = 10
 
 
 def compact_posting(row: dict) -> dict:
@@ -2225,7 +2249,10 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             title_exclude=f.get("title_exclude"),
         )
         total_matching = len(ranked_all)
-        ranked = ranked_all[:MAX_PAGE_SIZE]
+        # A first pull lists at most WATCH_PAGE rows: 19 compact rows still ran past the client's
+        # limit (persona test, 2026-11-05). The rest is a search_jobs call away, and said so.
+        page = WATCH_PAGE if since is None else MAX_PAGE_SIZE
+        ranked = ranked_all[:page]
         company_ids = {j.company_id for j, _ in ranked}
         companies = {
             c.id: c
@@ -2256,12 +2283,13 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
                 # fields and new_matches is empty on a first pull.
                 "is_first_pull": first_pull,
                 "total_matching": total_matching,
-                "truncated": total_matching > MAX_PAGE_SIZE,
+                "truncated": total_matching > page,
                 "truncation_note": (
-                    f"{total_matching} postings match; showing the {MAX_PAGE_SIZE} best-ranked. "
-                    "Narrow the watch (required_skills, company) to see the rest; the "
-                    "remainder is not re-reported on later pulls."
-                ) if total_matching > MAX_PAGE_SIZE else None,
+                    f"{total_matching} postings match; showing the {page} best-ranked. "
+                    + ("The rest are already live: search_jobs with the same filters and envelope=true lists them. "
+                       if since is None else
+                       "Narrow the watch (required_skills, company) to see the rest; the remainder is not re-reported on later pulls.")
+                ) if total_matching > page else None,
                 "baseline": (
                     "Everything matching this watch right now; nothing has been reported "
                     "for it before. Later pulls return only postings first seen after this "
@@ -2289,6 +2317,9 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
     else:
         zh_tail = f"新出现 {total_new} 条。" if total_new else "没有新岗位。"
         en_tail = f"{total_new} new posting(s)." if total_new else "Nothing new."
+    if not watches:
+        zh_tail = "这个指纹下没有任何雷达：核对一下指纹是否抄对，或用 watch_intent 新建一个。"
+        en_tail = "No watch is registered under this fingerprint: check that it was copied exactly, or register one with watch_intent."
     return {
         "fingerprint": fingerprint, "watches": len(watches), "new_matches": total_new,
         "baseline_count": total_baseline, "results": results,
@@ -2779,6 +2810,18 @@ def role_excerpt(text: str | None, n: int = EXCERPT_CHARS) -> str:
     return text[start:start + n]
 
 
+def _indexed_company_for_host(session: Session, url: str):
+    from urllib.parse import urlparse
+    host = (urlparse(url if "//" in url else "https://" + url).hostname or "").lower().removeprefix("www.")
+    if not host:
+        return None
+    for c in session.execute(select(Company)).scalars():
+        h = (urlparse(c.careers_url or "").hostname or "").lower().removeprefix("www.")
+        if h and (h == host or h.endswith("." + host) or host.endswith("." + h)):
+            return c
+    return None
+
+
 def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
     posted = _aware(rec.posted_at) if rec.posted_at else None
     updated = _aware(rec.updated_at) if rec.updated_at else None
@@ -2996,7 +3039,13 @@ def read_board(
     try:
         vendor, tenant = detect_board(url)
     except BoardNotSupported as e:
-        raise OpenHireError("ERR_UNSUPPORTED_BOARD", f"[{e.reason}] {e.hint}") from None
+        msg = f"[{e.reason}] {e.hint}"
+        indexed = _indexed_company_for_host(session, url)
+        if indexed is not None:
+            # Li Auto's site is in the index through its own mirror (persona test, 2026-11-05).
+            msg += (f" This employer IS in the index as {indexed.id} ({indexed.name}): use "
+                    f"search_jobs(company=\"{indexed.id}\") for its postings instead.")
+        raise OpenHireError("ERR_UNSUPPORTED_BOARD", msg) from None
     if limit < 1:
         raise OpenHireError("ERR_BAD_PAGE", "limit must be at least 1.")
     offset = max(0, int(offset or 0))
