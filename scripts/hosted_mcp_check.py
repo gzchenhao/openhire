@@ -128,11 +128,36 @@ def _watch_round_trip(url: str) -> list[str]:
     return []
 
 
+def wait_ready(base: str, timeout_s: float = 240.0) -> None:
+    """Wait until /healthz reports a non-empty index. A free Render instance that was asleep
+    downloads the snapshot on wake; checking /mcp in that window answered 503 once
+    (run 42205329596, 2026-11-06) and read as an outage."""
+    import time
+
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(base.rstrip("/") + "/healthz", timeout=30) as r:
+                body = json.loads(r.read().decode("utf-8", "replace") or "{}")
+            if body.get("status") == "ok" or (body.get("jobs") or 0) > 0:
+                return
+        except (urllib.error.URLError, OSError, ValueError):
+            pass
+        time.sleep(10)
+
+
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(__doc__.strip().splitlines()[2])
         return 2
+    wait_ready(argv[1])
     problems = check(argv[1], argv[2] if len(argv) > 2 else None)
+    if any(" HTTP 5" in p for p in problems):
+        # One retry for a 5xx: the instance can restart between calls (snapshot swap).
+        import time
+        time.sleep(30)
+        wait_ready(argv[1])
+        problems = check(argv[1], argv[2] if len(argv) > 2 else None)
     for p in problems:
         print(p)
     return 1 if problems else 0
