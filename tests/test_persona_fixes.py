@@ -157,11 +157,11 @@ def test_remote_scope_does_not_see_us_inside_other_words():
 
 
 # --- 5. watches: unknown keys refused, company scoping real, truncation reported --------
-def test_watch_refuses_unknown_filter_keys(session):
+def test_watch_refuses_unknown_filter_keys(session):  # remote_scope became a watch key in 0.8.63
     with pytest.raises(OpenHireError) as e:
-        service.watch_intent(session, "#t3st", {"skills": ["bev"], "remote_scope": "worldwide"}, now=NOW)
+        service.watch_intent(session, "#t3st", {"skills": ["bev"], "salary_floor": 1}, now=NOW)
     assert e.value.code == "ERR_UNKNOWN_FILTER"
-    assert "remote_scope" in e.value.message
+    assert "salary_floor" in e.value.message
 
 
 def test_watch_can_be_scoped_to_one_employer(session):

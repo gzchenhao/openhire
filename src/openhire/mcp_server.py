@@ -542,7 +542,8 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     other, as in search_jobs: one watch for "robotics companies in Shenzhen" instead of one
     per employer), `entry_level` (true: only postings open to a new graduate, as in
     search_jobs), `posted_within_days` (only postings published in the last N days, as in
-    search_jobs).
+    search_jobs), `remote_scope` (worldwide / region_locked / country_locked / unknown, as in
+    search_jobs: a seeker outside the US keeps US-only remote roles out with "worldwide").
     Any other key is REFUSED (ERR_UNKNOWN_FILTER) rather than silently dropped, and a
     `role_family` outside engineering | data | product | design | marketing | sales | hr |
     ops | other is refused too (ERR_UNKNOWN_ROLE_FAMILY); "recruiting" and "招聘" resolve

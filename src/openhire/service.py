@@ -177,6 +177,17 @@ def annualise(value: int | None, period: str | None) -> int | None:
 from .pipeline.ranking import expand_skill, normalize_skill  # noqa: E402  (placed with its explanation)
 from .pipeline.extract import seniority_basis, seniority_for  # noqa: E402
 from .pipeline.extract import _SEN_FUNCTION_MANAGER as _FUNCTION_MANAGER_TITLE  # noqa: E402
+from .pipeline.extract import SEN_FUNCTION_MANAGER_ZH as _FUNCTION_MANAGER_ZH  # noqa: E402
+
+
+def effective_role_family(stored: str | None, title: str | None) -> str | None:
+    """The stored family, except an "hr" whose title is a marketing job: the classifier filed
+    "Senior Marketing Manager, Recruiting Events" under hr, and three persona nights in a row
+    showed it to recruiters (2026-11-04 to 11-06)."""
+    rf = (stored or "").lower() or None
+    if rf == "hr" and title and re.search(r"(?<![a-z])marketing(?![a-z])|市场营销|市场推广", title, re.I):
+        return "marketing"
+    return rf
 # Program / product / project managers run a thing, not a team: no "ask whether it leads people"
 # item for them (persona test, 2026-11-05: a Policy Program Manager was flagged).
 
@@ -686,7 +697,7 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
                     "zh": "雇主说明日期是内部立项日，不是上线日。",
                     "en": "The employer says the date is the internal requisition date, not the go-live date."})
     if (seniority == "unknown" and title and re.search(r"经理|(?<![a-z])managers?(?![a-z])", title, re.I)
-            and not _FUNCTION_MANAGER_TITLE.search(title)):
+            and not _FUNCTION_MANAGER_TITLE.search(title) and not _FUNCTION_MANAGER_ZH.search(title)):
         # 招聘经理 / Project Manager: the word names a grade in some firms and a team in others
         # (persona test, 2026-11-04: it slipped into an individual-contributor list unflagged).
         out.append({"code": "manager_title_unclear",
@@ -750,7 +761,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         "remote_policy": job.remote_policy,
         "remote_scope": _rs,          # worldwide | region_locked | country_locked | null
         "eligible_regions": _regions,  # matched regions/countries ([] = worldwide/unknown)
-        "role_family": getattr(job, "role_family", None),  # populated for ~99% of live rows
+        "role_family": effective_role_family(getattr(job, "role_family", None), job.title),
         "skills": list(job.skills or []),
         "salary_min": _sal_lo,
         "salary_max": _sal_hi,
@@ -1035,7 +1046,7 @@ def _filter_and_rank(
         # unclassified (2026-10-19), role_family="hr" otherwise returned mostly engineers.
         # HR is decided by the title alone, so an unclassified row joins an hr search only
         # when its title names an HR job; for any other family an unsure row stays in.
-        jrf = (getattr(job, "role_family", None) or "").lower()
+        jrf = effective_role_family(getattr(job, "role_family", None), job.title) or ""
         if rf and not jrf:
             jrf = classify_role_family_heuristic(job.title or "") or ("unclassified" if rf == "hr" else "")
         if rf and jrf and jrf != rf:
@@ -1904,6 +1915,7 @@ def _new_id(session: Session, model, pk_attr: str, prefix: str) -> str:
 _WATCH_FILTER_KEYS = (
     "skills", "required_skills", "remote", "role_family", "min_salary", "company", "location",
     "title", "board_url", "seniority", "sector", "entry_level", "posted_within_days", "title_exclude",
+    "remote_scope",
 )
 # A board watch (reports/070) reads one employer's public board live on every pull, so the
 # only filters that mean anything on it are the ones a live read can apply.
@@ -1947,6 +1959,12 @@ def _clean_filters(filters: dict[str, Any]) -> dict[str, Any]:
         allowed["title"] = title_terms(filters["title"])
     if filters.get("title_exclude"):
         allowed["title_exclude"] = title_terms(filters["title_exclude"])
+    if filters.get("remote_scope"):
+        # A Hong Kong seeker's remote watch kept firing on US-only roles (persona test, 2026-11-06).
+        rs = str(filters["remote_scope"]).strip().lower()
+        if rs not in ("worldwide", "region_locked", "country_locked", "unknown"):
+            raise OpenHireError("ERR_BAD_QUERY", "remote_scope is one of worldwide, region_locked, country_locked, unknown.")
+        allowed["remote_scope"] = rs
     if filters.get("seniority"):
         # Validated now, expanded at match time, so a watch on "ic" also keeps a level
         # added to the alias later.
@@ -2039,7 +2057,7 @@ def watch_intent(
             company_ids=clean.get("company_ids"), location=clean.get("location"),
             title=clean.get("title"), seniority=clean.get("seniority"), sector=clean.get("sector"),
             entry_level=bool(clean.get("entry_level")), posted_within_days=clean.get("posted_within_days"),
-            title_exclude=clean.get("title_exclude"),
+            title_exclude=clean.get("title_exclude"), remote_scope=clean.get("remote_scope"),
         ))
     watch_id = _new_id(session, Watch, "watch_id", "w_")
     session.add(
@@ -2137,7 +2155,7 @@ def watch_intent(
 # characters and the client cut it off before the second watch (persona test, 2026-11-03).
 # The five protocol fields stay; the full row is one search_jobs call away.
 COMPACT_KEYS = (
-    "job_id", "title", "company", "location", "remote_policy",
+    "job_id", "title", "company", "location", "remote_policy", "remote_scope",
     "salary_min", "salary_max", "salary_currency", "salary_period", "salary_note", "salary_raw",
     "datePosted", "days_open", "date_source", "dates_in_words", "seniority", "seniority_basis", "requirements",
     "check_before_apply", "matched_skills", "verified_at", "source", "ghost_score",
@@ -2246,7 +2264,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
             company_ids=f.get("company_ids"), location=f.get("location"),
             title=f.get("title"), seniority=f.get("seniority"), sector=f.get("sector"),
             entry_level=bool(f.get("entry_level")), posted_within_days=f.get("posted_within_days"),
-            title_exclude=f.get("title_exclude"),
+            title_exclude=f.get("title_exclude"), remote_scope=f.get("remote_scope"),
         )
         total_matching = len(ranked_all)
         # A first pull lists at most WATCH_PAGE rows: 19 compact rows still ran past the client's

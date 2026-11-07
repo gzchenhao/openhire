@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.62 · 2026-11-06；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.63 · 2026-11-07；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.63（2026-11-07，云端会话，`reports/142`）：** 模拟求职者 11-06 夜（首次用公开快照；US$10.68，累计 60.02，82 条：**high 0**、medium 33）。修：中文职能经理不提示 manager_title_unclear（招聘经理仍提示）、incident / vendor manager；**存量 role_family=hr 的营销标题读取时改 marketing**（`effective_role_family`）；**盯岗键 `remote_scope`**；RDAP / 首页连不上的提示附 ICANN 与工信部入口。体检脚本先等 /healthz 就绪、5xx 重试一次。issue #3（JobsPipe 互链）婉拒关闭。待领导定：match_quality 加权。1160 tests。
 - **v0.8.62（2026-11-06，云端会话，`reports/141`）：** 模拟求职者 11-05 夜（US$11.05，累计 49.35，88 条：high 2、medium 34）。**根因：夜测一直用本机一周前的旧索引**，`persona_test.py` 改为默认现下载公开快照（`--index public`），退出码 2 只在累计到顶时返回。修：Moka 校招缺站点编号的报错说清楚；TLM 算管理岗；Program / Product Manager 不提示 manager_title_unclear；应届生筛选排除社招轨；envelope 带 `entry_level_unstated`；空指纹提示；盯岗没设级别提醒先问；首次拉取每雷达 10 条（`WATCH_PAGE`）并补回 requirements / date_source；read_board 读已收录自建站时指向 search_jobs。1155 tests。
 - **v0.8.61（2026-11-05，云端会话，`reports/140`）：** 领导「都做」：**第 14 个工具 `manage_watch`**（list / update / delete，update 换新编号、新基线，坏条件不动旧盯岗，只认原指纹）；**`search_jobs(envelope=true)`** 返回 matched / has_more / next_offset / headline，默认形状不变。服务器指令同步。**服务器现在 14 个工具、12 个提示词。** 模拟求职者每晚改 `--repeat 2 --budget-usd 10.5 --total-cap 92`，把赠送额度花完。1146 tests。
 - **v0.8.60（2026-11-05，云端会话，`reports/139`）：** 模拟求职者 11-04 夜（US$6.32，累计 38.29，53 条：high 1、medium 21）：每条岗位带 **`seniority_basis`（title / description / none）与 `seniority_quote`**（high：助手为标 manager 编理由）；`manager_title_unclear` 提示；marketing 标题不算 HR；盯岗 unknown 说明改准；`fingerprint_notice` 说明指纹不是 watch_id；精简行去空值；**ingest 每次抓取都更新雇主系统的 remote / hybrid / onsite**（0.8.59 读取器修正才进得了旧行）；缓存现读文案；北森校招链接 `channel_note`。请领导定：update_watch / delete_watch、非空搜索结果外层。1142 tests。

@@ -226,7 +226,8 @@ def homepage_check(domain: str, icp: str | None = None, name: str | None = None)
     r = _get(f"https://{domain}/")
     if r is None:
         return {"status": "unavailable", "reason": "network", "icp_on_page": [],
-                "note": f"本次没有连上 https://{domain}/（网络不通或超时），说明的是这次查询的网络，不是这个站"}
+                "note": (f"本次没有连上 https://{domain}/（网络不通或超时），说明的是这次查询的网络，不是这个站；"
+                         "备案号可以自己在工信部备案查询 https://beian.miit.gov.cn/ 按域名查")}
     if r.status_code != 200:
         return {"status": "unavailable", "reason": "http_status", "icp_on_page": [],
                 "note": f"https://{domain}/ 回了 HTTP {r.status_code}，首页读不到"}
@@ -254,10 +255,13 @@ def domain_age(domain: str) -> dict:
         # A network failure is about this query, not about the domain: say so, or a seeker
         # behind a restricted network reads "no record" as a mark against the employer.
         return {"status": "unavailable", "reason": "network",
-                "note": "本次没有连上 RDAP（网络不通或超时），说明的是这次查询的网络，不是这个域名"}
+                "note": "本次没有连上 RDAP（网络不通或超时），说明的是这次查询的网络，不是这个域名；可以自己在 ICANN 查询页 https://lookup.icann.org 查注册日期"}
     if r.status_code != 200:
         return {"status": "unavailable", "reason": "no_record",
-                "note": f"RDAP 没有这个域名的注册记录（HTTP {r.status_code}；.cn 域名常见）"}
+                "note": (f"RDAP 没有这个域名的注册记录（HTTP {r.status_code}"
+                         + ("；.cn 域名常见，.cn 的注册信息不走 RDAP）" if domain.lower().endswith(".cn") else
+                            "；通用后缀查不到通常说明域名没有注册或拼错了，先核对拼写）")
+                         + "；可以自己在 ICANN 查询页 https://lookup.icann.org 再查一次")}
     try:
         events = r.json().get("events", [])
         reg = next((e["eventDate"] for e in events if e.get("eventAction") == "registration"), None)

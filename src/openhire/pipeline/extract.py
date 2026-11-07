@@ -531,11 +531,13 @@ _SEN_FUNCTION_MANAGER = re.compile(
     # and was told to a user as a people-management job. Same family as product / program.
     r"|(?:public )?policy(?: design)?|compliance|communications?|comms|government affairs|public affairs"
     r"|strategy|insights?|locali[sz]ation|documentation|knowledge|curriculum|learning|enablement"
-    r"|revenue operations|editorial|trust (?:and|&) safety|integrity) managers?\b",
+    r"|revenue operations|editorial|trust (?:and|&) safety|integrity|incident|vendor|supplier|operations program) managers?\b",
     re.I,
 )
 # 门店产品专家 is a shop-floor sales title (persona test, 2026-11-03): 专家 names a grade only
 # outside retail.
+# 项目经理 / 产品经理 / 客户经理 ... run a thing, not a team (the Chinese twin of the list above).
+SEN_FUNCTION_MANAGER_ZH = re.compile(r"(项目|产品|客户|销售|渠道|商务|市场|品牌|运营|采购|培训|大客户|解决方案|交付|质量|售前|售后|区域|门店)经理")
 _SEN_RETAIL = re.compile(r"店|导购|门市|柜台")  # 静安大融城店, 门店, 旗舰店, 店员 ...
 _SEN_MTS = re.compile(r"\bmembers? of technical staff\b|\bchief of staff\b", re.I)
 _SEN_TEAM_LEAD = re.compile(r"团队负责人|组长|\bteam lead(er)?\b|\btech(nical)? lead\b", re.I)
