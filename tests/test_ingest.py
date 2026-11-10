@@ -216,3 +216,20 @@ def test_failed_fetch_does_not_touch_jobs(session):
     assert stats.companies_failed == 1
     # Existing job untouched (not delisted by a failed crawl).
     assert session.get(Job, "acme:1").delisted_at is None
+
+
+def test_a_moved_posting_date_is_reported_not_silent(session):
+    # Persona night 2026-11-07: Moka's publishedAt for one row went from 05-15 to 05-05
+    # between two crawls and refresh_index said jobs_updated: 0.
+    t0 = dt.datetime(2026, 10, 28, tzinfo=UTC)
+    r = rec("1", "测试策略岗")
+    r.posted_at = dt.datetime(2026, 5, 15, tzinfo=UTC)
+    ingest(session, [r], t0)
+    r2 = rec("1", "测试策略岗")
+    r2.posted_at = dt.datetime(2026, 5, 5, tzinfo=UTC)
+    stats = ingest(session, [r2], t0 + dt.timedelta(days=10))
+    assert stats.posting_dates_changed == [
+        {"job_id": "acme:1", "title": "测试策略岗", "was": "2026-05-15", "now": "2026-05-05"}]
+    r3 = rec("1", "测试策略岗")
+    r3.posted_at = dt.datetime(2026, 5, 5, 3, tzinfo=UTC)
+    assert ingest(session, [r3], t0 + dt.timedelta(days=11)).posting_dates_changed == []

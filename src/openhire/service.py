@@ -360,6 +360,16 @@ _TITLE_GROUPS: tuple[tuple[str, ...], ...] = (
      "sourcer", "people operations", "people ops", "people partner", "people lead",
      "people business partner", "head of people", "chief people", "人力", "人事", "招聘"),
 )
+# Only the broad words reach the whole HR group. A specific word stays in its own corner:
+# an HR persona asked for "recruiting only" with title=["招聘", "Recruiter", "Talent
+# Acquisition"] and got HRBP rows first, because every member expanded to every other one;
+# title_exclude=["HRBP"] then expanded the same way and threw out every 招聘 title (persona
+# night 2026-11-09).
+_TITLE_BROAD = frozenset({"hr", "human resources", "people operations", "people ops", "人力", "人事"})
+_TITLE_SUBGROUPS: tuple[tuple[str, ...], ...] = (
+    ("recruit", "talent acquisition", "talent partner", "sourcer", "招聘"),
+    ("hrbp", "people partner", "people business partner", "hr business partner"),
+)
 
 
 def expand_title_term(term: str) -> list[str]:
@@ -367,7 +377,9 @@ def expand_title_term(term: str) -> list[str]:
     t = " ".join((term or "").casefold().split())
     if not t:
         return []
-    for group in _TITLE_GROUPS:
+    if t in _TITLE_BROAD:
+        return list(_TITLE_GROUPS[0])
+    for group in _TITLE_SUBGROUPS:
         if t in group:
             return list(group)
     return [t]
@@ -375,12 +387,17 @@ def expand_title_term(term: str) -> list[str]:
 
 # CJK aliases that sit inside an unrelated compound, with what must not follow them.
 _CJK_NOT_FOLLOWED_BY = {"人事": "业"}
+# ... and with what must not come before them: 机器人力控 ("robot force control") is not 人力
+# (persona night 2026-11-09 listed a force-control engineer as an HR role).
+_CJK_NOT_PRECEDED_BY = {"人力": "机器", "人事": "机器"}
 
 
 def _title_pattern(alias: str) -> re.Pattern[str]:
     if re.search(r"[^\x00-\x7f]", alias):
         tail = _CJK_NOT_FOLLOWED_BY.get(alias)
-        return re.compile(re.escape(alias) + (f"(?!{tail})" if tail else ""), re.IGNORECASE)
+        head = _CJK_NOT_PRECEDED_BY.get(alias)
+        return re.compile((f"(?<!{head})" if head else "") + re.escape(alias) + (f"(?!{tail})" if tail else ""),
+                          re.IGNORECASE)
     return re.compile(r"(?<![a-z0-9])" + re.escape(alias), re.IGNORECASE)
 
 
@@ -390,6 +407,17 @@ def title_terms(title: str | list[str] | None) -> list[str]:
         return []
     items = [title] if isinstance(title, str) else list(title)
     return [t for t in (" ".join(str(x).split()) for x in items) if t]
+
+
+def title_excluded(title: str | None, terms: list[str]) -> bool:
+    """True when the title contains any exclude term, literally and caselessly.
+
+    No synonyms and no word anchoring: an exclusion removes exactly what the user named.
+    ["BP"] used to leave "销售HRBP" in (the ASCII anchor), and ["HRBP"] used to drop every
+    招聘 title (the synonym group).
+    """
+    text = (title or "").casefold()
+    return any(" ".join(t.casefold().split()) in text for t in terms if t.strip())
 
 
 def title_matches(title: str | None, terms: list[str]) -> bool:
@@ -1053,7 +1081,7 @@ def _filter_and_rank(
             continue
         if terms and not title_matches(job.title, terms):
             continue
-        if ex_terms and title_matches(job.title, ex_terms):
+        if ex_terms and title_excluded(job.title, ex_terms):
             continue
         if keep_levels is not None:
             level = seniority_for(job.title, job.description_raw)
@@ -1333,6 +1361,9 @@ def diagnose_empty_search(
             "company": company, "skills": skills, "required_skills": required_skills,
             "role_family": role_family, "currency": currency,
             "title": title_terms(title) or None, "title_exclude": title_terms(title_exclude) or None,
+            # The spellings `title` actually matched, so a synonym is never a surprise.
+            "title_matches_any": list(dict.fromkeys(
+                a for t in title_terms(title) for a in expand_title_term(t))) or None,
             "location": (location or "").strip() or None,
             "seniority": ([seniority] if isinstance(seniority, str) else seniority) or None,
             "sector": sector or None,
@@ -2009,6 +2040,13 @@ def watch_intent(
     now: dt.datetime | None = None,
 ) -> dict:
     now = _now(now)
+    # A model asked for "12 random characters" writes the same ones in every conversation:
+    # "#q7m2-x9kd-4tpw-r8vn" turned up in three unrelated persona runs (2026-11-04, 11-06,
+    # 11-09) and the third found the second's watch under it. "new" asks the server for
+    # real randomness instead; the result is as anonymous as one the client makes up.
+    minted = (fingerprint or "").strip().casefold() in ("new", "auto")
+    if minted:
+        fingerprint = "#" + "-".join(secrets.token_hex(2) + secrets.token_hex(1) for _ in range(4))
     _assert_anonymous(fingerprint)
     clean = _clean_filters(filters or {})
     if clean.get("company"):
@@ -2142,11 +2180,16 @@ def watch_intent(
                 if existing and short else ""
             )
             + (
-                f" This fingerprint already has {existing} other active watch(es), most likely "
-                "your own from earlier; check_watches returns them all together."
+                f" This fingerprint already had {existing} other active watch(es). Yours only if "
+                "you registered them earlier with this exact fingerprint (in this conversation, or "
+                "it is the key the user saved). Otherwise it belongs to someone else: models tend "
+                "to invent the same \"random\" strings. Then delete this watch with "
+                "manage_watch and register again with fingerprint \"new\" (the server picks a "
+                "random one)."
                 if existing and not short else ""
             )
         ),
+        **({"fingerprint_minted": True} if minted else {}),
     }
 
 
@@ -2252,7 +2295,7 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         if f.get("board_url"):
             entry = _check_board_watch(session, w, f, since, now)
             total_new += len(entry["new_matches"])
-            total_baseline += len(entry.get("baseline_postings") or [])
+            total_baseline += entry.get("baseline_count") or 0
             results.append(entry)
             continue
         # Rank the WHOLE standing set, then page it. The old call asked for 20 and then
@@ -2287,7 +2330,10 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
         ]
         first_pull = since is None
         if first_pull:
-            total_baseline += len(matches)
+            # The whole baseline, as each watch reports it, not the rows listed on this page:
+            # the top-level 17 beside watches of 18 and 7 read as a contradiction (persona
+            # nights 2026-11-09).
+            total_baseline += total_matching
         else:
             total_new += len(matches)
         results.append(
@@ -2628,10 +2674,16 @@ def refresh_company_index(
         "jobs_delisted": stats.jobs_delisted,
         "jobs_unchanged": stats.jobs_unchanged,
         "delisted": list(stats.delisted_jobs[:20]),
+        "new": list(stats.new_jobs[:20]),
+        "posting_dates_changed": list(stats.posting_dates_changed[:20]),
         "counts_note": ("jobs_updated counts rows whose title or description changed; a row the employer "
                         "re-saved without changing either counts as unchanged, so do not read jobs_updated: 0 "
                         "as \"nobody touched these\" and do not read a recent updated_at as an edit. "
-                        "`delisted` names the rows this crawl took down (first 20)."),
+                        "`delisted` names the rows this crawl took down and `new` the rows it added (first 20 each); to "
+                        "answer \"is this one still up\", look its job_id up with search_jobs after the refresh. `posting_dates_changed` "
+                        "lists rows whose employer-reported posting date differs from the last crawl (was / now): "
+                        "the employer's system changed it; tell the user the date moved and quote both, do not "
+                        "pick one as right."),
     }
 
 

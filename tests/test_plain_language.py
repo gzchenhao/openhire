@@ -157,7 +157,9 @@ def test_persona_round_2026_10_29_fixes(db):
     w = service.watch_intent(db, "#persona-k2p7x8q1", {"title": ["perception"]}, now=NOW)
     assert "check_watches" in w["what_happens_next"]["zh"] and "check_watches" in w["what_happens_next"]["en"]
     again = service.watch_intent(db, "#persona-k2p7x8q1", {"title": ["slam"]}, now=NOW)
-    assert "most likely your own" in again["fingerprint_notice"]
+    # 11-09: no longer presumed the caller's own (models repeat "random" strings); the
+    # notice says how to tell and how to get a fresh one, without the short-tag wording.
+    assert "Yours only if you registered them earlier" in again["fingerprint_notice"]
     assert "another client chose" not in again["fingerprint_notice"]
 
 

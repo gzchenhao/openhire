@@ -28,10 +28,11 @@ PRIVACY_EN = ("Never pass my résumé, name, email or phone to any tool; if you 
 LENGTH_ZH = "在架时间长的岗位只说量到的事实（在架多少天、多久没更新），不要说它是假岗或僵尸岗。"
 LENGTH_EN = ("For long-open postings say only what was measured (open N days, last touched M days ago); "
              "never call a posting fake or a ghost.")
-FINGERPRINT_ZH = ("你生成一个 12 位以上的随机指纹（不含任何个人信息），把它原样告诉我、让我存好；"
-                  "以后我说「看看我的雷达」，你就用这个指纹调 check_watches。")
-FINGERPRINT_EN = ("Generate a random fingerprint of 12+ characters (nothing personal in it), show it to me "
-                  "verbatim so I can keep it; when I later say \"check my radar\", call check_watches with it.")
+FINGERPRINT_ZH = ("我还没有指纹的话，第一次调 watch_intent 时 fingerprint 填 \"new\"，让服务器生成随机指纹，"
+                  "不要自己编；把返回的指纹原样告诉我、让我存好；以后我说「看看我的雷达」，你就用这个指纹调 check_watches。")
+FINGERPRINT_EN = ("If I have no fingerprint yet, call watch_intent with fingerprint \"new\" so the server picks a "
+                  "random one (do not invent one); show the returned fingerprint to me verbatim so I can keep it; "
+                  "when I later say \"check my radar\", call check_watches with it.")
 
 
 def _zh(*values: str | None) -> bool:

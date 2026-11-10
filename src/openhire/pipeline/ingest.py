@@ -56,6 +56,13 @@ class IngestStats:
     # three went and not only that three did (persona test, 2026-10-29: the assistant could
     # not tell whether the delisted rows were the ones the user was watching).
     delisted_jobs: list[dict] = field(default_factory=list)
+    # Rows whose employer-reported posting date moved on this crawl (old and new, first 50).
+    # Moka's publishedAt for one 福瑞泰克 row went from 05-15 to 05-05 between two crawls and
+    # refresh_index reported nothing (persona night 2026-11-07); the user saw two dates.
+    posting_dates_changed: list[dict] = field(default_factory=list)
+    # Which rows this crawl added (id and title, first 50): refresh_index named the delisted
+    # rows but only counted the new ones (persona night 2026-11-09).
+    new_jobs: list[dict] = field(default_factory=list)
 
     @property
     def jobs_seen(self) -> int:
@@ -227,6 +234,8 @@ def _insert_new_job(
     session.add(job)
     existing[pk] = job
     stats.jobs_new += 1
+    if len(stats.new_jobs) < 50:
+        stats.new_jobs.append({"job_id": job.id, "title": job.title})
 
 
 def _update_job(
@@ -242,7 +251,15 @@ def _update_job(
     job.apply_channel = rec.apply_channel or job.apply_channel
     # Keep the real ATS posting dates fresh (posted_at is stable; updated_at moves).
     if rec.posted_at:
-        job.posted_at = _aware(rec.posted_at)
+        new_posted = _aware(rec.posted_at)
+        old_posted = _aware(job.posted_at) if job.posted_at else None
+        if old_posted is not None and abs((new_posted - old_posted).total_seconds()) >= 86400:
+            if len(stats.posting_dates_changed) < 50:
+                stats.posting_dates_changed.append({
+                    "job_id": job.id, "title": job.title,
+                    "was": old_posted.date().isoformat(), "now": new_posted.date().isoformat(),
+                })
+        job.posted_at = new_posted
     if rec.updated_at:
         job.updated_at = _aware(rec.updated_at)
 

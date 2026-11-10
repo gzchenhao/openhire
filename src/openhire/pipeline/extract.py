@@ -1110,7 +1110,39 @@ def _invites(pat: re.Pattern, text: str) -> bool:
                for m in pat.finditer(text))
 
 
-def _is_preference(text: str, start: int, end: int) -> bool:
+# A whole section can be a preference: Anthropic lists "5+ years of experience in policy
+# development" under a "Preferred qualifications" heading, and the clause itself carries no
+# preference word (persona night 2026-11-09 read it as min_years 5). A heading is a short line;
+# a preferred section runs until the next heading of any kind.
+_PREF_HEADING = re.compile(
+    r"^\s*(preferred|bonus|nice[- ]to[- ]haves?|strong candidates (may|might) also|it would be (great|nice)|"
+    r"pluses|additional (preferred )?qualifications|desired (qualifications|skills|experience)|"
+    r"加分项|加分条件|优先条件|优先考虑)", re.I)
+_ANY_HEADING = re.compile(
+    r"qualifications|requirements|responsibilit|about|logistics|benefits|compensation|what (you|we)|"
+    r"you (will|may|have|should)|who you are|the role|location|salary|任职|岗位|职位|职责|要求|福利|关于|我们", re.I)
+
+
+def _preferred_spans(text: str) -> list[tuple[int, int]]:
+    spans, start, pos = [], None, 0
+    for line in text.split("\n"):
+        stripped = line.strip()
+        heading = 0 < len(stripped) <= 70 and not stripped.endswith((".", "。"))
+        if heading and _PREF_HEADING.match(stripped):
+            if start is None:
+                start = pos
+        elif heading and start is not None and _ANY_HEADING.search(stripped):
+            spans.append((start, pos))
+            start = None
+        pos += len(line) + 1
+    if start is not None:
+        spans.append((start, len(text)))
+    return spans
+
+
+def _is_preference(text: str, start: int, end: int, spans: list[tuple[int, int]] | None = None) -> bool:
+    if spans and any(a <= start < b for a, b in spans):
+        return True
     return bool(_PREFERENCE_AFTER.match(text[end:end + 60]) or _PREFERENCE_BEFORE.search(text[max(0, start - 40):start]))
 
 
@@ -1194,10 +1226,11 @@ def requirements_from_text(title: str | None, description: str | None) -> dict:
     experience required), False only when the text asks for experience, None otherwise."""
     title = title or ""
     text = f"{title}\n{description or ''}"
+    spans = _preferred_spans(text)
     required = []
     for level, pat in _DEGREE_PATTERNS:
         for m in pat.finditer(text):
-            if not _is_preference(text, m.start(), m.end()):
+            if not _is_preference(text, m.start(), m.end(), spans):
                 required.append(level)
                 break
     min_degree = min(required, key=DEGREE_LEVELS.index) if required else None
@@ -1205,7 +1238,7 @@ def requirements_from_text(title: str | None, description: str | None) -> dict:
     years = []
     for pat in (_YEARS_ZH, _YEARS_ZH_AFTER, _YEARS_EN):
         for m in pat.finditer(text):
-            if _is_preference(text, m.start(), m.end()):
+            if _is_preference(text, m.start(), m.end(), spans):
                 continue
             if _MANAGEMENT_YEARS.search(m.group(0)):
                 continue

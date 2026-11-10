@@ -105,8 +105,10 @@ def test_title_filter_reaches_hr_roles_in_both_languages_and_skips_chrome(sessio
 
     hr = {"dobot:hrbp", "dobot:zp", "mongodb:rec"}
     assert ids("hr") == hr, "hr expands to HRBP / 招聘 / Recruiter, and never to Chrome"
-    assert ids("招聘") == hr
-    assert ids("recruit") == hr
+    # A recruiting word reaches recruiting titles in both languages, and not HRBP (11-09).
+    assert ids("招聘") == {"dobot:zp", "mongodb:rec"}
+    assert ids("recruit") == {"dobot:zp", "mongodb:rec"}
+    assert ids("hrbp") == {"dobot:hrbp"}
     assert ids("感知") == {"dobot:perc"}
     # ANY-of across terms; a plain string is accepted as one term.
     assert ids("感知", "项目") == {"dobot:perc", "uisee:pm"}
@@ -126,7 +128,7 @@ def test_a_watch_can_be_scoped_to_a_title(session):
     w = service.watch_intent(session, "#hr-k2p7-x8q1-b2", {"title": ["招聘"], "company": "dobot"}, now=NOW)
     assert w["status"] == "active"
     res = service.check_watches(session, "#hr-k2p7-x8q1-b2", now=NOW)["results"][0]
-    assert {m["job_id"] for m in res["baseline_postings"]} == {"dobot:hrbp", "dobot:zp"}
+    assert {m["job_id"] for m in res["baseline_postings"]} == {"dobot:zp"}
     stored = session.execute(select(Watch).where(Watch.watch_id == w["watch_id"])).scalar_one()
     assert stored.filters["title"] == ["招聘"], "stored as typed; expansion happens at match time"
 

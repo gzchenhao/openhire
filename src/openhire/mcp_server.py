@@ -34,8 +34,9 @@ mcp = FastMCP(
         "the day this index first saw it (flagged date_signal), plus days_open, a "
         "ghost_score and a direct apply link; role_family \"hr\" holds recruiting, HRBP and people "
         "roles, so a recruiter can search their own market. A résumé or any "
-        "PII NEVER transits this server — only an anonymous, client-generated fingerprint "
-        "(e.g. '#a3f9-k2p7-x8q1'; 12+ random characters, short tags collide). Matching happens on the client. Use search_jobs to hard-filter "
+        "PII NEVER transits this server — only an anonymous fingerprint (for a new user pass "
+        "fingerprint \"new\" to watch_intent and the server picks a random one; do not invent "
+        "one, models repeat the same strings; reuse a key the user saved). Matching happens on the client. Use search_jobs to hard-filter "
         "the live index (results carry verified_at, ghost_score and apply_channel); "
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; manage_watch to list, change or delete a watch; authorize_application to record an "
@@ -285,14 +286,18 @@ def search_jobs(
             finance, legal, a specific team name; for HR it is a wider net than
             role_family="hr". An ASCII term must start
             a word ("hr" reaches HR, HRBP and HR Business Partner but not Chrome); a CJK
-            term is a plain substring. One synonym group is expanded for you: any of hr /
-            hrbp / human resources / recruit / talent acquisition / sourcer / people ops /
-            人力 / 人事 / 招聘 reaches all the others, so title=["招聘"] also finds an
-            English "Senior Technical Recruiter". Combine with `company` to ask "does
-            <employer> have any HR openings?" instead of paging their whole list.
-        title_exclude: title words to keep OUT, ANY-of, matched like `title`: ["专家"] drops
-            产品专家 rows, ["manager"] drops every manager title. Use it when the user says
-            "not X"; a watch accepts the same key, so the exclusion holds on every pull.
+            term is a plain substring. HR synonyms are expanded for you, narrowly: the broad
+            words hr / human resources / people ops / 人力 / 人事 reach every HR title;
+            recruit / talent acquisition / talent partner / sourcer / 招聘 reach only
+            recruiting titles (so title=["招聘"] also finds "Senior Technical Recruiter" but
+            not HRBP); hrbp / people partner reach only business-partner titles.
+            filters_applied.title_matches_any lists the spellings used. Combine with
+            `company` to ask "does <employer> have any HR openings?" instead of paging their
+            whole list.
+        title_exclude: title text to keep OUT, ANY-of, a literal caseless substring with no
+            synonyms: ["专家"] drops 产品专家 rows, ["BP"] drops 销售HRBP, ["manager"] drops
+            every manager title. Use it when the user says "not X"; a watch accepts the
+            same key, so the exclusion holds on every pull.
         seniority: keep only rows whose title names one of these levels, ANY-of: intern,
             junior, senior, staff, lead, manager, director, unknown; plus the aliases "ic"
             (intern, junior, senior, staff, unknown: everyone who leads no team, including
@@ -522,9 +527,11 @@ def get_company_info(company_id: str) -> dict:
 def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     """Register a standing intent so new matches can be pulled later.
 
-    The caller supplies its OWN anonymous fingerprint (e.g. "#a3f9-k2p7-x8q1"; make it 12+
-    random characters, a four-character tag collides with strangers) — the client generates
-    and owns it; the server stores but can never recover it, so persist it client-side and
+    The caller supplies an anonymous fingerprint. For a user who has none yet, pass
+    fingerprint="new": the server picks a random one and returns it (do not invent one
+    yourself; models write the same "random" strings in every conversation and collide).
+    A user's saved key from before is reused as is (12+ characters; a four-character tag
+    collides with strangers). The client owns it; the server stores but can never recover it, so persist it client-side and
     pass the identical one to check_watches. Only the fingerprint and non-PII filter keys
     are stored — never a name, email, phone or résumé. Accepted filter keys mirror
     search_jobs: `skills` (ANY-overlap), `required_skills` (ALL/AND — use this to keep
@@ -565,8 +572,8 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     none new; null for a board watch); `what_happens_next` is the sentence to relay: OpenHire
     does not push, the user asks you to check, the first check is a baseline, a scheduled
     reminder is a recurring task in the assistant. `existing_watches` > 0 means this
-    fingerprint was already in use; if those watches are not yours, pick a longer random
-    fingerprint.
+    fingerprint was already in use; unless you registered those watches yourself with it,
+    they are a stranger's: delete this watch and register again with fingerprint "new".
     """
     _await_index()
     with session_scope() as s:
@@ -613,7 +620,9 @@ def refresh_index(company: str) -> dict:
 
     Returns: `refreshed` plus `last_refreshed_at` / `next_allowed_at`; when it did run, also
     jobs_new / jobs_updated / jobs_delisted / jobs_unchanged, `delisted` (job_id and title of
-    the rows this crawl took down, first 20) and `counts_note` on what the counts mean.
+    the rows this crawl took down, first 20), `new` (the rows it added, first 20), `posting_dates_changed` (rows whose employer-
+    reported posting date moved since the last crawl, was / now; say so and quote both) and
+    `counts_note` on what the counts mean.
     """
     _await_index()
 
@@ -836,7 +845,8 @@ def read_board(url: str, location: str | None = None, title: list[str] | None = 
         location: only postings whose location text contains this, in either language
             (香港 = Hong Kong = HK, 广州 reaches 天河区).
         title: words in the job title, any match ("hr" reaches HR, HRBP, recruiter, talent
-            acquisition); the filter for roles no skill tag names.
+            acquisition; "recruit" or "招聘" reach recruiting titles only); the filter for
+            roles no skill tag names.
         limit / offset: page through `total_matching` (newest posting date first, undated last).
         ats_job_id: one posting's id from an earlier read; returns it alone with the full text.
     """
