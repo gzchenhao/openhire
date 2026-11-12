@@ -357,7 +357,7 @@ My résumé stays on my machine; never send it to any server. I apply by clickin
 </div>
 
 <hr>
-<p class="dim">步骤不对，<a href="https://github.com/gzchenhao/openhire/issues/new?template=checklist_feedback.yml">在这里反馈</a>（不收个人信息）。<a href="https://github.com/gzchenhao/openhire/blob/main/docs/PRIVACY.md">隐私说明</a>。数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
+<p class="dim">步骤不对，<a href="https://github.com/gzchenhao/openhire/issues/new?template=checklist_feedback.yml">在这里反馈</a>（不收个人信息）。<a href="https://github.com/gzchenhao/openhire/blob/main/docs/PRIVACY.md">隐私说明</a>。复制按钮每点一次，只数一下是哪个助手的那段，不记任何个人信息。The copy button counts one click per assistant, and nothing about you.数据有误或想更正贵公司的岗位状态？<a href="https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml">雇主认领入口</a>，免费，也可以直接要求我们把贵公司从索引中移除。</p>
 
 <script>
 (function(){
@@ -400,13 +400,21 @@ My résumé stays on my machine; never send it to any server. I apply by clickin
     var b=ev.target.closest?ev.target.closest("button"):null;
     if(b&&b.getAttribute("data-client")){pick(b.getAttribute("data-client"));}
   });}
+  // One anonymous count per successful copy: which assistant's block, nothing else (no
+  // address, no cookie, no time finer than the day). docs/PRIVACY.md section 3.
+  function count(pre){
+    try{
+      var sec=pre.closest("[data-client]");var k=sec?sec.getAttribute("data-client"):"other";
+      if(navigator.sendBeacon){navigator.sendBeacon("https://openhire-vlny.onrender.com/c/copy?k="+encodeURIComponent(k));}
+    }catch(e){}
+  }
   if(navigator.clipboard){
     var pres=document.querySelectorAll("pre");
     for(var m=0;m<pres.length;m++){(function(pre){
       var btn=document.createElement("button");btn.type="button";btn.className="copy";btn.textContent="复制 · copy";
       btn.addEventListener("click",function(){
         var code=pre.querySelector("code");
-        navigator.clipboard.writeText(code?code.textContent:pre.textContent).then(function(){btn.textContent="已复制 · copied";setTimeout(function(){btn.textContent="复制 · copy";},1500);},function(){btn.textContent="复制不了，请手动选中 · select it by hand";setTimeout(function(){btn.textContent="复制 · copy";},3000);});
+        navigator.clipboard.writeText(code?code.textContent:pre.textContent).then(function(){count(pre);btn.textContent="已复制 · copied";setTimeout(function(){btn.textContent="复制 · copy";},1500);},function(){btn.textContent="复制不了，请手动选中 · select it by hand";setTimeout(function(){btn.textContent="复制 · copy";},3000);});
       });
       pre.appendChild(btn);
     })(pres[m]);}

@@ -102,9 +102,33 @@ def expand_skill(tag: str) -> set[str]:
     return {n, *(normalize_skill(a) for a in _SKILL_ALIASES.get(n, ()))}
 
 
-def match_quality(requested_skills: list[str], job_skills: list[str]) -> float:
-    """Fraction of requested skills the job matches (intersection / requested).
+# A requested skill named in the job TITLE is the job; one that only sits in the extracted
+# skill tags may be a side duty ("Motion Planning Engineer" with "perception" among twelve
+# tags). Before 2026-11-12 both scored 1.0 and freshness alone decided, so planning and QA
+# roles topped perception searches (persona nights 10-30 to 11-09). Leader approved the
+# weighting on 11-12. Still a pure function of the posting's own text: no paid input.
+TAG_ONLY_WEIGHT = 0.6
 
+
+def _in_title(aliases: set[str], title: str) -> bool:
+    t = normalize_skill(title)
+    for a in aliases:
+        if not a:
+            continue
+        if re.search(r"[^\x00-\x7f]", a):
+            if a in t:
+                return True
+        elif re.search(r"(?<![a-z0-9])" + re.escape(a) + r"(?![a-z0-9])", t):
+            return True
+    return False
+
+
+def match_quality(requested_skills: list[str], job_skills: list[str], title: str | None = None) -> float:
+    """How well the job matches the requested skills, 0 to 1.
+
+    Each requested skill scores 1.0 when the job title names it (or an alias), TAG_ONLY_WEIGHT
+    when it appears only in the job's skill tags, 0 otherwise; the result is the average.
+    Without a title (older callers) a tag hit scores 1.0, as before.
     With no requested skills, match is neutral (1.0) so ranking falls back to freshness.
     """
     if not requested_skills:
@@ -112,7 +136,13 @@ def match_quality(requested_skills: list[str], job_skills: list[str]) -> float:
     # Dedupe on the folded form so "BEV" and "bev" are one request, not two.
     req = {normalize_skill(s): expand_skill(s) for s in requested_skills}
     have = {normalize_skill(s) for s in job_skills}
-    return sum(1 for aliases in req.values() if aliases & have) / len(req)
+    total = 0.0
+    for aliases in req.values():
+        if title and _in_title(aliases, title):
+            total += 1.0
+        elif aliases & have:
+            total += TAG_ONLY_WEIGHT if title else 1.0
+    return total / len(req)
 
 
 def freshness(anchor: dt.datetime, now: dt.datetime | None = None) -> float:

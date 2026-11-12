@@ -114,7 +114,8 @@ def test_ranking_prefers_higher_match(session):
     # rust+k8s: acme:1 matches both (1.0), acme:3 & beta:4 match one (0.5) → acme:1 first.
     res = service.search_jobs(session, skills=["rust", "k8s"], remote=True, now=NOW)
     assert res[0]["job_id"] == "acme:1"
-    assert res[0]["match_quality"] == pytest.approx(1.0)
+    # Both skills only in the tags, not the title: TAG_ONLY_WEIGHT each (weighting from 11-12).
+    assert res[0]["match_quality"] == pytest.approx(0.6)
 
 
 # --- get_company_info ---------------------------------------------------------
@@ -297,7 +298,7 @@ def test_match_quality_is_scored_against_what_the_ranker_used(session):
     assert rows
     for r in rows:
         assert r["matched_skills"] == ["rust"]
-        assert r["match_quality"] == 1.0  # genuinely earned now, not the empty-request default
+        assert r["match_quality"] in (0.6, 1.0)  # earned (tag 0.6, title 1.0), not the empty-request default
 
     # And a row matching one of two requested skills must not read as a perfect match.
     partial = service.search_jobs(session, skills=["rust", "cobol"], now=NOW)

@@ -73,7 +73,15 @@ refuses to install any snapshot whose user-state tables are non-empty.
   instead of from your machine, with private address space refused. Render, as the
   platform, sees the connection as it sees any web request. If any of this matters to you,
   run OpenHire locally: there, nothing of a search leaves your machine.
-- We do not use analytics, tracking pixels, advertising SDKs or telemetry of any kind.
+- **One anonymous counter** (2026-11-12): on the connect guide (`/connect` and its copy on
+  GitHub Pages), each successful click of a copy button sends one request to the hosted
+  endpoint naming which assistant's block was copied (chatgpt, claude-desktop, agent, doubao,
+  deepseek, vscode or other). The host adds one to that day's count and stores nothing else:
+  no address, cookie, user agent or time finer than the day. The totals are public at
+  `/c/counts`. It exists so the maintainer can tell whether anyone connects after reading an
+  article. It runs nowhere else: not in the MCP server, not in a local install.
+- Apart from that counter, we do not use analytics, tracking pixels, advertising SDKs or
+  telemetry of any kind.
 - We never sell, share or transfer data to third parties. There is no data to sell.
 
 ## 4. Applications

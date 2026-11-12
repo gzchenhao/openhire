@@ -160,6 +160,13 @@ def main(argv: list[str]) -> int:
         problems = check(argv[1], argv[2] if len(argv) > 2 else None)
     for p in problems:
         print(p)
+    try:
+        # The anonymous copy counts (docs/PRIVACY.md section 3), printed so they outlive the
+        # free host's restarts in the Actions log. Never a reason to fail the check.
+        with urllib.request.urlopen(argv[1].rstrip("/") + "/c/counts", timeout=30) as r:
+            print("copy counts:", r.read().decode("utf-8")[:2000])
+    except Exception as e:  # noqa: BLE001
+        print(f"copy counts: not read ({e})")
     return 1 if problems else 0
 
 

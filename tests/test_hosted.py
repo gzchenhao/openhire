@@ -373,3 +373,12 @@ def test_check_company_page_is_served_pure_and_identical_to_docs(client):
         assert banned not in page, banned
     assert "gsxt.gov.cn" in page and "beian.miit.gov.cn" in page and "cyberdefender.hk" in page
     assert page.count("github.com/gzchenhao/openhire/issues") == 1, "the footer carries the feedback link only"
+
+
+def test_copy_counter_routes(client, tmp_path, monkeypatch):
+    from openhire import config
+    monkeypatch.setattr(config, "CLIENT_HOME", tmp_path)
+    assert client.post("/c/copy?k=deepseek").status_code == 204
+    assert client.post("/c/copy?k=nobody").status_code == 204  # dropped, same answer
+    counts = client.get("/c/counts").json()
+    assert list(counts.values()) == [{"deepseek": 1}]

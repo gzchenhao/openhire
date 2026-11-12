@@ -410,6 +410,17 @@ def build_app(mcp, per_ip: int | None = None, total: int | None = None):
 
             return HTMLResponse(render())
 
+        @mcp.custom_route("/c/copy", methods=["POST"], include_in_schema=False)
+        async def _copy(request: Request):
+            from starlette.responses import Response
+
+            count_copy(request.query_params.get("k"))
+            return Response(status_code=204, headers={"Access-Control-Allow-Origin": "*"})
+
+        @mcp.custom_route("/c/counts", methods=["GET"], include_in_schema=False)
+        async def _copy_counts(_: Request):
+            return JSONResponse(copy_counts(), headers={"Access-Control-Allow-Origin": "*"})
+
         _ROUTES_REGISTERED = True
 
     if not (mcp._mcp_server.instructions or "").endswith(NOTICE):
@@ -442,3 +453,41 @@ def serve(mcp, host: str, port: int, snapshot_url: str, db_path: str,
     # access_log off: request lines carry client addresses, and the host keeps no log of use.
     uvicorn.run(app, host=host, port=port, log_level="info", access_log=False,
                 proxy_headers=True, forwarded_allow_ips="*")
+
+
+# --- anonymous copy counter (2026-11-12, leader approved; docs/PRIVACY.md section 3) -------
+# The connect guide's copy button sends one beacon per successful copy: which assistant's
+# block, nothing else. Stored as {day: {client: n}}; no address, cookie, user agent or time
+# finer than the day. It is how we can tell whether a Zhihu answer led anyone to connect.
+COPY_CLIENTS = frozenset({"chatgpt", "claude-desktop", "agent", "doubao", "deepseek", "vscode", "other"})
+_COPY_LOCK = threading.Lock()
+
+
+def _copy_counts_path() -> Path:
+    from . import config
+    return Path(config.CLIENT_HOME) / "copy_counts.json"
+
+
+def count_copy(client: str | None, today: dt.date | None = None) -> bool:
+    """Add one to today's count for this assistant. Unknown names are dropped, not stored."""
+    if client not in COPY_CLIENTS:
+        return False
+    day = (today or dt.datetime.now(dt.timezone.utc).date()).isoformat()
+    path = _copy_counts_path()
+    with _COPY_LOCK:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+        data.setdefault(day, {})
+        data[day][client] = data[day].get(client, 0) + 1
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, sort_keys=True), encoding="utf-8")
+    return True
+
+
+def copy_counts() -> dict:
+    try:
+        return json.loads(_copy_counts_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}

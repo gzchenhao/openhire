@@ -72,7 +72,7 @@ def test_any_spelling_finds_every_row(session, query):
     rows = service.search_jobs(session, [query], None, None, 10, now=NOW)
     assert len(rows) == 3, f"{query!r} should reach all three spellings"
     for r in rows:
-        assert r["match_quality"] == 1.0
+        assert r["match_quality"] > 0  # a tag hit (0.6), or 1.0 if the title names it
         # Reported in the ROW's own spelling: that is what the posting actually says.
         assert r["matched_skills"], "a matched row must name the tag it matched on"
 

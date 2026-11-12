@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.64 · 2026-11-10；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.65 · 2026-11-12；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.65（2026-11-12，云端会话，`reports/145`）：** 领导批：**match_quality 加权**（查询技能在岗位标题里 1.0、只在标签里 0.6，`ranking.TAG_ONLY_WEIGHT`；仍是两输入纯函数）；**连接向导复制按钮匿名计数**（`/c/copy?k=` 只收七个助手名、按日累加，`/c/counts` 公开，每日体检打进日志；隐私说明 §3 新增一条，**这是唯一的计数，别处不许加**）。模拟求职者测试续跑：新赠送额度 US$95.44 到 12-12，领导交给另一个 agent 跑（私库 `persona-test-prompt-2026-11-12.md`，累计上限 186），日读定时任务保留。1173 tests。
 - **v0.8.64（2026-11-10，云端会话，`reports/143`）：** 模拟求职者 11-07、11-09 两晚三次（累计约 US$92.25，**额度到顶，测试结束**）5 条 high 全修：**HR 同义词分层**（泛称 hr / 人力 / 人事覆盖全部；招聘 / recruit / sourcer 只到招聘岗；hrbp / people partner 只到 BP 岗，`filters_applied.title_matches_any` 回显）；**title_exclude 改原文子串**、不展开同义词；**`watch_intent(fingerprint="new")` 服务器生成指纹**（模型编的「随机」指纹三次运行撞号），撞号提示不再说「多半是你自己的」；**refresh_index 带 `posting_dates_changed` 与 `new`**（Moka 发布日被雇主改了 10 天原来不报）；**Preferred 小标题下的年限、学历不算要求**。另修：check_watches 顶层 baseline_count 改为各盯岗总数之和；「机器人力控」不算 HR。1168 tests。
 - **v0.8.63（2026-11-07，云端会话，`reports/142`）：** 模拟求职者 11-06 夜（首次用公开快照；US$10.68，累计 60.02，82 条：**high 0**、medium 33）。修：中文职能经理不提示 manager_title_unclear（招聘经理仍提示）、incident / vendor manager；**存量 role_family=hr 的营销标题读取时改 marketing**（`effective_role_family`）；**盯岗键 `remote_scope`**；RDAP / 首页连不上的提示附 ICANN 与工信部入口。体检脚本先等 /healthz 就绪、5xx 重试一次。issue #3（JobsPipe 互链）婉拒关闭。待领导定：match_quality 加权。1160 tests。
 - **v0.8.62（2026-11-06，云端会话，`reports/141`）：** 模拟求职者 11-05 夜（US$11.05，累计 49.35，88 条：high 2、medium 34）。**根因：夜测一直用本机一周前的旧索引**，`persona_test.py` 改为默认现下载公开快照（`--index public`），退出码 2 只在累计到顶时返回。修：Moka 校招缺站点编号的报错说清楚；TLM 算管理岗；Program / Product Manager 不提示 manager_title_unclear；应届生筛选排除社招轨；envelope 带 `entry_level_unstated`；空指纹提示；盯岗没设级别提醒先问；首次拉取每雷达 10 条（`WATCH_PAGE`）并补回 requirements / date_source；read_board 读已收录自建站时指向 search_jobs。1155 tests。

@@ -182,3 +182,15 @@ def test_an_ats_that_echoes_posted_at_reports_unknown_not_untouched():
     real = service.job_posting(_job(now - dt.timedelta(days=13)), company, [], now)
     assert real["days_since_update"] == 13
     assert "update_signal" not in real
+
+
+def test_a_skill_in_the_title_outranks_a_skill_only_in_the_tags():
+    # Leader approved 2026-11-12: a perception search should put the perception engineer
+    # above the planning engineer whose tags merely mention perception.
+    from openhire.pipeline.ranking import TAG_ONLY_WEIGHT
+    tags = ["perception", "planning", "c++"]
+    assert match_quality(["perception"], tags, "Perception Engineer") == pytest.approx(1.0)
+    assert match_quality(["perception"], tags, "Motion Planning Engineer") == pytest.approx(TAG_ONLY_WEIGHT)
+    assert match_quality(["感知"], ["perception"], "感知算法工程师") == pytest.approx(1.0)
+    assert match_quality(["perception"], tags) == pytest.approx(1.0), "no title: old behaviour"
+    assert match_quality(["perception"], [], "Planning Engineer") == 0.0

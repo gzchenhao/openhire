@@ -749,7 +749,7 @@ def _sector_of(company_id: str | None) -> str | None:
 
 def job_posting(job: Job, company: Company | None, requested_skills: list[str], now: dt.datetime) -> dict:
     """schema.org/JobPosting + the five OpenHire fields (protocol contract)."""
-    mq = match_quality(requested_skills, job.skills)
+    mq = match_quality(requested_skills, job.skills, job.title)
     fr = freshness(_freshness_anchor(job), now)
     # datePosted is the employer's REAL posting date (ATS), not our crawl date; fall back
     # to first_seen_at only when the ATS exposed no date. days_open = age of the posting,
@@ -1095,7 +1095,7 @@ def _filter_and_rank(
                     continue
         if entry_level and not is_entry_level(job.title, job.description_raw):
             continue
-        mq = match_quality(list(skills or []) or list(required_skills or []), job.skills)
+        mq = match_quality(list(skills or []) or list(required_skills or []), job.skills, job.title)
         fr = freshness(_freshness_anchor(job), now)
         scored.append((job, rank_score(mq, fr)))
 
