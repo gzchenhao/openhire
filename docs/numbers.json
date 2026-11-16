@@ -1,63 +1,63 @@
 {
-  "generated_at": "2026-11-10T00:51:56.983051+00:00",
+  "generated_at": "2026-11-16T16:56:22.158178+00:00",
   "companies_in_index": 218,
-  "employers_with_live_postings": 215,
-  "live_postings": 28771,
+  "employers_with_live_postings": 213,
+  "live_postings": 27933,
   "postings_unverified_over_30d": 0,
-  "postings_with_employer_posting_date": 27848,
-  "median_days_open": 69,
-  "pct_open_over_90d": 42.8,
-  "pct_open_over_180d": 27.1,
-  "pct_open_over_365d": 13.0,
-  "ghost_hi_postings": 5848,
-  "ghost_hi_with_last_touched_reported": 2255,
-  "pct_ghost_hi_touched_within_30d": 72,
-  "live_postings_open_to_new_grads": 1071,
-  "live_postings_with_employer_published_pay": 14654,
+  "postings_with_employer_posting_date": 27004,
+  "median_days_open": 68,
+  "pct_open_over_90d": 42.7,
+  "pct_open_over_180d": 27.6,
+  "pct_open_over_365d": 13.3,
+  "ghost_hi_postings": 5808,
+  "ghost_hi_with_last_touched_reported": 2280,
+  "pct_ghost_hi_touched_within_30d": 80,
+  "live_postings_open_to_new_grads": 1058,
+  "live_postings_with_employer_published_pay": 14210,
   "live_postings_with_employer_published_pay_by_currency": {
-    "USD": 12591,
-    "CNY": 1539,
-    "GBP": 192,
-    "EUR": 166,
-    "CAD": 96,
-    "SGD": 13,
+    "USD": 12176,
+    "CNY": 1519,
+    "GBP": 195,
+    "EUR": 172,
+    "CAD": 79,
+    "SGD": 14,
     "INR": 10,
     "BRL": 8,
-    "AUD": 8,
+    "AUD": 7,
     "MXN": 5,
-    "PLN": 4,
-    "AED": 4,
+    "SAR": 5,
     "SEK": 4,
-    "SAR": 4,
     "TWD": 3,
+    "AED": 3,
     "JPY": 3,
+    "PLN": 3,
     "NOK": 1,
     "HUF": 1,
     "PHP": 1,
     "ILS": 1
   },
   "new_postings_by_sector_30d": {
-    "window_end": "2026-11-09",
+    "window_end": "2026-11-16",
     "by_sector": {
       "autonomous_driving": {
-        "last_30d": 1697,
-        "prior_30d": 1746,
-        "change_pct": -3
+        "last_30d": 1631,
+        "prior_30d": 1759,
+        "change_pct": -7
       },
       "embodied_ai": {
-        "last_30d": 567,
-        "prior_30d": 444,
-        "change_pct": 28
+        "last_30d": 527,
+        "prior_30d": 486,
+        "change_pct": 8
       },
       "ai_infra": {
-        "last_30d": 4337,
-        "prior_30d": 2120,
-        "change_pct": 105
+        "last_30d": 4209,
+        "prior_30d": 2291,
+        "change_pct": 84
       },
       "other": {
-        "last_30d": 2472,
-        "prior_30d": 2433,
-        "change_pct": 2
+        "last_30d": 2563,
+        "prior_30d": 2342,
+        "change_pct": 9
       }
     }
   }
