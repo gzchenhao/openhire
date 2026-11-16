@@ -440,6 +440,15 @@ def search_jobs(
                     "headline": {"zh": f"共 {matched} 条，本页 {len(rows)} 条" + ("，还有下一页。" if nxt < matched else "，已到底。"),
                                  "en": f"{matched} in all, {len(rows)} on this page" + ("; more to fetch." if nxt < matched else "; that is all.")},
                 }
+                # The postings left out because they say nothing about new graduates belong in the
+                # sentence the assistant reads first (persona night 2026-11-15: "1 in all" read as
+                # "only one job in Beijing" while 26 more never said either way).
+                unstated = total.get("entry_level_unstated") or 0
+                if unstated:
+                    env["headline"]["zh"] += (f"另有 {unstated} 条没写收不收应届，没算进来；想一起看，去掉 entry_level，"
+                                              "改用 seniority=[\"intern\",\"junior\",\"unknown\"]。")
+                    env["headline"]["en"] += (f" {unstated} more say nothing about new graduates and are left out; to include "
+                                              "them, drop entry_level and use seniority=[\"intern\",\"junior\",\"unknown\"].")
                 unknown, suggestions = service.skill_diagnostics(s, skills, required_skills)
                 if unknown:
                     env.update(unknown_skills=unknown, suggestions=suggestions)
@@ -568,7 +577,7 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     portal (Feishu, a job site) is refused with the reason.
 
     Returns { watch_id, status, fingerprint, matching_now, what_happens_next, existing_watches,
-    fingerprint_notice }. `matching_now` is how many postings match today (all already live,
+    fingerprint_notice, and existing_watch_list (earlier watches under the same key) }. `matching_now` is how many postings match today (all already live,
     none new; null for a board watch); `what_happens_next` is the sentence to relay: OpenHire
     does not push, the user asks you to check, the first check is a baseline, a scheduled
     reminder is a recurring task in the assistant. `existing_watches` > 0 means this

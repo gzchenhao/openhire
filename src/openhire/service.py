@@ -2078,11 +2078,23 @@ def watch_intent(
             )
         clean["company"] = matched[0].name
         clean["company_ids"] = [matched[0].id]
-    existing = session.scalar(
-        select(func.count()).select_from(Watch).where(
-            Watch.fingerprint == fingerprint, Watch.active.is_(True)
-        )
-    ) or 0
+    prior = session.execute(
+        select(Watch).where(Watch.fingerprint == fingerprint, Watch.active.is_(True))
+        .order_by(Watch.created_at)
+    ).scalars().all()
+    existing = len(prior)
+    # The earlier watches under this key, briefly, so the assistant can recognise its own
+    # instead of guessing (persona night 2026-11-15: told only "2 other watches", it deleted
+    # the watch the user had just asked for). Only filter keys, never anything personal.
+    existing_list = [
+        {"watch_id": w.watch_id,
+         "created_at": _aware(w.created_at).isoformat() if w.created_at else None,
+         "filters": {k: v for k, v in (w.filters or {}).items() if not k.startswith("_") and k != "company_ids"}}
+        for w in prior[:10]
+    ]
+    # A key the server issued ("new") is 4 x 6 random hex digits: a stranger cannot hold the
+    # same one, so watches already under it are the caller's own.
+    issued_key = minted or bool(re.fullmatch(r"#[0-9a-f]{6}(-[0-9a-f]{6}){3}", (fingerprint or "").strip()))
     # What the watch matches right now, so the assistant can say "N postings match today,
     # all of them already live" instead of letting the first check_watches pull read as
     # "N new jobs appeared" (a tester, reports/098). A board watch is read live on each
@@ -2161,6 +2173,7 @@ def watch_intent(
         # not PII (there is none to leak) but it is someone else's intent. Say when the
         # tag was already in use so the client can pick a longer one.
         "existing_watches": int(existing),
+        **({"existing_watch_list": existing_list} if existing else {}),
         **({"short_fingerprint": True} if short else {}),
         "fingerprint_notice": (
             "Persist this fingerprint yourself — the server cannot recover it. Tell the user it is "
@@ -2180,13 +2193,19 @@ def watch_intent(
                 if existing and short else ""
             )
             + (
-                f" This fingerprint already had {existing} other active watch(es). Yours only if "
-                "you registered them earlier with this exact fingerprint (in this conversation, or "
-                "it is the key the user saved). Otherwise it belongs to someone else: models tend "
-                "to invent the same \"random\" strings. Then delete this watch with "
-                "manage_watch and register again with fingerprint \"new\" (the server picks a "
-                "random one)."
-                if existing and not short else ""
+                f" This key already had {existing} other active watch(es), listed in existing_watch_list. "
+                "It is a server-issued random key, so they are the user's own (registered earlier with it): "
+                "keep this watch and carry on; check_watches returns them all together."
+                if existing and not short and issued_key else ""
+            )
+            + (
+                f" This fingerprint already had {existing} other active watch(es), listed in "
+                "existing_watch_list. If you registered them earlier in this conversation or the user "
+                "gave you this key, they are the user's own: keep this watch and carry on. Only if none "
+                "of them is familiar and you made the key up yourself, ask the user before changing "
+                "anything; do not delete a watch the user asked for. For a fresh key, register with "
+                "fingerprint \"new\"."
+                if existing and not short and not issued_key else ""
             )
         ),
         **({"fingerprint_minted": True} if minted else {}),

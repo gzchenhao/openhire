@@ -93,3 +93,15 @@ def test_top_level_baseline_count_is_the_sum_of_the_watches(db):
     service.watch_intent(db, "#sum-k2p7-x8q1-z9", {"title": ["招聘"]}, now=NOW)
     out = service.check_watches(db, "#sum-k2p7-x8q1-z9", now=NOW)
     assert out["baseline_count"] == sum(r["baseline_count"] for r in out["results"]) == 5 + 3
+
+
+def test_watches_under_a_server_issued_key_are_called_the_users_own(db):
+    # Persona night 2026-11-15: three watches in a row under one "new" key; the generic
+    # collision notice made the assistant delete the one the user asked for.
+    a = service.watch_intent(db, "new", {"title": ["招聘"]}, now=NOW)
+    key = a["fingerprint"]
+    b = service.watch_intent(db, key, {"title": ["hr"]}, now=NOW)
+    assert b["existing_watches"] == 1
+    assert b["existing_watch_list"][0]["watch_id"] == a["watch_id"]
+    assert "server-issued random key" in b["fingerprint_notice"]
+    assert "delete" not in b["fingerprint_notice"]

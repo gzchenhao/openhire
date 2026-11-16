@@ -89,3 +89,27 @@ def test_mcp_envelope(db, monkeypatch):
     page2 = ms.search_jobs(title=["perception"], limit=10, offset=10, envelope=True)
     assert page2["returned"] == 5 and page2["has_more"] is False and page2["next_offset"] is None
     assert isinstance(ms.search_jobs(title=["perception"], limit=10), list)   # default shape unchanged
+
+
+def test_envelope_headline_names_postings_that_say_nothing_about_graduates(db, monkeypatch):
+    # Persona night 2026-11-15: "1 in all" read as "only one job" while 26 more were left out.
+    from contextlib import contextmanager
+    from openhire import mcp_server as ms
+
+    @contextmanager
+    def scope():
+        yield db
+    monkeypatch.setattr(ms, "session_scope", scope)
+    monkeypatch.setattr(ms, "_await_index", lambda timeout=180.0: None)
+    monkeypatch.setattr(ms, "_preparing", lambda: None)
+    real = service.search_jobs
+
+    def fake(*a, **kw):
+        rows = real(*a, **kw)
+        if kw.get("total_out") is not None:
+            kw["total_out"]["entry_level_unstated"] = 26
+        return rows
+    monkeypatch.setattr(service, "search_jobs", fake)
+    env = ms.search_jobs(title=["perception"], limit=10, envelope=True)
+    assert "另有 26 条没写收不收应届" in env["headline"]["zh"]
+    assert "seniority" in env["headline"]["en"]

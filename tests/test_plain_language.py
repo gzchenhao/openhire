@@ -159,7 +159,9 @@ def test_persona_round_2026_10_29_fixes(db):
     again = service.watch_intent(db, "#persona-k2p7x8q1", {"title": ["slam"]}, now=NOW)
     # 11-09: no longer presumed the caller's own (models repeat "random" strings); the
     # notice says how to tell and how to get a fresh one, without the short-tag wording.
-    assert "Yours only if you registered them earlier" in again["fingerprint_notice"]
+    # 11-16: it lists the earlier watches and says not to delete one the user asked for.
+    assert "do not delete a watch the user asked for" in again["fingerprint_notice"]
+    assert again["existing_watch_list"][0]["filters"] == {"title": ["perception"]}
     assert "another client chose" not in again["fingerprint_notice"]
 
 
