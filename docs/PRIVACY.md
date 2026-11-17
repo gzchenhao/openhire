@@ -68,7 +68,8 @@ refuses to install any snapshot whose user-state tables are non-empty.
   tools take (search filters, a company name or domain, a board URL, your anonymous
   fingerprint) and nothing else; it keeps no log of queries (access logging is off); watches
   and application records are stored in its index keyed by your fingerprint, carried over when
-  the index is refreshed, and lost if the host is rebuilt; requests are rate-limited per
+  the index is refreshed, and deleted whenever the host is redeployed, which happens with each
+  OpenHire release (often several times a week); requests are rate-limited per
   address. `check_employer` and `read_board` make their outbound requests from that host
   instead of from your machine, with private address space refused. Render, as the
   platform, sees the connection as it sees any web request. If any of this matters to you,

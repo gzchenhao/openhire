@@ -618,6 +618,9 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     reminder is a recurring task in the assistant. `existing_watches` > 0 means this
     fingerprint was already in use; unless you registered those watches yourself with it,
     they are a stranger's: delete this watch and register again with fingerprint "new".
+
+    On the hosted endpoint (results carry `hosted_reset_note`) these records are deleted at every
+    redeploy of the host; relay that note once, and keep the user's conditions so they can redo it.
     """
     _await_index()
     with session_scope() as s:
@@ -630,7 +633,7 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
         # counted on an index that is not here yet.
         out["matching_now"] = None
         out.update(preparing)
-    return out
+    return _with_reset_note(out)
 
 
 @mcp.tool(
@@ -689,6 +692,14 @@ def refresh_index(company: str) -> dict:
 def _hosted_mode() -> bool:
     from . import hosted
     return hosted.is_hosted()
+
+
+def _with_reset_note(out):
+    """On the hosted endpoint, say on every watch / application result that a redeploy wipes them."""
+    if isinstance(out, dict) and _hosted_mode():
+        from . import hosted
+        out["hosted_reset_note"] = hosted.STATE_RESET_NOTE
+    return out
 
 
 @mcp.tool(
@@ -1004,6 +1015,9 @@ def check_watches(fingerprint: str) -> dict:
 
     Start your answer with the `summary` sentence (top level and per watch): it already
     says whether this is the first-pull baseline or an increment, and how many.
+
+    On the hosted endpoint (results carry `hosted_reset_note`) these records are deleted at every
+    redeploy of the host; relay that note once, and keep the user's conditions so they can redo it.
     """
     _await_index()
     if (preparing := _preparing()):
@@ -1013,7 +1027,7 @@ def check_watches(fingerprint: str) -> dict:
                 "results": [], **preparing}
     with session_scope() as s:
         try:
-            return service.check_watches(s, fingerprint)
+            return _with_reset_note(service.check_watches(s, fingerprint))
         except OpenHireError as e:
             return e.as_dict()
 
@@ -1036,7 +1050,7 @@ def manage_watch(fingerprint: str, action: str, watch_id: str | None = None,
     _await_index()
     with session_scope() as s:
         try:
-            return service.manage_watch(s, fingerprint, action, watch_id=watch_id, filters=filters)
+            return _with_reset_note(service.manage_watch(s, fingerprint, action, watch_id=watch_id, filters=filters))
         except OpenHireError as e:
             return e.as_dict()
 
@@ -1108,13 +1122,16 @@ def check_applications(
         fingerprint: the user's anonymous fingerprint (the same one their watches use).
         add_job_ids: job_ids (from search_jobs) the user says they applied to.
         remove_job_ids: job_ids to stop following.
+
+    On the hosted endpoint (results carry `hosted_reset_note`) these records are deleted at every
+    redeploy of the host; relay that note once, and keep the user's conditions so they can redo it.
     """
     _await_index()
     if (preparing := _preparing()):
         return {"fingerprint": fingerprint, "applications": None, **preparing}
     with session_scope() as s:
         try:
-            return service.check_applications(s, fingerprint, add_job_ids, remove_job_ids)
+            return _with_reset_note(service.check_applications(s, fingerprint, add_job_ids, remove_job_ids))
         except OpenHireError as e:
             return e.as_dict()
 

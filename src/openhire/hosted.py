@@ -49,9 +49,24 @@ NOTICE = (
     "exactly what the tools take: search filters, a company name or domain, a board URL, the "
     "anonymous fingerprint. No résumé, name, email or phone, ever. The host keeps no log of "
     "queries. Watches and application records are stored in this host's index, keyed by the "
-    "fingerprint, and carried over across index refreshes; for a watch that lives on the user's "
-    "own disk, run OpenHire locally (`uvx openhire serve`). Privacy terms: " + PRIVACY_URL
+    "fingerprint, and carried over across weekly index refreshes, but EVERY REDEPLOY OF THIS HOST "
+    "DELETES THEM, and the host is redeployed with each OpenHire release (often several times a "
+    "week). Tell the user so before you register a watch, suggest they keep a copy of the "
+    "conditions to register it again, and when a check finds no watch, say it was most likely "
+    "reset by an update, not that they never set one. For a watch that lasts, run OpenHire locally "
+    "(`uvx openhire serve`). Privacy terms: " + PRIVACY_URL
 )
+
+
+# Put on every watch / application result in hosted mode (Howard, 2026-11-17): Render's free
+# plan has no persistent disk, so each redeploy (every release) starts from an empty user state.
+STATE_RESET_NOTE = {
+    "zh": "托管版提醒：盯岗和投递记录存在这台公共服务器上，OpenHire 每次发版更新服务器都会清空（常常一周几次）。"
+          "请把条件记下来，被清空后重新登记一次；想长期保留，就在自己电脑上安装 OpenHire。",
+    "en": "Hosted endpoint: watches and application records live on this public server and are deleted "
+          "whenever it is updated for an OpenHire release (often several times a week). Keep the conditions "
+          "to register again after a reset; for records that last, install OpenHire on your own computer.",
+}
 
 
 def is_hosted() -> bool:
@@ -246,7 +261,7 @@ def landing_html() -> str:
 <h2>What this host receives</h2>
 <ul>
 <li><p>Only the tool arguments: search filters, a company name or domain, a careers page address, an anonymous fingerprint. No résumé, name, email or phone, ever, by protocol.</p></li>
-<li><p>No query log. Watches and application records stay on this host under the fingerprint. A rebuild of the host deletes them. For a durable watch, run OpenHire on your own computer.</p></li>
+<li><p>No query log. Watches and application records stay on this host under the fingerprint. Every update of this host deletes them, and it is updated with each release, often several times a week. For a watch that lasts, run OpenHire on your own computer.</p></li>
 <li><p>Each address has a rate limit. The index is the public weekly snapshot.</p></li>
 <li><p>Full terms: <a href="{e(PRIVACY_URL)}">privacy policy</a>. Source and numbers: <a href="{e(REPO_URL)}">GitHub</a>.</p></li>
 </ul>
