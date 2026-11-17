@@ -1273,6 +1273,70 @@ def verified_cutoff(session: Session) -> dt.datetime | None:
     return _aware(newest) - dt.timedelta(days=STALE_AFTER_DAYS)
 
 
+GET_JOB_MAX_CHARS = 20_000
+
+
+def get_job(session: Session, job_id: str, now: dt.datetime | None = None,
+            max_chars: int = 8_000, offset: int = 0) -> dict:
+    """One posting by its job_id, with the description the index holds (reports/147: a product
+    manager asked whether a 理想 posting was really product work; the text was in the index and
+    no tool would hand it over, so the assistant said it could not read it).
+
+    The row is the same shape search_jobs returns, plus `description`: the employer's own text
+    as the index last read it, `max_chars` at a time from `offset`. `description_total_chars`
+    and `description_next_offset` (null at the end) page through a long one. `status` says
+    whether the posting is live, closed (`delisted_at`), or not confirmed by the employer's
+    system in 30 days; a closed one is still returned so the user can read what they applied
+    to, never as an opening. Read-only: no fetch, no write, nothing about the user."""
+    _assert_anonymous(job_id)
+    now = _now(now)
+    if not isinstance(max_chars, int) or not 1 <= max_chars <= GET_JOB_MAX_CHARS:
+        raise OpenHireError("ERR_BAD_PAGE", f"max_chars must be 1 to {GET_JOB_MAX_CHARS}.")
+    offset = max(0, int(offset or 0))
+    job = session.get(Job, (job_id or "").strip())
+    if job is None:
+        raise OpenHireError(
+            "ERR_JOB_NOT_FOUND",
+            f"No job with id '{job_id}'. Take job_id from a search_jobs, check_watches or "
+            "check_applications result; read_board rows are not in the index.")
+    company = session.get(Company, job.company_id)
+    row = job_posting(job, company, [], now)
+    text = job.description_raw or ""
+    piece = text[offset:offset + max_chars]
+    end = offset + len(piece)
+    cutoff = verified_cutoff(session)
+    verified = _aware(job.verified_at) if job.verified_at is not None else None
+    if job.delisted_at is not None:
+        status = "closed"
+        words = {"zh": f"这条已于 {_aware(job.delisted_at).date().isoformat()} 从雇主系统下架，不要当作在招岗位推荐。",
+                 "en": f"Taken down from the employer's system on {_aware(job.delisted_at).date().isoformat()}; do not offer it as an opening."}
+    elif cutoff is not None and verified is not None and verified < cutoff:
+        status = "not_verified_recently"
+        words = {"zh": "雇主系统超过 30 天没返回过这条，现在还在不在说不准；投之前用 refresh_index 现读一次。",
+                 "en": "The employer's system has not returned this posting in over 30 days; run refresh_index before applying."}
+    else:
+        status = "live"
+        words = None
+    # No query here, so no match score: a 0 would read as "a poor fit".
+    for k in ("rank_score", "match_quality", "matched_skills"):
+        row.pop(k, None)
+    out = {
+        **row,
+        "status": status,
+        **({"status_in_words": words} if words else {}),
+        "description": piece,
+        "description_offset": offset,
+        "description_total_chars": len(text),
+        "description_next_offset": end if end < len(text) else None,
+        "description_note": (
+            "The employer's own text as the index last read it (verified_at). Quote it; do not "
+            "add duties or requirements it does not state."
+            if text else
+            "The employer's system gave no description for this posting; say so, do not write one."),
+    }
+    return out
+
+
 def sector_thermometer(session: Session) -> dict:
     """New postings per sector in the 30 days up to the index's newest verification, against
     the 30 days before (reports/110: "which sector is hiring more this month" was a question

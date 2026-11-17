@@ -233,7 +233,7 @@ irm https://astral.sh/uv/install.ps1 | iex          # Windows PowerShell
 ```
 
 **On Claude Desktop you can skip even that** — download
-[`openhire-0.8.67.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
+[`openhire-0.8.68.mcpb`](https://github.com/gzchenhao/openhire/releases/latest) and
 double-click it. No terminal, no Python, no uv.
 
 **On Cursor, one click** (it still needs `uv` on your PATH): [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==)
@@ -269,7 +269,7 @@ All clients use the same MCP entry. The config below works in every MCP client a
 the package on demand — but it does need [uv](https://docs.astral.sh/uv/) present first.
 
 > **New to MCP? Two shortcuts before the config below.**
-> **Claude Desktop**: download [`openhire-0.8.67.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
+> **Claude Desktop**: download [`openhire-0.8.68.mcpb`](https://github.com/gzchenhao/openhire/releases/latest)
 > and double-click it. No terminal, no Python.
 > **Cursor** — [![Install MCP Server in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=openhire&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJvcGVuaGlyZUBsYXRlc3QiLCJzZXJ2ZSJdfQ==) (needs `uv` installed).
 > **腾讯 WorkBuddy / Cursor / Claude Code / TRAE** — paste the one-block prompt from the Quickstart
@@ -322,7 +322,7 @@ pipx install openhire     # then use "command": "ohp", "args": ["serve"] — pro
 ```
 
 `@latest` also means your tool surface can change under you without warning. Pin it when that
-matters: `"args": ["openhire==0.8.67", "serve"]`.
+matters: `"args": ["openhire==0.8.68", "serve"]`.
 
 The server **auto-downloads the public job snapshot on first run** if the index is empty, so
 `ohp bootstrap` is optional. If you ran `pipx install openhire`, `"command": "ohp"` works too.
@@ -433,6 +433,7 @@ MCP 设置即可；Cherry Studio 里是「设置 → MCP 服务器 → 添加 �
 | Tool | What it gives you |
 |------|-------------------|
 | `search_jobs` | Hard-filter the live index; every result carries `verified_at`, `datePosted`, `days_open`, `ghost_score`, `remote_scope`, `eligible_regions`, `apply_channel`. Filter by `required_skills` (AND), `role_family` (engineering, data, product, design, marketing, sales, `hr` for recruiting / HRBP / people roles, ops, other), `remote_scope`, `min_salary` + `currency`, `company`, `location` (bilingual city aliases: 香港 = Hong Kong, 广州 reaches 天河区), `title` (words in the job title, e.g. `招聘` / `recruit` — the filter for HR, finance and other roles no skill tag names) `posted_within_days` (only postings the employer published in the last N days) and `seniority` (`ic` / `management`, or intern, junior, senior, staff, lead, manager, director, unknown: the level the title names, so an engineer's search does not open with a Senior Manager). Each row also carries `seniority`, `date_source`, `dates_in_words` (the dates as one sentence, zh and en) and `check_before_apply` (what to confirm before applying, from measured facts). |
+| `get_job` | One posting by `job_id` with the employer's own description as the index holds it (paged with `max_chars` / `offset`), plus `status`: live, closed, or not seen for 30 days. Use it to answer "what does this role actually involve". 读一条岗位的职位描述全文。 |
 | `watch_intent` | Register a standing intent once — new matching jobs are waiting next time you check, even after you close the terminal. Accepts `required_skills` / `role_family` / `location` / `title` / `seniority` so sales / solutions / management roles stay out. Returns `matching_now` and `what_happens_next`: OpenHire never pushes; you ask the assistant to check, and the first check is a baseline of postings already live. |
 | `check_watches` | Pull the matches that are new since your last check (client-pull; stdio has no push). |
 | `salary_benchmark` | What employers themselves publish as pay for comparable live postings: low and high ends separately (p25 / median / p75), by currency, role family, level, years asked, sector and place; no quantiles under 20 postings. Published ranges, not offers; most Chinese postings publish none. 同类岗位雇主自己标的薪资范围，下限和上限分开报。 |

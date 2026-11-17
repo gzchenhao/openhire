@@ -38,6 +38,7 @@ mcp = FastMCP(
         "fingerprint \"new\" to watch_intent and the server picks a random one; do not invent "
         "one, models repeat the same strings; reuse a key the user saved). Matching happens on the client. Use search_jobs to hard-filter "
         "the live index (results carry verified_at, ghost_score and apply_channel); "
+        "get_job for one posting's full description from the index (quote it, add nothing); "
         "get_company_info for aggregate trust signals; watch_intent to register a standing "
         "intent; check_watches to pull new hits; manage_watch to list, change or delete a watch; authorize_application to record an "
         "authorized, employer-direct application; read_board to read any employer's public "
@@ -525,6 +526,40 @@ def get_company_info(company_id: str) -> dict:
     with session_scope() as s:
         try:
             return service.get_company_info(s, company_id)
+        except OpenHireError as e:
+            return e.as_dict()
+
+
+@mcp.tool(
+    title="Read one posting",
+    annotations=ToolAnnotations(title="Read one posting", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False),
+)
+def get_job(job_id: str, max_chars: int = 8000, offset: int = 0) -> dict:
+    """One posting by job_id, with the employer's own description as the index holds it.
+
+    Use it when the user asks what a posting actually involves (is this really product work,
+    does it lead people, what does it require) or before evaluate_fit / tailor_cv. Take
+    job_id from search_jobs, check_watches or check_applications; read_board rows are not in
+    the index (read_board already returns their text).
+
+    Returns the same fields as a search_jobs row plus `description` (`max_chars` characters
+    from `offset`; follow `description_next_offset` until it is null for a long one),
+    `description_total_chars` and `status`: live, closed (taken down; still shown so the user
+    can read what they applied to, never offer it as an opening) or not_verified_recently
+    (run refresh_index before applying). Quote the text; do not add duties, requirements or
+    visa terms it does not state. Nothing about the user is sent or stored.
+
+    Args:
+        job_id: e.g. "lixiang:12345", from another tool's result.
+        max_chars: 1 to 20000 characters of description per call (default 8000).
+        offset: where to start in the description (default 0).
+    """
+    _await_index()
+    if (preparing := _preparing()):
+        return {"job_id": job_id, **preparing}
+    with session_scope() as s:
+        try:
+            return service.get_job(s, job_id, max_chars=max_chars, offset=offset)
         except OpenHireError as e:
             return e.as_dict()
 
@@ -1166,7 +1201,7 @@ def _refuse_undeclared_arguments(tool_name: str) -> None:
     )
 
 
-for _name in ("authorize_application", "watch_intent", "add_employer", "list_portals", "check_applications"):
+for _name in ("authorize_application", "watch_intent", "add_employer", "list_portals", "check_applications", "get_job"):
     _refuse_undeclared_arguments(_name)
 
 

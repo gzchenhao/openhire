@@ -276,14 +276,14 @@ def evaluate_fit(
     if _zh(job):
         return "\n".join([
             f"帮我评估这个岗位：{job}",
-            "1. 用 search_jobs 找到这条，抄下 dates_in_words、check_before_apply、requirements；用 get_company_info 看 hiring_trend；它标了薪资的话，用 salary_benchmark（同币种、同岗位族和级别）看同类岗位雇主自己标的范围，只报数字。",
+            "1. 用 search_jobs 找到这条，抄下 dates_in_words、check_before_apply、requirements；用 get_job 读职位描述全文；用 get_company_info 看 hiring_trend；它标了薪资的话，用 salary_benchmark（同币种、同岗位族和级别）看同类岗位雇主自己标的范围，只报数字。",
             "2. 在本机对照我的简历：启事要求里哪些我的简历有证据、哪些没有、哪些只是「优先」。",
             "3. 写进 openhire/evaluations.md，三段：雇主系统里的事实（原句）、和我简历的匹配、投之前要问清的问题。",
             NO_VERDICT_ZH, LOCAL_CV_ZH, PRIVACY_ZH,
         ])
     return "\n".join([
         f"Evaluate this posting for me: {job}",
-        "1. Find it with search_jobs and quote dates_in_words, check_before_apply and requirements; get_company_info for hiring_trend; if it states pay, salary_benchmark (same currency, family and level) for what comparable employers publish, numbers only.",
+        "1. Find it with search_jobs and quote dates_in_words, check_before_apply and requirements; read the full description with get_job; get_company_info for hiring_trend; if it states pay, salary_benchmark (same currency, family and level) for what comparable employers publish, numbers only.",
         "2. On this machine, compare with my CV: which stated requirements it shows evidence for, which it does not, which are only preferred.",
         "3. Write openhire/evaluations.md with three parts: facts from the employer's system (quoted), fit against my CV, questions to ask before applying.",
         NO_VERDICT_EN, LOCAL_CV_EN, PRIVACY_EN,
@@ -297,7 +297,7 @@ def tailor_cv(
     if _zh(job):
         return "\n".join([
             f"按这个岗位改我的简历：{job}",
-            "1. 用 search_jobs 找到它看 requirements；能读的板用 read_board 的 ats_job_id 取全文职位描述。",
+            "1. 用 search_jobs 找到它看 requirements，用 get_job 取全文职位描述；索引外的板用 read_board 的 ats_job_id 取全文。",
             "2. 只用我本机 cv.md 里的真实内容，调整顺序和措辞，让岗位要的证据排在前面；只改写不编造：不加公司、头衔、日期、数字和技能。",
             "3. 岗位要求而我简历里没有的，不要硬加，单独告诉我。",
             "4. 写成 openhire/cv-<job_id>.md，并列出改了哪些地方。",
@@ -305,7 +305,7 @@ def tailor_cv(
         ])
     return "\n".join([
         f"Tailor my CV to this posting: {job}",
-        "1. Find it with search_jobs for requirements; for boards read_board reads, use ats_job_id for the full description.",
+        "1. Find it with search_jobs for requirements and get_job for the full description; for boards outside the index, use read_board's ats_job_id.",
         "2. Using only what is true in cv.md on this machine, reorder and reword so the evidence it asks for comes first; reformulate, never fabricate: no new employers, titles, dates, numbers or skills.",
         "3. If it asks for something my CV does not show, leave it out and tell me.",
         "4. Write openhire/cv-<job_id>.md and list what changed.",

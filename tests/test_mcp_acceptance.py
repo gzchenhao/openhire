@@ -88,6 +88,8 @@ async def test_all_five_acceptance_scripts(seeded):
             "salary_benchmark",
             # 0.8.61: change or delete a watch instead of stacking a second one (Howard, 2026-11-05).
             "manage_watch",
+            # 0.8.68: the description the index holds, one posting at a time (Howard, 2026-11-17).
+            "get_job",
         }
         portals = _payload(await client.call_tool("list_portals", {"sector": "具身"}))
         assert portals["@type"] == "PortalDirectory" and portals["sector"] == "embodied_ai"
@@ -108,6 +110,11 @@ async def test_all_five_acceptance_scripts(seeded):
             assert job["apply_channel"].startswith("https://")
             assert job["remote_policy"] == "remote"  # genuinely remote
         first_company = r[0]["company_id"]
+        one = _payload(await client.call_tool("get_job", {"job_id": r[0]["job_id"], "max_chars": 50}))
+        assert one["job_id"] == r[0]["job_id"] and one["status"] == "live"
+        assert len(one["description"]) <= 50 and one["description_total_chars"] >= len(one["description"])
+        bad = _payload(await client.call_tool("get_job", {"job_id": r[0]["job_id"], "resume": "x"}))
+        assert bad["error"] == "ERR_PII_NOT_ACCEPTED", bad
 
         # --- Script 2: is the first company legit / a ghost job? --------------
         info = _payload(await client.call_tool(
