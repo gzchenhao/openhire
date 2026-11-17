@@ -277,6 +277,8 @@ the package on demand — but it does need [uv](https://docs.astral.sh/uv/) pres
 > **ChatGPT** (paid plans) — Settings → Connectors → Advanced → Developer mode → Create, name
 > `OpenHire`, URL `https://openhire-vlny.onrender.com/mcp`, no authentication. Nothing to install;
 > that host sees only tool arguments, never a résumé (see `docs/PRIVACY.md` §3).
+> In the ChatGPT desktop app's work mode (ChatGPT Work): Settings → Plugins → Add → Add MCP server,
+> type Streamable HTTP, same name and URL; it works in work mode only, not in a normal chat.
 > **豆包（豆包工作）** — its custom connectors take an HTTP address, not a command: run
 > `ohp serve --transport streamable-http --port 8000` on your machine, then add
 > `http://127.0.0.1:8000/mcp` as a 自定义连接器 (see the 豆包 entry under Works with).
