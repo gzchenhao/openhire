@@ -25,8 +25,8 @@ open     Physical Intelligence  Mechanical Design Engineer          还在雇主
 
 It tells you whether the posting is still there, never whether the employer read you: no index can see an inbox. 只说岗位在不在，不说雇主看没看：谁也看不到雇主的收件箱。投的时候也不交简历给任何服务器。
 
-**为什么不直接让 AI 上网搜？** 网页搜索是一张照片：只看得到这一刻网上有什么，下架的旧岗位也混在里面。OpenHire 是一段录像：每周去雇主自己的系统看一遍，记下每个岗位哪天出现、哪周还在、哪天撤下。所以它答得出搜索答不出的三个问题：这个岗位挂了多久？你投的那个还在不在？这周新出了哪些？
-**Why not let the AI search the web?** A web search is one photo: what is on the web at this moment, closed postings included. OpenHire is a recording: each week it reads every employer's own system and notes when a posting appeared, each week it was still there, and when it was taken down. So it answers what a search cannot: how long has this been open, is the one you applied to still there, what is new this week.
+**为什么不直接让 AI 上网搜？** 网页搜索是一张照片，而且常常是旧照片：搜索引擎给你的是它上次抓到的那一页，可能是昨天，也可能是几个月前。搜得到，不等于今天还在。OpenHire 是一段录像：每周去雇主自己的系统看一遍，记下每个岗位哪天出现、哪周还在、哪天撤下。所以它答得出搜索答不出的三个问题：这个岗位挂了多久？你投的那个还在不在？这周新出了哪些？
+**Why not let the AI search the web?** A web search is one photo, and often an old one: a search engine shows the page as it last fetched it, which may be yesterday or months ago. Found in a search does not mean still open today. OpenHire is a recording: each week it reads every employer's own system and notes when a posting appeared, each week it was still there, and when it was taken down. So it answers what a search cannot: how long has this been open, is the one you applied to still there, what is new this week.
 
 **In Claude Code, the plugin is a whole local job-search workflow**: find postings, check the company, tailor your CV, build interview stories, follow what you applied to. Your CV stays in your own folder (`cv.md`) and is read by your own assistant; OpenHire tools only ever get a job id. `/plugin marketplace add gzchenhao/openhire`, then `/plugin install openhire@openhire`.
 在 Claude Code 里装上插件，就是一套完整的本机求职工作流：找岗、查公司、改简历、备面试故事、盯投递，简历留在你自己的文件夹里，OpenHire 的工具只拿到岗位编号。
