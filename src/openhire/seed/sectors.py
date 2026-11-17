@@ -7,6 +7,8 @@ One label per employer, from what the company makes, the same four words everywh
                       built for it, and autonomy off the road (drones, ships, airport tugs)
   embodied_ai         robots: humanoids, arms, mobile and warehouse robots, robot foundation models
   ai_infra            AI labs and models, AI chips and compute, AI developer tools and AI-first apps
+  finance             banks, brokers, insurers, asset managers and trading firms; so far their
+                      Hong Kong postings only (reports/151), middle and back office included
   other               everything else the index carries (cloud software, fintech, consumer)
 
 The first three match not_indexed.SECTORS, so list_portals and search_jobs mean the same thing
@@ -19,10 +21,19 @@ from __future__ import annotations
 
 from .not_indexed import SECTOR_ALIASES as _PORTAL_SECTOR_ALIASES
 
-AV, EMB, AI, OTHER = "autonomous_driving", "embodied_ai", "ai_infra", "other"
-SECTORS = (AV, EMB, AI, OTHER)
+AV, EMB, AI, FIN, OTHER = "autonomous_driving", "embodied_ai", "ai_infra", "finance", "other"
+SECTORS = (AV, EMB, AI, FIN, OTHER)
+
+# Sectors whose postings are never sent to a paid extractor (DeepSeek, GLM, Anthropic): titles,
+# places, dates and levels come from free rules, and a seeker who wants a description read hands
+# it to their own assistant (get_job). Howard 2026-11-17: new sectors cost us nothing (reports/150).
+ZERO_EXTRACTION = (FIN,)
 
 _BY_SECTOR: dict[str, tuple[str, ...]] = {
+    FIN: (
+        "cicc-hk", "citi-hk", "schonfeld-hk", "tower-research-hk", "airwallex-hk", "state-street-hk",
+        "flow-traders-hk", "barclays-hk", "fidelity-intl-hk", "verition-hk", "worldquant-hk",
+    ),
     AV: (
         "waymo", "kodiak", "motional", "torcrobotics", "botauto", "nuro", "weride", "zoox", "waabi",
         "aurorainnovation", "wayve", "robosense", "deeproute", "minieye", "freetech", "yushi", "rino",
@@ -61,11 +72,13 @@ _BY_SECTOR: dict[str, tuple[str, ...]] = {
 
 COMPANY_SECTOR: dict[str, str] = {cid: s for s, ids in _BY_SECTOR.items() for cid in ids}
 
-SECTOR_NAMES_ZH = {AV: "自动驾驶", EMB: "具身智能 / 机器人", AI: "AI 基础设施与大模型", OTHER: "其他"}
+SECTOR_NAMES_ZH = {AV: "自动驾驶", EMB: "具身智能 / 机器人", AI: "AI 基础设施与大模型", FIN: "金融（香港）", OTHER: "其他"}
 
 # What a seeker types for each, in either language: the portal directory's words plus "other".
 SECTOR_ALIASES: dict[str, tuple[str, ...]] = {
     **{k: tuple(v) for k, v in _PORTAL_SECTOR_ALIASES.items()},
+    FIN: ("finance", "financial services", "banking", "bank", "insurance", "asset management",
+          "hedge fund", "trading", "金融", "银行", "銀行", "保险", "保險", "证券", "證券", "券商", "资管", "基金", "投行"),
     OTHER: ("other", "others", "其他", "其它"),
 }
 
@@ -83,6 +96,11 @@ def resolve_sector(value: str | None) -> str | None:
         if v == sector or v in (w.casefold() for w in words):
             return sector
     return None
+
+
+def zero_extraction(company_id: str | None) -> bool:
+    """True when this employer's postings must never go to a paid extractor."""
+    return sector_of(company_id) in ZERO_EXTRACTION
 
 
 def company_ids_in(sector: str) -> list[str]:

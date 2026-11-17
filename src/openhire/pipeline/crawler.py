@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import httpx
 
 from .. import config
-from ..ats import FetchResult, get_client
+from ..ats import FetchResult, fetch_scoped, get_client
 
 
 @dataclass
@@ -48,7 +48,7 @@ async def fetch_all(
         async def one(company: CompanyRef):
             async with sem:
                 client_impl = get_client(company.ats_vendor)
-                result = await client_impl.fetch(client, company.ats_tenant)
+                result = await fetch_scoped(client_impl, client, company.ats_tenant)
             results[company.id] = result
             if on_result:
                 on_result(company, result)
@@ -68,7 +68,7 @@ def fetch_board(vendor: str, tenant: str) -> FetchResult:
 
     async def _go() -> FetchResult:
         async with httpx.AsyncClient(timeout=timeout, headers=headers, follow_redirects=True) as client:
-            return await get_client(vendor).fetch(client, tenant)
+            return await fetch_scoped(get_client(vendor), client, tenant)
 
     try:
         asyncio.get_running_loop()

@@ -285,7 +285,9 @@ def search_jobs(
         title: caseless substrings over the job title, ANY-of, e.g. ["recruit", "招聘"]
             or ["感知"]. This is the filter for roles no skill tag or family can isolate:
             finance, legal, a specific team name; for HR it is a wider net than
-            role_family="hr". An ASCII term must start
+            role_family="hr". The umbrella words 中后台 / back office / middle office reach
+            compliance, risk, operations, finance, legal, audit, admin and HR titles in both
+            languages (the Hong Kong finance sector). An ASCII term must start
             a word ("hr" reaches HR, HRBP and HR Business Partner but not Chrome); a CJK
             term is a plain substring. HR synonyms are expanded for you, narrowly: the broad
             words hr / human resources / people ops / 人力 / 人事 reach every HR title;
@@ -313,7 +315,8 @@ def search_jobs(
             how many of those name no level in the title.
         sector: only employers in one sector: autonomous_driving (自动驾驶 / 智驾, including
             the lidar, chip and truck companies built for it), embodied_ai (具身 / 机器人),
-            ai_infra (大模型 / AI labs, chips, AI tools) or other. Use it when the user says
+            ai_infra (大模型 / AI labs, chips, AI tools), finance (金融 / 银行: banks, brokers, insurers,
+            asset managers, trading firms; Hong Kong postings only so far) or other. Use it when the user says
             "only robotics companies" instead of naming employers one by one. Every row
             carries its `sector`; a board the user added themselves has none and is left out.
             Unknown words are refused (ERR_UNKNOWN_SECTOR).
@@ -589,7 +592,7 @@ def watch_intent(fingerprint: str, filters: dict[str, Any]) -> dict:
     roles" gets that enforced by the watch, not by you), `seniority` (list of
     levels or the aliases "ic" / "management", as in search_jobs, so a watch for an engineer
     never fires on a Senior Manager; `what_happens_next` says when titles naming no level are
-    left out), `sector` (autonomous_driving / embodied_ai / ai_infra /
+    left out), `sector` (autonomous_driving / embodied_ai / ai_infra / finance /
     other, as in search_jobs: one watch for "robotics companies in Shenzhen" instead of one
     per employer), `entry_level` (true: only postings open to a new graduate, as in
     search_jobs), `posted_within_days` (only postings published in the last N days, as in

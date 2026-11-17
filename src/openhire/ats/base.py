@@ -94,13 +94,41 @@ ATS_APPLY_HOSTS: dict[str, set[str]] = {
 _PER_TENANT_HOST: dict[str, str] = {"beisen": "{tenant}.zhiye.com", "personio": "{tenant}.jobs.personio.de", "workday": "{account}.myworkdayjobs.com"}
 
 
+# A seed row can keep one place of a board instead of the whole board: "citi.wd5/2|place=hong kong"
+# indexes Citi's Hong Kong postings, not its 2,000 worldwide (Howard 2026-11-17, the Hong Kong
+# finance pilot, reports/151). The scope is ours, never sent to the vendor: every request and
+# every link uses the tenant before the bar.
+SCOPE_SEP = "|place="
+PLACES: dict[str, "re.Pattern[str]"] = {
+    "hong kong": re.compile(r"hong\s*kong|香港|\bhksar\b|\bhk\b|\bhkg\b|kowloon|九龍|九龙", re.I),
+}
+
+
+def split_scope(tenant: str) -> tuple[str, str | None]:
+    """("citi.wd5/2", "hong kong") for "citi.wd5/2|place=hong kong"; (tenant, None) without one."""
+    base, sep, place = (tenant or "").partition(SCOPE_SEP)
+    return (base, place.strip().casefold() or None) if sep else (tenant, None)
+
+
+def base_tenant(tenant: str) -> str:
+    return split_scope(tenant)[0]
+
+
+def place_matches(place: str, location: str | None) -> bool:
+    pat = PLACES.get(place)
+    if pat is None:
+        raise ValueError(f"unknown place scope {place!r}; known: {sorted(PLACES)}")
+    return bool(location) and bool(pat.search(location))
+
+
 def workday_host(tenant: str) -> str:
     """`nvidia.wd5/NVIDIAExternalCareerSite` -> `nvidia.wd5.myworkdayjobs.com`."""
-    return tenant.split("/", 1)[0].lower() + ".myworkdayjobs.com"
+    return base_tenant(tenant).split("/", 1)[0].lower() + ".myworkdayjobs.com"
 
 
 def _apply_hosts(vendor: str, tenant: str) -> set[str]:
     """Canonical apply hosts for a vendor, including per-tenant ones."""
+    tenant = base_tenant(tenant)
     hosts = set(ATS_APPLY_HOSTS.get(vendor, set()))
     if vendor == "workday":
         hosts.add(workday_host(tenant))
@@ -169,6 +197,7 @@ def canonical_apply_url(vendor: str, tenant: str, ats_job_id: str) -> str:
     page, because some tenants configure their hosted job page to redirect back to a
     (broken) employer embed — the application form is never hijacked that way.
     """
+    tenant = base_tenant(tenant)
     if vendor == "greenhouse":
         return f"https://boards.greenhouse.io/embed/job_app?for={tenant}&token={ats_job_id}"
     if vendor == "lever":
@@ -223,6 +252,7 @@ def resolve_apply_channel(
     vendor: str, tenant: str, ats_job_id: str, vendor_url: str | None
 ) -> ApplyResolution:
     """Choose a guaranteed-deep-linking apply_channel (see module note above)."""
+    tenant = base_tenant(tenant)
     hosts = _apply_hosts(vendor, tenant)
     canonical = canonical_apply_url(vendor, tenant, ats_job_id)
 

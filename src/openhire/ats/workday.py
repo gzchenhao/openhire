@@ -34,7 +34,7 @@ import re
 
 import httpx
 
-from .base import ATSClient, FetchResult, JobRecord, html_to_text, workday_host
+from .base import ATSClient, FetchResult, JobRecord, html_to_text, place_matches, workday_host
 from .workable import _date_to_dt
 
 _PAGE = 20              # Workday caps the list at 20 per request
@@ -91,7 +91,7 @@ class WorkdayClient(ATSClient):
     def _has_jobs_array(payload) -> bool:
         return isinstance(payload, dict) and isinstance(payload.get("jobPostings"), list)
 
-    async def fetch(self, client: httpx.AsyncClient, tenant: str) -> FetchResult:
+    async def fetch(self, client: httpx.AsyncClient, tenant: str, place: str | None = None) -> FetchResult:
         host, _account, site = _parts(tenant)
         if not site:
             return FetchResult(ok=False, status=0, error="a Workday tenant needs a site: <account>.wdN/<site>")
@@ -144,6 +144,11 @@ class WorkdayClient(ATSClient):
             if len(batch) < _PAGE or (total is not None and len(rows) >= total):
                 break
 
+        if place:
+            # Keep a row whose list text names the place, or names no single place ("2 Locations");
+            # the second kind is settled after its details give the full location list.
+            rows = [r for r in rows if place_matches(place, r.get("locationsText"))
+                    or re.search(r"\d+\s+locations", str(r.get("locationsText") or ""), re.I)]
         details = await self._fetch_details(client, tenant, rows, headers)
         records = self.parse({"jobPostings": rows, "details": details}, tenant)
         return FetchResult(ok=True, status=200, records=records)

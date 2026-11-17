@@ -23,7 +23,7 @@ from .. import config
 from ..ats import FetchResult, JobRecord, get_client
 from ..db import Company, Job, session_scope
 from .crawler import CompanyRef, fetch_all
-from .extract import Extractor, get_extractor
+from .extract import Extractor, HeuristicExtractor, get_extractor
 from .ghost_score import compute_ghost_score
 from .hashing import content_hash, normalize_title
 
@@ -131,6 +131,11 @@ def ingest_company(
         return
 
     stats.companies_crawled += 1
+    # A zero-extraction sector never reaches a paid extractor, whatever this run was given
+    # (Howard 2026-11-17: new sectors cost nothing; reports/150, 151).
+    from ..seed.sectors import zero_extraction
+    if zero_extraction(company.id) and not isinstance(extractor, HeuristicExtractor):
+        extractor = HeuristicExtractor()
 
     # Load existing jobs for this company once.
     existing: dict[str, Job] = {

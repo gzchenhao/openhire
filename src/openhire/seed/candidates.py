@@ -403,6 +403,30 @@ _COMEET = [
     ('mentee_robotics/6A.002/A6248AE298853101F2614C45D7214C433EA5310', 'Mentee Robotics', 'mentee-robotics'),
 ]
 
+# --- Hong Kong finance, middle and back office: the first zero-extraction sector -------
+# Howard 2026-11-17 (reports/150, 151): a pilot outside engineering. Every board below was
+# found on the employer's own careers page and read live that day by a Default-environment
+# session (reports/151): HK postings in brackets. Each row keeps the Hong Kong postings only
+# ("|place=hong kong", ats/base.split_scope), so a bank's worldwide board does not swell the
+# snapshot, and the sector is never sent to a paid extractor (seed/sectors.ZERO_EXTRACTION).
+# Read but not added: Optiver and XTX (no HK posting). Eleven Workday boards (HKEX, AIA,
+# Prudential, FWD, Sun Life, DBS, CLSA, BlackRock, Invesco, PIMCO, Bank of America) answered
+# HTTP 429 twice and were left alone; the weekly run may try them later through probe-boards.
+_HK = "|place=hong kong"
+_HK_FINANCE: list[tuple[str, str, str, str]] = [
+    ("beisen", "cicc" + _HK, "中金公司 CICC", "cicc-hk"),                                          # 67
+    ("workday", "citi.wd5/2" + _HK, "Citi 花旗", "citi-hk"),                                       # 34
+    ("greenhouse", "schonfeld" + _HK, "Schonfeld", "schonfeld-hk"),                                # 16
+    ("greenhouse", "towerresearchcapital" + _HK, "Tower Research Capital", "tower-research-hk"),    # 15
+    ("ashby", "airwallex" + _HK, "Airwallex 空中云汇", "airwallex-hk"),                             # 12
+    ("workday", "statestreet.wd1/Global" + _HK, "State Street 道富", "state-street-hk"),            # 11
+    ("greenhouse", "flowtraders" + _HK, "Flow Traders", "flow-traders-hk"),                        # 11
+    ("workday", "barclays.wd3/External_Career_Site_Barclays" + _HK, "Barclays 巴克莱", "barclays-hk"),  # 7
+    ("workday", "fil.wd3/001" + _HK, "Fidelity International 富达国际", "fidelity-intl-hk"),        # 6
+    ("greenhouse", "veritiongroupllc" + _HK, "Verition", "verition-hk"),                           # 6
+    ("greenhouse", "worldquant" + _HK, "WorldQuant", "worldquant-hk"),                             # 1
+]
+
 _SELF_REPORTED = [(e.slug, e.name) for e in SELF_REPORTED_EMPLOYERS.values()]
 
 
@@ -430,6 +454,8 @@ def all_candidates() -> list[Candidate]:
             out.append(
                 Candidate(vendor=vendor, tenant=tenant, name=name, company_id=company_id)
             )
+    for vendor, tenant, name, company_id in _HK_FINANCE:
+        out.append(Candidate(vendor=vendor, tenant=tenant, name=name, company_id=company_id))
     return out
 
 
@@ -445,4 +471,5 @@ def candidate_count() -> int:
         + len(_PERSONIO)
         + len(_COMEET)
         + len(_SELF_REPORTED)
+        + len(_HK_FINANCE)
     )

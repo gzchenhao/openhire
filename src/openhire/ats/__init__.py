@@ -12,7 +12,10 @@ from .base import (
     canonical_apply_url,
     html_to_text,
     apply_url_is_trusted,
+    base_tenant,
+    place_matches,
     resolve_apply_channel,
+    split_scope,
 )
 from .comeet import ComeetClient
 from .greenhouse import GreenhouseClient
@@ -44,6 +47,23 @@ _CLIENTS: dict[str, ATSClient] = {
     # Employer self-reported rosters, verified by corporate identity (ats/self_reported.py).
     "self_reported": SelfReportedClient(),
 }
+
+
+async def fetch_scoped(client_impl: ATSClient, http, tenant: str) -> FetchResult:
+    """Fetch one board, honouring a seed row's place scope ("<tenant>|place=hong kong"): the
+    vendor sees only the tenant before the bar, and only postings in that place come back.
+    Workday filters before it reads each posting's details, so Citi's 2,000 worldwide postings
+    cost one list read, not 2,000 detail reads (reports/151)."""
+    base, place = split_scope(tenant)
+    if place is None:
+        return await client_impl.fetch(http, tenant)
+    if isinstance(client_impl, WorkdayClient):
+        res = await client_impl.fetch(http, base, place=place)
+    else:
+        res = await client_impl.fetch(http, base)
+    if res.ok:
+        res.records = [r for r in res.records if place_matches(place, r.location)]
+    return res
 
 
 def get_client(vendor: str) -> ATSClient:

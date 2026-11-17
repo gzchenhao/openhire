@@ -372,11 +372,27 @@ _TITLE_SUBGROUPS: tuple[tuple[str, ...], ...] = (
 )
 
 
+# Middle and back office, for the Hong Kong finance pilot (reports/151): one word a seeker
+# says ("中后台", "back office") reaches the functions banks put in their titles. Only these
+# umbrella words expand; "compliance" alone stays "compliance".
+_BACK_OFFICE_WORDS = frozenset({"中后台", "中後台", "后台", "後台", "back office", "middle office",
+                                "middle and back office", "middle/back office"})
+_BACK_OFFICE: tuple[str, ...] = (
+    "compliance", "risk", "operations", "finance", "financial control", "accounting", "audit", "legal",
+    "counsel", "company secretar", "administration", "administrative", "executive assistant",
+    "human resources", "kyc", "aml", "treasury", "regulatory", "middle office", "back office", "settlement",
+    "合规", "合規", "风控", "風控", "风险", "風險", "运营", "營運", "财务", "財務", "会计", "會計", "审计", "審計",
+    "法务", "法務", "法律", "行政", "人力", "人事", "清算", "结算", "結算", "中后台", "中後台",
+)
+
+
 def expand_title_term(term: str) -> list[str]:
     """Every spelling to match for one title term. Always contains the term itself."""
     t = " ".join((term or "").casefold().split())
     if not t:
         return []
+    if t in _BACK_OFFICE_WORDS:
+        return list(dict.fromkeys((t, *_BACK_OFFICE)))
     if t in _TITLE_BROAD:
         return list(_TITLE_GROUPS[0])
     for group in _TITLE_SUBGROUPS:
@@ -510,7 +526,7 @@ def check_sector(value: str | None) -> str | None:
         raise OpenHireError(
             "ERR_UNKNOWN_SECTOR",
             f"Unknown sector {value!r}. Use autonomous_driving (自动驾驶 / 智驾), embodied_ai "
-            "(具身 / 机器人), ai_infra (大模型 / AI) or other.",
+            "(具身 / 机器人), ai_infra (大模型 / AI), finance (金融 / 银行; Hong Kong postings so far) or other.",
         )
     return out
 

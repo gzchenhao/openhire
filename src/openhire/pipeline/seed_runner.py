@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from sqlalchemy import select
 
-from ..ats import get_client
+from ..ats import base_tenant, get_client
 from ..db import Company, session_scope
 from ..seed import all_candidates
 from .crawler import CompanyRef, fetch_all
@@ -66,7 +66,7 @@ def seed_companies(on_result=None) -> SeedStats:
                     name=cand.name,
                     ats_vendor=cand.vendor,
                     ats_tenant=cand.tenant,
-                    careers_url=client.careers_url(cand.tenant),
+                    careers_url=client.careers_url(base_tenant(cand.tenant)),
                     verified=False,
                 )
                 session.add(company)
@@ -77,7 +77,7 @@ def seed_companies(on_result=None) -> SeedStats:
                 company.name = cand.name
                 company.ats_vendor = cand.vendor
                 company.ats_tenant = cand.tenant
-                company.careers_url = client.careers_url(cand.tenant)
+                company.careers_url = client.careers_url(base_tenant(cand.tenant))
 
         apply_claims(session)
     return stats

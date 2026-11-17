@@ -15,7 +15,7 @@ import re
 import time
 from dataclasses import dataclass, field
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, true
 from sqlalchemy.orm import Session
 
 from .. import config
@@ -42,6 +42,13 @@ TARGET_SOURCE = "deepseek"
 # (that means the plan's quota is gone, not that one call was unlucky).
 _429_BACKOFF_SECONDS = (2.0, 5.0, 12.0, 30.0)
 MAX_CONSECUTIVE_429 = 5
+
+
+def _PAID_ALLOWED():
+    """Rows a paid extractor may touch: not in a zero-extraction sector (seed/sectors.py)."""
+    from ..seed.sectors import ZERO_EXTRACTION, company_ids_in
+    ids = [cid for s in ZERO_EXTRACTION for cid in company_ids_in(s)]
+    return Job.company_id.notin_(ids) if ids else true()
 
 
 def cost_cny(prompt_tokens: int, completion_tokens: int, backend: str = "deepseek") -> float:
@@ -517,7 +524,7 @@ def rebuild_extraction(
     ceiling = config.EXTRACTION_COST_CEILING_CNY if ceiling_cny is None else ceiling_cny
     stats = RebuildStats(backend=source)
     consecutive_429 = 0
-    target = [Job.extraction_source.notin_(LLM_SOURCES), _HAS_JD]
+    target = [Job.extraction_source.notin_(LLM_SOURCES), _HAS_JD, _PAID_ALLOWED()]
     if not include_delisted:
         target.append(Job.delisted_at.is_(None))
 
@@ -688,7 +695,7 @@ def rebuild_role_family(
     ceiling = config.EXTRACTION_COST_CEILING_CNY if ceiling_cny is None else ceiling_cny
     stats = RebuildStats(backend=_source_label(extractor, backend))
     consecutive_429 = 0
-    target = [Job.role_family.is_(None)]
+    target = [Job.role_family.is_(None), _PAID_ALLOWED()]
     if not include_delisted:
         target.append(Job.delisted_at.is_(None))
 
