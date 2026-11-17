@@ -1234,9 +1234,9 @@ _BOOTSTRAP_ERROR: str | None = None
 # downloading, and a minute later it would be there (a first-run tester, reports/098).
 _BOOTSTRAP_STARTED_AT: float | None = None
 PREPARING_HINT = (
-    "The job index is still downloading on this first start (about 30 MB; usually one to two "
+    "The job index is still downloading on this first start (about 60 MB; usually one to two "
     "minutes, longer on a slow link). This is not an empty market and not an error: ask again "
-    "in a minute. 正在准备岗位数据（第一次启动要下载约 30 MB 的公开索引，通常一两分钟）。这不是"
+    "in a minute. 正在准备岗位数据（第一次启动要下载约 60 MB 的公开索引，通常一两分钟）。这不是"
     "「没有岗位」，也不是故障，过一分钟再试一次。"
 )
 

@@ -1459,7 +1459,7 @@ def diagnose_empty_search(
                 "(~30 MB, no account), or start the MCP server with `ohp serve`, which fetches "
                 "it by itself on first run. "
                 "本机还没有职位索引，所以这不是「没找到」，是「没得找」。跑 `ohp bootstrap` "
-                "下载公开快照（约 30 MB，无需注册），或直接 `ohp serve`，服务器会自己拉。"
+                "下载公开快照（约 60 MB，无需注册），或直接 `ohp serve`，服务器会自己拉。"
             ),
             "filters_applied": _applied(),
         }
