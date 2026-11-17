@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.66 · 2026-11-16；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.67 · 2026-11-17；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.67（2026-11-17，云端会话，`reports/147`）：** 模拟求职者 11-16 夜（US$10.57，累计 114.60，77 条：high 1）：**「必须已持有当前工作许可」算不办签证**（单写 must be authorized to work 不算）；Staff / Principal 工程师标题里的 Director 是职责不是级别；relax.location 标 `scope: worldwide`；no_match 提示改「索引里没有」并指 list_portals；`hiring_trend` 带 `employer_last_read` / `days_unread_in_window`。1188 tests。
 - **v0.8.66（2026-11-16，云端会话，`reports/146`）：** 模拟求职者新额度第一晚（11-15，US$11.79，累计 104.03，high 1）：撞号提示让助手删了用户要的盯岗，`watch_intent` 改返回 `existing_watch_list`，服务器发的指纹（`#` 加 4 组 6 位十六进制）直接认作用户自己的，其他情形明写「不要删除用户要的盯岗」；envelope headline 写出没写收不收应届的条数与改法。1175 tests。
 - **v0.8.65（2026-11-12，云端会话，`reports/145`）：** 领导批：**match_quality 加权**（查询技能在岗位标题里 1.0、只在标签里 0.6，`ranking.TAG_ONLY_WEIGHT`；仍是两输入纯函数）；**连接向导复制按钮匿名计数**（`/c/copy?k=` 只收七个助手名、按日累加，`/c/counts` 公开，每日体检打进日志；隐私说明 §3 新增一条，**这是唯一的计数，别处不许加**）。模拟求职者测试续跑：新赠送额度 US$95.44 到 12-12，领导交给另一个 agent 跑（私库 `persona-test-prompt-2026-11-12.md`，累计上限 186），日读定时任务保留。1173 tests。
 - **v0.8.64（2026-11-10，云端会话，`reports/143`）：** 模拟求职者 11-07、11-09 两晚三次（累计约 US$92.25，**额度到顶，测试结束**）5 条 high 全修：**HR 同义词分层**（泛称 hr / 人力 / 人事覆盖全部；招聘 / recruit / sourcer 只到招聘岗；hrbp / people partner 只到 BP 岗，`filters_applied.title_matches_any` 回显）；**title_exclude 改原文子串**、不展开同义词；**`watch_intent(fingerprint="new")` 服务器生成指纹**（模型编的「随机」指纹三次运行撞号），撞号提示不再说「多半是你自己的」；**refresh_index 带 `posting_dates_changed` 与 `new`**（Moka 发布日被雇主改了 10 天原来不报）；**Preferred 小标题下的年限、学历不算要求**。另修：check_watches 顶层 baseline_count 改为各盯岗总数之和；「机器人力控」不算 HR。1168 tests。

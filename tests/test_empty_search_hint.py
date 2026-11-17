@@ -50,7 +50,8 @@ def test_known_tags_report_a_genuine_miss_not_a_typo(tiny_index):
     with session_scope() as s:
         d = service.diagnose_empty_search(s, required_skills=["rust", "python"])
     assert d["unknown_skills"] == [], "both tags exist, so this is not a spelling problem"
-    assert "genuinely has no live match" in d["hint"]
+    assert "no live match in the index" in d["hint"]
+    assert "list_portals" in d["hint"], "an empty index result must not read as an empty market"
     assert "required_skills" in d["hint"], "the hint must name the strictest filter"
 
 

@@ -562,6 +562,9 @@ _SEN_JUNIOR = re.compile(
 _CJK_LATIN_SEAM = re.compile(r"(?<=[\u3400-\u9fff])(?=[A-Za-z])|(?<=[A-Za-z])(?=[\u3400-\u9fff])")
 
 
+_SEN_IC_NOUN = re.compile(r"\b(engineer|scientist|researcher|architect)\b|工程师|研究员|科学家", re.I)
+
+
 def seniority_from_title(title: str | None) -> str:
     """The level a job title names, one of SENIORITY_LEVELS; "unknown" when it names none.
 
@@ -582,7 +585,12 @@ def seniority_from_title(title: str | None) -> str:
         return "lead"  # 团队负责人 before 负责人 reads as director; a Tech Lead Manager is a manager
     if _SEN_TOP_IC.search(text):
         return "staff"
+    # "Senior Staff Engineer, Test Director (R5446)": the rank word names the person's grade;
+    # "Test Director" names a duty on the test range. An engineer graded staff or principal is
+    # an individual contributor unless the title also says manager (persona test, 2026-11-16).
     if _SEN_DIRECTOR.search(text):
+        if _SEN_STAFF.search(text) and _SEN_IC_NOUN.search(text) and not _SEN_MANAGER.search(text):
+            return "staff"
         return "director"
     if _SEN_MANAGER.search(text):
         return "manager"
@@ -1152,9 +1160,9 @@ def _is_preference(text: str, start: int, end: int, spans: list[tuple[int, int]]
 # sentence is returned with the label so a reader sees the wording ("we do sponsor visas,
 # but not for every role") instead of trusting a label. "Executive sponsor", a company-paid
 # 401(k) and "export licence sponsorship" are not about visas and are skipped.
-_VISA_HIT = re.compile(r"sponsor\w*|签证|工作许可|\bh-?1-?b\b|\bu\.?s\.? citizen|\bu\.?s\.? person|security clearance|secret clearance", re.I)
+_VISA_HIT = re.compile(r"sponsor\w*|authori[sz](?:ation|ed) to work|签证|工作许可|\bh-?1-?b\b|\bu\.?s\.? citizen|\bu\.?s\.? person|security clearance|secret clearance", re.I)
 _VISA_CONTEXT = re.compile(r"visa|\bh-?1-?b\b|work (authori[sz]ation|permit|rights)|immigration|employment (visa|authori)|"
-                           r"authori[sz]ed to work|right to work|citizen|u\.?s\.? person|clearance|签证|工作许可", re.I)
+                           r"authori[sz](?:ed|ation) to work|right to work|citizen|u\.?s\.? person|clearance|签证|工作许可", re.I)
 _NOT_VISA = re.compile(r"export licen|executive (technical )?sponsor|sponsorship program|(company|employer|state|nation-state|ceo)[- ]sponsor(?:e)d|"
                        r"sponsor(?:e)d (by|from|event|health|401|benefit|group|retirement)|c-suite|exec sponsor|customer executive", re.I)
 _VISA_NO = re.compile(
@@ -1162,7 +1170,12 @@ _VISA_NO = re.compile(
     r"(sponsor|support visa|offer visa|provide visa|visa transfer)|sponsorship (is |are )?(currently )?not (available|offered|provided|possible)|"
     r"\bno (h-?1-?b |visa |employment |work )*sponsorship|not eligible for (visa |employment )?sponsorship|"
     r"(without|not requir\w*|doesn't require|does not require|no need for)[^.;\n]{0,40}sponsorship|"
-    r"must be (a )?(u\.?s\.?|us) (citizen|person)|(u\.?s\.?|us) citizenship (is )?required|requires? (an )?(active )?(security|secret|ts/sci) clearance|"
+    r"must be (a )?(u\.?s\.?|us) (citizen|person)|"
+    # "Applicants must have current authorization to work in the United States": only people
+    # who already hold the right qualify. A plain "must be authorized to work" is left alone;
+    # sponsoring employers write that too, meaning authorised by the start date.
+    r"\b(must|need to|required to|should)\s+(already\s+)?(have|hold|possess)\s+(a\s+)?(current|existing|present|valid)\s+([\w.]+\s+){0,3}authori[sz]ation to work|"
+    r"\bmust\s+(already\s+|currently\s+)+be\s+(legally\s+)?authori[sz]ed to work|(u\.?s\.?|us) citizenship (is )?required|requires? (an )?(active )?(security|secret|ts/sci) clearance|"
     r"不提供(工作)?签证|不办理(工作)?签证|不支持(工作)?签证|无法办理(工作)?签证", re.I)
 # "we aren't able to successfully sponsor visas for every role": a caveat, not a refusal.
 _VISA_NO_CAVEAT = re.compile(r"^[^.;\n]{0,30}(for every|for all|in every|in all cases|for each)", re.I)

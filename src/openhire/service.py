@@ -1608,6 +1608,10 @@ def _relax_counts(session: Session, now: dt.datetime | None = None, **f) -> dict
             continue
         rows = run(**{key: None})
         entry = {"matches_without_it": len(rows)}
+        if key == "location":
+            # Dropping the place counts every country: a tester read "31 without location" as
+            # 31 in China and paged through 25 in the US (persona test, 2026-11-16).
+            entry["scope"] = "worldwide"
         if key == "seniority" and rows:
             entry["of_which_title_names_no_level"] = sum(
                 1 for j, _ in rows if seniority_for(j.title, j.description_raw) == "unknown")
@@ -1625,12 +1629,16 @@ def _relax_hint(relax: dict) -> str:
             extra_en = (f" ({m} of them name no level in the title and were excluded by the seniority "
                         "filter; add \"unknown\" to seniority to see them)")
             extra_zh = f"（其中 {m} 条标题没写级别，被职级条件排除，seniority 里加上 unknown 就能看到）"
+        if key == "location":
+            extra_en = " (worldwide: every country, not just the region you asked about)"
+            extra_zh = "（这是全球范围，不只是你问的地区）"
         parts_en.append(f"without {key}: {n}{extra_en}")
         parts_zh.append(f"去掉 {key} 有 {n} 条{extra_zh}")
     return ("Every tag you asked for exists in the index, so the tags are fine: this combination of filters "
-            "genuinely has no live match right now. Dropping one filter at a time: " + "; ".join(parts_en)
+            "has no live match in the index right now (employers whose portals we cannot read are not in it: "
+            "list_portals names them). Dropping one filter at a time: " + "; ".join(parts_en)
             + ("; required_skills is AND, every one of them must be on the row" if "required_skills" in relax else "")
-            + ". 条件都认得，只是没有岗位同时满足；逐个去掉一项：" + "；".join(parts_zh) + "。")
+            + ". 条件都认得，只是索引里现在没有岗位同时满足（招聘页读不了的雇主不在索引里，list_portals 列出它们）；逐个去掉一项：" + "；".join(parts_zh) + "。")
 
 
 # The first line to show the user when a search returns nothing: which of the different
@@ -1782,8 +1790,23 @@ def hiring_trend(session: Session, company_id: str) -> dict:
           f"近 30 天下架 {down} 条。这是雇主系统里的数，不是对公司前景的判断。")
     en = (f"As of {end.date().isoformat()}: {last} postings published in the last 30 days, {prior} in the 30 before; "
           f"{down} taken down in the last 30. Counts from the employer's own system, not a forecast.")
+    # The window ends at the index's newest read, but this employer's board may have been read
+    # last weeks earlier: then "0 new, 0 taken down" can mean "not read", not "quiet" (persona
+    # test, 2026-11-16: 嬴彻 last read 10-28, window to 11-16).
+    own = session.scalar(select(func.max(Job.verified_at)).where(Job.company_id == company_id))
+    if isinstance(own, str):
+        own = dt.datetime.fromisoformat(own)
+    own = _aware(own) if own is not None else None
+    gap = (end - own).days if own is not None else None
+    if gap is not None and gap > 2:
+        zh += (f"注意：这家雇主的系统最后一次读到是 {own.date().isoformat()}，之后 {gap} 天没读到，"
+               "这段时间的新发和下架没有算进来，少不等于没有。")
+        en += (f" Note: this employer's system was last read on {own.date().isoformat()}, {gap} days before the window "
+               "ends; postings and takedowns since then are not counted, so low numbers may just mean unread.")
     return {
         "window_end": end.date().isoformat(),
+        "employer_last_read": own.date().isoformat() if own is not None else None,
+        "days_unread_in_window": gap if gap and gap > 0 else 0,
         "new_last_30d": last, "new_prior_30d": prior, "delisted_last_30d": down,
         "first_seen_last_30d_without_employer_date": no_date,
         "in_words": {"zh": zh, "en": en},
