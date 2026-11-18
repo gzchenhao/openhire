@@ -1206,6 +1206,16 @@ def search_jobs(
     # shown was not the number that ordered the list.
     scored_against = list(skills or []) or list(required_skills or [])
     rows = [job_posting(j, companies.get(j.company_id), scored_against, now) for j, _ in ranked]
+    if role_family:
+        # An unclassified row stays in a family search (see _filter_and_rank) but must say so:
+        # a warehouse posting ranked first in an "engineering" search read as a wrong filter
+        # (persona nights 2026-11-16 and 11-17).
+        for r in rows:
+            if not r.get("role_family"):
+                r["role_family_note"] = {
+                    "zh": "这条还没分到岗位族，所以留在结果里；看标题自己判断是不是你要的岗位。",
+                    "en": "Not yet filed under any role family, so it stays in; judge it by its title.",
+                }
     if collapse_role_group:
         # Keep the highest-ranked row per group and say how many it stands for. The siblings
         # are NOT hidden state: `role_group` still identifies the group, so a caller that
@@ -2486,6 +2496,11 @@ def check_watches(session: Session, fingerprint: str, now: dt.datetime | None = 
                 "summary": _watch_summary(first_pull, total_matching, len(matches), since),
                 "baseline_count": total_matching if first_pull else 0,
                 "baseline_postings": matches if first_pull else [],
+                # The baseline rows not listed above, by id, so none of them is lost: later
+                # pulls report only new postings, and 6 of 16 never surfaced again (persona
+                # night 2026-11-17). get_job reads any of them.
+                **({"baseline_not_listed_job_ids": [j.id for j, _ in ranked_all[page:page + 100]]}
+                   if first_pull and total_matching > page else {}),
                 "new_matches": [] if first_pull else matches,
                 "fields": COMPACT_NOTE,
             }

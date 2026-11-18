@@ -1095,7 +1095,9 @@ _PREFERENCE_BEFORE = re.compile(r"(preferred|ideally|bonus|nice to have|plus)[^�
 # is 17 (persona run 2026-11-02 read it as no requirement); a comma ends the clause.
 _YEARS_ZH = re.compile(r"(\d{1,2})\s*(?:[-~～至到]\s*\d{1,2}\s*)?年(?:以上|及以上)?[^。；;，,\n]{0,24}?(?:工作|相关|行业|开发|研发)?经验")
 _YEARS_ZH_AFTER = re.compile(r"经验\s*(\d{1,2})\s*年")
-_YEARS_EN = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d{1,2}\s*)?(?:years?|yrs?)\b[^.\n]{0,40}?experience", re.I)
+# "8–10+ years", "8 to 10 years": the range starts at the first number (read_board persona
+# 2026-11-17 got 10 from an en dash). Hyphen, en dash, em dash, tilde and "to" all join a range.
+_YEARS_EN = re.compile(r"(\d{1,2})\s*\+?\s*(?:(?:[-–—~～]|to)\s*\d{1,2}\s*\+?\s*)?(?:years?|yrs?)\b[^.\n]{0,40}?experience", re.I)
 _NO_EXPERIENCE = re.compile(r"经验不限|不限经验|无需经验|应届|\bno (prior )?experience (required|needed)\b|\bnew grad", re.I)
 _CAMPUS = re.compile(r"校招|校园招聘|应届|\b20\d\d\s*届|届毕业生|\bnew grad(uate)?s?\b|\bgraduate (program|programme|scheme)\b|\bcampus\b|\buniversity grad", re.I)
 _INTERN = re.compile(r"实习|\binterns?(hip)?\b|\bco-?op\b", re.I)
