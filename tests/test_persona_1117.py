@@ -55,3 +55,16 @@ def test_a_baseline_names_every_posting_it_did_not_list(db):
     rest = set(w["baseline_not_listed_job_ids"])
     assert len(listed) == service.WATCH_PAGE and not listed & rest
     assert len(listed | rest) == w["total_matching"] == 14
+
+
+@pytest.mark.parametrize("text,want", [
+    ("BS, MS, or PhD in Computer Science, Robotics or related field", "bachelor"),
+    ("B.S., M.S. or Ph.D. in EE", "bachelor"),
+    ("BS/MS/PhD in Robotics", "bachelor"),
+    ("MS or PhD in CS required", "master"),
+    ("PhD in Robotics", "phd"),
+    ("Proficient in MS Office and Excel", None),
+])
+def test_a_list_of_degrees_reads_as_its_lowest(text, want):
+    # persona night 2026-11-18 (high): "BS, MS, or PhD" was read as a PhD requirement
+    assert requirements_from_text("Engineer", text)["min_degree"] == want

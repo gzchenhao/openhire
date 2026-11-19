@@ -1082,10 +1082,12 @@ def get_extractor() -> Extractor:
 # stored, and "unknown" whenever the text does not say. A degree or a number of years named
 # only as a preference ("硕士优先", "PhD preferred") is not a requirement.
 DEGREE_LEVELS = ("associate", "bachelor", "master", "phd")
+# BS / MS count when they sit in a list of degrees ("BS, MS, or PhD", "BS/MS/PhD") or before
+# "degree" / "in" / "required"; a list read as PhD only once (persona night 2026-11-18, high).
 _DEGREE_PATTERNS = (
     ("phd", re.compile(r"博士|\bph\.?\s?d\b|\bdoctora(te|l)\b", re.I)),
-    ("master", re.compile(r"硕士|研究生|\bmaster['’]?s\b|\bm\.?s\.?\b(?= degree| in | required)|\bmsc\b", re.I)),
-    ("bachelor", re.compile(r"本科|学士|\bbachelor['’]?s\b|\bb\.?s\.?\b(?= degree| in | required)|\bbsc\b|\bundergraduate\b", re.I)),
+    ("master", re.compile(r"硕士|研究生|\bmaster['’]?s\b|\bm\.?s\b(?=\.?\s*(?:,|/|\bor\b|\band\b|degree|\bin\b|required|\())|\bmsc\b", re.I)),
+    ("bachelor", re.compile(r"本科|学士|\bbachelor['’]?s\b|\bb\.?s\b(?=\.?\s*(?:,|/|\bor\b|\band\b|degree|\bin\b|required|\())|\bbsc\b|\bundergraduate\b", re.I)),
     ("associate", re.compile(r"大专|专科|\bassociate'?s? degree\b", re.I)),
 )
 # The preference word must sit in the same clause: "硕士及以上学历，博士优先" requires a master's.
