@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import httpx
 
 from .. import config
-from ..ats import FetchResult, fetch_scoped, get_client
+from ..ats import FetchResult, base_tenant, fetch_scoped, get_client
 
 
 @dataclass
@@ -31,13 +31,20 @@ async def fetch_all(
     companies: list[CompanyRef],
     concurrency: int | None = None,
     on_result=None,
+    probe: bool = False,
 ) -> dict[str, FetchResult]:
     """Fetch every company concurrently under a global semaphore.
 
     `on_result(company, result)` is invoked as each completes (for progress display).
+    Workday boards go one at a time (reports/154: every Workday board answered 429 or failed
+    fast from GitHub's runners on 2026-11-17), and take their place in the global queue only
+    when their turn comes, so a waiting Workday board never holds a slot other vendors need.
+    `probe=True` is seed validation: a vendor that can tell a live board from one list page
+    (Workday) reads only that page; every other vendor reads as usual.
     """
     concurrency = concurrency or config.MAX_GLOBAL_CONCURRENCY
     sem = asyncio.Semaphore(concurrency)
+    workday_turn = asyncio.Semaphore(1)  # local to this run, never module-level
     results: dict[str, FetchResult] = {}
 
     headers = {"User-Agent": config.USER_AGENT, "Accept": "application/json"}
@@ -45,10 +52,19 @@ async def fetch_all(
 
     async with httpx.AsyncClient(timeout=timeout, headers=headers, follow_redirects=True) as client:
 
-        async def one(company: CompanyRef):
+        async def read(company: CompanyRef) -> FetchResult:
             async with sem:
                 client_impl = get_client(company.ats_vendor)
-                result = await fetch_scoped(client_impl, client, company.ats_tenant)
+                if probe and hasattr(client_impl, "probe"):
+                    return await client_impl.probe(client, base_tenant(company.ats_tenant))
+                return await fetch_scoped(client_impl, client, company.ats_tenant)
+
+        async def one(company: CompanyRef):
+            if company.ats_vendor == "workday":
+                async with workday_turn:
+                    result = await read(company)
+            else:
+                result = await read(company)
             results[company.id] = result
             if on_result:
                 on_result(company, result)

@@ -39,8 +39,46 @@ from .workable import _date_to_dt
 
 _PAGE = 20              # Workday caps the list at 20 per request
 _MAX_PAGES = 150        # 3,000 postings; large enough for any employer in our sectors
-_DETAIL_CONCURRENCY = 6
+# Slower reads (reports/154, 2026-11-19, the maintainer's "slow Workday down for a week"):
+# from GitHub's runners every Workday board answered 429 or failed fast in the 11-17 refresh.
+# One request at a time per board, a pause between requests, and, when the site says 429,
+# one identical retry after the wait it asks for. That single identical retry is the only
+# retry the scraping rules allow (CLAUDE.md); a second 429 means stop.
+_DETAIL_CONCURRENCY = 1
+_LIST_PAUSE_SECONDS = 1.5
+_DETAIL_PAUSE_SECONDS = 0.5
+_RETRY_AFTER_DEFAULT = 30.0
+_RETRY_AFTER_CAP = 60.0
 _RELATIVE = re.compile(r"posted\s+(today|yesterday|(\d+)\+?\s+days?\s+ago)", re.I)
+
+
+async def _pause(seconds: float) -> None:
+    """One place to wait, so tests can record the waits instead of sleeping."""
+    if seconds > 0:
+        await asyncio.sleep(seconds)
+
+
+def _retry_after(resp) -> float:
+    """The wait a 429 asks for, in seconds, capped; the default when it names none."""
+    raw = None
+    try:
+        raw = (getattr(resp, "headers", None) or {}).get("Retry-After")
+    except Exception:
+        raw = None
+    try:
+        secs = float(raw)
+    except (TypeError, ValueError):
+        secs = _RETRY_AFTER_DEFAULT
+    return max(0.0, min(secs, _RETRY_AFTER_CAP))
+
+
+async def _send(call):
+    """Make one request; on 429 wait as asked and make the identical request once more."""
+    resp = await call()
+    if getattr(resp, "status_code", None) == 429:
+        await _pause(_retry_after(resp))
+        resp = await call()
+    return resp
 
 
 def _parts(tenant: str) -> tuple[str, str, str]:
@@ -91,7 +129,12 @@ class WorkdayClient(ATSClient):
     def _has_jobs_array(payload) -> bool:
         return isinstance(payload, dict) and isinstance(payload.get("jobPostings"), list)
 
-    async def fetch(self, client: httpx.AsyncClient, tenant: str, place: str | None = None) -> FetchResult:
+    async def probe(self, client: httpx.AsyncClient, tenant: str) -> FetchResult:
+        """First list page only, no details: enough to tell a live board from a dead one."""
+        return await self.fetch(client, tenant, probe_only=True)
+
+    async def fetch(self, client: httpx.AsyncClient, tenant: str, place: str | None = None,
+                    probe_only: bool = False) -> FetchResult:
         host, _account, site = _parts(tenant)
         if not site:
             return FetchResult(ok=False, status=0, error="a Workday tenant needs a site: <account>.wdN/<site>")
@@ -113,8 +156,10 @@ class WorkdayClient(ATSClient):
         total: int | None = None
         for pageno in range(_MAX_PAGES):
             body = {"appliedFacets": {}, "limit": _PAGE, "offset": pageno * _PAGE, "searchText": ""}
+            if pageno:
+                await _pause(_LIST_PAUSE_SECONDS)
             try:
-                resp = await client.post(self.endpoint(tenant), json=body, headers=headers)
+                resp = await _send(lambda: client.post(self.endpoint(tenant), json=body, headers=headers))
             except httpx.HTTPError as exc:
                 if rows:
                     break
@@ -143,7 +188,13 @@ class WorkdayClient(ATSClient):
                 total = reported
             if len(batch) < _PAGE or (total is not None and len(rows) >= total):
                 break
+            if probe_only:
+                break
 
+        if probe_only:
+            # Seed validation (pipeline/seed_runner): one list page proves the board answers.
+            # The details are read once, by the weekly ingest, not twice.
+            return FetchResult(ok=True, status=200, records=self.parse({"jobPostings": rows}, tenant))
         if place:
             # Keep a row whose list text names the place, or names no single place ("2 Locations");
             # the second kind is settled after its details give the full location list.
@@ -159,8 +210,10 @@ class WorkdayClient(ATSClient):
 
         async def one(path: str) -> None:
             async with sem:
+                await _pause(_DETAIL_PAUSE_SECONDS)
                 try:
-                    resp = await client.get(self.detail_endpoint(tenant, path), headers=headers)
+                    url = self.detail_endpoint(tenant, path)
+                    resp = await _send(lambda: client.get(url, headers=headers))
                     if resp.status_code == 200:
                         data = resp.json()
                         info = data.get("jobPostingInfo") if isinstance(data, dict) else None

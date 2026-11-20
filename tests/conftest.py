@@ -50,3 +50,16 @@ def _deepseek_at_half_price(monkeypatch):
     saturday = dt.datetime(2026, 10, 24, 6, 0, tzinfo=dt.timezone.utc)  # 14:00 Beijing
     monkeypatch.setattr(pricing, "_now", lambda: saturday)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _workday_without_real_waits(monkeypatch):
+    """The Workday reader pauses between requests and waits out a 429 (reports/154). Tests
+    keep the logic and skip the sleeping; tests about the pauses record them themselves."""
+    from openhire.ats import workday
+
+    async def _no_wait(seconds):
+        return None
+
+    monkeypatch.setattr(workday, "_pause", _no_wait)
+    yield

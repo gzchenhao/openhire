@@ -44,7 +44,7 @@ def seed_companies(on_result=None) -> SeedStats:
     ]
     by_slug = {c.slug: c for c in candidates}
 
-    results = asyncio.run(fetch_all(refs, on_result=on_result))
+    results = asyncio.run(fetch_all(refs, on_result=on_result, probe=True))
 
     stats = SeedStats()
     now = dt.datetime.now(dt.timezone.utc)

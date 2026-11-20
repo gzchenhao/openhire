@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.74 · 2026-11-19；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.75 · 2026-11-20；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.75（2026-11-20，云端会话，`reports/154`）：** 领导「Workday 先放慢节奏试一周」：**Workday 一次只读一家**（crawler 里每次抓取建锁，排队不占全局名额），翻页间停 1.5 秒、详情一条一条读且每条前停 0.5 秒，**429 按 Retry-After（默认 30 秒、封顶 60 秒）等后发一模一样的请求一次，再 429 就停**（红线允许的唯一重试，身份不改），`ohp seed` 校验 Workday 只读第一页（`fetch_all(probe=True)`）；快照工作流时限 90 分钟。11-23 快照看四家香港金融、BD、AutoStore、NVIDIA 读没读进，还 429 就转门户目录。1231 tests。
 - **v0.8.74（2026-11-19，云端会话，`reports/153`）：** 模拟求职者 11-18 夜（US$10.76，累计 136.54，83 条：high 1）：**学历列表取最低一档**（"BS, MS, or PhD" 原读 phd，BS / MS 后跟逗号、斜杠、or、and 也认）。1224 tests。
 - **v0.8.73（2026-11-18，云端会话，`reports/152`）：** 模拟求职者 11-17 夜（US$11.17，累计 125.77，91 条：high 0）：年限区间取下限（8–10+ 读 8）；岗位族搜索里未分类的行带 `role_family_note`；盯岗基线没列出的给 `baseline_not_listed_job_ids`。151 号补：快照刷新后香港金融只进 7 家 128 条，**Workday 从 GitHub 机器也被拒（花旗等四家未进，Boston Dynamics、AutoStore 本周未读到）**，待领导定放慢节奏或转门户目录。1218 tests。
 - **v0.8.72（2026-11-17，云端会话，`reports/151`）：** 领导「试点直接做，就选香港金融机构中后台」：**第五个行业 `finance`，零精抽写进代码**（`seed/sectors.ZERO_EXTRACTION`：抓取一律免费规则，两条付费精抽排除它，测试钉住付费抽取器零调用）；**种子行地点范围** `<tenant>|place=hong kong`（`ats/base.split_scope`，范围不发给雇主系统，Workday 先按列表地点过滤再读详情）；**11 家进种子表**（中金 67、花旗 34、Schonfeld 16、Tower 15、Airwallex 12、道富 11、Flow Traders 11、巴克莱 7、富达国际 6、Verition 6、WorldQuant 1，11-17 现读）；`title=["中后台"]` / back office 展开到合规、风控、运营、财务、法务等。77 家只读核查：大行保险多在 Eightfold / SuccessFactors / Oracle / Taleo / iCIMS，读不了；Workday 429 的 11 家待 probe-boards。运行成本全由 GitHub Actions 免费承担。1212 tests。

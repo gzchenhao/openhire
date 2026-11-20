@@ -27,7 +27,7 @@ def _rec(jid: str) -> JobRecord:
 
 def _fake_fetch(n: int):
     """`seed_companies` drives fetch_all through asyncio.run, so the stub is async."""
-    async def fetch_all(refs, on_result=None):
+    async def fetch_all(refs, on_result=None, probe=False):
         return {
             r.id: FetchResult(ok=True, status=200,
                               records=[_rec(str(i)) for i in range(n)])
