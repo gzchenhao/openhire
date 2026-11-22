@@ -201,7 +201,19 @@ def extract_salary_from_text(text: str) -> tuple[int | None, int | None, str | N
     return None, None, None
 
 
+# The employer's own words on a hybrid policy: "Location-based hybrid policy ... in one of our
+# offices at least 25% of the time" (Anthropic, every posting). Its Greenhouse "Location Type"
+# field says on-site, so the field alone told a persona eleven roles were full-time in office
+# (read_board, persona night 2026-11-19). The text is more specific than the field.
+_HYBRID_TEXT = re.compile(
+    r"\bhybrid\b|\b(?:[1-9]\d?)\s*%\s+of\s+(?:the|their|your)?\s*time\b[^.\n]{0,40}\boffices?\b|"
+    r"\boffices?\b[^.\n]{0,40}\b(?:[1-9]\d?)\s*%\s+of\s+(?:the|their|your)?\s*time\b|"
+    r"\b[1-4]\s*(?:days?|x)\s*(?:a|per)\s*week\b[^.\n]{0,30}\b(?:in[- ]office|in the office|on[- ]?site)\b|混合办公", re.I)
+
+
 def _resolve_remote(job: JobRecord, text: str) -> str:
+    if job.remote_hint == "onsite" and has_description(job) and _HYBRID_TEXT.search(text):
+        return "hybrid"
     if job.remote_hint in ("remote", "hybrid", "onsite"):
         return job.remote_hint
     if not has_description(job):
@@ -213,7 +225,7 @@ def _resolve_remote(job: JobRecord, text: str) -> str:
         return "unknown"
     if re.search(r"\bfully remote\b|\b100% remote\b|\bremote[- ]first\b", text):
         return "remote"
-    if re.search(r"\bhybrid\b", text):
+    if _HYBRID_TEXT.search(text):
         return "hybrid"
     if re.search(r"\bon[- ]?site\b|\bin[- ]?office\b", text):
         return "onsite"
@@ -1095,7 +1107,25 @@ _PREFERENCE_AFTER = re.compile(r"^[^，,。.;；\n]{0,40}?(优先|加分|更佳|
 _PREFERENCE_BEFORE = re.compile(r"(preferred|ideally|bonus|nice to have|plus)[^，,.。;；\n]{0,25}$", re.I)
 # Up to 24 characters inside one clause between the years and 经验: "3年以上机器人或强化学习相关领域的研发经验"
 # is 17 (persona run 2026-11-02 read it as no requirement); a comma ends the clause.
-_YEARS_ZH = re.compile(r"(\d{1,2})\s*(?:[-~～至到]\s*\d{1,2}\s*)?年(?:以上|及以上)?[^。；;，,\n]{0,24}?(?:工作|相关|行业|开发|研发)?经验")
+# Up to 60 characters when the clause lists fields with 、: "3年以上自动驾驶、人工智能、机器人、智能网联
+# 或相关科技行业产品经理、解决方案架构师、战略规划或售前技术支持经验" is 52 (persona night 2026-11-19
+# read it as no requirement). A number right after "1." or "1.5" is a decimal or a list item,
+# never years on its own: "1.5年" read as 5 (see _strip_list_numbers for the list case).
+_YEARS_ZH = re.compile(r"(?<![\d.．])(\d{1,2})(?:[.．]\d)?\s*(?:[-~～至到]\s*\d{1,2}\s*)?年(?:以上|及以上)?[^。；;，,\n]{0,60}?(?:工作|相关|行业|开发|研发)?经验")
+_LIST_ITEM = re.compile(r"^\s*(\d{1,2})\s*[.．、)）]", re.M)
+_ITEM_THEN_NUMBER = re.compile(r"^(\s*)(\d{1,2})[.．](?=\d+\s*(?:[-~～至到]\s*\d+\s*)?年)", re.M)
+
+
+def _strip_list_numbers(text: str) -> str:
+    """"1.5年以上...经验" in a list whose next item is "2." is item 1, five years (理想汽车, persona
+    night 2026-11-19 read 3 from the clause after it). Only when a neighbouring item number
+    exists; a lone "1.5年" stays one and a half years."""
+    items = {int(m.group(1)) for m in _LIST_ITEM.finditer(text)}
+
+    def _fix(m: re.Match) -> str:
+        n = int(m.group(2))
+        return m.group(1) if (n + 1 in items or n - 1 in items) else m.group(0)
+    return _ITEM_THEN_NUMBER.sub(_fix, text)
 _YEARS_ZH_AFTER = re.compile(r"经验\s*(\d{1,2})\s*年")
 # "8–10+ years", "8 to 10 years": the range starts at the first number (read_board persona
 # 2026-11-17 got 10 from an en dash). Hyphen, en dash, em dash, tilde and "to" all join a range.
@@ -1105,7 +1135,11 @@ _CAMPUS = re.compile(r"校招|校园招聘|应届|\b20\d\d\s*届|届毕业生|\b
 _INTERN = re.compile(r"实习|\binterns?(hip)?\b|\bco-?op\b", re.I)
 # Years of managing people are not the years of experience a posting asks for: "2年以上智驾行业
 # 相关工作经验，1年以上团队管理经验" asks for 2 (persona run 2026-10-30 read it as 1).
-_MANAGEMENT_YEARS = re.compile(r"管理|带团队|带人|团队管理|\bmanag|\bleadership\b|\bleading\b|\bpeople\b|\bsupervis", re.I)
+# Managing a project, a product or a process is not managing people: "5年以上...产品或项目管理经验"
+# asks for five years (驭势, persona night 2026-11-19 read it as no requirement).
+_MANAGEMENT_YEARS = re.compile(
+    r"(?<!项目)(?<!产品)(?<!质量)(?<!流程)(?<!供应链)(?<!需求)(?<!版本)(?<!配置)(?<!周期)(?<!风险)(?<!数据)(?<!交付)管理"
+    r"|带团队|带人|团队管理|(?<!project )(?<!product )(?<!program )(?<!programme )\bmanag|\bleadership\b|\bleading\b|\bpeople\b|\bsupervis", re.I)
 # "校招运营专家", "校园招聘专员": the campus word names the job's function (an HR role that runs
 # campus hiring), not a campus-hire track.
 _CAMPUS_AS_FUNCTION = re.compile(r"(校招|校园招聘|campus recruit\w*)\s*[-_/]?\s*(运营|专员|专家|经理|主管|负责人|招聘|hr|bp|项目|coordinator|lead|manager|specialist|partner)", re.I)
@@ -1232,6 +1266,22 @@ def visa_sponsorship_from_text(text: str | None) -> tuple[str | None, str | None
     return found, (quote[:300] + "…") if len(quote) > 300 else quote
 
 
+# Between two year counts, these words mean the posting offers a choice ("本科5年以上或硕士3年以上",
+# "BS with 5+ years or MS with 3+"): the smaller count is what a candidate can come in with.
+_YEARS_ALTERNATIVE = re.compile(r"或|或者|\bor\b|本科|硕士|博士|研究生|学士|bachelor|master|ph\.?d|\b[bm]\.?s\.?\b", re.I)
+
+
+def _years_asked(text: str, found: list[tuple[int, int, int]]) -> int:
+    """Several year counts in one posting are all asked for ("5年以上座舱产品交付经验，3年以上海外
+    市场经验" needs five; persona night 2026-11-19 read three), so the largest one is the bar,
+    unless the text between two of them offers a choice, then the smallest."""
+    found = sorted(found)
+    for (_, end, _), (start, _, _) in zip(found, found[1:]):
+        if _YEARS_ALTERNATIVE.search(text[end:start]):
+            return min(n for _, _, n in found)
+    return max(n for _, _, n in found)
+
+
 def requirements_from_text(title: str | None, description: str | None) -> dict:
     """{min_degree, min_years, hire_track, entry_level} as the posting itself states them.
 
@@ -1253,6 +1303,8 @@ def requirements_from_text(title: str | None, description: str | None) -> dict:
     min_degree = min(required, key=DEGREE_LEVELS.index) if required else None
 
     years = []
+    text = _strip_list_numbers(text)
+    spans = _preferred_spans(text)
     for pat in (_YEARS_ZH, _YEARS_ZH_AFTER, _YEARS_EN):
         for m in pat.finditer(text):
             if _is_preference(text, m.start(), m.end(), spans):
@@ -1261,9 +1313,9 @@ def requirements_from_text(title: str | None, description: str | None) -> dict:
                 continue
             n = int(m.group(1))
             if 0 <= n <= 20:
-                years.append(n)
+                years.append((m.start(), m.end(), n))
     no_exp = _invites(_NO_EXPERIENCE, text)
-    min_years = 0 if no_exp and not years else (min(years) if years else None)
+    min_years = 0 if no_exp and not years else (_years_asked(text, years) if years else None)
 
     campus_title = bool(_CAMPUS.search(title)) and not _CAMPUS_AS_FUNCTION.search(title)
     if _INTERN.search(title):

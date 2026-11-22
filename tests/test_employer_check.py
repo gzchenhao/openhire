@@ -201,7 +201,8 @@ def test_job_id_resolves_the_employer_and_screens_the_stored_posting(session):
     assert res["company"] == "佑驾创新 MINIEYE" and res["query"]["posting_text_source"] == "index"
     assert by["posting_red_flags"]["status"] == "not_verified" and "包机票" in by["posting_red_flags"]["flags"]
     clean = _run(session, job_id="minieye:0")
-    assert {i["id"]: i for i in clean["checks"]}["posting_red_flags"]["status"] == "verified"
+    # The fixture's stored text is "x": too little to scan, so not a pass (persona night 2026-11-19).
+    assert {i["id"]: i for i in clean["checks"]}["posting_red_flags"]["status"] == "not_applicable"
     given = _run(session, job_id="minieye:bad", posting_text="负责 BEV 感知模型开发")
     assert given["query"]["posting_text_source"] == "user"
     assert {i["id"]: i for i in given["checks"]}["posting_red_flags"]["status"] == "verified"
@@ -313,3 +314,20 @@ def test_message_text_is_refused_on_the_hosted_endpoint(monkeypatch):
     monkeypatch.setattr(mcp_server, "_await_index", lambda: None)
     out = mcp_server.check_employer(message_text="加我微信")
     assert out["error"] == "ERR_LOCAL_ONLY" and "never goes through a server" in out["message"]
+
+
+def test_a_placeholder_posting_is_not_scanned_as_clean(session):
+    # "详见岗位JD" twice (persona night 2026-11-19) read as "no red flags found".
+    res = _run(session, company="minieye", posting_text="详见岗位JD\n\n详见岗位JD")
+    item = {i["id"]: i for i in res["checks"]}["posting_red_flags"]
+    assert item["status"] == "not_applicable" and "不要说成" in item["note"]
+
+
+def test_a_placeholder_in_the_index_is_not_scanned_as_clean(session):
+    session.add(Job(id="minieye:ph", company_id="minieye", title="校园人才引力官（深圳）招聘专员",
+                    description_raw="详见岗位JD\n\n详见岗位JD", skills=[], remote_policy="onsite", location="深圳",
+                    first_seen_at=NOW, verified_at=NOW, source="ats_public_api", content_hash="ph",
+                    apply_channel="https://app.mokahr.com/apply/minieye/118570#/job/ph", ghost_score=0.0))
+    session.commit()
+    item = {i["id"]: i for i in _run(session, job_id="minieye:ph")["checks"]}["posting_red_flags"]
+    assert item["status"] == "not_applicable"

@@ -176,6 +176,20 @@ def annualise(value: int | None, period: str | None) -> int | None:
 # Defined next to match_quality so the filter and the score can never drift apart.
 from .pipeline.ranking import expand_skill, normalize_skill  # noqa: E402  (placed with its explanation)
 from .pipeline.extract import seniority_basis, seniority_for  # noqa: E402
+from .pipeline.extract import _HYBRID_TEXT  # noqa: E402
+
+
+def effective_remote(policy: str | None, location: str | None, description: str | None) -> str:
+    """The workplace the employer's own words name, read at answer time. An on-site field loses
+    to a location saying Remote-Friendly (Anthropic, persona night 2026-11-21: eleven rows read as
+    office-only) and to a description stating a hybrid policy (persona night 2026-11-19)."""
+    policy = policy or "unknown"
+    if policy in ("onsite", "unknown"):
+        if location and re.search(r"\bremote\b", location, re.I):
+            return "remote"
+        if description and _HYBRID_TEXT.search(description):
+            return "hybrid"
+    return policy
 from .pipeline.extract import _SEN_FUNCTION_MANAGER as _FUNCTION_MANAGER_TITLE  # noqa: E402
 from .pipeline.extract import SEN_FUNCTION_MANAGER_ZH as _FUNCTION_MANAGER_ZH  # noqa: E402
 
@@ -691,11 +705,15 @@ def _visa_item(requirements: dict | None, description: str | None) -> dict | Non
     return None
 
 
+_TEXT_INVITES_GRADS = re.compile(r"(接受|欢迎|可接受)[^。；;\n]{0,8}(应届|校招|毕业生)|new grad(uate)?s? (are )?welcome", re.I)
+
+
 def check_before_apply(*, date_source: str, days_open: int | None, salary_stated: bool,
                        remote_scope: str | None, apply_ok: bool, correction: dict | None,
                        visa: dict | None = None, salary_note: str | None = None,
                        requirements: dict | None = None, apply_url: str | None = None,
-                       title: str | None = None, seniority: str | None = None) -> list[dict]:
+                       title: str | None = None, seniority: str | None = None,
+                       description: str | None = None) -> list[dict]:
     """What a reader should confirm before applying, each item from a measured fact.
     An empty list means nothing on this row stood out, not that the posting is vetted."""
     out: list[dict] = []
@@ -747,7 +765,10 @@ def check_before_apply(*, date_source: str, days_open: int | None, salary_stated
         out.append({"code": "manager_title_unclear",
                     "zh": "标题带「经理」，但启事没写是否带团队，投递前问清是个人岗还是管理岗。",
                     "en": "The title says manager, but the posting does not say whether the role leads a team; ask before applying."})
-    if (requirements or {}).get("hire_track") == "campus" and apply_url and "/social/" in apply_url:
+    if ((requirements or {}).get("hire_track") == "campus" and apply_url and "/social/" in apply_url
+            and not _TEXT_INVITES_GRADS.search(description or "")):
+        # Unless the posting's own text invites graduates: 普渡 "接受优秀校招生" under /social/ still
+        # drew "confirm it takes new graduates" (persona night 2026-11-19).
         # Beisen's zhiye portals file campus and experienced hires under /campus/ and /social/;
         # a title saying 校招 under /social/ is worth a question (persona test, 2026-11-03).
         out.append({"code": "campus_posting_in_social_channel",
@@ -774,7 +795,8 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
     # by one on every row, "days_open 848" beside "open 847d".
     posted = _aware(job.posted_at or job.first_seen_at)
     age_days = (now.date() - posted.date()).days if posted else None
-    _rs, _regions = classify_remote(job.remote_policy, job.location, job.description_raw)
+    _remote = effective_remote(job.remote_policy, job.location, job.description_raw)
+    _rs, _regions = classify_remote(_remote, job.location, job.description_raw)
     _sal_lo, _sal_hi, _sal_note = usable_salary(
         job.salary_min, job.salary_max, getattr(job, "salary_period", None)
     )
@@ -802,7 +824,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
         # this names a limit of the source, not a fact about the employer.
         **({"date_signal": _ds} if (_ds := date_signal_for(job, company)) else {}),
         "location": job.location,
-        "remote_policy": job.remote_policy,
+        "remote_policy": _remote,
         "remote_scope": _rs,          # worldwide | region_locked | country_locked | null
         "eligible_regions": _regions,  # matched regions/countries ([] = worldwide/unknown)
         "role_family": effective_role_family(getattr(job, "role_family", None), job.title),
@@ -923,7 +945,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             correction=_corr,
             visa=_visa_item(_req, job.description_raw),
             salary_note=_sal_note, requirements=_req, apply_url=job.apply_channel,
-            title=job.title, seniority=_sen["level"],
+            title=job.title, seniority=_sen["level"], description=job.description_raw,
         ),
         # ---- ranking transparency (client may re-rank; server sort is fixed) ----
         # WHICH requested skills this row actually carries. A reviewer searched `rust`,
@@ -2924,7 +2946,9 @@ def employer_check(
         job_company = session.get(Company, job.company_id)
         company = company or job.company_id
         if posting_text is None:
-            posting_text = " ".join(t for t in (job.title, job.description_raw) if t) or None
+            # Title on the first line, the employer's text after it (employer_check reads the
+            # second part alone to tell a placeholder from a posting).
+            posting_text = "\n".join(t for t in (job.title, job.description_raw or "") if t is not None) or None
             posting_source = "index" if posting_text else None
     query = {"company": company, "domain": domain, "job_id": job_id,
              "posting_text_given": bool(posting_text), "posting_text_source": posting_source}
@@ -3032,7 +3056,8 @@ def _indexed_company_for_host(session: Session, url: str):
 def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
     posted = _aware(rec.posted_at) if rec.posted_at else None
     updated = _aware(rec.updated_at) if rec.updated_at else None
-    scope, regions = classify_remote(rec.remote_hint, rec.location, rec.description_raw)
+    _remote = effective_remote(rec.remote_hint, rec.location, rec.description_raw)
+    scope, regions = classify_remote(_remote, rec.location, rec.description_raw)
     # Calendar days, the same count job_posting uses: elapsed seconds floored to days read one
     # less than the index on the same posting (persona test, 2026-11-03).
     age_days = (now.date() - posted.date()).days if posted else None
@@ -3044,7 +3069,7 @@ def _board_posting(rec, now: dt.datetime, full: bool = False) -> dict:
         **({"seniority_quote": _sb["quote"]} if _sb["quote"] else {}),
         "requirements": requirements_from_text(rec.title, rec.description_raw),
         "location": rec.location,
-        "remote_policy": rec.remote_hint or "unknown",
+        "remote_policy": _remote,
         "remote_scope": scope,
         "eligible_regions": regions,
         "datePosted": posted.date().isoformat() if posted else None,

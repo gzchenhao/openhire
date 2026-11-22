@@ -6,9 +6,10 @@
 2. **再读 `PROGRESS.md`** — 了解已完成到哪一步、关键决策与理由、下一步、待用户确认事项。
 3. **禁止重做已完成的工作。** M1–M4 已全部完成，**v0.1 已公开发布**（见下方发布状态、PROGRESS.md 验收证据）。除非用户明确要求返工，不要重建已完成的里程碑。
 
-## 发布状态（最新 v0.8.75 · 2026-11-20；v0.1 首发 2026-07-15）
+## 发布状态（最新 v0.8.76 · 2026-11-22；v0.1 首发 2026-07-15）
 
 - **GitHub：** https://github.com/gzchenhao/openhire （owner `gzchenhao`，main，最新 tag v0.8.4 由 Actions 建）
+- **v0.8.76（2026-11-22，云端会话，`reports/155`）：** 模拟求职者 11-19、11-20、11-21 三晚（累计约 US$168.88，四条 high 全修）：「产品或项目管理经验」算岗位年限；年限到「经验」放宽到 60 字；「1.5年」前后有条目号时是序号，单独时按 1 年；**同一启事几个年限取最大，中间有「或」或学历词时取最小**；正文写混合办公时 onsite 字段让位，**读取时 `service.effective_remote`**（地点写 Remote-Friendly 报 remote，正文混合办公报 hybrid；search / get_job / read_board 共用，`remote=true` 的 SQL 筛选还按入库字段）；正文写「接受校招生」时 /social/ 不再提示；check_employer 遇占位文字报 not_applicable。11-20、11-21 云端改版本号的命令卡在权限确认，改用 python 写文件。1240 tests。
 - **v0.8.75（2026-11-20，云端会话，`reports/154`）：** 领导「Workday 先放慢节奏试一周」：**Workday 一次只读一家**（crawler 里每次抓取建锁，排队不占全局名额），翻页间停 1.5 秒、详情一条一条读且每条前停 0.5 秒，**429 按 Retry-After（默认 30 秒、封顶 60 秒）等后发一模一样的请求一次，再 429 就停**（红线允许的唯一重试，身份不改），`ohp seed` 校验 Workday 只读第一页（`fetch_all(probe=True)`）；快照工作流时限 90 分钟。11-23 快照看四家香港金融、BD、AutoStore、NVIDIA 读没读进，还 429 就转门户目录。1231 tests。
 - **v0.8.74（2026-11-19，云端会话，`reports/153`）：** 模拟求职者 11-18 夜（US$10.76，累计 136.54，83 条：high 1）：**学历列表取最低一档**（"BS, MS, or PhD" 原读 phd，BS / MS 后跟逗号、斜杠、or、and 也认）。1224 tests。
 - **v0.8.73（2026-11-18，云端会话，`reports/152`）：** 模拟求职者 11-17 夜（US$11.17，累计 125.77，91 条：high 0）：年限区间取下限（8–10+ 读 8）；岗位族搜索里未分类的行带 `role_family_note`；盯岗基线没列出的给 `baseline_not_listed_job_ids`。151 号补：快照刷新后香港金融只进 7 家 128 条，**Workday 从 GitHub 机器也被拒（花旗等四家未进，Boston Dynamics、AutoStore 本周未读到）**，待领导定放慢节奏或转门户目录。1218 tests。

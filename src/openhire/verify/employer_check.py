@@ -174,7 +174,16 @@ def build_checklist(
                            reason=home.get("reason")))
 
     # 3. The posting the seeker is looking at, if they pasted it.
-    if posting_text:
+    # A placeholder ("详见岗位JD" twice, 14 characters) is too little text to scan; "nothing found"
+    # there read as a pass (persona night 2026-11-19).
+    body = posting_text
+    if posting_text and query.get("posting_text_source") == "index":
+        body = posting_text.split("\n", 1)[1] if "\n" in posting_text else ""
+    if posting_text and len(re.sub(r"\s|详见岗位\s*JD|详见JD|see (the )?JD", "", body, flags=re.I)) < 8:
+        items.append(_item("posting_red_flags", "岗位文本里的骗局招聘特征", "not_applicable",
+                           "雇主系统给的岗位文本太短（像是占位文字），没法检查；不要说成「检查通过」",
+                           source="OpenHire red-flag list (reports/064)", flags=[]))
+    elif posting_text:
         flags = checks.red_flags_in(posting_text)
         items.append(_item("posting_red_flags", "岗位文本里的骗局招聘特征", "not_verified" if flags else "verified",
                            ("命中：" + "、".join(flags) + "。这些词在真实的智驾 / 具身 / AI 基础设施岗位里几乎不会出现") if flags
