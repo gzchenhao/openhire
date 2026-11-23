@@ -644,7 +644,7 @@ def _date_source(job: Job, company: Company | None) -> str:
 
 def dates_in_words(posted_day: dt.date | None, days_open: int | None, source: str,
                    verified_day: dt.date | None, correction: dict | None = None,
-                   updated_day: dt.date | None = None) -> dict:
+                   updated_day: dt.date | None = None, delisted_day: dt.date | None = None) -> dict:
     """One sentence per language about the dates on a posting, safe to show verbatim.
     Never says a posting is fake, dead or not hiring: it reports what was measured."""
     if posted_day is None or days_open is None:
@@ -652,6 +652,12 @@ def dates_in_words(posted_day: dt.date | None, days_open: int | None, source: st
     p = posted_day.isoformat()
     v_zh = f"；最近核验 {verified_day.isoformat()}，雇主系统当天仍返回这条岗位" if verified_day else ""
     v_en = f"; last verified {verified_day.isoformat()}, when the employer's system still returned it" if verified_day else ""
+    if delisted_day is not None:
+        # A closed row said "still returned it" next to status closed (get_job, persona night
+        # 2026-11-22): the last sighting is history, the removal is the news.
+        d = delisted_day.isoformat()
+        v_zh = f"；雇主系统 {d} 起不再返回这条岗位（已下架）"
+        v_en = f"; the employer's system stopped returning it on {d} (closed)"
     if source == "index_first_seen":
         zh = f"雇主系统没有提供发布日期；本工具首次发现日期 {p}，在架至少 {days_open} 天{v_zh}。"
         en = (f"The employer's system reports no posting date; this index first saw the posting on {p}, "
@@ -674,7 +680,7 @@ def dates_in_words(posted_day: dt.date | None, days_open: int | None, source: st
         u = updated_day.isoformat()
         zh += f"雇主系统最后保存于 {u}，保存不等于内容有改动。"
         en += f" The employer's system last saved it on {u}; saved does not mean edited."
-    if days_open > LONG_OPEN_DAYS:
+    if days_open > LONG_OPEN_DAYS and delisted_day is None:
         zh += "在架较久，投递前建议先确认仍在招。"
         en += " Open for a while now; worth confirming it is still being filled before you apply."
     return {"zh": zh, "en": en}
@@ -938,6 +944,7 @@ def job_posting(job: Job, company: Company | None, requested_skills: list[str], 
             posted.date() if posted else None, age_days, _date_source(job, company),
             _aware(job.verified_at).date() if job.verified_at else None, _corr,
             updated_day=_aware(job.updated_at).date() if _touched else None,
+            delisted_day=_aware(job.delisted_at).date() if job.delisted_at else None,
         ),
         "check_before_apply": check_before_apply(
             date_source=_date_source(job, company), days_open=age_days,

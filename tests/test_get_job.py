@@ -77,3 +77,12 @@ def test_unknown_id_and_bad_page(db):
 def test_refuses_personal_data_as_an_id(db):
     with pytest.raises(OpenHireError):
         service.get_job(db, "张三 13800000000 zhangsan@example.com", now=NOW)
+
+
+def test_a_closed_posting_does_not_say_it_is_still_returned(db):
+    # Persona night 2026-11-22: status closed next to "雇主系统当天仍返回这条岗位".
+    closed = service.get_job(db, "lixiang:closed", now=NOW)
+    assert "仍返回" not in closed["dates_in_words"]["zh"] and "不再返回" in closed["dates_in_words"]["zh"]
+    assert "still returned" not in closed["dates_in_words"]["en"]
+    live = service.get_job(db, "lixiang:live", now=NOW)
+    assert "仍返回" in live["dates_in_words"]["zh"]

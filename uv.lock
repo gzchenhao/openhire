@@ -582,7 +582,7 @@ wheels = [
 
 [[package]]
 name = "openhire"
-version = "0.8.76"
+version = "0.8.77"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
