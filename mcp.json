@@ -4,7 +4,7 @@
     "openhire": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["openhire==0.8.77", "serve"]
+      "args": ["openhire==0.8.78", "serve"]
     }
   }
 }

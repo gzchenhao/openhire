@@ -139,3 +139,29 @@ def test_seed_validation_probes():
 
     from openhire.pipeline import seed_runner
     assert "probe=True" in inspect.getsource(seed_runner.seed_companies)
+
+
+class _DetailRefuses(_Fake):
+    """List answers; every detail answers 429."""
+
+    async def get(self, url, headers=None, **kw):
+        if "/wday/cxs/" not in url:
+            return _Resp(200)
+        self.details += 1
+        return _Resp(429)
+
+
+def test_a_detail_refused_twice_stops_all_detail_reads(monkeypatch):
+    _record_waits(monkeypatch)
+    fake = _DetailRefuses(total=10)
+    res = asyncio.run(WorkdayClient().fetch(fake, T))
+    assert res.ok and res.count == 10, "the list rows still come back, with list fields only"
+    assert fake.details == 2, "one detail and its one identical retry, then nothing more"
+
+
+def test_details_stop_at_the_time_budget(monkeypatch):
+    _record_waits(monkeypatch)
+    monkeypatch.setattr(workday, "_DETAIL_BUDGET_SECONDS", -1)
+    fake = _Fake(total=5)
+    res = asyncio.run(WorkdayClient().fetch(fake, T))
+    assert res.ok and res.count == 5 and fake.details == 0

@@ -31,6 +31,7 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import re
+import time
 
 import httpx
 
@@ -49,6 +50,11 @@ _LIST_PAUSE_SECONDS = 1.5
 _DETAIL_PAUSE_SECONDS = 0.5
 _RETRY_AFTER_DEFAULT = 30.0
 _RETRY_AFTER_CAP = 60.0
+# Details stop on the first refusal that survives its one retry, and after this much time per
+# board: the 11-23 refresh spent an hour on NVIDIA's 2,000 details and hit the job's limit
+# (reports/157). Postings without details keep the list fields; ingest keeps a description
+# it already has when a later read brings none.
+_DETAIL_BUDGET_SECONDS = 12 * 60
 _RELATIVE = re.compile(r"posted\s+(today|yesterday|(\d+)\+?\s+days?\s+ago)", re.I)
 
 
@@ -207,13 +213,20 @@ class WorkdayClient(ATSClient):
     async def _fetch_details(self, client: httpx.AsyncClient, tenant: str, rows: list[dict], headers: dict) -> dict[str, dict]:
         sem = asyncio.Semaphore(_DETAIL_CONCURRENCY)
         out: dict[str, dict] = {}
+        deadline = time.monotonic() + _DETAIL_BUDGET_SECONDS
+        stop = {"refused": False}
 
         async def one(path: str) -> None:
             async with sem:
+                if stop["refused"] or time.monotonic() > deadline:
+                    return
                 await _pause(_DETAIL_PAUSE_SECONDS)
                 try:
                     url = self.detail_endpoint(tenant, path)
                     resp = await _send(lambda: client.get(url, headers=headers))
+                    if resp.status_code == 429:
+                        stop["refused"] = True   # refused twice: no more requests to this board
+                        return
                     if resp.status_code == 200:
                         data = resp.json()
                         info = data.get("jobPostingInfo") if isinstance(data, dict) else None
