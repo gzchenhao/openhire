@@ -7,7 +7,7 @@
 > **Let your AI assistant find jobs straight from employers' own systems, with your résumé never leaving your computer. Is the job still open? Is the company real? Check both before you apply.**
 > 让 AI 助手直接从雇主自己的系统里替你找工作，简历不出你的电脑。岗位还在不在，公司真不真，投之前先查一遍。
 
-![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![220 employers hiring](https://img.shields.io/badge/employers%20hiring-220-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
+![MCP 1.0](https://img.shields.io/badge/MCP-1.0-58A6FF) ![privacy: local-first](https://img.shields.io/badge/privacy-local--first-3FB950) ![python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A5%203.11-C9D1D9) ![license: MIT](https://img.shields.io/badge/license-MIT-C9D1D9) ![221 employers hiring](https://img.shields.io/badge/employers%20hiring-221-E3B341) [![OpenHire on Glama](https://glama.ai/mcp/servers/gzchenhao/openhire/badges/score.svg)](https://glama.ai/mcp/servers/gzchenhao/openhire)
 
 **投了没回音，该等还是该走？** 对你的 AI 助手说一句「我投的这 12 个岗位，哪些已经下架、不用再等？」，它从雇主自己的招聘系统里答（2026-10-26 索引上真跑的结果，节选）：
 **Applied and heard nothing?** Ask your assistant "which of the 12 postings I applied to have closed?" and it answers from the employers' own systems (a real run on the 2026-10-26 index, trimmed):
@@ -94,7 +94,7 @@ to hire. A long-open role can equally mean "hard to fill". Treat it as a reason 
 An MCP server that turns **any** MCP-speaking assistant — Claude, 豆包 Doubao, DeepSeek (through
 an MCP client such as Cherry Studio or Chatbox), Cursor, 腾讯 WorkBuddy, TRAE, Windsurf, Cline,
 ChatGPT (through the hosted endpoint below) — into a private radar for
-**AI / Infra, autonomous-driving and embodied-AI jobs** (plus, as a pilot, Hong Kong finance middle and back office) — pulled straight from **220 employers'**
+**AI / Infra, autonomous-driving and embodied-AI jobs** (plus, as a pilot, Hong Kong finance middle and back office) — pulled straight from **221 employers'**
 own career sites and public ATS APIs (Greenhouse / Lever / Ashby / 北森 Beisen / Moka, plus
 first-party employer career sites such as Li Auto's), across
 the US, Europe **and China** (Waymo, Figure, Zoox — and Unitree, XPeng, UBTECH, Mech-Mind…).
@@ -251,7 +251,7 @@ Per-client config paths and the trade-offs of `uvx` vs a one-time install are in
 
 ```bash
 pipx install openhire      # keeps it isolated and puts `ohp` on your PATH
-ohp bootstrap              # 220 employers · ~26k live postings · no account
+ohp bootstrap              # 221 employers · ~26k live postings · no account
 
 ohp search --required-skills rust,k8s --remote --role-family engineering
 ohp search --currency CNY --role-family engineering   # e.g. CN 智驾 / robotics roles
@@ -709,7 +709,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## Roadmap
 
 - **v0.2 – v0.3 (shipped)** — CN ATS adapters (北森 Beisen + Moka) · weekly auto-refreshed
-  public snapshot · `ghost_score` public beta · 220 employers across US / EU / China
+  public snapshot · `ghost_score` public beta · 221 employers across US / EU / China
 - **next** — Employer claim + verified badges — employers can [reserve their claim
   today](https://github.com/gzchenhao/openhire/issues/new?template=employer_claim.yml) via a
   corporate-identity GitHub issue (zero-cost now; badges + listing-status control ship next) ·
@@ -721,7 +721,7 @@ default local SQLite file (`~/.openhire/openhire.db`).
 ## FAQ
 
 **Where does the job data come from?**
-Directly from 220 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, Workable, SmartRecruiters, Workday, Rippling, Personio, Comeet, plus
+Directly from 221 employers' own public ATS APIs (Greenhouse, Lever, Ashby, 北森 Beisen, Moka, Workable, SmartRecruiters, Workday, Rippling, Personio, Comeet, plus
 first-party employer career sites such as Li Auto's), the same endpoints that power their careers
 pages. No third-party job boards. `source` is
 always `ats_public_api`, and `verified_at` records the last time we confirmed each posting live.

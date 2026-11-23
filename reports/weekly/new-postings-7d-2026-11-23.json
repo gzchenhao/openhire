@@ -1,0 +1,684 @@
+{
+  "snapshot_verified_at": "2026-11-23 18:53:48.765781",
+  "window_days": 7,
+  "window": [
+    "2026-11-16",
+    "2026-11-23"
+  ],
+  "definition": "live postings whose employer-reported posting date falls in (start, end]; rows without a reported date are counted as undated, never as new",
+  "cn": {
+    "employers_with_live_postings": 19,
+    "live": 1148,
+    "new_in_window": 14,
+    "undated": 0,
+    "by_employer": [
+      {
+        "company_id": "galbot",
+        "name": "银河通用 Galbot",
+        "live": 96,
+        "new_in_window": 5,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-23",
+            "title": "日语商务专员",
+            "location": "北京市·海淀区",
+            "apply": "https://app.mokahr.com/apply/yinhetongyong/165929#/job/c477d3df-d617-4541-aafc-2410c6e25d01"
+          },
+          {
+            "datePosted": "2026-11-23",
+            "title": "机器人整机产品经理",
+            "location": null,
+            "apply": "https://app.mokahr.com/apply/yinhetongyong/165929#/job/e4694185-7879-44d4-b912-749529022d6a"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "硬件测试工程师（零部件方向）",
+            "location": "广东·宝安区",
+            "apply": "https://app.mokahr.com/apply/yinhetongyong/165929#/job/051f9454-fad7-4795-8ef2-8b0a1e8ceb54"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "售前方案项目经理",
+            "location": "北京市·海淀区",
+            "apply": "https://app.mokahr.com/apply/yinhetongyong/165929#/job/ba3eb9bf-82b3-4299-b0af-43f4fc8a39f2"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "商务项目经理",
+            "location": null,
+            "apply": "https://app.mokahr.com/apply/yinhetongyong/165929#/job/5f1d582c-0765-4636-b8a6-5dcf3869fe88"
+          }
+        ]
+      },
+      {
+        "company_id": "geekplus",
+        "name": "极智嘉 Geek+",
+        "live": 54,
+        "new_in_window": 2,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-19",
+            "title": "具身遥操系统工程师",
+            "location": "北京市·朝阳区",
+            "apply": "https://app.mokahr.com/apply/geekplus/5030#/job/bc8fb750-fc73-4fb3-a659-f8dba9894d6c"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "具身业务拓展",
+            "location": "上海市·长宁区",
+            "apply": "https://app.mokahr.com/apply/geekplus/5030#/job/ca65275d-2828-4bbf-b013-6345f9d5c286"
+          }
+        ]
+      },
+      {
+        "company_id": "mechmind",
+        "name": "梅卡曼德 Mech-Mind",
+        "live": 53,
+        "new_in_window": 2,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-19",
+            "title": "机械设计工程师(力控工作站/工装夹具方向)(J11150)",
+            "location": "上海市",
+            "apply": "https://mechmind.zhiye.com/social/detail?jobAdId=f87cb7b8-808a-4d4d-bd25-7c256c357d5d"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "机械设计工程师(J10937)",
+            "location": "上海市",
+            "apply": "https://mechmind.zhiye.com/social/detail?jobAdId=bd63393a-c95c-4427-92c6-da7cd7009a5e"
+          }
+        ]
+      },
+      {
+        "company_id": "paxini",
+        "name": "帕西尼 PaXini",
+        "live": 118,
+        "new_in_window": 1,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-18",
+            "title": "Web前端开发工程师",
+            "location": "广东省·深圳市",
+            "apply": "https://paxini.zhiye.com/social/detail?jobAdId=e37b3847-0131-41cb-aa3e-89cd62bca97b"
+          }
+        ]
+      },
+      {
+        "company_id": "astribot",
+        "name": "星尘智能 Astribot",
+        "live": 31,
+        "new_in_window": 1,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-23",
+            "title": "PCBA研发工艺工程师",
+            "location": null,
+            "apply": "https://app.mokahr.com/apply/astribot/144861#/job/b2992960-3baf-4f74-9a51-4a1511f57a21"
+          }
+        ]
+      },
+      {
+        "company_id": "galaxea",
+        "name": "星海图 Galaxea",
+        "live": 25,
+        "new_in_window": 1,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-17",
+            "title": "项目经理",
+            "location": "江苏省·苏州市",
+            "apply": "https://galaxea.zhiye.com/social/detail?jobAdId=02bf1627-9c40-4969-a454-11baa7a9e312"
+          }
+        ]
+      },
+      {
+        "company_id": "pudutech",
+        "name": "普渡科技 Pudu Robotics",
+        "live": 180,
+        "new_in_window": 1,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-18",
+            "title": "C端产品海外GTM",
+            "location": "广东省·深圳市",
+            "apply": "https://pudutech.zhiye.com/social/detail?jobAdId=a1db8a57-8dee-4a0a-bde9-c65b40b7275d"
+          }
+        ]
+      },
+      {
+        "company_id": "hairobotics",
+        "name": "海柔创新 Hai Robotics",
+        "live": 58,
+        "new_in_window": 1,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-19",
+            "title": "电池专家(J13225)",
+            "location": "广东省·深圳市",
+            "apply": "https://hairobotics.zhiye.com/social/detail?jobAdId=f46c4f7c-1a08-434a-916c-9bdd3f4b5ff6"
+          }
+        ]
+      },
+      {
+        "company_id": "yijiahe",
+        "name": "亿嘉和 YIJIAHE",
+        "live": 134,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "ubtrobot",
+        "name": "优必选 UBTECH",
+        "live": 31,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "fftai",
+        "name": "傅利叶 Fourier",
+        "live": 11,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "unitree",
+        "name": "宇树科技 Unitree",
+        "live": 39,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "keenon",
+        "name": "擎朗智能 Keenon",
+        "live": 7,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "siasun",
+        "name": "新松机器人 SIASUN",
+        "live": 16,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "robotera",
+        "name": "星动纪元 Robot Era",
+        "live": 14,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "jaka",
+        "name": "节卡机器人 JAKA",
+        "live": 38,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "dobot",
+        "name": "越疆 Dobot",
+        "live": 97,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "megarobo",
+        "name": "镁伽 MegaRobo",
+        "live": 73,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "magiclab",
+        "name": "魔法原子 MagicLab",
+        "live": 73,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      }
+    ]
+  },
+  "overseas": {
+    "employers_with_live_postings": 20,
+    "live": 778,
+    "new_in_window": 41,
+    "undated": 0,
+    "by_employer": [
+      {
+        "company_id": "1x",
+        "name": "1X Technologies",
+        "live": 106,
+        "new_in_window": 12,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-23",
+            "title": "HR Business Partner",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/2a7704a9-1ab0-4ac1-be01-7531b937d1fe/application"
+          },
+          {
+            "datePosted": "2026-11-20",
+            "title": "Soft Goods Technician",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/d4e1e1c2-8be2-4b13-89ea-8e2ad1424648/application"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "Mechanical Engineer - Ropes",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/8f3df9dd-fe29-4eb7-9aa0-8d1e9ccb5aad/application"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "Staff Automation Engineer - Manufacturing",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/57fe2d16-f837-4852-8420-d43e7039c820/application"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "Mechanical Engineer - Foot",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/ad316a76-6d96-40fb-8b3f-47a44aada5c2/application"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Mechanical Engineer",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/3398e992-b02a-4d39-aabe-f4ac2bb6591d/application"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Mechanical Engineer - Prototyping",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/2d502918-5b0f-4eeb-a86b-8802184c5f09/application"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Prototyping Fabrication Technician",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/c250c698-9d8f-4323-9a5f-c7f7150090ba/application"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Global Supply Manager- Structures",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/67c1c165-6473-4735-883e-98b7efcbe4cd/application"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "CNC Operator",
+            "location": "Hayward, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/a8f00f40-aa88-4650-afe8-fb5778f79e3f/application"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Global Supply Manager- Electrical Components",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/298eb24f-6c9b-4674-b1a3-76f5d9d2af5b/application"
+          },
+          {
+            "datePosted": "2026-11-17",
+            "title": "Robot Operations Manager Swing Shift",
+            "location": "San Carlos, CA",
+            "apply": "https://jobs.ashbyhq.com/1x/d718036a-530c-40cd-bfed-63ce8e64dc75/application"
+          }
+        ]
+      },
+      {
+        "company_id": "apptronik",
+        "name": "Apptronik",
+        "live": 87,
+        "new_in_window": 8,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-20",
+            "title": "Mechanical Engineer – Structural Simulation & Analysis",
+            "location": "Austin, TX",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6267259004?gh_jid=6267259004"
+          },
+          {
+            "datePosted": "2026-11-20",
+            "title": "Staff Mechanical Engineer – Torso",
+            "location": "Austin, TX",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6266320004?gh_jid=6266320004"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "Engineering Manager - Dexterous Manipulation",
+            "location": "Sunnyvale, CA",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6266166004?gh_jid=6266166004"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "Manufacturing Test Engineer - Robotic Hands",
+            "location": "Austin, TX",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6266502004?gh_jid=6266502004"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "Senior Manager, Hardware Test",
+            "location": "Austin, TX",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6266318004?gh_jid=6266318004"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Senior Technical Program Manager, Electronics",
+            "location": "Austin, TX",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6264819004?gh_jid=6264819004"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Staff Technical Program Manager, Physical AI",
+            "location": "Sunnyvale, CA",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6264796004?gh_jid=6264796004"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Staff Technical Program Manager, Physical AI",
+            "location": "Austin, Texas",
+            "apply": "https://boards.greenhouse.io/apptronik/jobs/6264814004?gh_jid=6264814004"
+          }
+        ]
+      },
+      {
+        "company_id": "andromeda-robotics",
+        "name": "Andromeda Robotics",
+        "live": 15,
+        "new_in_window": 6,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-22",
+            "title": "Senior ML Platform Engineer, Robotics",
+            "location": "Southbank, Victoria, Australia",
+            "apply": "https://apply.workable.com/j/27F20D0979/apply"
+          },
+          {
+            "datePosted": "2026-11-20",
+            "title": "Modeling & Simulation Engineer, Robotics",
+            "location": "San Francisco, California, United States",
+            "apply": "https://apply.workable.com/j/C701F95C7C/apply"
+          },
+          {
+            "datePosted": "2026-11-20",
+            "title": "Senior ML Platform Engineer, Robotics",
+            "location": "San Francisco, California, United States",
+            "apply": "https://apply.workable.com/j/EB5D9A91BD/apply"
+          },
+          {
+            "datePosted": "2026-11-19",
+            "title": "Robotics Engineer, Mission Autonomy",
+            "location": "San Francisco, California, United States",
+            "apply": "https://apply.workable.com/j/9DC8822060/apply"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Business Operations Lead",
+            "location": "San Francisco, California, United States",
+            "apply": "https://apply.workable.com/j/2B14928226/apply"
+          },
+          {
+            "datePosted": "2026-11-17",
+            "title": "Executive Assistant to CEO/CFO (Start-up)",
+            "location": "San Francisco, California, United States",
+            "apply": "https://apply.workable.com/j/3433016FFE/apply"
+          }
+        ]
+      },
+      {
+        "company_id": "pathrobotics",
+        "name": "Path Robotics",
+        "live": 63,
+        "new_in_window": 6,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-23",
+            "title": "Field Service Technician",
+            "location": "Lafayette, LA",
+            "apply": "https://boards.greenhouse.io/pathrobotics/jobs/8958541002?gh_jid=8958541002"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Industrial & Production Engineer",
+            "location": "Columbus, Ohio",
+            "apply": "https://boards.greenhouse.io/pathrobotics/jobs/8950251002?gh_jid=8950251002"
+          },
+          {
+            "datePosted": "2026-11-18",
+            "title": "Machine Learning Engineer, Robotics",
+            "location": "Columbus, Ohio or Remote",
+            "apply": "https://boards.greenhouse.io/pathrobotics/jobs/8949716002?gh_jid=8949716002"
+          },
+          {
+            "datePosted": "2026-11-17",
+            "title": "Customer Manufacturing Excellence Manager",
+            "location": "Columbus, Ohio",
+            "apply": "https://boards.greenhouse.io/pathrobotics/jobs/8948051002?gh_jid=8948051002"
+          },
+          {
+            "datePosted": "2026-11-17",
+            "title": "Head of Legal",
+            "location": "Columbus, Ohio",
+            "apply": "https://boards.greenhouse.io/pathrobotics/jobs/8949018002?gh_jid=8949018002"
+          },
+          {
+            "datePosted": "2026-11-17",
+            "title": "Production Operator",
+            "location": "Columbus, OH",
+            "apply": "https://boards.greenhouse.io/pathrobotics/jobs/8948749002?gh_jid=8948749002"
+          }
+        ]
+      },
+      {
+        "company_id": "agilityrobotics",
+        "name": "Agility Robotics",
+        "live": 74,
+        "new_in_window": 3,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-23",
+            "title": "Brand Designer III",
+            "location": "Remote",
+            "apply": "https://boards.greenhouse.io/embed/job_app?for=agilityrobotics&token=6267614004"
+          },
+          {
+            "datePosted": "2026-11-23",
+            "title": "Senior Manager, Environmental, Health & Safety",
+            "location": "Hybrid- Fremont, CA; Hybrid- Pittsburgh, PA; Hybrid- Salem, OR",
+            "apply": "https://boards.greenhouse.io/embed/job_app?for=agilityrobotics&token=6266523004"
+          },
+          {
+            "datePosted": "2026-11-17",
+            "title": "Inside Sales Representative",
+            "location": "Remote",
+            "apply": "https://boards.greenhouse.io/embed/job_app?for=agilityrobotics&token=6263459004"
+          }
+        ]
+      },
+      {
+        "company_id": "dynarobotics",
+        "name": "Dyna Robotics",
+        "live": 25,
+        "new_in_window": 2,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-20",
+            "title": "Logistics & Inventory Specialist",
+            "location": "Redwood City, CA",
+            "apply": "https://jobs.ashbyhq.com/dyna-robotics/477872e8-44ba-430f-8efc-ad239e7acd69/application"
+          },
+          {
+            "datePosted": "2026-11-17",
+            "title": "Senior Firmware / Embedded Engineer",
+            "location": "Redwood City, CA",
+            "apply": "https://jobs.ashbyhq.com/dyna-robotics/7c33b1a8-f4cc-4150-9caa-049d7ca87987/application"
+          }
+        ]
+      },
+      {
+        "company_id": "flexion-robotics",
+        "name": "Flexion Robotics",
+        "live": 11,
+        "new_in_window": 2,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-23",
+            "title": "Forward Deployed Engineer - Robotics",
+            "location": "Zürich, Switzerland",
+            "apply": "https://apply.workable.com/j/15E54A027D/apply"
+          },
+          {
+            "datePosted": "2026-11-23",
+            "title": "Product Manager",
+            "location": "San Francisco, California, United States; Zürich, Zurich, Switzerland",
+            "apply": "https://apply.workable.com/j/732B4FCB07/apply"
+          }
+        ]
+      },
+      {
+        "company_id": "generalist",
+        "name": "Generalist AI",
+        "live": 40,
+        "new_in_window": 1,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-23",
+            "title": "Lead Robotics Engineer, Deployments",
+            "location": "San Francisco Bay Area (San Mateo)",
+            "apply": "https://jobs.ashbyhq.com/generalist/eee7278e-29b8-406e-81b3-8bb2bcb76ec1/application"
+          }
+        ]
+      },
+      {
+        "company_id": "standardbots",
+        "name": "Standard Bots",
+        "live": 23,
+        "new_in_window": 1,
+        "undated": 0,
+        "new_postings": [
+          {
+            "datePosted": "2026-11-19",
+            "title": "Manufacturing Quality Inspector",
+            "location": "Glen Cove, NY",
+            "apply": "https://jobs.ashbyhq.com/StandardBots/199c16cb-1454-4739-82be-f30bfd6075d0/application"
+          }
+        ]
+      },
+      {
+        "company_id": "agile-robots",
+        "name": "Agile Robots",
+        "live": 3,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "ambirobotics",
+        "name": "Ambi Robotics",
+        "live": 5,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "carbonrobotics",
+        "name": "Carbon Robotics",
+        "live": 3,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "cobot",
+        "name": "Collaborative Robotics",
+        "live": 12,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "dexterity",
+        "name": "Dexterity",
+        "live": 14,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "fieldai",
+        "name": "Field AI",
+        "live": 83,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "figureai",
+        "name": "Figure",
+        "live": 102,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "palrobotics",
+        "name": "PAL Robotics",
+        "live": 3,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "physicalintelligence",
+        "name": "Physical Intelligence",
+        "live": 45,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "robotec-ai",
+        "name": "Robotec.ai",
+        "live": 6,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      },
+      {
+        "company_id": "skildai",
+        "name": "Skild AI",
+        "live": 58,
+        "new_in_window": 0,
+        "undated": 0,
+        "new_postings": []
+      }
+    ]
+  }
+}

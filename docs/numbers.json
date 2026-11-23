@@ -1,68 +1,68 @@
 {
-  "generated_at": "2026-11-17T17:07:49.646054+00:00",
-  "companies_in_index": 225,
-  "employers_with_live_postings": 220,
-  "live_postings": 26138,
+  "generated_at": "2026-11-23T19:54:28.777540+00:00",
+  "companies_in_index": 229,
+  "employers_with_live_postings": 221,
+  "live_postings": 26033,
   "postings_unverified_over_30d": 0,
-  "postings_with_employer_posting_date": 25201,
+  "postings_with_employer_posting_date": 25069,
   "median_days_open": 80,
-  "pct_open_over_90d": 46.1,
+  "pct_open_over_90d": 46.2,
   "pct_open_over_180d": 29.6,
-  "pct_open_over_365d": 14.3,
-  "ghost_hi_postings": 5827,
-  "ghost_hi_with_last_touched_reported": 2298,
-  "pct_ghost_hi_touched_within_30d": 79,
-  "live_postings_open_to_new_grads": 929,
-  "live_postings_with_employer_published_pay": 14200,
+  "pct_open_over_365d": 14.4,
+  "ghost_hi_postings": 5899,
+  "ghost_hi_with_last_touched_reported": 2289,
+  "pct_ghost_hi_touched_within_30d": 77,
+  "live_postings_open_to_new_grads": 920,
+  "live_postings_with_employer_published_pay": 14126,
   "live_postings_with_employer_published_pay_by_currency": {
-    "USD": 12164,
-    "CNY": 1519,
-    "GBP": 194,
-    "EUR": 176,
-    "CAD": 76,
-    "SGD": 16,
+    "USD": 12113,
+    "CNY": 1481,
+    "GBP": 195,
+    "EUR": 191,
+    "CAD": 73,
+    "SGD": 18,
     "INR": 10,
     "BRL": 8,
     "AUD": 7,
-    "MXN": 5,
+    "SEK": 6,
     "SAR": 5,
-    "SEK": 4,
+    "MXN": 4,
     "TWD": 3,
-    "AED": 3,
     "JPY": 3,
     "PLN": 3,
+    "AED": 2,
     "NOK": 1,
     "HUF": 1,
     "PHP": 1,
-    "ILS": 1
+    "MXV": 1
   },
   "new_postings_by_sector_30d": {
-    "window_end": "2026-11-17",
+    "window_end": "2026-11-23",
     "by_sector": {
       "autonomous_driving": {
-        "last_30d": 1693,
-        "prior_30d": 1730,
-        "change_pct": -2
+        "last_30d": 1563,
+        "prior_30d": 1853,
+        "change_pct": -16
       },
       "embodied_ai": {
-        "last_30d": 549,
-        "prior_30d": 468,
-        "change_pct": 17
+        "last_30d": 541,
+        "prior_30d": 477,
+        "change_pct": 13
       },
       "ai_infra": {
-        "last_30d": 4388,
-        "prior_30d": 2213,
-        "change_pct": 98
+        "last_30d": 4157,
+        "prior_30d": 2400,
+        "change_pct": 73
       },
       "finance": {
-        "last_30d": 27,
-        "prior_30d": 16,
-        "change_pct": 69
+        "last_30d": 65,
+        "prior_30d": 17,
+        "change_pct": 282
       },
       "other": {
-        "last_30d": 2652,
-        "prior_30d": 2208,
-        "change_pct": 20
+        "last_30d": 2593,
+        "prior_30d": 2370,
+        "change_pct": 9
       }
     }
   }
