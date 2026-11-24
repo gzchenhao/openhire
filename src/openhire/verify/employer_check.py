@@ -169,6 +169,13 @@ def build_checklist(
                            source="Internet Archive Wayback Machine", first_capture=hist.get("first_capture"),
                            reason=hist.get("reason")))
         home = homepage_fn(domain, None, name)
+        if (age.get("reason") == "no_record" and not domain.lower().endswith(".cn")
+                and home.get("reason") == "network"):
+            # RDAP has no registration for this name, so an unreachable homepage is what that
+            # predicts; "it is the network, not the site" contradicted the line above it
+            # (persona night 2026-11-23).
+            home = {**home, "reason": "no_registration",
+                    "note": "首页打不开；上面 RDAP 查不到这个域名的注册记录，两项一起看，先核对域名拼写，再用公司注册名查"}
         items.append(_item("icp_on_homepage", "首页备案号", home.get("status", "unavailable"), home.get("note", ""),
                            source=f"https://{domain}/ (one GET)", icp_on_page=home.get("icp_on_page", []),
                            reason=home.get("reason")))

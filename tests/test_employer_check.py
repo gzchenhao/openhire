@@ -331,3 +331,15 @@ def test_a_placeholder_in_the_index_is_not_scanned_as_clean(session):
     session.commit()
     item = {i["id"]: i for i in _run(session, job_id="minieye:ph")["checks"]}["posting_red_flags"]
     assert item["status"] == "not_applicable"
+
+
+def test_unreachable_homepage_after_no_rdap_record_is_not_blamed_on_the_network(session, monkeypatch):
+    # Persona night 2026-11-23: RDAP said no record, the homepage line said "the network, not the site".
+    monkeypatch.setattr(checks, "domain_age", lambda d: {"status": "unavailable", "reason": "no_record", "note": "RDAP 没有这个域名的注册记录"})
+    monkeypatch.setattr(checks, "homepage_check", lambda d, icp=None, name=None: {"status": "unavailable", "reason": "network", "note": "说明的是这次查询的网络，不是这个站"})
+    res = _run(session, domain="nobody-robotics.com")
+    home = {i["id"]: i for i in res["checks"]}["icp_on_homepage"]
+    assert home["reason"] == "no_registration" and "核对域名拼写" in home["note"]
+    # A .cn name has no RDAP record as a matter of course; the network note stays.
+    res = _run(session, domain="nobody-robotics.cn")
+    assert {i["id"]: i for i in res["checks"]}["icp_on_homepage"]["reason"] == "network"
